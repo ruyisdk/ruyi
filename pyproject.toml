@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "ruyi"
+version = "0.1.0"
+description = "Package manager for RuyiSDK"
+keywords = ["ruyi", "ruyisdk"]
+license = { file = "LICENSE-Apache.txt" }
+readme = "README.md"
+authors = [
+  { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" },
+]
+
+requires-python = ">=3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
