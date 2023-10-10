@@ -3,13 +3,15 @@ name = "ruyi"
 version = "0.1.0"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
-license = { file = "LICENSE-Apache.txt" }
+# license = { file = "LICENSE-Apache.txt" }
+license = "Apache-2.0"
 readme = "README.md"
 authors = [
-  { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" },
+  # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
+  "WANG Xuerui <wangxuerui@iscas.ac.cn>",
 ]
 
-requires-python = ">=3.11"
+#requires-python = ">=3.11"
 
 
 [build-system]
@@ -18,4 +20,6 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11"
+
+rich = "^13.5"
