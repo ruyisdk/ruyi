@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from typing import List
 
 from rich import print
@@ -29,7 +30,7 @@ def main(argv: List[str]) -> int:
     init_debug_status()
 
     if not argv:
-        print('[bold red]fatal error:[/bold red] no argv?', file=os.stderr)
+        print("[bold red]fatal error:[/bold red] no argv?", file=sys.stderr)
         return 1
 
     if is_debug():
