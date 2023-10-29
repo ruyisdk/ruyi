@@ -2,69 +2,18 @@ import glob
 import json
 import os.path
 import sys
-from typing import Iterable, NotRequired, TypedDict
+from typing import Iterable, TypedDict
 
 from git import Repo
 from rich import print
 
 from ruyi import is_debug
+from .pkg_manifest import PackageManifestType
+from .profile import ArchProfilesDeclType
 
 
 class RepoConfigType(TypedDict):
     dist: str
-
-
-class VendorDeclType(TypedDict):
-    name: str
-    eula: str | None
-
-
-class DistfileDeclType(TypedDict):
-    name: str
-    size: int
-    checksums: dict[str, str]
-
-
-class BinaryFileDeclType(TypedDict):
-    host: str
-    distfiles: list[str]
-
-
-BinaryDeclType = list[BinaryFileDeclType]
-
-
-class ToolchainComponentDeclType(TypedDict):
-    name: str
-    version: str
-
-
-class ToolchainDeclType(TypedDict):
-    target: str
-    flavors: list[str]
-    components: list[ToolchainComponentDeclType]
-
-
-class PackageManifestType(TypedDict):
-    slug: str
-    kind: list[str]
-    name: str
-    vendor: VendorDeclType
-    distfiles: list[DistfileDeclType]
-    binary: NotRequired[BinaryDeclType]
-    toolchain: NotRequired[ToolchainDeclType]
-
-
-class ProfileDeclType(TypedDict):
-    name: str
-    need_flavor: NotRequired[list[str]]
-    # can contain arch-specific free-form str -> str mappings
-
-
-class ArchProfilesDeclType(TypedDict):
-    arch: str
-    generic_opts: dict[str, str]
-    profiles: list[ProfileDeclType]
-    # can contain arch-specific free-form KVs
 
 
 class MetadataRepo:
