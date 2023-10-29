@@ -19,7 +19,9 @@ class RuyiConfig:
         self.override_repo_branch: str | None = None
 
     def get_repo_dir(self) -> str:
-        return self.override_repo_dir or os.path.join(self.ensure_cache_dir(), "repo")
+        return self.override_repo_dir or os.path.join(
+            self.ensure_cache_dir(), "packages-index"
+        )
 
     def get_repo_url(self) -> str:
         return self.override_repo_url or DEFAULT_REPO_URL
