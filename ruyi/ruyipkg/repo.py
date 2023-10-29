@@ -113,11 +113,11 @@ class MetadataRepo:
     def iter_pkg_manifests(self) -> Iterable[PackageManifestType]:
         manifests_dir = os.path.join(self.root, "manifests")
         for f in glob.iglob("*.json", root_dir=manifests_dir):
-            with open(f, "rb") as fp:
+            with open(os.path.join(manifests_dir, f), "rb") as fp:
                 yield json.load(fp)
 
     def iter_arch_profiles(self) -> Iterable[ArchProfilesDeclType]:
         profiles_dir = os.path.join(self.root, "profiles")
         for f in glob.iglob("*.json", root_dir=profiles_dir):
-            with open(f, "rb") as fp:
+            with open(os.path.join(profiles_dir, f), "rb") as fp:
                 yield json.load(fp)
