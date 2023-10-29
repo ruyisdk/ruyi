@@ -44,7 +44,10 @@ class MetadataRepo:
         if remote.url != self.remote:
             remote.set_url(self.remote, remote.url)
         remote.fetch()
-        remote.refs[self.branch].checkout()
+        # cosmetic touch-up: sync the local head reference to the remote HEAD too
+        main_branch = repo.heads[self.branch]
+        main_branch.commit = remote.refs[self.branch].commit
+        main_branch.checkout()
 
     def get_config(self) -> RepoConfigType:
         # we can read the config file directly because we're operating from a
