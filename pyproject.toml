@@ -27,3 +27,6 @@ target-version = ['py311']
 python = ">=3.11"
 
 rich = "^13.5"
+
+# build
+nuitka = "^1.8"
