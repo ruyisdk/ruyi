@@ -54,6 +54,19 @@ class PackageManifestType(TypedDict):
     toolchain: NotRequired[ToolchainDeclType]
 
 
+class ProfileDeclType(TypedDict):
+    name: str
+    need_flavor: NotRequired[list[str]]
+    # can contain arch-specific free-form str -> str mappings
+
+
+class ArchProfilesDeclType(TypedDict):
+    arch: str
+    generic_opts: dict[str, str]
+    profiles: list[ProfileDeclType]
+    # can contain arch-specific free-form KVs
+
+
 class MetadataRepo:
     def __init__(self, path: str, remote: str, branch: str) -> None:
         self.root = path
@@ -100,5 +113,11 @@ class MetadataRepo:
     def iter_pkg_manifests(self) -> Iterable[PackageManifestType]:
         manifests_dir = os.path.join(self.root, "manifests")
         for f in glob.iglob("*.json", root_dir=manifests_dir):
+            with open(f, "rb") as fp:
+                yield json.load(fp)
+
+    def iter_arch_profiles(self) -> Iterable[ArchProfilesDeclType]:
+        profiles_dir = os.path.join(self.root, "profiles")
+        for f in glob.iglob("*.json", root_dir=profiles_dir):
             with open(f, "rb") as fp:
                 yield json.load(fp)
