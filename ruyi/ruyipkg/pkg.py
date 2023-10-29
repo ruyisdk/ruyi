@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 from rich import print
 
-from ruyi import is_debug
+from .. import log
 
 from ..config import RuyiConfig
 from .repo import MetadataRepo
@@ -54,8 +54,7 @@ def cli_list(args: argparse.Namespace) -> int:
 def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     slugs: set[str] = set(args.slug)
-    if is_debug():
-        print(f"[cyan]debug:[/cyan] about to install for host {host}: {slugs}")
+    log.D(f"about to install for host {host}: {slugs}")
 
     config = RuyiConfig.load_from_config()
     mr = MetadataRepo(
@@ -79,33 +78,26 @@ def cli_install(args: argparse.Namespace) -> int:
     found_slugs = set(pm.slug for pm in pms_to_install)
     nonexistent_slugs = slugs.difference(found_slugs)
     if nonexistent_slugs:
-        print(
-            f"[bold][red]fatal error:[/red][/bold] {nonexistent_slugs} not found in the repository"
-        )
+        log.F(f"{nonexistent_slugs} not found in the repository")
         return 1
 
     for pm in pms_to_install:
         bm = pm.binary_metadata
         if bm is None:
-            print(
-                f"[bold][red]fatal error[/red][/bold]: don't know how to handle non-binary package {pm.slug}"
-            )
+            log.F(f"don't know how to handle non-binary package {pm.slug}")
             return 2
 
         dfs = pm.distfiles()
 
         distfiles_for_host = bm.get_distfile_names_for_host(host)
         if not distfiles_for_host:
-            print(
-                f"[bold][red]fatal error[/red][/bold]: package {pm.slug} declares no binary for host {host}"
-            )
+            log.F(f"package {pm.slug} declares no binary for host {host}")
             return 2
 
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
             url = urljoin(dist_url_base, f"distfiles/{df_name}")
-            if is_debug():
-                print(f"[cyan]debug:[/cyan] about to download {url}")
+            log.D(f"about to download {url}")
 
     return 0

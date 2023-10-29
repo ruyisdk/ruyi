@@ -7,7 +7,7 @@ from typing import Iterable, TypedDict
 from git import Repo
 from rich import print
 
-from ruyi import is_debug
+from .. import log
 from .pkg_manifest import PackageManifestType
 from .profile import ArchProfilesDeclType
 
@@ -31,11 +31,7 @@ class MetadataRepo:
             self.repo = Repo(self.root)
             return self.repo
 
-        if is_debug():
-            print(
-                f"[cyan]debug:[/cyan] {self.root} does not exist, cloning from {self.remote}",
-                file=sys.stderr,
-            )
+        log.D(f"{self.root} does not exist, cloning from {self.remote}")
 
         # TODO: progress bar
         self.repo = Repo.clone_from(self.remote, self.root, branch=self.branch)

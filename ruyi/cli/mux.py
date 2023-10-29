@@ -5,28 +5,21 @@ from typing import List, NoReturn, Optional, Union
 
 from rich import print
 
-from ruyi import is_debug
+from .. import log
 
 
 def mux_main(argv: List[str]) -> Union[int, NoReturn]:
-    if is_debug():
-        print(f"[cyan]debug:[/cyan] mux mode: argv = {argv}")
+    log.D(f"mux mode: argv = {argv}")
 
     # if no preference is set for the cwd, find the next command in PATH with
     # the same argv[0], and exec it
     next = find_next_in_path(os.path.basename(argv[0]))
     if next is None:
-        print(
-            f"[red]fatal:[/red] cannot find a '[yellow]{argv[0]}[/yellow]' to exec",
-            file=sys.stderr,
-        )
+        log.F(f"cannot find a '[yellow]{argv[0]}[/yellow]' to exec")
         return 127
 
     new_argv = [next] + argv[1:]
-    if is_debug():
-        print(
-            f"[cyan]debug:[/cyan] exec-ing [green]{next}[/green] with argv {new_argv}"
-        )
+    log.D(f"exec-ing [green]{next}[/green] with argv {new_argv}")
     return os.execv(next, new_argv)
 
 

@@ -5,6 +5,7 @@ from typing import List, Optional, Set
 from rich import print
 
 from ruyi import is_debug
+from .. import log
 
 
 CC_FLAVOR_GCC = "gcc"
@@ -51,7 +52,7 @@ def probe_by_bindir(path: str) -> List[ToolchainCharacteristics]:
             candidates.append(match)
 
     if is_debug():
-        print(f"[cyan]debug:[/cyan] {len(candidates)} candidate(s) found")
+        log.D(f"{len(candidates)} candidate(s) found")
         for p in candidates:
             print(f"  {p}")
 

@@ -6,7 +6,8 @@ from typing import List
 
 from rich import print
 
-from ruyi import is_debug, set_debug
+from ruyi import set_debug
+from .. import log
 from .mux import mux_main
 from ..mux.probe import cli_probe
 from ..ruyipkg.pkg import cli_install, cli_list
@@ -76,19 +77,17 @@ def main(argv: List[str]) -> int:
     init_debug_status()
 
     if not argv:
-        print("[bold red]fatal error:[/bold red] no argv?", file=sys.stderr)
+        log.F("no argv?")
         return 1
 
-    if is_debug():
-        print(f"[cyan]debug:[/cyan] argv[0] = {argv[0]}")
+    log.D(f"argv[0] = {argv[0]}")
 
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
 
     p = init_argparse()
     args = p.parse_args(argv[1:])
-    if is_debug():
-        print(f"[cyan]debug:[/cyan] args={args}")
+    log.D(f"args={args}")
 
     try:
         return args.func(args)
