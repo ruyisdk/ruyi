@@ -8,6 +8,7 @@ from rich import print
 from ruyi import is_debug, set_debug
 from .mux import mux_main
 from ..mux.probe import cli_probe
+from ..ruyipkg.update import cli_update
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -45,6 +46,9 @@ def init_argparse() -> argparse.ArgumentParser:
     tc_probe.add_argument(
         "bindir", help="Path to the directory containing toolchain commands"
     )
+
+    up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
+    up.set_defaults(func=cli_update)
 
     return root
 

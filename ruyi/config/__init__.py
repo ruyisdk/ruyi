@@ -5,15 +5,27 @@ from typing import Any, Self
 from xdg import BaseDirectory
 
 
+DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
+DEFAULT_REPO_BRANCH = "main"
+
+
 class RuyiConfig:
     resource_name = "ruyi"
 
     def __init__(self) -> None:
         # all defaults
         self.override_repo_dir: str | None = None
+        self.override_repo_url: str | None = None
+        self.override_repo_branch: str | None = None
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(self.ensure_cache_dir(), "repo")
+
+    def get_repo_url(self) -> str:
+        return self.override_repo_url or DEFAULT_REPO_URL
+
+    def get_repo_branch(self) -> str:
+        return self.override_repo_branch or DEFAULT_REPO_BRANCH
 
     @classmethod
     def init_from_config_data(cls, data: dict[str, Any]) -> Self:
