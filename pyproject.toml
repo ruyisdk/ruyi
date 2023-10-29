@@ -26,6 +26,7 @@ target-version = ['py311']
 [tool.poetry.dependencies]
 python = ">=3.11"
 
+pyxdg = "^0.28"
 rich = "^13.5"
 
 # build
