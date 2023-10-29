@@ -8,6 +8,7 @@ from rich import print
 from ruyi import is_debug, set_debug
 from .mux import mux_main
 from ..mux.probe import cli_probe
+from ..ruyipkg.pkg import cli_list
 from ..ruyipkg.update import cli_update
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -36,6 +37,11 @@ def init_argparse() -> argparse.ArgumentParser:
         description="RuyiSDK Package Manager",
     )
     sp = root.add_subparsers(required=True)
+
+    list = sp.add_parser(
+        "list", help="List available packages in configured repository"
+    )
+    list.set_defaults(func=cli_list)
 
     tc = sp.add_parser("toolchain", help="Query and manage toolchains")
     tcsp = tc.add_subparsers(required=True)
