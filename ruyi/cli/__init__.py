@@ -1,5 +1,6 @@
 import argparse
 import os
+import platform
 import sys
 from typing import List
 
@@ -42,6 +43,12 @@ def init_argparse() -> argparse.ArgumentParser:
         "install", aliases=["i"], help="Install package from configured repository"
     )
     install.add_argument("slug", type=str, nargs="+", help="Slug of package to install")
+    install.add_argument(
+        "--host",
+        type=str,
+        default=platform.machine(),
+        help="Override the host architecture (normally not needed)",
+    )
     install.set_defaults(func=cli_install)
 
     list = sp.add_parser(

@@ -52,7 +52,7 @@ def cli_list(args: argparse.Namespace) -> int:
 
 
 def cli_install(args: argparse.Namespace) -> int:
-    host = platform.machine()
+    host = args.host
     slugs: set[str] = set(args.slug)
     if is_debug():
         print(f"[cyan]debug:[/cyan] about to install for host {host}: {slugs}")
