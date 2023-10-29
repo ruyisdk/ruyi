@@ -1,4 +1,5 @@
 import os.path
+import pathlib
 import tomllib
 from typing import Any, Self
 
@@ -28,6 +29,16 @@ class RuyiConfig:
 
     def get_repo_branch(self) -> str:
         return self.override_repo_branch or DEFAULT_REPO_BRANCH
+
+    def ensure_distfiles_dir(self) -> str:
+        path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
+
+    def ensure_toolchain_install_root(self, slug: str) -> str:
+        path = pathlib.Path(self.ensure_cache_dir()) / "toolchains" / slug
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
 
     @classmethod
     def init_from_config_data(cls, data: dict[str, Any]) -> Self:
