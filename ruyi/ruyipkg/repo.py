@@ -1,7 +1,8 @@
+import glob
 import json
 import os.path
 import sys
-from typing import TypedDict
+from typing import Iterable, NotRequired, TypedDict
 
 from git import Repo
 from rich import print
@@ -11,6 +12,46 @@ from ruyi import is_debug
 
 class RepoConfigType(TypedDict):
     dist: str
+
+
+class VendorDeclType(TypedDict):
+    name: str
+    eula: str | None
+
+
+class DistfileDeclType(TypedDict):
+    name: str
+    size: int
+    checksums: dict[str, str]
+
+
+class BinaryFileDeclType(TypedDict):
+    host: str
+    distfiles: list[str]
+
+
+BinaryDeclType = list[BinaryFileDeclType]
+
+
+class ToolchainComponentDeclType(TypedDict):
+    name: str
+    version: str
+
+
+class ToolchainDeclType(TypedDict):
+    target: str
+    flavors: list[str]
+    components: list[ToolchainComponentDeclType]
+
+
+class PackageManifestType(TypedDict):
+    slug: str
+    kind: list[str]
+    name: str
+    vendor: VendorDeclType
+    distfiles: list[DistfileDeclType]
+    binary: NotRequired[BinaryDeclType]
+    toolchain: NotRequired[ToolchainDeclType]
 
 
 class MetadataRepo:
@@ -55,3 +96,9 @@ class MetadataRepo:
         path = os.path.join(self.root, "config.json")
         with open(path, "rb") as fp:
             return json.load(fp)
+
+    def iter_pkg_manifests(self) -> Iterable[PackageManifestType]:
+        manifests_dir = os.path.join(self.root, "manifests")
+        for f in glob.iglob("*.json", root_dir=manifests_dir):
+            with open(f, "rb") as fp:
+                yield json.load(fp)
