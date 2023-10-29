@@ -1,5 +1,5 @@
 import argparse
-import platform
+import os.path
 from urllib.parse import urljoin
 
 from rich import print
@@ -7,6 +7,7 @@ from rich import print
 from .. import log
 
 from ..config import RuyiConfig
+from .distfile import Distfile
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
 
@@ -51,9 +52,16 @@ def cli_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def make_distfile_url(base: str, name: str) -> str:
+    # urljoin can't be used because it trims the basename part if base is not
+    # `/`-suffixed
+    return f"{base}distfiles/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
+
+
 def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     slugs: set[str] = set(args.slug)
+    fetch_only = args.fetch_only
     log.D(f"about to install for host {host}: {slugs}")
 
     config = RuyiConfig.load_from_config()
@@ -97,7 +105,14 @@ def cli_install(args: argparse.Namespace) -> int:
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
-            url = urljoin(dist_url_base, f"distfiles/{df_name}")
-            log.D(f"about to download {url}")
+            url = make_distfile_url(dist_url_base, df_name)
+            dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+            log.D(f"about to download {url} to {dest}")
+            df = Distfile(url, dest, df_decl.size, df_decl.checksums)
+            df.ensure()
+
+            if fetch_only:
+                log.D("skipping installation because --fetch-only is given")
+                continue
 
     return 0

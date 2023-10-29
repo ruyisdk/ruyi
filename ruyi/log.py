@@ -43,3 +43,21 @@ def F(
         file=file or sys.stderr,
         flush=flush,
     )
+
+
+def W(
+    message,
+    *objects: Any,
+    sep: str = " ",
+    end: str = "\n",
+    file: Optional[IO[str]] = None,
+    flush: bool = False,
+) -> None:
+    return print(
+        f"[bold yellow]warn:[/bold yellow] {message}",
+        *objects,
+        sep=sep,
+        end=end,
+        file=file or sys.stderr,
+        flush=flush,
+    )

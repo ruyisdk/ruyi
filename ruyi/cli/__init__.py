@@ -45,6 +45,12 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     install.add_argument("slug", type=str, nargs="+", help="Slug of package to install")
     install.add_argument(
+        "-f",
+        "--fetch-only",
+        action="store_true",
+        help="Fetch distribution files only without installing",
+    )
+    install.add_argument(
         "--host",
         type=str,
         default=platform.machine(),
