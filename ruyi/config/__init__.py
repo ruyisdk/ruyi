@@ -35,9 +35,8 @@ class RuyiConfig:
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
 
-    def ensure_toolchain_install_root(self, slug: str) -> str:
-        path = pathlib.Path(self.ensure_cache_dir()) / "toolchains" / slug
-        path.mkdir(parents=True, exist_ok=True)
+    def get_toolchain_install_root(self, host: str, slug: str) -> str:
+        path = pathlib.Path(self.ensure_cache_dir()) / "toolchains" / host / slug
         return str(path)
 
     @classmethod

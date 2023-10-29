@@ -56,6 +56,11 @@ def init_argparse() -> argparse.ArgumentParser:
         default=platform.machine(),
         help="Override the host architecture (normally not needed)",
     )
+    install.add_argument(
+        "--reinstall",
+        action="store_true",
+        help="Force re-installation of already installed packages",
+    )
     install.set_defaults(func=cli_install)
 
     list = sp.add_parser(

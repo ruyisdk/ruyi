@@ -3,6 +3,7 @@ import subprocess
 
 from .. import log
 from .checksum import Checksummer
+from .unpack import do_unpack
 
 
 class Distfile:
@@ -70,3 +71,6 @@ class Distfile:
             raise RuntimeError(
                 f"failed to fetch distfile: {self.dest} failed integrity checks"
             )
+
+    def unpack(self, root: str) -> None:
+        return do_unpack(self.dest, root)

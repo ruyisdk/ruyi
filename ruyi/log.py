@@ -45,6 +45,24 @@ def F(
     )
 
 
+def I(
+    message,
+    *objects: Any,
+    sep: str = " ",
+    end: str = "\n",
+    file: Optional[IO[str]] = None,
+    flush: bool = False,
+) -> None:
+    return print(
+        f"[bold green]info:[/bold green] {message}",
+        *objects,
+        sep=sep,
+        end=end,
+        file=file or sys.stderr,
+        flush=flush,
+    )
+
+
 def W(
     message,
     *objects: Any,

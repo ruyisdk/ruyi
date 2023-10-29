@@ -1,5 +1,7 @@
 import argparse
 import os.path
+import pathlib
+import shutil
 from urllib.parse import urljoin
 
 from rich import print
@@ -62,6 +64,7 @@ def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     slugs: set[str] = set(args.slug)
     fetch_only = args.fetch_only
+    reinstall = args.reinstall
     log.D(f"about to install for host {host}: {slugs}")
 
     config = RuyiConfig.load_from_config()
@@ -92,14 +95,32 @@ def cli_install(args: argparse.Namespace) -> int:
     for pm in pms_to_install:
         bm = pm.binary_metadata
         if bm is None:
-            log.F(f"don't know how to handle non-binary package {pm.slug}")
+            log.F(
+                f"don't know how to handle non-binary package [green]{pm.slug}[/green]"
+            )
             return 2
+
+        install_root = config.get_toolchain_install_root(host, pm.slug)
+        if os.path.exists(install_root):
+            if reinstall:
+                log.W(
+                    f"package [green]{pm.slug}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+                )
+                shutil.rmtree(install_root)
+                pathlib.Path(install_root).mkdir(parents=True)
+            else:
+                log.I(f"skipping already installed package [green]{pm.slug}[/green]")
+                continue
+        else:
+            pathlib.Path(install_root).mkdir(parents=True)
 
         dfs = pm.distfiles()
 
         distfiles_for_host = bm.get_distfile_names_for_host(host)
         if not distfiles_for_host:
-            log.F(f"package {pm.slug} declares no binary for host {host}")
+            log.F(
+                f"package [green]{pm.slug}[/green] declares no binary for host {host}"
+            )
             return 2
 
         dist_url_base = repo_cfg["dist"]
@@ -107,12 +128,23 @@ def cli_install(args: argparse.Namespace) -> int:
             df_decl = dfs[df_name]
             url = make_distfile_url(dist_url_base, df_name)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-            log.D(f"about to download {url} to {dest}")
+            log.I(f"downloading {url} to {dest}")
             df = Distfile(url, dest, df_decl.size, df_decl.checksums)
             df.ensure()
 
             if fetch_only:
-                log.D("skipping installation because --fetch-only is given")
+                log.D(
+                    "skipping installation because [yellow]--fetch-only[/yellow] is given"
+                )
                 continue
+
+            log.I(
+                f"extracting [green]{df_name}[/green] for package [green]{pm.slug}[/green]"
+            )
+            df.unpack(install_root)
+
+        log.I(
+            f"package [green]{pm.slug}[/green] installed to [yellow]{install_root}[/yellow]"
+        )
 
     return 0
