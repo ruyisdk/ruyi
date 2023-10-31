@@ -60,6 +60,13 @@ def make_distfile_url(base: str, name: str) -> str:
     return f"{base}distfiles/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
 
 
+def is_root_likely_populated(root: str) -> bool:
+    try:
+        return any(os.scandir(root))
+    except FileNotFoundError:
+        return False
+
+
 def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     slugs: set[str] = set(args.slug)
@@ -101,7 +108,7 @@ def cli_install(args: argparse.Namespace) -> int:
             return 2
 
         install_root = config.get_toolchain_install_root(host, pm.slug)
-        if os.path.exists(install_root):
+        if is_root_likely_populated(install_root):
             if reinstall:
                 log.W(
                     f"package [green]{pm.slug}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
@@ -112,7 +119,7 @@ def cli_install(args: argparse.Namespace) -> int:
                 log.I(f"skipping already installed package [green]{pm.slug}[/green]")
                 continue
         else:
-            pathlib.Path(install_root).mkdir(parents=True)
+            pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
         dfs = pm.distfiles()
 
