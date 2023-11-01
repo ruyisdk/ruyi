@@ -10,6 +10,7 @@ from ruyi import set_debug
 from .. import log
 from .mux import mux_main
 from ..mux.probe import cli_probe
+from ..mux.venv import cli_venv
 from ..ruyipkg.pkg import cli_install, cli_list
 from ..ruyipkg.update import cli_update
 
@@ -80,6 +81,16 @@ def init_argparse() -> argparse.ArgumentParser:
 
     up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
     up.set_defaults(func=cli_update)
+
+    venv = sp.add_parser(
+        "venv",
+        help="Generate a virtual environment adapted to the chosen toolchain and profile",
+    )
+    venv.add_argument("dest", type=str, help="Path to the new virtual environment")
+    venv.add_argument(
+        "--name", "-n", type=str, default=None, help="Override the venv's name"
+    )
+    venv.set_defaults(func=cli_venv)
 
     return root
 

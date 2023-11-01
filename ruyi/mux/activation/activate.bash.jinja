@@ -1,0 +1,60 @@
+# This file must be used with "source bin/activate" *from bash*
+# you cannot run it directly
+
+
+if [ "${BASH_SOURCE-}" = "$0" ]; then
+    echo "You must source this script: \$ source $0" >&2
+    exit 33
+fi
+
+ruyi-deactivate () {
+    # reset old environment variables
+    # ! [ -z ${VAR+_} ] returns true if VAR is declared at all
+    if ! [ -z "${_RUYI_OLD_PATH:+_}" ] ; then
+        PATH="$_RUYI_OLD_PATH"
+        export PATH
+        unset _RUYI_OLD_PATH
+    fi
+
+    # invalidate the PATH cache
+    hash -r 2>/dev/null
+
+    if ! [ -z "${_RUYI_OLD_PS1+_}" ] ; then
+        PS1="$_RUYI_OLD_PS1"
+        export PS1
+        unset _RUYI_OLD_PS1
+    fi
+
+    unset RUYI_VENV
+    unset RUYI_VENV_PROMPT
+    if [ ! "${1-}" = "nondestructive" ] ; then
+    # Self destruct!
+        unset -f ruyi-deactivate
+    fi
+}
+
+# unset irrelevant variables
+ruyi-deactivate nondestructive
+
+RUYI_VENV={{ RUYI_VENV | sh }}
+export RUYI_VENV
+
+_RUYI_OLD_PATH="$PATH"
+PATH="$RUYI_VENV/bin:$PATH"
+export PATH
+
+# invalidate the PATH cache
+hash -r 2>/dev/null
+
+{% if RUYI_VENV_NAME -%}
+RUYI_VENV_PROMPT={{ RUYI_VENV_NAME | sh }}
+{%- else -%}
+RUYI_VENV_PROMPT="$(basename "$RUYI_VENV")"
+{%- endif %}
+export RUYI_VENV_PROMPT
+
+if [ -z "${RUYI_VENV_DISABLE_PROMPT-}" ] ; then
+    _RUYI_OLD_PS1="${PS1-}"
+    PS1="«Ruyi ${VIRTUAL_ENV_PROMPT}» ${PS1-}"
+    export PS1
+fi
