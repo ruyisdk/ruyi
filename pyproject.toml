@@ -27,6 +27,7 @@ target-version = ['py311']
 python = ">=3.11"
 
 gitpython = "^3.1"
+jinja2 = "^3"
 pyxdg = "^0.28"
 rich = "^13.5"
 
