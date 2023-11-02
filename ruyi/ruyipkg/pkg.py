@@ -2,7 +2,6 @@ import argparse
 import os.path
 import pathlib
 import shutil
-from urllib.parse import urljoin
 
 from rich import print
 
