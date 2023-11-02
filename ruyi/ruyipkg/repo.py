@@ -112,5 +112,5 @@ class MetadataRepo:
             self.ensure_pkg_cache()
 
         all_semvers = [pm.semver for pm in self._pkgs[name].values()]
-        latest_ver = max(*all_semvers)
+        latest_ver = max(all_semvers)
         return self._pkgs[name][str(latest_ver)]
