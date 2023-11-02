@@ -19,8 +19,14 @@ ruyi update
 # List all available packages
 ruyi list
 
+# And the details
+ruyi list -v
+
 # Install a package
-ruyi install plct-20231026
+# Either way is okay and equivalent to each other:
+ruyi install plct
+ruyi install name:plct
+ruyi install slug:plct-20231026
 
 # TODO: remove a package
 #ruyi remove plct-20231026
