@@ -63,14 +63,12 @@ def print_pkg_detail(pm: PackageManifest) -> None:
         for kind, csum in dd.checksums.items():
             print(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
 
-    bm = pm.binary_metadata
-    if bm is not None:
+    if bm := pm.binary_metadata:
         print("\n### Binary artifacts\n")
         for host, distfile_names in bm.data.items():
             print(f"* Host [green]{host}[/green]: {distfile_names}")
 
-    tm = pm.toolchain_metadata
-    if tm is not None:
+    if tm := pm.toolchain_metadata:
         print("\n### Toolchain metadata\n")
         print(f"* Target: [bold][green]{tm.target}[/green][/bold]")
         print(f"* Flavors: {tm.flavors}")
