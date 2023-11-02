@@ -6,8 +6,18 @@ from rich.console import Console
 from . import is_debug
 
 
+STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False)
 DEBUG_CONSOLE = Console(file=sys.stderr)
 LOG_CONSOLE = Console(file=sys.stderr, highlight=False)
+
+
+def stdout(
+    message,
+    *objects: Any,
+    sep: str = " ",
+    end: str = "\n",
+) -> None:
+    return STDOUT_CONSOLE.print(message, *objects, sep=sep, end=end)
 
 
 def D(

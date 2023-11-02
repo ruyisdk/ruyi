@@ -31,8 +31,8 @@ ruyi install slug:plct-20231026
 # TODO: remove a package
 #ruyi remove plct-20231026
 
-# TODO: list available profiles
-#ruyi list profiles
+# list available profiles
+ruyi list profiles
 
 # TODO: setup a project
 #cd path/to/your/project

@@ -12,6 +12,7 @@ from .mux import mux_main
 from ..mux.probe import cli_probe
 from ..mux.venv import cli_venv
 from ..ruyipkg.pkg import cli_install, cli_list
+from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -79,6 +80,10 @@ def init_argparse() -> argparse.ArgumentParser:
         action="store_true",
         help="Also show details for every package",
     )
+
+    listsp = list.add_subparsers(required=False)
+    list_profiles = listsp.add_parser("profiles", help="List all available profiles")
+    list_profiles.set_defaults(func=cli_list_profiles)
 
     tc = sp.add_parser("toolchain", help="Query and manage toolchains")
     tcsp = tc.add_subparsers(required=True)
