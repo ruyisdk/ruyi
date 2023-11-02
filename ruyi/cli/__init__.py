@@ -1,10 +1,7 @@
 import argparse
 import os
 import platform
-import sys
 from typing import List
-
-from rich import print
 
 from ruyi import set_debug
 from .. import log
