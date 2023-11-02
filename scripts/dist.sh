@@ -24,7 +24,7 @@ docker_args=(
     -v "$REPO_ROOT":/home/b/ruyi:ro
     -v "$BUILD_DIR":/build
     -v "$POETRY_CACHE_DIR":/poetry-cache
-    -t "ruyi-python-dist:20231031-${arch}"
+    -ti "ruyi-python-dist:20231031-${arch}"
     /home/b/ruyi/scripts/dist-inner.sh
 )
 
