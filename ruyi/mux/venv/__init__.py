@@ -2,13 +2,27 @@ import argparse
 import pathlib
 
 from ... import log
+from ...config import RuyiConfig
+from ...ruyipkg.repo import MetadataRepo
 from .provision import VenvMaker
 
 
 def cli_venv(args: argparse.Namespace) -> int:
-    profile = args.profile
+    profile_name: str = args.profile
     dest = pathlib.Path(args.dest)
     override_name: str | None = args.name
+
+    config = RuyiConfig.load_from_config()
+    mr = MetadataRepo(
+        config.get_repo_dir(),
+        config.get_repo_url(),
+        config.get_repo_branch(),
+    )
+
+    profile = mr.get_profile(profile_name)
+    if profile is None:
+        log.F(f"profile '{profile_name}' not found")
+        return 1
 
     if override_name is not None:
         log.I(

@@ -7,6 +7,7 @@ import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
+from ...ruyipkg.profile import ProfileDecl
 from .data import TEMPLATES
 
 
@@ -46,7 +47,7 @@ def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -
 class VenvMaker:
     def __init__(
         self,
-        profile: str,
+        profile: ProfileDecl,
         dest: PathLike,
         override_name: str | None = None,
     ) -> None:
@@ -60,8 +61,8 @@ class VenvMaker:
 
         env_data = {
             "kvs": {
-                "RUYI_PROFILE": self.profile,
-                "RUYI_PROFILE_COMMON_FLAGS": "",  # TODO
+                "RUYI_PROFILE": self.profile.name,
+                "RUYI_PROFILE_COMMON_FLAGS": self.profile.get_common_flags(),
             },
         }
 

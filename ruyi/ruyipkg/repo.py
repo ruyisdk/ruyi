@@ -72,6 +72,12 @@ class MetadataRepo:
             with open(os.path.join(manifests_dir, f), "rb") as fp:
                 yield PackageManifest(pkg_name, pkg_ver, json.load(fp))
 
+    def get_profile(self, name: str) -> ProfileDecl | None:
+        if not self._profile_cache:
+            self.ensure_profile_cache()
+
+        return self._profile_cache.get(name)
+
     def iter_profiles(self) -> Iterable[ProfileDecl]:
         if not self._profile_cache:
             self.ensure_profile_cache()
