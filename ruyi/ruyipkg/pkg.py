@@ -15,42 +15,68 @@ from .pkg_manifest import PackageManifest
 
 
 def cli_list(args: argparse.Namespace) -> int:
+    verbose = args.verbose
+
     config = RuyiConfig.load_from_config()
     mr = MetadataRepo(
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )
 
-    for pm in mr.iter_pkg_manifests():
-        print(
-            f"[bold]## [green]{pm.desc}[/green] [yellow]({pm.slug})[/yellow][/bold]\n"
-        )
-        print(f"* Package kind: {sorted(pm.kind)}")
-        print(f"* Vendor: {pm.vendor_name}\n")
+    if not verbose:
+        return do_list_non_verbose(mr)
 
-        df = pm.distfiles()
-        print(f"Package declares {len(df)} distfiles:\n")
-        for dd in df.values():
-            print(f"* [green]{dd.name}[/green]")
-            print(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
-            for kind, csum in dd.checksums.items():
-                print(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
-
-        bm = pm.binary_metadata
-        if bm is not None:
-            print("\n### Binary artifacts\n")
-            for host, distfile_names in bm.data.items():
-                print(f"* Host [green]{host}[/green]: {distfile_names}")
-
-        tm = pm.toolchain_metadata
-        if tm is not None:
-            print("\n### Toolchain metadata\n")
-            print(f"* Target: [bold][green]{tm.target}[/green][/bold]")
-            print(f"* Flavors: {tm.flavors}")
-            print("* Components:")
-            for tc in tm.components:
-                print(f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]')
+    for _, pkg_vers in mr.iter_pkgs():
+        for pm in pkg_vers.values():
+            print_pkg_detail(pm)
 
     return 0
+
+
+def do_list_non_verbose(mr: MetadataRepo) -> int:
+    print("List of available packages:\n")
+
+    for pkg_name, pkg_vers in mr.iter_pkgs():
+        print(f"* [bold green]{pkg_name}[/bold green]")
+        semvers = [pm.semver for pm in pkg_vers.values()]
+        semvers.sort(reverse=True)
+        for i, sv in enumerate(semvers):
+            slug = pkg_vers[str(sv)].slug
+            latest = " (latest)" if i == 0 else ""
+            print(f"  - [blue]{sv}[/blue]{latest} slug: [yellow]{slug}[/yellow]")
+
+    return 0
+
+
+def print_pkg_detail(pm: PackageManifest) -> None:
+    print(
+        f"[bold]## [green]{pm.name}[/green] [blue]{pm.ver}[/blue] (slug: [yellow]{pm.slug}[/yellow])[/bold]\n"
+    )
+
+    print(f"* Package kind: {sorted(pm.kind)}")
+    print(f"* Vendor: {pm.vendor_name}\n")
+
+    df = pm.distfiles()
+    print(f"Package declares {len(df)} distfiles:\n")
+    for dd in df.values():
+        print(f"* [green]{dd.name}[/green]")
+        print(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
+        for kind, csum in dd.checksums.items():
+            print(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
+
+    bm = pm.binary_metadata
+    if bm is not None:
+        print("\n### Binary artifacts\n")
+        for host, distfile_names in bm.data.items():
+            print(f"* Host [green]{host}[/green]: {distfile_names}")
+
+    tm = pm.toolchain_metadata
+    if tm is not None:
+        print("\n### Toolchain metadata\n")
+        print(f"* Target: [bold][green]{tm.target}[/green][/bold]")
+        print(f"* Flavors: {tm.flavors}")
+        print("* Components:")
+        for tc in tm.components:
+            print(f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]')
 
 
 def make_distfile_url(base: str, name: str) -> str:

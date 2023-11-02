@@ -1,7 +1,7 @@
 import glob
 import json
 import os.path
-from typing import Iterable, TypedDict
+from typing import Iterable, Tuple, TypedDict
 
 from git import Repo
 from rich import print
@@ -87,6 +87,12 @@ class MetadataRepo:
                 cache[pm.name] = {}
             cache[pm.name][pm.ver] = pm
         self._pkgs = cache
+
+    def iter_pkgs(self) -> Iterable[Tuple[str, dict[str, PackageManifest]]]:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        return self._pkgs.items()
 
     def get_pkg_latest_ver(self, name: str) -> PackageManifest:
         if not self._pkgs:

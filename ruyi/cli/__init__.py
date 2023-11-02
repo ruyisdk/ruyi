@@ -68,6 +68,12 @@ def init_argparse() -> argparse.ArgumentParser:
         "list", help="List available packages in configured repository"
     )
     list.set_defaults(func=cli_list)
+    list.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Also show details for every package",
+    )
 
     tc = sp.add_parser("toolchain", help="Query and manage toolchains")
     tcsp = tc.add_subparsers(required=True)
