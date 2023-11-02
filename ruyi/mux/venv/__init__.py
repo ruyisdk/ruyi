@@ -6,6 +6,7 @@ from .provision import VenvMaker
 
 
 def cli_venv(args: argparse.Namespace) -> int:
+    profile = args.profile
     dest = pathlib.Path(args.dest)
     override_name: str | None = args.name
 
@@ -16,7 +17,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     else:
         log.I(f"Creating a Ruyi virtual environment at [green]{dest}[/green]...")
 
-    maker = VenvMaker(dest.resolve(), override_name)
+    maker = VenvMaker(profile, dest.resolve(), override_name)
     maker.provision()
 
     log.I(

@@ -46,15 +46,26 @@ def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -
 class VenvMaker:
     def __init__(
         self,
+        profile: str,
         dest: PathLike,
         override_name: str | None = None,
     ) -> None:
+        self.profile = profile
         self.dest = dest
         self.override_name = override_name
 
     def provision(self) -> None:
         venv_root = pathlib.Path(self.dest)
         venv_root.mkdir()
+
+        env_data = {
+            "kvs": {
+                "RUYI_PROFILE": self.profile,
+                "RUYI_PROFILE_COMMON_FLAGS": "",  # TODO
+            },
+        }
+
+        render_and_write(venv_root / "ruyi.env", "ruyi.env", env_data)
 
         bindir = venv_root / "bin"
         bindir.mkdir()

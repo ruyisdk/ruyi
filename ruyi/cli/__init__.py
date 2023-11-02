@@ -97,6 +97,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "venv",
         help="Generate a virtual environment adapted to the chosen toolchain and profile",
     )
+    venv.add_argument("profile", type=str, help="Profile to use for the environment")
     venv.add_argument("dest", type=str, help="Path to the new virtual environment")
     venv.add_argument(
         "--name", "-n", type=str, default=None, help="Override the venv's name"

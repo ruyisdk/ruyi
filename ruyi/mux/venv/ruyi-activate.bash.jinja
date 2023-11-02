@@ -46,6 +46,8 @@ export PATH
 # invalidate the PATH cache
 hash -r 2>/dev/null
 
+source "$RUYI_VENV/ruyi.env"
+
 {% if RUYI_VENV_NAME -%}
 RUYI_VENV_PROMPT={{ RUYI_VENV_NAME | sh }}
 {%- else -%}
