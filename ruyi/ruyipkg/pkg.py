@@ -9,6 +9,7 @@ from rich import print
 from .. import log
 
 from ..config import RuyiConfig
+from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
@@ -92,10 +93,10 @@ def is_root_likely_populated(root: str) -> bool:
 
 def cli_install(args: argparse.Namespace) -> int:
     host = args.host
-    slugs: set[str] = set(args.slug)
+    atom_strs: set[str] = set(args.atom)
     fetch_only = args.fetch_only
     reinstall = args.reinstall
-    log.D(f"about to install for host {host}: {slugs}")
+    log.D(f"about to install for host {host}: {atom_strs}")
 
     config = RuyiConfig.load_from_config()
     mr = MetadataRepo(
@@ -107,21 +108,13 @@ def cli_install(args: argparse.Namespace) -> int:
     # TODO: somehow don't traverse the entire repo?
     # Currently this isn't a problem due to the repo's small size, but it might
     # become necessary in the future.
-    pms_to_install: list[PackageManifest] = []
-    for pm in mr.iter_pkg_manifests():
-        if pm.slug not in slugs:
-            continue
+    for a_str in atom_strs:
+        a = Atom.parse(a_str)
+        pm = a.match_in_repo(mr)
+        if pm is None:
+            log.F(f"atom {a_str} matches no package in the repository")
+            return 1
 
-        pms_to_install.append(pm)
-
-    # check non-existent slugs
-    found_slugs = set(pm.slug for pm in pms_to_install)
-    nonexistent_slugs = slugs.difference(found_slugs)
-    if nonexistent_slugs:
-        log.F(f"{nonexistent_slugs} not found in the repository")
-        return 1
-
-    for pm in pms_to_install:
         bm = pm.binary_metadata
         if bm is None:
             log.F(

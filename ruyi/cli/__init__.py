@@ -44,7 +44,12 @@ def init_argparse() -> argparse.ArgumentParser:
     install = sp.add_parser(
         "install", aliases=["i"], help="Install package from configured repository"
     )
-    install.add_argument("slug", type=str, nargs="+", help="Slug of package to install")
+    install.add_argument(
+        "atom",
+        type=str,
+        nargs="+",
+        help="Specifier (atom) of the package to install",
+    )
     install.add_argument(
         "-f",
         "--fetch-only",

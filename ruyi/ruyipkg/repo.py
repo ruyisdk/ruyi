@@ -23,6 +23,7 @@ class MetadataRepo:
         self.repo: Repo | None = None
 
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
+        self._slug_cache: dict[str, PackageManifest] = {}
 
     def ensure_git_repo(self) -> Repo:
         if self.repo is not None:
@@ -82,17 +83,29 @@ class MetadataRepo:
             return
 
         cache: dict[str, dict[str, PackageManifest]] = {}
+        slug_cache: dict[str, PackageManifest] = {}
         for pm in self.iter_pkg_manifests():
             if pm.name not in cache:
                 cache[pm.name] = {}
             cache[pm.name][pm.ver] = pm
+
+            if pm.slug:
+                slug_cache[pm.slug] = pm
+
         self._pkgs = cache
+        self._slug_cache = slug_cache
 
     def iter_pkgs(self) -> Iterable[Tuple[str, dict[str, PackageManifest]]]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
         return self._pkgs.items()
+
+    def get_pkg_by_slug(self, slug: str) -> PackageManifest | None:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        return self._slug_cache.get(slug)
 
     def get_pkg_latest_ver(self, name: str) -> PackageManifest:
         if not self._pkgs:
