@@ -7,7 +7,7 @@ import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
-from .activation.data import TEMPLATES
+from .data import TEMPLATES
 
 
 def unpack_payload(x: bytes) -> str:

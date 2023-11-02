@@ -1,8 +1,8 @@
 import argparse
 import pathlib
 
-from .. import log
-from .venv_maker import VenvMaker
+from ... import log
+from .provision import VenvMaker
 
 
 def cli_venv(args: argparse.Namespace) -> int:
