@@ -4,11 +4,10 @@ import os.path
 from typing import Iterable, Tuple, TypedDict
 
 from git import Repo
-from rich import print
 
 from .. import log
 from .pkg_manifest import PackageManifest
-from .profile import ArchProfilesDeclType
+from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 
 
 class RepoConfigType(TypedDict):
@@ -24,6 +23,7 @@ class MetadataRepo:
 
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
+        self._profile_cache: dict[str, ProfileDecl] = {}
 
     def ensure_git_repo(self) -> Repo:
         if self.repo is not None:
@@ -72,11 +72,23 @@ class MetadataRepo:
             with open(os.path.join(manifests_dir, f), "rb") as fp:
                 yield PackageManifest(pkg_name, pkg_ver, json.load(fp))
 
-    def iter_arch_profiles(self) -> Iterable[ArchProfilesDeclType]:
+    def iter_profiles(self) -> Iterable[ProfileDecl]:
+        if not self._profile_cache:
+            self.ensure_profile_cache()
+
+        return self._profile_cache.values()
+
+    def ensure_profile_cache(self) -> None:
+        cache: dict[str, ProfileDecl] = {}
+
         profiles_dir = os.path.join(self.root, "profiles")
         for f in glob.iglob("*.json", root_dir=profiles_dir):
             with open(os.path.join(profiles_dir, f), "rb") as fp:
-                yield json.load(fp)
+                arch_profiles_decl: ArchProfilesDeclType = json.load(fp)
+                for p in parse_profiles(arch_profiles_decl):
+                    cache[p.name] = p
+
+        self._profile_cache = cache
 
     def ensure_pkg_cache(self) -> None:
         if self._pkgs:
