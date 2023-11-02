@@ -41,12 +41,19 @@ class MetadataRepo:
         repo = self.ensure_git_repo()
         remote = repo.remote()
         if remote.url != self.remote:
+            log.D(f"updating remote url from {remote.url} to {self.remote}")
             remote.set_url(self.remote, remote.url)
+        log.D(f"fetching")
         remote.fetch()
         # cosmetic touch-up: sync the local head reference to the remote HEAD too
         main_branch = repo.heads[self.branch]
-        main_branch.commit = remote.refs[self.branch].commit
-        main_branch.checkout()
+        tgt_commit = remote.refs[self.branch].commit
+        log.D(
+            f"updating branch {self.branch} head {main_branch} to commit {tgt_commit}"
+        )
+        main_branch.commit = tgt_commit
+        log.D("checking out")
+        main_branch.checkout(force=True)
 
     def get_config(self) -> RepoConfigType:
         # we can read the config file directly because we're operating from a
