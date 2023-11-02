@@ -1,7 +1,6 @@
 import glob
 import json
 import os.path
-import sys
 from typing import Iterable, TypedDict
 
 from git import Repo
@@ -22,6 +21,8 @@ class MetadataRepo:
         self.remote = remote
         self.branch = branch
         self.repo: Repo | None = None
+
+        self._pkgs: dict[str, dict[str, PackageManifest]] = {}
 
     def ensure_git_repo(self) -> Repo:
         if self.repo is not None:
@@ -75,3 +76,22 @@ class MetadataRepo:
         for f in glob.iglob("*.json", root_dir=profiles_dir):
             with open(os.path.join(profiles_dir, f), "rb") as fp:
                 yield json.load(fp)
+
+    def ensure_pkg_cache(self) -> None:
+        if self._pkgs:
+            return
+
+        cache: dict[str, dict[str, PackageManifest]] = {}
+        for pm in self.iter_pkg_manifests():
+            if pm.name not in cache:
+                cache[pm.name] = {}
+            cache[pm.name][pm.ver] = pm
+        self._pkgs = cache
+
+    def get_pkg_latest_ver(self, name: str) -> PackageManifest:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        all_semvers = [pm.semver for pm in self._pkgs[name].values()]
+        latest_ver = max(*all_semvers)
+        return self._pkgs[name][str(latest_ver)]

@@ -1,5 +1,7 @@
 from typing import Iterable, NotRequired, TypedDict
 
+from semver.version import Version
+
 
 class VendorDeclType(TypedDict):
     name: str
@@ -98,6 +100,11 @@ class PackageManifest:
         self._data = data
         self.name = name
         self.ver = ver
+        self._semver = Version.parse(ver)
+
+    @property
+    def semver(self) -> Version:
+        return self._semver
 
     @property
     def slug(self) -> str:
