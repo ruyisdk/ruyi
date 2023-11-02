@@ -1,9 +1,13 @@
 from typing import Any, IO, Optional
 import sys
 
-from rich import print
+from rich.console import Console
 
 from . import is_debug
+
+
+DEBUG_CONSOLE = Console(file=sys.stderr)
+LOG_CONSOLE = Console(file=sys.stderr, highlight=False)
 
 
 def D(
@@ -11,19 +15,15 @@ def D(
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
 ) -> None:
     if not is_debug():
         return
 
-    return print(
+    return DEBUG_CONSOLE.print(
         f"[cyan]debug:[/cyan] {message}",
         *objects,
         sep=sep,
         end=end,
-        file=file or sys.stderr,
-        flush=flush,
     )
 
 
@@ -32,16 +32,12 @@ def F(
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
 ) -> None:
-    return print(
+    return LOG_CONSOLE.print(
         f"[bold red]fatal error:[/bold red] {message}",
         *objects,
         sep=sep,
         end=end,
-        file=file or sys.stderr,
-        flush=flush,
     )
 
 
@@ -53,13 +49,11 @@ def I(
     file: Optional[IO[str]] = None,
     flush: bool = False,
 ) -> None:
-    return print(
+    return LOG_CONSOLE.print(
         f"[bold green]info:[/bold green] {message}",
         *objects,
         sep=sep,
         end=end,
-        file=file or sys.stderr,
-        flush=flush,
     )
 
 
@@ -68,14 +62,10 @@ def W(
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
 ) -> None:
-    return print(
+    return LOG_CONSOLE.print(
         f"[bold yellow]warn:[/bold yellow] {message}",
         *objects,
         sep=sep,
         end=end,
-        file=file or sys.stderr,
-        flush=flush,
     )
