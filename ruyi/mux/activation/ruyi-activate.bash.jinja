@@ -1,4 +1,4 @@
-# This file must be used with "source bin/activate" *from bash*
+# This file must be used with "source bin/ruyi-activate" *from bash*
 # you cannot run it directly
 
 
@@ -55,6 +55,6 @@ export RUYI_VENV_PROMPT
 
 if [ -z "${RUYI_VENV_DISABLE_PROMPT-}" ] ; then
     _RUYI_OLD_PS1="${PS1-}"
-    PS1="«Ruyi ${VIRTUAL_ENV_PROMPT}» ${PS1-}"
+    PS1="«Ruyi ${RUYI_VENV_PROMPT}» ${PS1-}"
     export PS1
 fi
