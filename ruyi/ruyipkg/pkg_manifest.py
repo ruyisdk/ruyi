@@ -34,7 +34,7 @@ class ToolchainDeclType(TypedDict):
 class PackageManifestType(TypedDict):
     slug: str
     kind: list[str]
-    name: str
+    desc: str
     vendor: VendorDeclType
     distfiles: list[DistfileDeclType]
     binary: NotRequired[BinaryDeclType]
@@ -94,8 +94,10 @@ class ToolchainDecl:
 
 
 class PackageManifest:
-    def __init__(self, data: PackageManifestType) -> None:
+    def __init__(self, name: str, ver: str, data: PackageManifestType) -> None:
         self._data = data
+        self.name = name
+        self.ver = ver
 
     @property
     def slug(self) -> str:
@@ -109,8 +111,8 @@ class PackageManifest:
         return k in self._data["kind"]
 
     @property
-    def name(self) -> str:
-        return self._data["name"]
+    def desc(self) -> str:
+        return self._data["desc"]
 
     @property
     def vendor_name(self) -> str:

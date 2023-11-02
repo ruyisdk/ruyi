@@ -20,10 +20,9 @@ def cli_list(args: argparse.Namespace) -> int:
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )
 
-    for pm_data in mr.iter_pkg_manifests():
-        pm = PackageManifest(pm_data)
+    for pm in mr.iter_pkg_manifests():
         print(
-            f"[bold]## [green]{pm.name}[/green] [yellow]({pm.slug})[/yellow][/bold]\n"
+            f"[bold]## [green]{pm.desc}[/green] [yellow]({pm.slug})[/yellow][/bold]\n"
         )
         print(f"* Package kind: {sorted(pm.kind)}")
         print(f"* Vendor: {pm.vendor_name}\n")
@@ -85,8 +84,7 @@ def cli_install(args: argparse.Namespace) -> int:
     # Currently this isn't a problem due to the repo's small size, but it might
     # become necessary in the future.
     pms_to_install: list[PackageManifest] = []
-    for pm_data in mr.iter_pkg_manifests():
-        pm = PackageManifest(pm_data)
+    for pm in mr.iter_pkg_manifests():
         if pm.slug not in slugs:
             continue
 

@@ -8,7 +8,7 @@ from git import Repo
 from rich import print
 
 from .. import log
-from .pkg_manifest import PackageManifestType
+from .pkg_manifest import PackageManifest
 from .profile import ArchProfilesDeclType
 
 
@@ -55,11 +55,13 @@ class MetadataRepo:
         with open(path, "rb") as fp:
             return json.load(fp)
 
-    def iter_pkg_manifests(self) -> Iterable[PackageManifestType]:
+    def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         manifests_dir = os.path.join(self.root, "manifests")
-        for f in glob.iglob("*.json", root_dir=manifests_dir):
+        for f in glob.iglob("*/*.json", root_dir=manifests_dir):
+            pkg_name, pkg_ver = os.path.split(f)
+            pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
             with open(os.path.join(manifests_dir, f), "rb") as fp:
-                yield json.load(fp)
+                yield PackageManifest(pkg_name, pkg_ver, json.load(fp))
 
     def iter_arch_profiles(self) -> Iterable[ArchProfilesDeclType]:
         profiles_dir = os.path.join(self.root, "profiles")
