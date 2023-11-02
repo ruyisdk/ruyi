@@ -82,7 +82,7 @@ def print_pkg_detail(pm: PackageManifest) -> None:
 def make_distfile_url(base: str, name: str) -> str:
     # urljoin can't be used because it trims the basename part if base is not
     # `/`-suffixed
-    return f"{base}distfiles/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
+    return f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
 
 
 def is_root_likely_populated(root: str) -> bool:
