@@ -64,4 +64,4 @@ class VenvMaker:
             "RUYI_VENV_NAME": self.override_name,
         }
 
-        render_and_write(bindir / "activate", "activate.bash", template_data)
+        render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
