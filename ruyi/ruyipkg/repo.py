@@ -125,6 +125,12 @@ class MetadataRepo:
 
         return self._slug_cache.get(slug)
 
+    def iter_pkg_vers(self, name: str) -> Iterable[PackageManifest]:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        return self._pkgs[name].values()
+
     def get_pkg_latest_ver(self, name: str) -> PackageManifest:
         if not self._pkgs:
             self.ensure_pkg_cache()

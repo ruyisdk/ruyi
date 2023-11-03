@@ -34,7 +34,7 @@ class Atom:
             return NameAtom(s, s[5:])  # strip the "name:" prefix
 
         if match := RE_ATOM_EXPR.match(s):
-            return ExprAtom(s, match[0], match[1])
+            return ExprAtom(s, match[1], match[2])
 
         # fallback
         if match := RE_ATOM_NAME.match(s):
@@ -64,11 +64,26 @@ class ExprAtom(Atom):
     def __init__(self, s: str, name: str, expr: str) -> None:
         super().__init__(s, "expr")
         self.name = name
-        self.expr = expr
+        self.exprs = expr.split(",")
+
+    def _is_pm_matching_my_exprs(self, pm: PackageManifest) -> bool:
+        for e in self.exprs:
+            if not pm.semver.match(e):
+                return False
+        return True
 
     def match_in_repo(self, repo: MetadataRepo) -> PackageManifest | None:
-        # TODO
-        raise NotImplementedError
+        matching_pms = {
+            pm.ver: pm
+            for pm in repo.iter_pkg_vers(self.name)
+            if self._is_pm_matching_my_exprs(pm)
+        }
+        if not matching_pms:
+            return None
+
+        semvers = [pm.semver for pm in matching_pms.values()]
+        latest_ver = max(semvers)
+        return matching_pms[str(latest_ver)]
 
 
 class SlugAtom(Atom):
