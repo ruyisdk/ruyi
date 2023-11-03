@@ -3,6 +3,7 @@ import subprocess
 
 from .. import log
 from .checksum import Checksummer
+from .fetch import BaseFetcher
 from .unpack import do_unpack
 
 
@@ -19,14 +20,14 @@ class Distfile:
             st = os.stat(self.dest)
         except FileNotFoundError:
             log.D(f"file {self.dest} not existent")
-            return self.fetch()
+            return self.fetch_and_ensure_integrity()
 
         if st.st_size < self.size:
             # assume incomplete transmission, try to resume
             log.D(
                 f"file {self.dest} appears incomplete: size {st.st_size} < {self.size}; resuming"
             )
-            return self.fetch(resume=True)
+            return self.fetch_and_ensure_integrity(resume=True)
         elif st.st_size == self.size:
             if self.ensure_integrity_or_rm():
                 log.D(f"file {self.dest} passed checks")
@@ -34,13 +35,13 @@ class Distfile:
 
             # the file is already gone, re-fetch
             log.D(f"re-fetching {self.url} to {self.dest}")
-            return self.fetch()
+            return self.fetch_and_ensure_integrity()
 
         log.W(
             f"file {self.dest} is corrupt: size too big ({st.st_size} > {self.size}); deleting"
         )
         os.remove(self.dest)
-        return self.fetch()
+        return self.fetch_and_ensure_integrity()
 
     def ensure_integrity_or_rm(self) -> bool:
         try:
@@ -53,19 +54,9 @@ class Distfile:
             os.remove(self.dest)
             return False
 
-    def fetch(self, *, resume: bool = False) -> None:
-        # TODO: support more fetchers
-        # This list is taken from Gentoo
-        argv = ["wget"]
-        if resume:
-            argv.append("-c")
-        argv.extend(("-t", "3", "-T", "60", "--passive-ftp", "-O", self.dest, self.url))
-
-        retcode = subprocess.call(argv)
-        if retcode != 0:
-            raise RuntimeError(
-                f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
-            )
+    def fetch_and_ensure_integrity(self, *, resume: bool = False) -> None:
+        fetcher = BaseFetcher.new(self.url, self.dest)
+        fetcher.fetch(resume=resume)
 
         if not self.ensure_integrity_or_rm():
             raise RuntimeError(
