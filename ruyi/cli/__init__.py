@@ -8,7 +8,7 @@ from .. import log
 from .mux import mux_main
 from ..mux.probe import cli_probe
 from ..mux.venv import cli_venv
-from ..ruyipkg.pkg import cli_install, cli_list
+from ..ruyipkg.pkg_cli import cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
 
