@@ -131,10 +131,16 @@ class MetadataRepo:
 
         return self._pkgs[name].values()
 
-    def get_pkg_latest_ver(self, name: str) -> PackageManifest:
+    def get_pkg_latest_ver(
+        self,
+        name: str,
+        include_prerelease_vers: bool = False,
+    ) -> PackageManifest:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
         all_semvers = [pm.semver for pm in self._pkgs[name].values()]
+        if not include_prerelease_vers:
+            all_semvers = [sv for sv in all_semvers if sv.prerelease is None]
         latest_ver = max(all_semvers)
         return self._pkgs[name][str(latest_ver)]

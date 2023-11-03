@@ -94,6 +94,7 @@ def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     atom_strs: set[str] = set(args.atom)
     fetch_only = args.fetch_only
+    prerelease = args.prerelease
     reinstall = args.reinstall
     log.D(f"about to install for host {host}: {atom_strs}")
 
@@ -109,7 +110,7 @@ def cli_install(args: argparse.Namespace) -> int:
     # become necessary in the future.
     for a_str in atom_strs:
         a = Atom.parse(a_str)
-        pm = a.match_in_repo(mr)
+        pm = a.match_in_repo(mr, prerelease)
         if pm is None:
             log.F(f"atom {a_str} matches no package in the repository")
             return 1

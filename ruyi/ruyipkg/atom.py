@@ -43,7 +43,11 @@ class Atom:
         raise ValueError(f"invalid atom: '{s}'")
 
     @abc.abstractmethod
-    def match_in_repo(self, repo: MetadataRepo) -> PackageManifest | None:
+    def match_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> PackageManifest | None:
         raise NotImplementedError
 
 
@@ -52,10 +56,14 @@ class NameAtom(Atom):
         super().__init__(s, "name")
         self.name = name
 
-    def match_in_repo(self, repo: MetadataRepo) -> PackageManifest | None:
+    def match_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> PackageManifest | None:
         # return the latest version of the package named self.name in the given repo
         try:
-            return repo.get_pkg_latest_ver(self.name)
+            return repo.get_pkg_latest_ver(self.name, include_prerelease_vers)
         except KeyError:
             return None
 
@@ -72,7 +80,11 @@ class ExprAtom(Atom):
                 return False
         return True
 
-    def match_in_repo(self, repo: MetadataRepo) -> PackageManifest | None:
+    def match_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> PackageManifest | None:
         matching_pms = {
             pm.ver: pm
             for pm in repo.iter_pkg_vers(self.name)
@@ -82,6 +94,10 @@ class ExprAtom(Atom):
             return None
 
         semvers = [pm.semver for pm in matching_pms.values()]
+        if not include_prerelease_vers:
+            semvers = [sv for sv in semvers if sv.prerelease is None]
+        if not semvers:
+            return None
         latest_ver = max(semvers)
         return matching_pms[str(latest_ver)]
 
@@ -91,5 +107,12 @@ class SlugAtom(Atom):
         super().__init__(s, "slug")
         self.slug = s[5:]  # strip the "slug:" prefix
 
-    def match_in_repo(self, repo: MetadataRepo) -> PackageManifest | None:
-        return repo.get_pkg_by_slug(self.slug)
+    def match_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> PackageManifest | None:
+        pm = repo.get_pkg_by_slug(self.slug)
+        if pm and pm.semver.prerelease:
+            return pm if include_prerelease_vers else None
+        return pm

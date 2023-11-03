@@ -61,6 +61,11 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Override the host architecture (normally not needed)",
     )
     install.add_argument(
+        "--prerelease",
+        action="store_true",
+        help="Do not ignore pre-release package versions",
+    )
+    install.add_argument(
         "--reinstall",
         action="store_true",
         help="Force re-installation of already installed packages",
