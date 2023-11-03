@@ -54,6 +54,47 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
     raise RuntimeError("no fetcher is available on the system")
 
 
+class CurlFetcher(BaseFetcher):
+    def __init__(self, url: str, dest: str) -> None:
+        super().__init__(url, dest)
+
+    @classmethod
+    def is_available(cls) -> bool:
+        # try running "curl --version" and it should succeed
+        try:
+            retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
+            return retcode == 0
+        except Exception as e:
+            log.D(f"exception occurred when trying to curl --version:", e)
+            return False
+
+    def fetch(self, *, resume: bool = False) -> None:
+        argv = ["curl"]
+        if resume:
+            argv.extend(("-C", "-"))
+        argv.extend(
+            (
+                "--retry",
+                "3",
+                "--connect-timeout",
+                "60",
+                "--ftp-pasv",
+                "-o",
+                self.dest,
+                self.url,
+            )
+        )
+
+        retcode = subprocess.call(argv)
+        if retcode != 0:
+            raise RuntimeError(
+                f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
+            )
+
+
+register_fetcher(CurlFetcher)
+
+
 class WgetFetcher(BaseFetcher):
     def __init__(self, url: str, dest: str) -> None:
         super().__init__(url, dest)
