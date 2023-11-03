@@ -105,9 +105,6 @@ def cli_install(args: argparse.Namespace) -> int:
 
     repo_cfg = mr.get_config()
 
-    # TODO: somehow don't traverse the entire repo?
-    # Currently this isn't a problem due to the repo's small size, but it might
-    # become necessary in the future.
     for a_str in atom_strs:
         a = Atom.parse(a_str)
         pm = a.match_in_repo(mr, prerelease)
