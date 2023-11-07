@@ -1,12 +1,16 @@
 import base64
+import glob
+import os
 from os import PathLike
 import pathlib
+import re
 import shlex
 from typing import Any, Callable, Tuple
 import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
+from ... import log, self_exe
 from ...ruyipkg.profile import ProfileDecl
 from .data import TEMPLATES
 
@@ -66,8 +70,9 @@ class VenvMaker:
         }
         render_and_write(venv_root / "config.toml", "config.toml", env_data)
 
+        toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
         initial_cache_data = {
-            "toolchain_bindir": str(pathlib.Path(self.toolchain_install_root) / "bin"),
+            "toolchain_bindir": str(toolchain_bindir),
             "profile_common_flags": self.profile.get_common_flags(),
         }
         render_and_write(venv_root / "cached.toml", "cached.toml", initial_cache_data)
@@ -75,9 +80,53 @@ class VenvMaker:
         bindir = venv_root / "bin"
         bindir.mkdir()
 
+        log.D("symlinking binaries into venv")
+        symlink_binaries(toolchain_bindir, bindir)
+
         template_data = {
             "RUYI_VENV": str(self.dest),
             "RUYI_VENV_NAME": self.override_name,
         }
 
         render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
+
+
+def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:
+    src_binpath = pathlib.Path(src_bindir)
+    dest_binpath = pathlib.Path(dest_bindir)
+    self_exe_path = self_exe()
+
+    for filename in glob.iglob("*", root_dir=src_bindir):
+        if not is_executable(src_binpath / filename):
+            log.D(f"skipping non-executable {filename} in src bindir")
+            continue
+
+        if should_ignore_symlinking(filename):
+            log.D(f"skipping command {filename} explicitly")
+            continue
+
+        # symlink self to dest with the name of this command
+        dest_path = dest_binpath / filename
+        log.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
+        os.symlink(self_exe_path, dest_path)
+
+
+def is_executable(p: PathLike) -> bool:
+    return os.access(p, os.F_OK | os.X_OK)
+
+
+def should_ignore_symlinking(c: str) -> bool:
+    return is_command_specific_to_ct_ng(c) or is_command_versioned_cc(c)
+
+
+def is_command_specific_to_ct_ng(c: str) -> bool:
+    return c.endswith("populate") or c.endswith("ct-ng.config")
+
+
+VERSIONED_CC_RE = re.compile(
+    r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+)-[0-9.]+$"
+)
+
+
+def is_command_versioned_cc(c: str) -> bool:
+    return VERSIONED_CC_RE.search(c) is not None
