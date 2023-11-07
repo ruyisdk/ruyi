@@ -12,7 +12,13 @@ def cli_venv(args: argparse.Namespace) -> int:
     profile_name: str = args.profile
     dest = pathlib.Path(args.dest)
     override_name: str | None = args.name
-    toolchain_slug: str = args.toolchain
+    toolchain_slug: str | None = args.toolchain
+
+    if toolchain_slug is None:
+        log.F(
+            "You have to explicitly specify a toolchain slug for now, e.g. [yellow]`-t plct-xxxxxxxx`[/yellow]"
+        )
+        return 1
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
