@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import platform
 
 from ... import log
 from ...config import GlobalConfig
@@ -11,6 +12,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     profile_name: str = args.profile
     dest = pathlib.Path(args.dest)
     override_name: str | None = args.name
+    toolchain_slug: str = args.toolchain
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
@@ -24,6 +26,12 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F(f"profile '{profile_name}' not found")
         return 1
 
+    # TODO: resolve from local PM state, so as to not require slugs
+    toolchain_root = config.get_toolchain_install_root(
+        platform.machine(),  # TODO
+        toolchain_slug,
+    )
+
     if override_name is not None:
         log.I(
             f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/cyan] at [green]{dest}[/green]..."
@@ -31,7 +39,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     else:
         log.I(f"Creating a Ruyi virtual environment at [green]{dest}[/green]...")
 
-    maker = VenvMaker(profile, dest.resolve(), override_name)
+    maker = VenvMaker(profile, toolchain_root, dest.resolve(), override_name)
     maker.provision()
 
     log.I(

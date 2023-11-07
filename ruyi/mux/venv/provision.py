@@ -48,10 +48,12 @@ class VenvMaker:
     def __init__(
         self,
         profile: ProfileDecl,
+        toolchain_install_root: str,
         dest: PathLike,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
+        self.toolchain_install_root = toolchain_install_root
         self.dest = dest
         self.override_name = override_name
 
@@ -60,13 +62,15 @@ class VenvMaker:
         venv_root.mkdir()
 
         env_data = {
-            "kvs": {
-                "RUYI_PROFILE": self.profile.name,
-                "RUYI_PROFILE_COMMON_FLAGS": self.profile.get_common_flags(),
-            },
+            "profile": self.profile.name,
         }
+        render_and_write(venv_root / "config.toml", "config.toml", env_data)
 
-        render_and_write(venv_root / "ruyi.env", "ruyi.env", env_data)
+        initial_cache_data = {
+            "toolchain_bindir": str(pathlib.Path(self.toolchain_install_root) / "bin"),
+            "profile_common_flags": self.profile.get_common_flags(),
+        }
+        render_and_write(venv_root / "cached.toml", "cached.toml", initial_cache_data)
 
         bindir = venv_root / "bin"
         bindir.mkdir()
