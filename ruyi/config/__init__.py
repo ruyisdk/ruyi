@@ -1,7 +1,7 @@
 import os.path
 import pathlib
 import tomllib
-from typing import Any, Self
+from typing import Any, Self, TypedDict
 
 from xdg import BaseDirectory
 
@@ -82,7 +82,29 @@ class GlobalConfig:
             return cls.init_from_config_data(tomllib.load(fp))
 
 
+class VenvConfigType(TypedDict):
+    profile: str
+
+
+class VenvConfigRootType(TypedDict):
+    config: VenvConfigType
+
+
+class VenvCacheType(TypedDict):
+    toolchain_bindir: str
+    profile_common_flags: str
+
+
+class VenvCacheRootType(TypedDict):
+    cached: VenvCacheType
+
+
 class RuyiVenvConfig:
+    def __init__(self, cfg: VenvConfigRootType, cache: VenvCacheRootType) -> None:
+        self.profile = cfg["config"]["profile"]
+        self.toolchain_bindir = cache["cached"]["toolchain_bindir"]
+        self.profile_common_flags = cache["cached"]["profile_common_flags"]
+
     @classmethod
     def inside_ruyi_venv(cls) -> bool:
         return ENV_VENV_ROOT_KEY in os.environ
@@ -92,10 +114,16 @@ class RuyiVenvConfig:
         return pathlib.Path(os.environ[ENV_VENV_ROOT_KEY])
 
     @classmethod
-    def get_venv_config(cls) -> dict[str, Any] | None:
+    def load_from_venv(cls) -> Self | None:
         if not cls.inside_ruyi_venv():
             return None
 
         venv_config_path = cls.venv_root() / "config.toml"
         with open(venv_config_path, "rb") as fp:
-            return tomllib.load(fp)
+            cfg: Any = tomllib.load(fp)  # in order to cast to our stricter type
+
+        venv_cache_path = cls.venv_root() / "cached.toml"
+        with open(venv_cache_path, "rb") as fp:
+            cache: Any = tomllib.load(fp)  # in order to cast to our stricter type
+
+        return cls(cfg, cache)
