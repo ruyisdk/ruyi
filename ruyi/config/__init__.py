@@ -9,6 +9,8 @@ from xdg import BaseDirectory
 DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
 
+ENV_VENV_ROOT_KEY = "RUYI_VENV"
+
 
 class GlobalConfig:
     resource_name = "ruyi"
@@ -78,3 +80,22 @@ class GlobalConfig:
 
         with open(config_path, "rb") as fp:
             return cls.init_from_config_data(tomllib.load(fp))
+
+
+class RuyiVenvConfig:
+    @classmethod
+    def inside_ruyi_venv(cls) -> bool:
+        return ENV_VENV_ROOT_KEY in os.environ
+
+    @classmethod
+    def venv_root(cls) -> pathlib.Path:
+        return pathlib.Path(os.environ[ENV_VENV_ROOT_KEY])
+
+    @classmethod
+    def get_venv_config(cls) -> dict[str, Any] | None:
+        if not cls.inside_ruyi_venv():
+            return None
+
+        venv_config_path = cls.venv_root() / "config.toml"
+        with open(venv_config_path, "rb") as fp:
+            return tomllib.load(fp)
