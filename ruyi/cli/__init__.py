@@ -5,8 +5,8 @@ from typing import List
 
 from ruyi import set_debug
 from .. import log
-from .mux import mux_main
 from ..mux.probe import cli_probe
+from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
 from ..ruyipkg.pkg_cli import cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles

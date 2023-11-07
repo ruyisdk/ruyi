@@ -28,7 +28,7 @@ def mux_main(argv: List[str]) -> Union[int, NoReturn]:
 def find_next_in_path(
     argv0: str, search_paths: Optional[List[str]] = None
 ) -> Optional[str]:
-    from . import _self_exe
+    from ..cli import _self_exe
 
     if search_paths is None:
         path_str = os.environ.get("PATH", os.defpath)
