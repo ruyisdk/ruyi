@@ -2,7 +2,7 @@ import argparse
 import pathlib
 
 from ... import log
-from ...config import RuyiConfig
+from ...config import GlobalConfig
 from ...ruyipkg.repo import MetadataRepo
 from .provision import VenvMaker
 
@@ -12,7 +12,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     dest = pathlib.Path(args.dest)
     override_name: str | None = args.name
 
-    config = RuyiConfig.load_from_config()
+    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
         config.get_repo_dir(),
         config.get_repo_url(),

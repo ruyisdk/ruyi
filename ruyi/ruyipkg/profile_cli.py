@@ -1,12 +1,12 @@
 import argparse
 
 from .. import log
-from ..config import RuyiConfig
+from ..config import GlobalConfig
 from .repo import MetadataRepo
 
 
 def cli_list_profiles(args: argparse.Namespace) -> int:
-    config = RuyiConfig.load_from_config()
+    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )

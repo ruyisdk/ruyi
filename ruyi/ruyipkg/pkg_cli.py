@@ -7,7 +7,7 @@ from rich import print
 
 from .. import log
 
-from ..config import RuyiConfig
+from ..config import GlobalConfig
 from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
@@ -17,7 +17,7 @@ from .pkg_manifest import PackageManifest
 def cli_list(args: argparse.Namespace) -> int:
     verbose = args.verbose
 
-    config = RuyiConfig.load_from_config()
+    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )
@@ -98,7 +98,7 @@ def cli_install(args: argparse.Namespace) -> int:
     reinstall = args.reinstall
     log.D(f"about to install for host {host}: {atom_strs}")
 
-    config = RuyiConfig.load_from_config()
+    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )

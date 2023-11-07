@@ -10,7 +10,7 @@ DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
 
 
-class RuyiConfig:
+class GlobalConfig:
     resource_name = "ruyi"
 
     def __init__(self) -> None:
