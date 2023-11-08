@@ -4,7 +4,7 @@ import platform
 from typing import List
 
 from ruyi import set_debug
-from .. import log
+from .. import log, self_exe
 from ..mux.probe import cli_probe
 from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
@@ -123,7 +123,7 @@ def main(argv: List[str]) -> int:
         log.F("no argv?")
         return 1
 
-    log.D(f"argv[0] = {argv[0]}")
+    log.D(f"argv[0] = {argv[0]}, self_exe = {self_exe()}")
 
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
