@@ -118,11 +118,11 @@ class RuyiVenvConfig:
         if not cls.inside_ruyi_venv():
             return None
 
-        venv_config_path = cls.venv_root() / "config.toml"
+        venv_config_path = cls.venv_root() / "ruyi-venv.toml"
         with open(venv_config_path, "rb") as fp:
             cfg: Any = tomllib.load(fp)  # in order to cast to our stricter type
 
-        venv_cache_path = cls.venv_root() / "cached.toml"
+        venv_cache_path = cls.venv_root() / "ruyi-cache.toml"
         with open(venv_cache_path, "rb") as fp:
             cache: Any = tomllib.load(fp)  # in order to cast to our stricter type
 

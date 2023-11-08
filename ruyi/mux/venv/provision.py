@@ -68,14 +68,14 @@ class VenvMaker:
         env_data = {
             "profile": self.profile.name,
         }
-        render_and_write(venv_root / "config.toml", "config.toml", env_data)
+        render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 
         toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
         initial_cache_data = {
             "toolchain_bindir": str(toolchain_bindir),
             "profile_common_flags": self.profile.get_common_flags(),
         }
-        render_and_write(venv_root / "cached.toml", "cached.toml", initial_cache_data)
+        render_and_write(venv_root / "ruyi-cache.toml", "ruyi-cache.toml", initial_cache_data)
 
         bindir = venv_root / "bin"
         bindir.mkdir()

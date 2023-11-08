@@ -3,6 +3,6 @@
 
 TEMPLATES = {
     "ruyi-activate.bash": b"eNp9lN1u2kAQhe/3KSYGqiSVRUnuqIhEGqRESgLCBClKI2uxx/JKZh2t126o6yfqI/QuT9bxH2CHhBvEzpn1d2YO7sDCFxF4IkBYx5GGFUIcoQu/hPbBiMJYOQgrIfsq3giTO1okXKMBp54K17DikX/KOrAJY3C4lKEGFUsQGlyh0NHBhjEmPHgCo5tejq1r25o+zH9MzMyAEZ19M+D5O2gfJQP6oOOHYDzSZQVL9XSdE0aOEi96CD+79XHefPHlrGx8pUeenzNPMFaAulijwvEJpIWoAwoj1BAGLqBMhArlGqWGhCvBVwFGleqIcM3f0E2X4/lXO4Nn6tOxkhFoFSOQHSoAMbnoBFzRsLgGHgRFO1WrfnJszx8eb+zp7ZU9Gy+uh3QZ+YU9w/knL42MblNrbMv4+hIqXai2Z7HMfTQ7imLuvzQhZMID4eYDoKcV7bQhx8ei7tPewFRwdtF3MenLmOg/xbcGH8Bbgya7NXiPbg0+Jq9qNXhZL8rLyf3y0Jk9m0/vZosa94mAiXVQRUqG0sWIFpWvH1vEHbAw8KAWHLWwTA9a4anZMkYhL0VCKQww4Y3gtDPXpGBsCz9K050T+AO0hixj1aB2tllztzTiMhTVj62wT//MYVXbDwr7LAAHl5/28mHuhnw/vpuA2ctYe+4NB6WstpH2TMAgwsN9RveYXhco+Rphz4JxYpSN0iWA3vth1Psu3yNlMnfFqxtrfHk7qURmO6ONpBFCSl8kYtvsvv2d0+5g/8ryquztHzTke2mmRPwHax2J0Q==",  # fmt: skip
-    "config.toml": b"eNqLTs7PS8tMj+UqKMpPy8xJVbBVUKquVoDxamuVuADirgwW",  # fmt: skip
-    "cached.toml": b"eNpTVvDzD3G1UgjJyCxWSMvMSVUA0rmJeYnpqSkKSZUKRaWVmXoKLv4gZQquLp4hilxc0cmJyRmpKbFcJfn5OckZiZl58UmZeSmZRQq2CkrV1QoYwrW1SlwFRfkg4+OT83Nz8/Pi03IS04uh6rFKgfQAAA33NjA=",  # fmt: skip
+    "ruyi-venv.toml": b"eNqLTs7PS8tMj+UqKMpPy8xJVbBVUKquVoDxamuVuADirgwW",  # fmt: skip
+    "ruyi-cache.toml": b"eNpTVvDzD3G1UgjJyCxWSMvMSVUA0rmJeYnpqSkKSZUKRaWVmXoKLv4gZQquLp4hilxc0cmJyRmpKbFcJfn5OckZiZl58UmZeSmZRQq2CkrV1QoYwrW1SlwFRfkg4+OT83Nz8/Pi03IS04uh6rFKgfQAAA33NjA=",  # fmt: skip
 }
