@@ -5,6 +5,8 @@ from typing import Any, Self, TypedDict
 
 from xdg import BaseDirectory
 
+from .. import log, self_exe
+
 
 DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
@@ -106,23 +108,37 @@ class RuyiVenvConfig:
         self.profile_common_flags = cache["cached"]["profile_common_flags"]
 
     @classmethod
-    def inside_ruyi_venv(cls) -> bool:
-        return ENV_VENV_ROOT_KEY in os.environ
+    def explicit_ruyi_venv_root(cls) -> str | None:
+        return os.environ.get(ENV_VENV_ROOT_KEY)
 
     @classmethod
-    def venv_root(cls) -> pathlib.Path:
-        return pathlib.Path(os.environ[ENV_VENV_ROOT_KEY])
+    def venv_root(cls) -> pathlib.Path | None:
+        if explicit_root := cls.explicit_ruyi_venv_root():
+            return pathlib.Path(explicit_root)
+
+        # check ../.. from self.exe
+        implied_root = pathlib.Path(os.path.dirname(os.path.dirname(self_exe())))
+        if (implied_root / "ruyi-venv.toml").exists():
+            return implied_root
+
+        return None
 
     @classmethod
     def load_from_venv(cls) -> Self | None:
-        if not cls.inside_ruyi_venv():
+        venv_root = cls.venv_root()
+        if venv_root is None:
             return None
 
-        venv_config_path = cls.venv_root() / "ruyi-venv.toml"
+        if cls.explicit_ruyi_venv_root() is not None:
+            log.D(f"using explicit venv root {venv_root}")
+        else:
+            log.D(f"detected implicit venv root {venv_root}")
+
+        venv_config_path = venv_root / "ruyi-venv.toml"
         with open(venv_config_path, "rb") as fp:
             cfg: Any = tomllib.load(fp)  # in order to cast to our stricter type
 
-        venv_cache_path = cls.venv_root() / "ruyi-cache.toml"
+        venv_cache_path = venv_root / "ruyi-cache.toml"
         with open(venv_cache_path, "rb") as fp:
             cache: Any = tomllib.load(fp)  # in order to cast to our stricter type
 
