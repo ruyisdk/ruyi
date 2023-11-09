@@ -12,9 +12,11 @@ if [[ -z $arch ]]; then
     exit 1
 fi
 
+source "$MY_DIR/_image_tag_base.sh"
+
 cd "$MY_DIR/dist-image"
 exec docker build --rm \
     --platform "linux/${arch}" \
-    -t "ruyi-python-dist:20231031-${arch}" \
+    -t "$(image_tag_base "$arch")-${arch}" \
     -f "Dockerfile.${arch}" \
     .
