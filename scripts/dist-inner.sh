@@ -16,6 +16,8 @@ nuitka_args=(
     --output-filename=ruyi
     --output-dir=/build
     --no-deployment-flag=self-execution
+    --product-version=0.1.0
+    --onefile-tempdir-spec="%CACHE_DIR%/ruyi/progcache/%VERSION%"
     ./ruyi/__main__.py
 )
 
