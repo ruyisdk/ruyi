@@ -15,6 +15,7 @@ nuitka_args=(
     --onefile
     --output-filename=ruyi
     --output-dir=/build
+    --no-deployment-flag=self-execution
     ./ruyi/__main__.py
 )
 
