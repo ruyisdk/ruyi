@@ -3,14 +3,15 @@ import os
 import platform
 from typing import List
 
-from ruyi import set_debug
-from .. import log, self_exe
+import ruyi
+from .. import log
 from ..mux.probe import cli_probe
 from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
 from ..ruyipkg.pkg_cli import cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
+from .nuitka import get_nuitka_self_exe
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -21,7 +22,7 @@ def is_called_as_ruyi(argv0: str) -> bool:
 
 def init_debug_status() -> None:
     debug_env = os.environ.get("RUYI_DEBUG", "")
-    set_debug(debug_env.lower() in {"1", "true", "x", "y", "yes"})
+    ruyi.set_debug(debug_env.lower() in {"1", "true", "x", "y", "yes"})
 
 
 def init_argparse() -> argparse.ArgumentParser:
@@ -123,7 +124,18 @@ def main(argv: List[str]) -> int:
         log.F("no argv?")
         return 1
 
-    log.D(f"argv[0] = {argv[0]}, self_exe = {self_exe()}")
+    # note down our own executable path, for identity-checking in mux, if not
+    # we're not already Nuitka-compiled
+    #
+    # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
+    # work if it's just `ruyi` so we have to check our parent process in that case
+    if hasattr(ruyi, "__compiled__"):
+        self_exe = get_nuitka_self_exe()
+    else:
+        self_exe = __file__
+
+    log.D(f"argv[0] = {argv[0]}, self_exe = {self_exe}")
+    ruyi.record_self_exe(self_exe)
 
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
