@@ -15,15 +15,18 @@ class Checksummer:
         self.file = file
         self.checksums = checksums
 
-    def check(self, chunksize=4096) -> None:
-        checksummers = {kind: get_hash_instance(kind) for kind in self.checksums.keys()}
-        while chunk := self.file.read(chunksize):
-            for h in checksummers.values():
-                h.update(chunk)
-
-        computed_csums = {kind: h.hexdigest() for kind, h in checksummers.items()}
+    def check(self) -> None:
+        computed_csums = self.compute()
         for kind, expected_csum in self.checksums.items():
             if computed_csums[kind] != expected_csum:
                 raise ValueError(
                     f"wrong {kind} checksum: want {expected_csum}, got {computed_csums[kind]}"
                 )
+
+    def compute(self, chunksize=4096) -> dict[str, str]:
+        checksummers = {kind: get_hash_instance(kind) for kind in self.checksums.keys()}
+        while chunk := self.file.read(chunksize):
+            for h in checksummers.values():
+                h.update(chunk)
+
+        return {kind: h.hexdigest() for kind, h in checksummers.items()}
