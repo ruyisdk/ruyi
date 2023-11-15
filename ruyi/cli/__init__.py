@@ -5,7 +5,6 @@ from typing import List
 
 import ruyi
 from .. import log
-from ..mux.probe import cli_probe
 from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
 from ..ruyipkg.pkg_cli import cli_install, cli_list
@@ -79,16 +78,6 @@ def init_argparse() -> argparse.ArgumentParser:
     listsp = list.add_subparsers(required=False)
     list_profiles = listsp.add_parser("profiles", help="List all available profiles")
     list_profiles.set_defaults(func=cli_list_profiles)
-
-    tc = sp.add_parser("toolchain", help="Query and manage toolchains")
-    tcsp = tc.add_subparsers(required=True)
-    tc_probe = tcsp.add_parser(
-        "probe", help="Probe a directory for manageable toolchains"
-    )
-    tc_probe.set_defaults(func=cli_probe)
-    tc_probe.add_argument(
-        "bindir", help="Path to the directory containing toolchain commands"
-    )
 
     up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
     up.set_defaults(func=cli_update)
