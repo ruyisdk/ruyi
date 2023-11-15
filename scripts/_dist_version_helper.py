@@ -31,9 +31,9 @@ def to_version_for_nuitka(version: str) -> str:
     semver string.
 
     * `X.Y.Z` -> `X.Y.Z.0`
-    * `X.Y.Z-alpha.YYYYMMDD` -> `X.(Y-1).1YYYY.MMDD`
-    * `X.Y.Z-beta.YYYYMMDD` -> `X.(Y-1).2YYYY.MMDD`
-    * `X.Y.Z-rc.YYYYMMDD` -> `X.(Y-1).3YYYY.MMDD`
+    * `X.Y.Z-alpha.YYYYMMDD` -> `X.(Y-1).1YYYY.MMDD0`
+    * `X.Y.Z-beta.YYYYMMDD` -> `X.(Y-1).2YYYY.MMDD0`
+    * `X.Y.Z-rc.YYYYMMDD` -> `X.(Y-1).3YYYY.MMDD0`
 
     The strange mapping is due to Nuitka (actually Windows?) requiring each
     part to fit in an u16.
@@ -48,7 +48,8 @@ def to_version_for_nuitka(version: str) -> str:
     prerelease_kind, ymd_str = sv.prerelease.split(".")
     y, md = divmod(int(ymd_str), 10000)
     n_patch = PRERELEASE_NUITKA_PATCH_VER_MAP[prerelease_kind] + y
-    return f"{n_major}.{n_minor}.{n_patch}.{md}"
+    n_extra = md * 10
+    return f"{n_major}.{n_minor}.{n_patch}.{n_extra}"
 
 
 if __name__ == "__main__":
