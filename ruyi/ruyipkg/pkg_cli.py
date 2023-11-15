@@ -25,7 +25,7 @@ def cli_list(args: argparse.Namespace) -> int:
     if not verbose:
         return do_list_non_verbose(mr)
 
-    for _, pkg_vers in mr.iter_pkgs():
+    for _, _, pkg_vers in mr.iter_pkgs():
         for pm in pkg_vers.values():
             print_pkg_detail(pm)
 
@@ -35,8 +35,8 @@ def cli_list(args: argparse.Namespace) -> int:
 def do_list_non_verbose(mr: MetadataRepo) -> int:
     print("List of available packages:\n")
 
-    for pkg_name, pkg_vers in mr.iter_pkgs():
-        print(f"* [bold green]{pkg_name}[/bold green]")
+    for category, pkg_name, pkg_vers in mr.iter_pkgs():
+        print(f"* [bold green]{category}/{pkg_name}[/bold green]")
         semvers = [pm.semver for pm in pkg_vers.values()]
         semvers.sort(reverse=True)
         for i, sv in enumerate(semvers):
@@ -49,7 +49,7 @@ def do_list_non_verbose(mr: MetadataRepo) -> int:
 
 def print_pkg_detail(pm: PackageManifest) -> None:
     print(
-        f"[bold]## [green]{pm.name}[/green] [blue]{pm.ver}[/blue] (slug: [yellow]{pm.slug}[/yellow])[/bold]\n"
+        f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue] (slug: [yellow]{pm.slug}[/yellow])[/bold]\n"
     )
 
     print(f"* Package kind: {sorted(pm.kind)}")

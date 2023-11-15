@@ -4,6 +4,7 @@ import os.path
 from typing import Iterable, Tuple, TypedDict
 
 from git import Repo
+import semver
 
 from .. import log
 from .pkg_manifest import PackageManifest
@@ -22,6 +23,7 @@ class MetadataRepo:
         self.repo: Repo | None = None
 
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
+        self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
         self._profile_cache: dict[str, ProfileDecl] = {}
 
@@ -66,11 +68,21 @@ class MetadataRepo:
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         manifests_dir = os.path.join(self.root, "manifests")
-        for f in glob.iglob("*/*.json", root_dir=manifests_dir):
+        for f in os.scandir(manifests_dir):
+            if not f.is_dir():
+                continue
+            yield from self._iter_pkg_manifests_from_category(f.path)
+
+    def _iter_pkg_manifests_from_category(
+        self,
+        category_dir: str,
+    ) -> Iterable[PackageManifest]:
+        category = os.path.basename(category_dir)
+        for f in glob.iglob("*/*.json", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
-            with open(os.path.join(manifests_dir, f), "rb") as fp:
-                yield PackageManifest(pkg_name, pkg_ver, json.load(fp))
+            with open(os.path.join(category_dir, f), "rb") as fp:
+                yield PackageManifest(category, pkg_name, pkg_ver, json.load(fp))
 
     def get_profile(self, name: str) -> ProfileDecl | None:
         if not self._profile_cache:
@@ -100,24 +112,32 @@ class MetadataRepo:
         if self._pkgs:
             return
 
-        cache: dict[str, dict[str, PackageManifest]] = {}
+        cache_by_name: dict[str, dict[str, PackageManifest]] = {}
+        cache_by_category: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         slug_cache: dict[str, PackageManifest] = {}
         for pm in self.iter_pkg_manifests():
-            if pm.name not in cache:
-                cache[pm.name] = {}
-            cache[pm.name][pm.ver] = pm
+            if pm.name not in cache_by_name:
+                cache_by_name[pm.name] = {}
+            cache_by_name[pm.name][pm.ver] = pm
+
+            if pm.category not in cache_by_category:
+                cache_by_category[pm.category] = {pm.name: {}}
+            cache_by_category[pm.category][pm.name][pm.ver] = pm
 
             if pm.slug:
                 slug_cache[pm.slug] = pm
 
-        self._pkgs = cache
+        self._pkgs = cache_by_name
+        self._categories = cache_by_category
         self._slug_cache = slug_cache
 
-    def iter_pkgs(self) -> Iterable[Tuple[str, dict[str, PackageManifest]]]:
+    def iter_pkgs(self) -> Iterable[Tuple[str, str, dict[str, PackageManifest]]]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
-        return self._pkgs.items()
+        for cat, cat_pkgs in self._categories.items():
+            for pkg_name, pkg_vers in cat_pkgs.items():
+                yield (cat, pkg_name, pkg_vers)
 
     def get_pkg_by_slug(self, slug: str) -> PackageManifest | None:
         if not self._pkgs:
@@ -125,22 +145,34 @@ class MetadataRepo:
 
         return self._slug_cache.get(slug)
 
-    def iter_pkg_vers(self, name: str) -> Iterable[PackageManifest]:
+    def iter_pkg_vers(
+        self,
+        name: str,
+        category: str | None = None,
+    ) -> Iterable[PackageManifest]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
+        if category is not None:
+            return self._categories[category][name].values()
         return self._pkgs[name].values()
 
     def get_pkg_latest_ver(
         self,
         name: str,
+        category: str | None = None,
         include_prerelease_vers: bool = False,
     ) -> PackageManifest:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
-        all_semvers = [pm.semver for pm in self._pkgs[name].values()]
+        if category is not None:
+            pkgset = self._categories[category]
+        else:
+            pkgset = self._pkgs
+
+        all_semvers = [pm.semver for pm in pkgset[name].values()]
         if not include_prerelease_vers:
             all_semvers = [sv for sv in all_semvers if sv.prerelease is None]
         latest_ver = max(all_semvers)
-        return self._pkgs[name][str(latest_ver)]
+        return pkgset[name][str(latest_ver)]

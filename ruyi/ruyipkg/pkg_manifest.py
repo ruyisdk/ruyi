@@ -96,8 +96,15 @@ class ToolchainDecl:
 
 
 class PackageManifest:
-    def __init__(self, name: str, ver: str, data: PackageManifestType) -> None:
+    def __init__(
+        self,
+        category: str,
+        name: str,
+        ver: str,
+        data: PackageManifestType,
+    ) -> None:
         self._data = data
+        self.category = category
         self.name = name
         self.ver = ver
         self._semver = Version.parse(ver)

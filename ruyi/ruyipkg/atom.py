@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import Literal, Self
+from typing import Literal, Self, Tuple
 
 from .pkg_manifest import PackageManifest
 from .repo import MetadataRepo
@@ -51,10 +51,18 @@ class Atom:
         raise NotImplementedError
 
 
+def split_category(name: str) -> Tuple[str | None, str]:
+    fragments = name.split("/", 1)
+    if len(fragments) == 2:
+        return (fragments[0], fragments[1])
+    return (None, name)
+
+
 class NameAtom(Atom):
     def __init__(self, s: str, name: str) -> None:
         super().__init__(s, "name")
-        self.name = name
+
+        self.category, self.name = split_category(name)
 
     def match_in_repo(
         self,
@@ -63,7 +71,11 @@ class NameAtom(Atom):
     ) -> PackageManifest | None:
         # return the latest version of the package named self.name in the given repo
         try:
-            return repo.get_pkg_latest_ver(self.name, include_prerelease_vers)
+            return repo.get_pkg_latest_ver(
+                self.name,
+                self.category,
+                include_prerelease_vers,
+            )
         except KeyError:
             return None
 
@@ -71,8 +83,9 @@ class NameAtom(Atom):
 class ExprAtom(Atom):
     def __init__(self, s: str, name: str, expr: str) -> None:
         super().__init__(s, "expr")
-        self.name = name
         self.exprs = expr.split(",")
+
+        self.category, self.name = split_category(name)
 
     def _is_pm_matching_my_exprs(self, pm: PackageManifest) -> bool:
         for e in self.exprs:
@@ -87,7 +100,7 @@ class ExprAtom(Atom):
     ) -> PackageManifest | None:
         matching_pms = {
             pm.ver: pm
-            for pm in repo.iter_pkg_vers(self.name)
+            for pm in repo.iter_pkg_vers(self.name, self.category)
             if self._is_pm_matching_my_exprs(pm)
         }
         if not matching_pms:
