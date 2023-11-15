@@ -10,14 +10,19 @@ cd /home/b
 cd ruyi
 poetry install
 
+eval "$(./scripts/_dist_version_helper.py)"
+
+echo "Project SemVer       : $RUYI_DIST_SEMVER"
+echo "Nuitka version to use: $RUYI_DIST_NUITKA_VER"
+
 nuitka_args=(
     --standalone
     --onefile
     --output-filename=ruyi
     --output-dir=/build
     --no-deployment-flag=self-execution
-    --product-version=0.1.50.20231115
-    --onefile-tempdir-spec="%CACHE_DIR%/ruyi/progcache/0.2.0-alpha.20231115"
+    --product-version="$RUYI_DIST_NUITKA_VER"
+    --onefile-tempdir-spec="%CACHE_DIR%/ruyi/progcache/${RUYI_DIST_SEMVER}"
     ./ruyi/__main__.py
 )
 
