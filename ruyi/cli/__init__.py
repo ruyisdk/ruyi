@@ -7,6 +7,7 @@ import ruyi
 from .. import log
 from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
+from ..ruyipkg.admin_cli import cli_admin_manifest
 from ..ruyipkg.pkg_cli import cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
@@ -102,6 +103,27 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Slug of the toolchain to use",
     )
     venv.set_defaults(func=cli_venv)
+
+    # Repo admin commands
+    admin = sp.add_parser(
+        "admin",
+        # https://github.com/python/cpython/issues/67037
+        # help=argparse.SUPPRESS,
+        help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
+    )
+    adminsp = admin.add_subparsers(required=True)
+
+    admin_manifest = adminsp.add_parser(
+        "manifest",
+        help="Generate manifest for the distfiles given",
+    )
+    admin_manifest.add_argument(
+        "file",
+        type=str,
+        nargs="+",
+        help="Path to the distfile(s) to generate manifest for",
+    )
+    admin_manifest.set_defaults(func=cli_admin_manifest)
 
     return root
 

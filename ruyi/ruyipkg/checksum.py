@@ -1,5 +1,5 @@
 import hashlib
-from typing import BinaryIO
+from typing import BinaryIO, Iterable
 
 SUPPORTED_CHECKSUM_KINDS = {"sha256", "sha512"}
 
@@ -23,8 +23,15 @@ class Checksummer:
                     f"wrong {kind} checksum: want {expected_csum}, got {computed_csums[kind]}"
                 )
 
-    def compute(self, chunksize=4096) -> dict[str, str]:
-        checksummers = {kind: get_hash_instance(kind) for kind in self.checksums.keys()}
+    def compute(
+        self,
+        kinds: Iterable[str] | None = None,
+        chunksize=4096,
+    ) -> dict[str, str]:
+        if kinds is None:
+            kinds = self.checksums.keys()
+
+        checksummers = {kind: get_hash_instance(kind) for kind in kinds}
         while chunk := self.file.read(chunksize):
             for h in checksummers.values():
                 h.update(chunk)
