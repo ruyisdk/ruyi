@@ -3,9 +3,9 @@ import os.path
 import pathlib
 import shutil
 
-from rich import print
-
 from .. import log
+
+print = log.stdout
 
 from ..config import GlobalConfig
 from .atom import Atom
