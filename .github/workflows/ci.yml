@@ -1,0 +1,56 @@
+name: CI
+on: push
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+        os: [ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    env: 
+      RUYI: python -m ruyi
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+      - name: install deps
+        run: |
+          poetry install
+      - name: ruyi build
+        run: |
+          poetry build
+      - name: ruyi install
+        run: |
+          python -m pip install dist/*.whl
+      - id: test
+        uses: ./.github/actions/test
+        with:
+          ruyi: python -m ruyi
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    env: 
+      RUYI_DOWNLOAD_LINK: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/ruyi.amd64.20231107
+      RUYI: ruyi-binary
+    steps:
+      - uses: actions/checkout@v3
+      - name: prepare ruyi
+        run: |
+          curl $RUYI_DOWNLOAD_LINK -o ruyi-binary
+          chmod +x ./ruyi-binary
+          export PATH="$(pwd):$PATH"
+          $RUYI venv
+          $RUYI -h
+      - id: test
+        uses: ./.github/actions/test
+        with:
+          ruyi: ruyi-binary
