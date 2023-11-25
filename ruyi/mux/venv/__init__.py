@@ -33,7 +33,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         return 1
 
     # TODO: resolve from local PM state, so as to not require slugs
-    toolchain_root = config.get_toolchain_install_root(
+    toolchain_root = config.global_binary_install_root(
         platform.machine(),  # TODO
         toolchain_slug,
     )

@@ -39,8 +39,8 @@ class GlobalConfig:
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
 
-    def get_toolchain_install_root(self, host: str, slug: str) -> str:
-        path = pathlib.Path(self.ensure_cache_dir()) / "toolchains" / host / slug
+    def global_binary_install_root(self, host: str, slug: str) -> str:
+        path = pathlib.Path(self.ensure_cache_dir()) / "binaries" / host / slug
         return str(path)
 
     @classmethod

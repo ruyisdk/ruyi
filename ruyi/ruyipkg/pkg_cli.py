@@ -220,7 +220,7 @@ def cli_install(args: argparse.Namespace) -> int:
             )
             return 2
 
-        install_root = config.get_toolchain_install_root(host, pkg_name)
+        install_root = config.global_binary_install_root(host, pkg_name)
         if is_root_likely_populated(install_root):
             if reinstall:
                 log.W(
