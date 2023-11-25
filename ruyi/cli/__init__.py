@@ -11,7 +11,6 @@ from ..ruyipkg.admin_cli import cli_admin_manifest
 from ..ruyipkg.pkg_cli import cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
-from .nuitka import get_nuitka_self_exe
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -129,25 +128,6 @@ def init_argparse() -> argparse.ArgumentParser:
 
 
 def main(argv: List[str]) -> int:
-    init_debug_status()
-
-    if not argv:
-        log.F("no argv?")
-        return 1
-
-    # note down our own executable path, for identity-checking in mux, if not
-    # we're not already Nuitka-compiled
-    #
-    # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
-    # work if it's just `ruyi` so we have to check our parent process in that case
-    if hasattr(ruyi, "__compiled__"):
-        self_exe = get_nuitka_self_exe()
-    else:
-        self_exe = __file__
-
-    log.D(f"argv[0] = {argv[0]}, self_exe = {self_exe}")
-    ruyi.record_self_exe(self_exe)
-
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
 
