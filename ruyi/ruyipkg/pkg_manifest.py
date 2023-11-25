@@ -35,7 +35,7 @@ class ToolchainDeclType(TypedDict):
 
 
 class PackageManifestType(TypedDict):
-    slug: str
+    slug: NotRequired[str]
     kind: list[str]
     desc: str
     vendor: VendorDeclType
@@ -119,8 +119,12 @@ class PackageManifest:
         return is_prerelease(self._semver)
 
     @property
-    def slug(self) -> str:
-        return self._data["slug"]
+    def slug(self) -> str | None:
+        return self._data.get("slug")
+
+    @property
+    def name_for_installation(self) -> str:
+        return f"{self.name}-{self.ver}"
 
     @property
     def kind(self) -> list[str]:

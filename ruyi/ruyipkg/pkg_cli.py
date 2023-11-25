@@ -61,18 +61,22 @@ def do_list_non_verbose(mr: MetadataRepo) -> int:
                     comments.append("latest-prerelease")
                 comments_str = f" ({', '.join(comments)})"
 
-            print(
-                f"  - [blue]{sv}[/blue]{comments_str} slug: [yellow]{pm.slug}[/yellow]"
-            )
+            slug_str = f" slug: [yellow]{pm.slug}[/yellow]" if pm.slug else ""
+
+            print(f"  - [blue]{sv}[/blue]{comments_str}{slug_str}")
 
     return 0
 
 
 def print_pkg_detail(pm: PackageManifest) -> None:
     print(
-        f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue] (slug: [yellow]{pm.slug}[/yellow])[/bold]\n"
+        f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
 
+    if pm.slug is not None:
+        print(f"* Slug: [yellow]{pm.slug}[/yellow]")
+    else:
+        print(f"* Slug: (none)")
     print(f"* Package kind: {sorted(pm.kind)}")
     print(f"* Vendor: {pm.vendor_name}\n")
 
@@ -132,24 +136,25 @@ def cli_install(args: argparse.Namespace) -> int:
         if pm is None:
             log.F(f"atom {a_str} matches no package in the repository")
             return 1
+        pkg_name = pm.name_for_installation
 
         bm = pm.binary_metadata
         if bm is None:
             log.F(
-                f"don't know how to handle non-binary package [green]{pm.slug}[/green]"
+                f"don't know how to handle non-binary package [green]{pkg_name}[/green]"
             )
             return 2
 
-        install_root = config.get_toolchain_install_root(host, pm.slug)
+        install_root = config.get_toolchain_install_root(host, pkg_name)
         if is_root_likely_populated(install_root):
             if reinstall:
                 log.W(
-                    f"package [green]{pm.slug}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+                    f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
                 )
                 shutil.rmtree(install_root)
                 pathlib.Path(install_root).mkdir(parents=True)
             else:
-                log.I(f"skipping already installed package [green]{pm.slug}[/green]")
+                log.I(f"skipping already installed package [green]{pkg_name}[/green]")
                 continue
         else:
             pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
@@ -159,7 +164,7 @@ def cli_install(args: argparse.Namespace) -> int:
         distfiles_for_host = bm.get_distfile_names_for_host(host)
         if not distfiles_for_host:
             log.F(
-                f"package [green]{pm.slug}[/green] declares no binary for host {host}"
+                f"package [green]{pkg_name}[/green] declares no binary for host {host}"
             )
             return 2
 
@@ -179,12 +184,12 @@ def cli_install(args: argparse.Namespace) -> int:
                 continue
 
             log.I(
-                f"extracting [green]{df_name}[/green] for package [green]{pm.slug}[/green]"
+                f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
             )
             df.unpack(install_root)
 
         log.I(
-            f"package [green]{pm.slug}[/green] installed to [yellow]{install_root}[/yellow]"
+            f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
         )
 
     return 0
