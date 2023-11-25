@@ -121,6 +121,65 @@ def is_root_likely_populated(root: str) -> bool:
         return False
 
 
+def cli_extract(args: argparse.Namespace) -> int:
+    host = args.host
+    atom_strs: set[str] = set(args.atom)
+    prerelease = args.prerelease
+    log.D(f"about to extract for host {host}: {atom_strs}")
+
+    config = GlobalConfig.load_from_config()
+    mr = MetadataRepo(
+        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
+    )
+
+    repo_cfg = mr.get_config()
+
+    for a_str in atom_strs:
+        a = Atom.parse(a_str)
+        pm = a.match_in_repo(mr, prerelease)
+        if pm is None:
+            log.F(f"atom {a_str} matches no package in the repository")
+            return 1
+        pkg_name = pm.name_for_installation
+
+        bm = pm.binary_metadata
+        if bm is None:
+            log.F(
+                f"don't know how to extract non-binary package [green]{pkg_name}[/green]"
+            )
+            return 2
+
+        dfs = pm.distfiles()
+
+        distfiles_for_host = bm.get_distfile_names_for_host(host)
+        if not distfiles_for_host:
+            log.F(
+                f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
+            )
+            return 2
+
+        dist_url_base = repo_cfg["dist"]
+        for df_name in distfiles_for_host:
+            df_decl = dfs[df_name]
+            url = make_distfile_url(dist_url_base, df_name)
+            dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+            log.I(f"downloading {url} to {dest}")
+            df = Distfile(url, dest, df_decl.size, df_decl.checksums)
+            df.ensure()
+
+            log.I(
+                f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
+            )
+            # unpack into CWD
+            df.unpack(None)
+
+        log.I(
+            f"package [green]{pkg_name}[/green] extracted to current working directory"
+        )
+
+    return 0
+
+
 def cli_install(args: argparse.Namespace) -> int:
     host = args.host
     atom_strs: set[str] = set(args.atom)

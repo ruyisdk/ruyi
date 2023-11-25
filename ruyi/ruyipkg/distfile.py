@@ -63,5 +63,5 @@ class Distfile:
                 f"failed to fetch distfile: {self.dest} failed integrity checks"
             )
 
-    def unpack(self, root: str) -> None:
+    def unpack(self, root: str | None) -> None:
         return do_unpack(self.dest, root)

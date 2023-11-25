@@ -8,7 +8,7 @@ from .. import log
 from ..mux.runtime import mux_main
 from ..mux.venv import cli_venv
 from ..ruyipkg.admin_cli import cli_admin_manifest
-from ..ruyipkg.pkg_cli import cli_install, cli_list
+from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
 from ..ruyipkg.profile_cli import cli_list_profiles
 from ..ruyipkg.update import cli_update
 
@@ -30,6 +30,29 @@ def init_argparse() -> argparse.ArgumentParser:
         description="RuyiSDK Package Manager",
     )
     sp = root.add_subparsers(required=True)
+
+    extract = sp.add_parser(
+        "extract",
+        help="Fetch package(s) then extract to current directory",
+    )
+    extract.add_argument(
+        "atom",
+        type=str,
+        nargs="+",
+        help="Specifier (atom) of the package(s) to extract",
+    )
+    extract.add_argument(
+        "--host",
+        type=str,
+        default=platform.machine(),
+        help="Override the host architecture (normally not needed)",
+    )
+    extract.add_argument(
+        "--prerelease",
+        action="store_true",
+        help="Do not ignore pre-release package versions",
+    )
+    extract.set_defaults(func=cli_extract)
 
     install = sp.add_parser(
         "install", aliases=["i"], help="Install package from configured repository"
