@@ -114,6 +114,10 @@ class PackageManifest:
         return self._semver
 
     @property
+    def is_prerelease(self) -> bool:
+        return is_prerelease(self._semver)
+
+    @property
     def slug(self) -> str:
         return self._data["slug"]
 

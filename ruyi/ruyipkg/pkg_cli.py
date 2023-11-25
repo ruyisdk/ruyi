@@ -39,10 +39,31 @@ def do_list_non_verbose(mr: MetadataRepo) -> int:
         print(f"* [bold green]{category}/{pkg_name}[/bold green]")
         semvers = [pm.semver for pm in pkg_vers.values()]
         semvers.sort(reverse=True)
+        found_latest = False
         for i, sv in enumerate(semvers):
-            slug = pkg_vers[str(sv)].slug
-            latest = " (latest)" if i == 0 else ""
-            print(f"  - [blue]{sv}[/blue]{latest} slug: [yellow]{slug}[/yellow]")
+            pm = pkg_vers[str(sv)]
+
+            latest = False
+            latest_prerelease = i == 0
+            prerelease = pm.is_prerelease
+            if not found_latest and not prerelease:
+                latest = True
+                found_latest = True
+
+            comments_str = ""
+            if latest or latest_prerelease or prerelease:
+                comments: list[str] = []
+                if prerelease:
+                    comments.append("prerelease")
+                if latest:
+                    comments.append("latest")
+                if latest_prerelease and not latest:
+                    comments.append("latest-prerelease")
+                comments_str = f" ({', '.join(comments)})"
+
+            print(
+                f"  - [blue]{sv}[/blue]{comments_str} slug: [yellow]{pm.slug}[/yellow]"
+            )
 
     return 0
 
