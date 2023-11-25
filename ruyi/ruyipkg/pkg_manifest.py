@@ -13,6 +13,7 @@ class DistfileDeclType(TypedDict):
     name: str
     size: int
     checksums: dict[str, str]
+    strip_components: NotRequired[int]
 
 
 class BinaryFileDeclType(TypedDict):
@@ -67,6 +68,10 @@ class DistfileDecl:
 
     def get_checksum(self, kind: str) -> str | None:
         return self._data["checksums"].get(kind)
+
+    @property
+    def strip_components(self) -> int:
+        return self._data.get("strip_components", 1)
 
 
 class BinaryDecl:

@@ -1,18 +1,24 @@
 import os
-import subprocess
 
 from .. import log
 from .checksum import Checksummer
 from .fetch import BaseFetcher
+from .pkg_manifest import DistfileDecl
 from .unpack import do_unpack
 
 
 class Distfile:
-    def __init__(self, url: str, dest: str, size: int, csums: dict[str, str]) -> None:
+    def __init__(
+        self,
+        url: str,
+        dest: str,
+        decl: DistfileDecl,
+    ) -> None:
         self.url = url
         self.dest = dest
-        self.size = size
-        self.csums = csums
+        self.size = decl.size
+        self.csums = decl.checksums
+        self.strip_components = decl.strip_components
 
     def ensure(self) -> None:
         log.D(f"checking {self.dest}")
@@ -64,4 +70,4 @@ class Distfile:
             )
 
     def unpack(self, root: str | None) -> None:
-        return do_unpack(self.dest, root)
+        return do_unpack(self.dest, root, self.strip_components)

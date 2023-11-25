@@ -174,7 +174,7 @@ def cli_extract(args: argparse.Namespace) -> int:
             url = make_distfile_url(dist_url_base, df_name)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl.size, df_decl.checksums)
+            df = Distfile(url, dest, df_decl)
             df.ensure()
 
             log.I(
@@ -249,7 +249,7 @@ def cli_install(args: argparse.Namespace) -> int:
             url = make_distfile_url(dist_url_base, df_name)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl.size, df_decl.checksums)
+            df = Distfile(url, dest, df_decl)
             df.ensure()
 
             if fetch_only:
