@@ -25,8 +25,14 @@ def cli_list(args: argparse.Namespace) -> int:
     if not verbose:
         return do_list_non_verbose(mr)
 
+    first = True
     for _, _, pkg_vers in mr.iter_pkgs():
         for pm in pkg_vers.values():
+            if first:
+                first = False
+            else:
+                print("\n")
+
             print_pkg_detail(pm)
 
     return 0
@@ -81,7 +87,7 @@ def print_pkg_detail(pm: PackageManifest) -> None:
     print(f"* Vendor: {pm.vendor_name}\n")
 
     df = pm.distfiles()
-    print(f"Package declares {len(df)} distfiles:\n")
+    print(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
         print(f"* [green]{dd.name}[/green]")
         print(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
