@@ -152,3 +152,7 @@ class PackageManifest:
         if "toolchain" not in self._data:
             return None
         return ToolchainDecl(self._data["toolchain"])
+
+
+def is_prerelease(sv: Version) -> bool:
+    return sv.prerelease is not None

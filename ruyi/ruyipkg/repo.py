@@ -4,10 +4,9 @@ import os.path
 from typing import Iterable, Tuple, TypedDict
 
 from git import Repo
-import semver
 
 from .. import log
-from .pkg_manifest import PackageManifest
+from .pkg_manifest import is_prerelease, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 
 
@@ -175,6 +174,6 @@ class MetadataRepo:
 
         all_semvers = [pm.semver for pm in pkgset[name].values()]
         if not include_prerelease_vers:
-            all_semvers = [sv for sv in all_semvers if sv.prerelease is None]
+            all_semvers = [sv for sv in all_semvers if not is_prerelease(sv)]
         latest_ver = max(all_semvers)
         return pkgset[name][str(latest_ver)]
