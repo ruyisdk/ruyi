@@ -59,6 +59,8 @@ class MetadataRepo:
         main_branch.checkout(force=True)
 
     def get_config(self) -> RepoConfigType:
+        self.ensure_git_repo()
+
         # we can read the config file directly because we're operating from a
         # working tree (as opposed to a bare repo)
         path = os.path.join(self.root, "config.json")
@@ -66,6 +68,8 @@ class MetadataRepo:
             return json.load(fp)
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
+        self.ensure_git_repo()
+
         manifests_dir = os.path.join(self.root, "manifests")
         for f in os.scandir(manifests_dir):
             if not f.is_dir():
@@ -76,6 +80,8 @@ class MetadataRepo:
         self,
         category_dir: str,
     ) -> Iterable[PackageManifest]:
+        self.ensure_git_repo()
+
         category = os.path.basename(category_dir)
         for f in glob.iglob("*/*.json", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
@@ -96,9 +102,13 @@ class MetadataRepo:
         return self._profile_cache.values()
 
     def ensure_profile_cache(self) -> None:
-        cache: dict[str, ProfileDecl] = {}
+        if self._profile_cache:
+            return
 
+        self.ensure_git_repo()
         profiles_dir = os.path.join(self.root, "profiles")
+
+        cache: dict[str, ProfileDecl] = {}
         for f in glob.iglob("*.json", root_dir=profiles_dir):
             with open(os.path.join(profiles_dir, f), "rb") as fp:
                 arch_profiles_decl: ArchProfilesDeclType = json.load(fp)
@@ -110,6 +120,8 @@ class MetadataRepo:
     def ensure_pkg_cache(self) -> None:
         if self._pkgs:
             return
+
+        self.ensure_git_repo()
 
         cache_by_name: dict[str, dict[str, PackageManifest]] = {}
         cache_by_category: dict[str, dict[str, dict[str, PackageManifest]]] = {}
