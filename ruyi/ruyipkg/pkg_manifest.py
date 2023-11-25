@@ -23,6 +23,10 @@ class BinaryFileDeclType(TypedDict):
 BinaryDeclType = list[BinaryFileDeclType]
 
 
+class SourceDeclType(TypedDict):
+    distfiles: list[str]
+
+
 class ToolchainComponentDeclType(TypedDict):
     name: str
     version: str
@@ -41,6 +45,7 @@ class PackageManifestType(TypedDict):
     vendor: VendorDeclType
     distfiles: list[DistfileDeclType]
     binary: NotRequired[BinaryDeclType]
+    source: NotRequired[SourceDeclType]
     toolchain: NotRequired[ToolchainDeclType]
 
 
@@ -74,6 +79,15 @@ class BinaryDecl:
 
     def get_distfile_names_for_host(self, host: str) -> list[str] | None:
         return self._data.get(host)
+
+
+class SourceDecl:
+    def __init__(self, data: SourceDeclType) -> None:
+        self._data = data
+
+    def get_distfile_names_for_host(self, host: str) -> list[str] | None:
+        # currently the host parameter is ignored
+        return self._data["distfiles"]
 
 
 class ToolchainDecl:
@@ -153,6 +167,14 @@ class PackageManifest:
         if "binary" not in self._data:
             return None
         return BinaryDecl(self._data["binary"])
+
+    @property
+    def source_metadata(self) -> SourceDecl | None:
+        if not self.has_kind("source"):
+            return None
+        if "source" not in self._data:
+            return None
+        return SourceDecl(self._data["source"])
 
     @property
     def toolchain_metadata(self) -> ToolchainDecl | None:

@@ -143,20 +143,30 @@ def cli_extract(args: argparse.Namespace) -> int:
         pkg_name = pm.name_for_installation
 
         bm = pm.binary_metadata
-        if bm is None:
+        sm = pm.source_metadata
+        if bm is None and sm is None:
+            log.F(f"don't know how to extract package [green]{pkg_name}[/green]")
+            return 2
+
+        if bm is not None and sm is not None:
             log.F(
-                f"don't know how to extract non-binary package [green]{pkg_name}[/green]"
+                f"cannot handle package [green]{pkg_name}[/green]: package is both binary and source"
             )
             return 2
 
-        dfs = pm.distfiles()
+        distfiles_for_host: list[str] | None = None
+        if bm is not None:
+            distfiles_for_host = bm.get_distfile_names_for_host(host)
+        elif sm is not None:
+            distfiles_for_host = sm.get_distfile_names_for_host(host)
 
-        distfiles_for_host = bm.get_distfile_names_for_host(host)
         if not distfiles_for_host:
             log.F(
                 f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
             )
             return 2
+
+        dfs = pm.distfiles()
 
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
