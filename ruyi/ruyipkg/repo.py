@@ -122,6 +122,8 @@ class MetadataRepo:
 
             if pm.category not in cache_by_category:
                 cache_by_category[pm.category] = {pm.name: {}}
+            if pm.name not in cache_by_category[pm.category]:
+                cache_by_category[pm.category][pm.name] = {}
             cache_by_category[pm.category][pm.name][pm.ver] = pm
 
             if pm.slug:
