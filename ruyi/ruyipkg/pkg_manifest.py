@@ -1,3 +1,4 @@
+import re
 from typing import Iterable, NotRequired, TypedDict
 
 from semver.version import Version
@@ -158,5 +159,14 @@ class PackageManifest:
         return ToolchainDecl(self._data["toolchain"])
 
 
+RUYI_DATESTAMP_IN_SEMVER_RE = re.compile(r"^ruyi\.\d+$")
+
+
 def is_prerelease(sv: Version) -> bool:
-    return sv.prerelease is not None
+    if sv.prerelease is None:
+        return False
+
+    # don't consider "ruyi.*" versions as prerelease
+    # if the prerelease string only contains a "ruyi.\d+" part, then that's
+    # considered as just a datestamp, and not a prerelease in ruyi's interpretation.
+    return RUYI_DATESTAMP_IN_SEMVER_RE.match(sv.prerelease) is None
