@@ -100,7 +100,8 @@ packages-index
       {"name": "gdb", "version": "13.1"},
       {"name": "glibc", "version": "2.38"},
       {"name": "linux-headers", "version": "6.4"}
-    ]
+    ],
+    "included_sysroot": "riscv64-plct-linux-gnu/sysroot"
   }
 }
 ```
@@ -133,6 +134,7 @@ packages-index
     - `flavors` 是自由形态字符串的列表，用于表示工具链的特殊特征（如支持某厂商未上游的特性，或 `-mcpu` 逻辑与社区版本不同等等）。目前定义了：
         - `xthead`：工具链是由 T-Head 源码构建而成，尤其其 `-mcpu` 取值方式与上游不同。
     - `components` 是该包所含的标准组件及相应（等价）版本的列表。目前暂时没有用上，后续可能会基于此提供展示、过滤、匹配等功能。
+    - `included_sysroot` 是可选的字符串。如果该字段存在，则代表在解压该包后，此相对路径是指向目标目录下的一个可供直接复制而为虚拟环境所用的 sysroot 目录。
 
 ### `profiles`
 

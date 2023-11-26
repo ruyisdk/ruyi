@@ -37,6 +37,7 @@ class ToolchainDeclType(TypedDict):
     target: str
     flavors: list[str]
     components: list[ToolchainComponentDeclType]
+    included_sysroot: NotRequired[str]
 
 
 class PackageManifestType(TypedDict):
@@ -141,6 +142,10 @@ class ToolchainDecl:
     @property
     def has_llvm(self) -> bool:
         return self.get_component_version("llvm") is not None
+
+    @property
+    def included_sysroot(self) -> str | None:
+        return self._data.get("included_sysroot")
 
 
 class PackageManifest:
