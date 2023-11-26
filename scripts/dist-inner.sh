@@ -3,6 +3,7 @@
 set -e
 
 export POETRY_CACHE_DIR=/poetry-cache
+export CCACHE_DIR=/ccache
 
 cd /home/b
 . ./venv/bin/activate
