@@ -98,6 +98,15 @@ class SourceDecl:
 class ToolchainDecl:
     def __init__(self, data: ToolchainDeclType) -> None:
         self._data = data
+        self._component_vers_cache: dict[str, str] | None = None
+
+    @property
+    def _component_vers(self) -> dict[str, str]:
+        if self._component_vers_cache is None:
+            self._component_vers_cache = {
+                x["name"]: x["version"] for x in self.components
+            }
+        return self._component_vers_cache
 
     @property
     def target(self) -> str:
@@ -113,6 +122,25 @@ class ToolchainDecl:
     @property
     def components(self) -> Iterable[ToolchainComponentDeclType]:
         return self._data["components"]
+
+    def get_component_version(self, name: str) -> str | None:
+        return self._component_vers.get(name)
+
+    @property
+    def has_binutils(self) -> bool:
+        return self.get_component_version("binutils") is not None
+
+    @property
+    def has_clang(self) -> bool:
+        return self.get_component_version("clang") is not None
+
+    @property
+    def has_gcc(self) -> bool:
+        return self.get_component_version("gcc") is not None
+
+    @property
+    def has_llvm(self) -> bool:
+        return self.get_component_version("llvm") is not None
 
 
 class PackageManifest:
