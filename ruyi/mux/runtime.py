@@ -39,7 +39,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
 # TODO: dedup with venv provision logic (into a command name parser)
 CC_ARGV0_RE = re.compile(
-    r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+)(?:-[0-9.]+)?$"
+    r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+|clang-cl|clang-cpp)(?:-[0-9.]+)?$"
 )
 
 
