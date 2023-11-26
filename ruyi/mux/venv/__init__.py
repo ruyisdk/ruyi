@@ -6,7 +6,7 @@ from ... import log
 from ...config import GlobalConfig
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.repo import MetadataRepo
-from .provision import VenvMaker
+from .provision import render_template_str, VenvMaker
 
 
 def cli_venv(args: argparse.Namespace) -> int:
@@ -78,13 +78,6 @@ def cli_venv(args: argparse.Namespace) -> int:
     )
     maker.provision()
 
-    log.I(
-        """\
-The virtual environment is now created.
-
-You may activate it by sourcing the appropriate activation script in the
-[green]bin[/green] directory, and deactivate by invoking `ruyi-deactivate`.
-"""
-    )
+    log.I(render_template_str("prompt.venv-created.txt", {}))
 
     return 0
