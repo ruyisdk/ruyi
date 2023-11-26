@@ -10,7 +10,7 @@ env:
 runs:
   using: "composite"
   steps:
-    - name: ruyil
+    - name: ruyi help
       run: |
         ${{ inputs.ruyi }} -h
       shell: bash
@@ -32,9 +32,9 @@ runs:
       shell: bash
     - name: ruyi install
       run: |
-        ${{ inputs.ruyi }}  install plct
-        ${{ inputs.ruyi }}  install name:plct
-        ${{ inputs.ruyi }}  install slug:plct-20231026
+        ${{ inputs.ruyi }}  install gnu-plct
+        ${{ inputs.ruyi }}  install name:gnu-plct
+        ${{ inputs.ruyi }}  install slug:gnu-plct-20231026
       shell: bash
     - name: ruyi list profiles
       run: |

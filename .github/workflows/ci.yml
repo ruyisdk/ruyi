@@ -39,7 +39,7 @@ jobs:
         os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env: 
-      RUYI_DOWNLOAD_LINK: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/ruyi.amd64.20231107
+      RUYI_DOWNLOAD_LINK: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/ruyi.amd64.20231126
       RUYI: ruyi-binary
     steps:
       - uses: actions/checkout@v3
