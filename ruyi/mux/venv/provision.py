@@ -42,9 +42,13 @@ JINJA_ENV = Environment(
 JINJA_ENV.filters["sh"] = shlex.quote
 
 
-def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -> None:
+def render_template_str(template_name: str, data: dict[str, Any]) -> str:
     tmpl = JINJA_ENV.get_template(template_name)
-    content = tmpl.render(data).encode("utf-8")
+    return tmpl.render(data)
+
+
+def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -> None:
+    content = render_template_str(template_name, data).encode("utf-8")
     with open(dest, "wb") as fp:
         fp.write(content)
 
