@@ -6,5 +6,8 @@ ARG BUILDER_GID=1000
 COPY ./prepare-distro.riscv64.sh /tmp/prepare-distro.sh
 RUN /tmp/prepare-distro.sh
 
+COPY ./prepare-poetry.sh /tmp/prepare-poetry.sh
+RUN /tmp/prepare-poetry.sh
+
 USER $BUILDER_UID:$BUILDER_GID
 WORKDIR /home/b

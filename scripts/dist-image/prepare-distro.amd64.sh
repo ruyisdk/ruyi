@@ -24,8 +24,3 @@ add-apt-repository ppa:deadsnakes/ppa
 apt-get install -y python3.11-dev python3.11-venv
 
 apt-get clean
-
-python3.11 -m venv /home/b/venv
-/home/b/venv/bin/pip install -U pip setuptools wheel
-/home/b/venv/bin/pip install poetry
-chown -R "$BUILDER_UID:$BUILDER_GID" /home/b/venv

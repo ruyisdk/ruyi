@@ -5,10 +5,10 @@ image_tag_base() {
 
     case "$arch" in
         amd64)
-            echo "ruyi-python-dist:20231110"
+            echo "ruyi-python-dist:20231125"
             ;;
         riscv64)
-            echo "ruyi-python-dist:20231031"
+            echo "ruyi-python-dist:20231125"
             ;;
         *)
             echo "error: unsupported arch $arch; supported are: amd64, riscv64" >&2
