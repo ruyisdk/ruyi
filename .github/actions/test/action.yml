@@ -34,7 +34,7 @@ runs:
       run: |
         ${{ inputs.ruyi }}  install gnu-plct
         ${{ inputs.ruyi }}  install name:gnu-plct
-        ${{ inputs.ruyi }}  install slug:gnu-plct-20231026
+        ${{ inputs.ruyi }}  install slug:gnu-plct-20231118
       shell: bash
     - name: ruyi list profiles
       run: |
