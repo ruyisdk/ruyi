@@ -82,7 +82,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         render_template_str(
             "prompt.venv-created.txt",
             {
-                "sysroot": tc_sysroot_dir,
+                "sysroot": dest.resolve() / "sysroot",
             },
         )
     )
