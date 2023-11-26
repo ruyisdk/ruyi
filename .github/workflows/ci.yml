@@ -2,7 +2,7 @@ name: CI
 on: push
 
 jobs:
-  build:
+  test-from-source:
     strategy:
       fail-fast: false
       matrix:
@@ -32,7 +32,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           ruyi: python -m ruyi
-  test:
+  test-from-release:
     strategy:
       fail-fast: false
       matrix:
