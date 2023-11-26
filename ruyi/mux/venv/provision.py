@@ -5,6 +5,7 @@ from os import PathLike
 import pathlib
 import re
 import shlex
+import shutil
 from typing import Any, Callable, Tuple
 import zlib
 
@@ -54,18 +55,26 @@ class VenvMaker:
         profile: ProfileDecl,
         toolchain_install_root: str,
         dest: PathLike,
-        with_sysroot: bool,
+        sysroot_srcdir: PathLike | None,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
         self.toolchain_install_root = toolchain_install_root
         self.dest = dest
-        self.with_sysroot = with_sysroot
+        self.sysroot_srcdir = sysroot_srcdir
         self.override_name = override_name
 
     def provision(self) -> None:
         venv_root = pathlib.Path(self.dest)
         venv_root.mkdir()
+
+        if self.sysroot_srcdir is not None:
+            shutil.copytree(
+                self.sysroot_srcdir,
+                venv_root / "sysroot",
+                symlinks=True,
+                ignore_dangling_symlinks=True,
+            )
 
         env_data = {
             "profile": self.profile.name,

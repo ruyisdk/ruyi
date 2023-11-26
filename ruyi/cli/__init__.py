@@ -122,7 +122,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "--toolchain",
         "-t",
         type=str,
-        help="Slug of the toolchain to use",
+        help="Specifier (atom) of the toolchain to use",
     )
     venv.add_argument(
         "--with-sysroot",
