@@ -68,16 +68,19 @@ class VenvMaker:
         venv_root = pathlib.Path(self.dest)
         venv_root.mkdir()
 
+        sysroot_destdir = None
         if self.sysroot_srcdir is not None:
+            sysroot_destdir = venv_root / "sysroot"
             shutil.copytree(
                 self.sysroot_srcdir,
-                venv_root / "sysroot",
+                sysroot_destdir,
                 symlinks=True,
                 ignore_dangling_symlinks=True,
             )
 
         env_data = {
             "profile": self.profile.name,
+            "sysroot": sysroot_destdir,
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 

@@ -1,2 +1,5 @@
 [config]
 profile = "{{ profile }}"
+{% if sysroot -%}
+sysroot = "{{ sysroot }}"
+{%- endif %}

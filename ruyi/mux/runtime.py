@@ -21,15 +21,19 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
     log.D(f"binary to exec: {binpath}")
 
-    common_argv_to_insert: list[str] | None = None
+    argv_to_insert: list[str] | None = None
     if is_proxying_to_cc(basename):
         log.D(f"{basename} is considered a CC")
-        common_argv_to_insert = shlex.split(vcfg.profile_common_flags)
-        log.D(f"parsed profile flags: {common_argv_to_insert}")
+        argv_to_insert = shlex.split(vcfg.profile_common_flags)
+        log.D(f"parsed profile flags: {argv_to_insert}")
+
+        if vcfg.sysroot is not None:
+            log.D(f"adding sysroot: {vcfg.sysroot}")
+            argv_to_insert.extend(("--sysroot", vcfg.sysroot))
 
     new_argv = [binpath]
-    if common_argv_to_insert is not None:
-        new_argv.extend(common_argv_to_insert)
+    if argv_to_insert:
+        new_argv.extend(argv_to_insert)
     if len(argv) > 1:
         new_argv.extend(argv[1:])
 

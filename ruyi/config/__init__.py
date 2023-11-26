@@ -1,7 +1,7 @@
 import os.path
 import pathlib
 import tomllib
-from typing import Any, Self, TypedDict
+from typing import Any, NotRequired, Self, TypedDict
 
 from xdg import BaseDirectory
 
@@ -86,6 +86,7 @@ class GlobalConfig:
 
 class VenvConfigType(TypedDict):
     profile: str
+    sysroot: NotRequired[str]
 
 
 class VenvConfigRootType(TypedDict):
@@ -104,6 +105,7 @@ class VenvCacheRootType(TypedDict):
 class RuyiVenvConfig:
     def __init__(self, cfg: VenvConfigRootType, cache: VenvCacheRootType) -> None:
         self.profile = cfg["config"]["profile"]
+        self.sysroot = cfg["config"].get("sysroot")
         self.toolchain_bindir = cache["cached"]["toolchain_bindir"]
         self.profile_common_flags = cache["cached"]["profile_common_flags"]
 
