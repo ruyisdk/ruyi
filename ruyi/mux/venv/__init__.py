@@ -78,6 +78,13 @@ def cli_venv(args: argparse.Namespace) -> int:
     )
     maker.provision()
 
-    log.I(render_template_str("prompt.venv-created.txt", {}))
+    log.I(
+        render_template_str(
+            "prompt.venv-created.txt",
+            {
+                "sysroot": tc_sysroot_dir,
+            },
+        )
+    )
 
     return 0
