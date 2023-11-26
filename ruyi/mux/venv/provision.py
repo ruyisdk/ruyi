@@ -54,11 +54,13 @@ class VenvMaker:
         profile: ProfileDecl,
         toolchain_install_root: str,
         dest: PathLike,
+        with_sysroot: bool,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
         self.toolchain_install_root = toolchain_install_root
         self.dest = dest
+        self.with_sysroot = with_sysroot
         self.override_name = override_name
 
     def provision(self) -> None:
@@ -75,7 +77,11 @@ class VenvMaker:
             "toolchain_bindir": str(toolchain_bindir),
             "profile_common_flags": self.profile.get_common_flags(),
         }
-        render_and_write(venv_root / "ruyi-cache.toml", "ruyi-cache.toml", initial_cache_data)
+        render_and_write(
+            venv_root / "ruyi-cache.toml",
+            "ruyi-cache.toml",
+            initial_cache_data,
+        )
 
         bindir = venv_root / "bin"
         bindir.mkdir()

@@ -124,6 +124,20 @@ def init_argparse() -> argparse.ArgumentParser:
         type=str,
         help="Slug of the toolchain to use",
     )
+    venv.add_argument(
+        "--with-sysroot",
+        action="store_true",
+        dest="with_sysroot",
+        default=True,
+        help="Provision a fresh sysroot inside the new virtual environment (default)",
+    )
+    venv.add_argument(
+        "--without-sysroot",
+        action="store_false",
+        dest="with_sysroot",
+        help="Do not include a sysroot inside the new virtual environment",
+    )
+
     venv.set_defaults(func=cli_venv)
 
     # Repo admin commands
