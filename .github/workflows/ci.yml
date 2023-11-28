@@ -32,6 +32,13 @@ jobs:
         uses: ./.github/actions/test
         with:
           ruyi: python -m ruyi
+      - name: ruyi install
+        run: |
+          sudo apt install ninja-build
+      - id: testcompile
+        uses: ./.github/actions/compile
+        with:
+          ruyi: python -m ruyi
   test-from-release:
     strategy:
       fail-fast: false
@@ -47,10 +54,11 @@ jobs:
         run: |
           curl $RUYI_DOWNLOAD_LINK -o ruyi-binary
           chmod +x ./ruyi-binary
-          export PATH="$(pwd):$PATH"
-          $RUYI venv
+          echo "$(pwd)" >> $GITHUB_PATH
+      - name: ruyi help
+        run: |
           $RUYI -h
-      - id: test
-        uses: ./.github/actions/test
+      - id: testcompile
+        uses: ./.github/actions/compile
         with:
           ruyi: ruyi-binary

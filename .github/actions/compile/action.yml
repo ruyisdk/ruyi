@@ -1,0 +1,52 @@
+name: test ruyi
+description: 'Run basic ruyi test'
+inputs:
+  ruyi:
+    type: string
+    required: false
+    default: "ruyi"
+runs:
+  using: "composite"
+  steps:
+    - name: ruyi help
+      shell: bash
+      run: |
+        ${{ inputs.ruyi }} install gnu-plct gnu-plct-xthead
+        ${{ inputs.ruyi }} venv -t gnu-plct milkv-duo /tmp/venv1
+        ${{ inputs.ruyi }} venv -t gnu-plct-xthead sipeed-lpi4a /tmp/venv2
+
+        # test pre-packaged demos
+        mkdir /tmp/test1
+        pushd /tmp/test1
+
+        # you can also choose the pre-release snapshot version
+        # ruyi extract coremark --prerelease
+        ${{ inputs.ruyi }} extract coremark
+
+        # customize and build
+        . /tmp/venv2/bin/ruyi-activate
+        sed -i 's/\bgcc\b/riscv64-plctxthead-linux-gnu-gcc/g' linux64/core_portme.mak 
+        make PORT_DIR=linux64 link
+        # check the resulting coremark.exe
+        file coremark.exe 
+        # coremark.exe: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-riscv64xthead-lp64d.so.1, BuildID[sha1]=d9510c5fef107e2c56b40547a02f1488471dd2d2, for GNU/Linux 4.15.0, with debug_info, not stripped
+        ruyi-deactivate
+        popd
+        rm -rf /tmp/test1
+
+        # test with any source repo convenient for you
+        # here zlib-ng is used as an example
+        # note zlib-ng's RVV code can't be built with the gnu-plct-xthead toolchain package
+        git clone https://github.com/zlib-ng/zlib-ng.git /tmp/zlib-ng --depth 1
+        mkdir /tmp/test2
+        pushd /tmp/test2
+        . /tmp/venv1/bin/ruyi-activate
+        cmake /tmp/zlib-ng -G Ninja -DCMAKE_C_COMPILER=riscv64-plct-linux-gnu-gcc -DCMAKE_INSTALL_PREFIX=/tmp/venv1/sysroot -DCMAKE_C_FLAGS="-O2 -pipe -g" -DZLIB_COMPAT=ON -DWITH_GTEST=OFF
+        ninja
+        ninja install
+        # check the sysroot
+        ls /tmp/venv1/sysroot/include
+
+        ruyi-deactivate
+        popd
+        rm -rf /tmp/test2

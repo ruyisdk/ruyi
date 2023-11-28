@@ -22,10 +22,6 @@ runs:
       run: |
         ${{ inputs.ruyi }}  list
       shell: bash
-    - name: ruyi update
-      run: |
-        ${{ inputs.ruyi }}  update
-      shell: bash
     - name: ruyi list -v
       run: |
         ${{ inputs.ruyi }}  list -v
