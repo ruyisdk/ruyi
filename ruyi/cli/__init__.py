@@ -6,11 +6,6 @@ from typing import List
 import ruyi
 from .. import log
 from ..mux.runtime import mux_main
-from ..mux.venv import cli_venv
-from ..ruyipkg.admin_cli import cli_admin_manifest
-from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
-from ..ruyipkg.profile_cli import cli_list_profiles
-from ..ruyipkg.update import cli_update
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -25,6 +20,12 @@ def init_debug_status() -> None:
 
 
 def init_argparse() -> argparse.ArgumentParser:
+    from ..mux.venv import cli_venv
+    from ..ruyipkg.admin_cli import cli_admin_manifest
+    from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
+    from ..ruyipkg.profile_cli import cli_list_profiles
+    from ..ruyipkg.update import cli_update
+
     root = argparse.ArgumentParser(
         prog=RUYI_ENTRYPOINT_NAME,
         description="RuyiSDK Package Manager",
