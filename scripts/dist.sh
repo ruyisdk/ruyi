@@ -28,7 +28,16 @@ docker_args=(
     -v "$BUILD_DIR":/build
     -v "$POETRY_CACHE_DIR":/poetry-cache
     -v "$CCACHE_DIR":/ccache
-    -ti "$(image_tag_base "$arch")-${arch}"
+)
+
+# only allocate pty if currently running interactively
+# check if stdout is a tty
+if [[ -t 1 ]]; then
+    docker_args+=( -t )
+fi
+
+docker_args+=(
+    "$(image_tag_base "$arch")-${arch}"
     /home/b/ruyi/scripts/dist-inner.sh
 )
 
