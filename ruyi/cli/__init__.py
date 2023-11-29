@@ -6,6 +6,7 @@ from typing import List
 import ruyi
 from .. import log
 from ..mux.runtime import mux_main
+from .prereqs import ensure_git_binary
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -168,6 +169,8 @@ def init_argparse() -> argparse.ArgumentParser:
 def main(argv: List[str]) -> int:
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
+
+    ensure_git_binary()
 
     p = init_argparse()
     args = p.parse_args(argv[1:])
