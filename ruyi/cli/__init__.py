@@ -6,7 +6,7 @@ from typing import List
 import ruyi
 from .. import log
 from ..mux.runtime import mux_main
-from .prereqs import ensure_git_binary
+from .prereqs import check_dep_binaries
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
@@ -170,7 +170,7 @@ def main(argv: List[str]) -> int:
     if not is_called_as_ruyi(argv[0]):
         return mux_main(argv)
 
-    ensure_git_binary()
+    check_dep_binaries()
 
     p = init_argparse()
     args = p.parse_args(argv[1:])
