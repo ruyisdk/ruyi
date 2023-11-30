@@ -7,9 +7,21 @@
 [binaries]
 c = '{{ cc }}'
 cpp = '{{ cxx }}'
+{%- for key, path in meson_additional_binaries.items() %}
+{{ key }} = '{{ path }}'
+{%- endfor %}
 {% if sysroot %}
 [built-in options]
 prefix = '{{ sysroot }}'
 {% endif %}
 [properties]
 cmake_toolchain_file = '{{ cmake_toolchain_file }}'
+{%- if sysroot %}
+sys_root = '{{ sysroot }}'
+{%- endif %}
+
+[host_machine]
+system = 'linux'
+cpu_family = '{{ processor }}'
+cpu = '{{ processor }}'
+endian = 'little'

@@ -60,6 +60,7 @@ class VenvMaker:
         toolchain_install_root: str,
         target_tuple: str,
         toolchain_flavor: str,
+        binutils_flavor: str,
         dest: PathLike,
         sysroot_srcdir: PathLike | None,
         override_name: str | None = None,
@@ -67,6 +68,7 @@ class VenvMaker:
         self.profile = profile
         self.toolchain_install_root = toolchain_install_root
         self.target_tuple = target_tuple
+        self.binutils_flavor = binutils_flavor
         self.toolchain_flavor = toolchain_flavor
         self.dest = dest
         self.sysroot_srcdir = sysroot_srcdir
@@ -116,13 +118,36 @@ class VenvMaker:
 
         render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
 
-        # CMake toolchain file
+        # CMake toolchain file & Meson cross file
         if self.toolchain_flavor == "clang":
             cc_path = bindir / "clang"
             cxx_path = bindir / "clang++"
         elif self.toolchain_flavor == "gcc":
             cc_path = bindir / f"{self.target_tuple}-gcc"
             cxx_path = bindir / f"{self.target_tuple}-g++"
+        else:
+            raise NotImplementedError
+
+        if self.binutils_flavor == "binutils":
+            meson_additional_binaries = {
+                "ar": bindir / f"{self.target_tuple}-ar",
+                "nm": bindir / f"{self.target_tuple}-nm",
+                "objcopy": bindir / f"{self.target_tuple}-objcopy",
+                "objdump": bindir / f"{self.target_tuple}-objdump",
+                "ranlib": bindir / f"{self.target_tuple}-ranlib",
+                "readelf": bindir / f"{self.target_tuple}-readelf",
+                "strip": bindir / f"{self.target_tuple}-strip",
+            }
+        elif self.binutils_flavor == "llvm":
+            meson_additional_binaries = {
+                "ar": bindir / "llvm-ar",
+                "nm": bindir / "llvm-nm",
+                "objcopy": bindir / "llvm-objcopy",
+                "objdump": bindir / "llvm-objdump",
+                "ranlib": bindir / "llvm-ranlib",
+                "readelf": bindir / "llvm-readelf",
+                "strip": bindir / "llvm-strip",
+            }
         else:
             raise NotImplementedError
 
@@ -134,6 +159,7 @@ class VenvMaker:
             "sysroot": sysroot_destdir,
             "venv_root": venv_root,
             "cmake_toolchain_file": str(cmake_toolchain_file_path),
+            "meson_additional_binaries": meson_additional_binaries,
         }
         render_and_write(
             cmake_toolchain_file_path,
