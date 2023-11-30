@@ -1,0 +1,15 @@
+# Use like:
+#
+# meson setup --cross-file {{ venv_root }}/meson-cross.ini ...
+#
+# Needs meson 0.56.0+.
+
+[binaries]
+c = '{{ cc }}'
+cpp = '{{ cxx }}'
+{% if sysroot %}
+[built-in options]
+prefix = '{{ sysroot }}'
+{% endif %}
+[properties]
+cmake_toolchain_file = '{{ cmake_toolchain_file }}'

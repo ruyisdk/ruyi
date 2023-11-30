@@ -13,8 +13,7 @@ set(CMAKE_C_COMPILER {{ cc }})
 set(CMAKE_CXX_COMPILER {{ cxx }})
 {% if sysroot -%}
 set(CMAKE_FIND_ROOT_PATH {{ sysroot }})
-{%- endif %}
-
+{% endif %}
 # search for headers and libraries in the target environment,
 # search for programs in the host environment
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

@@ -126,17 +126,25 @@ class VenvMaker:
         else:
             raise NotImplementedError
 
-        cmake_toolchain_file_data = {
+        cmake_toolchain_file_path = venv_root / "toolchain.cmake"
+        toolchain_file_data = {
             "cc": cc_path,
             "cxx": cxx_path,
             "processor": self.profile.arch,
             "sysroot": sysroot_destdir,
             "venv_root": venv_root,
+            "cmake_toolchain_file": str(cmake_toolchain_file_path),
         }
         render_and_write(
-            venv_root / "toolchain.cmake",
+            cmake_toolchain_file_path,
             "toolchain.cmake",
-            cmake_toolchain_file_data,
+            toolchain_file_data,
+        )
+
+        render_and_write(
+            venv_root / "meson-cross.ini",
+            "meson-cross.ini",
+            toolchain_file_data,
         )
 
 
