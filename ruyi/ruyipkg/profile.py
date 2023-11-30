@@ -14,7 +14,8 @@ class ArchProfilesDeclType(TypedDict):
 
 
 class ProfileDecl:
-    def __init__(self, decl: ProfileDeclType) -> None:
+    def __init__(self, arch: str, decl: ProfileDeclType) -> None:
+        self.arch = arch
         self.name = decl["name"]
         self.need_flavor: set[str] = set()
         if "need_flavor" in decl:
@@ -25,9 +26,9 @@ class ProfileDecl:
         return ""
 
 
-# should have been something like (T extends ArchProfilesDeclType) -> Iterable[U extends ProfileDecl]
+# should have been something like (str, T extends ArchProfilesDeclType) -> Iterable[U extends ProfileDecl]
 # but apparently not supported: https://github.com/python/mypy/issues/7435
-ArchProfileParser = Callable[[Any], Iterable[ProfileDecl]]
+ArchProfileParser = Callable[[str, Any], Iterable[ProfileDecl]]
 
 KNOWN_ARCHES: dict[str, ArchProfileParser] = {}
 
@@ -49,7 +50,7 @@ def parse_profiles(data: ArchProfilesDeclType) -> Iterable[ProfileDecl]:
     except KeyError:
         raise RuntimeError(f"arch '{arch}' is unknown to ruyi")
 
-    return arch_parser(data)
+    return arch_parser(arch, data)
 
 
 # put this last: register the built-in arches

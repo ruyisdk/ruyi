@@ -72,6 +72,10 @@ def cli_venv(args: argparse.Namespace) -> int:
     maker = VenvMaker(
         profile,
         toolchain_root,
+        tc_pm.toolchain_metadata.target,
+        # assume clang is preferred if package contains clang
+        # this is mostly true given most packages don't contain both
+        "clang" if tc_pm.toolchain_metadata.has_clang else "gcc",
         dest.resolve(),
         tc_sysroot_dir,
         override_name,

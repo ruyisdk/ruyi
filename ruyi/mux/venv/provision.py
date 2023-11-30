@@ -58,12 +58,16 @@ class VenvMaker:
         self,
         profile: ProfileDecl,
         toolchain_install_root: str,
+        target_tuple: str,
+        toolchain_flavor: str,
         dest: PathLike,
         sysroot_srcdir: PathLike | None,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
         self.toolchain_install_root = toolchain_install_root
+        self.target_tuple = target_tuple
+        self.toolchain_flavor = toolchain_flavor
         self.dest = dest
         self.sysroot_srcdir = sysroot_srcdir
         self.override_name = override_name
@@ -111,6 +115,29 @@ class VenvMaker:
         }
 
         render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
+
+        # CMake toolchain file
+        if self.toolchain_flavor == "clang":
+            cc_path = bindir / "clang"
+            cxx_path = bindir / "clang++"
+        elif self.toolchain_flavor == "gcc":
+            cc_path = bindir / f"{self.target_tuple}-gcc"
+            cxx_path = bindir / f"{self.target_tuple}-g++"
+        else:
+            raise NotImplementedError
+
+        cmake_toolchain_file_data = {
+            "cc": cc_path,
+            "cxx": cxx_path,
+            "processor": self.profile.arch,
+            "sysroot": sysroot_destdir,
+            "venv_root": venv_root,
+        }
+        render_and_write(
+            venv_root / "toolchain.cmake",
+            "toolchain.cmake",
+            cmake_toolchain_file_data,
+        )
 
 
 def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:

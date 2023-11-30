@@ -36,11 +36,12 @@ class RISCVArchProfilesDeclType(ArchProfilesDeclType):
 class RISCVProfileDecl(ProfileDecl):
     def __init__(
         self,
+        arch: str,
         decl: RISCVProfileDeclType,
         generic_opts: RISCVGenericOpts,
         mcpu_map: FlavorMCPUMap,
     ) -> None:
-        super().__init__(decl)
+        super().__init__(arch, decl)
 
         self.mabi = decl.get("mabi", generic_opts["mabi"])
         self.march = decl.get("march", generic_opts["march"])
@@ -61,6 +62,7 @@ class RISCVProfileDecl(ProfileDecl):
 
 
 def parse_riscv_arch_profiles(
+    arch: str,
     data: RISCVArchProfilesDeclType,
 ) -> Iterable[RISCVProfileDecl]:
     log.D(f"got data: {data}")
@@ -68,11 +70,11 @@ def parse_riscv_arch_profiles(
     mcpu_map = data["flavor_specific_mcpus"]
 
     # emit the generic profile
-    yield RISCVProfileDecl({"name": "generic"}, generic_opts, mcpu_map)
+    yield RISCVProfileDecl(arch, {"name": "generic"}, generic_opts, mcpu_map)
 
     # and the rest
     for p in data["profiles"]:
-        yield RISCVProfileDecl(p, generic_opts, mcpu_map)
+        yield RISCVProfileDecl(arch, p, generic_opts, mcpu_map)
 
 
 register_arch_profile_parser(parse_riscv_arch_profiles, "riscv32", "riscv64")
