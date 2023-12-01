@@ -39,7 +39,8 @@ packages-index
 }
 ```
 
-`dist` 字段表示 Ruyi 软件源分发路径，以 `/` 结尾与否均可。以下将此配置值称作 `${config.dist}`。
+* `dist` 字段表示 Ruyi 软件源分发路径，以 `/` 结尾与否均可。以下将此配置值称作 `${config.dist}`。
+* `doc_uri` 是可选的指向该仓库的配套文档首页的 URI 字符串。
 
 ### `manifests`
 
@@ -159,6 +160,7 @@ packages-index
     - `toolchain`：该包提供了一套工具链。
     - `emulator`：该包提供了一个或多个模拟器二进制。
 * `desc` 是包内容的一句话描述，仅用于向用户展示。
+* `doc_uri` 是可选的指向该包的配套文档首页的 URI 字符串。
 * `vendor` 提供了包的提供者相关信息。其中：
     - `name`：提供者名称，目前仅用于向用户展示。
     - `eula`：目前仅支持取值为 `null`，表示安装该包前不需要征得用户明确同意任何协议。
@@ -247,6 +249,7 @@ packages-index
 * `generic_opts` 包含 `march`、`mabi`、`mcpu` 取值，是本文件所定义的每种配置相应字段不取值时，默认使用的值。
 * `profiles` 是具体配置定义列表，每条记录：
     - `name` 是配置名，会被广泛用于展示、命令行参数等。
+    - `doc_uri` 是可选的指向该配置的配套文档首页的 URI 字符串。
     - `need_flavor` 是该配置要求对应的工具链包需要提供的 flavors 列表，如不为空，所有条目必须全部匹配。
     - `mabi` `march` `mcpu` 如果存在，代表此配置的相应编译器参数使用该值，而非通用值。对于 `-mcpu` 参数，如果 `need_flavor` 不为空，实际使用的值会额外经过一层映射，映射关系由 `flavor_specific_mcpus` 定义。
 * `flavor_specific_mcpus` 是当某配置文件需求了某工具链 flavor 时，对 `mcpu` 取值的映射关系。
