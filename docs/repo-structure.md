@@ -55,6 +55,7 @@ packages-index
 举例说明：
 
 ```json
+// 工具链包示例
 {
   "slug": "plct-20231026",
   "kind": ["binary", "toolchain"],
@@ -104,6 +105,49 @@ packages-index
     "included_sysroot": "riscv64-plct-linux-gnu/sysroot"
   }
 }
+
+// 模拟器包示例
+{
+  "kind": ["binary", "emulator"],
+  "desc": "RuyiSDK QEMU linux-user Build (Upstream 8.1.2, built by PLCT)",
+  "vendor": {
+    "name": "PLCT",
+    "eula": null
+  },
+  "distfiles": [
+    {
+      "name": "qemu-user-riscv-8.1.2.ruyi-20231121.amd64.tar.zst",
+      "size": 15154068,
+      "checksums": {
+        "sha512": "73ac9c82b4386b5d8cb3d5e6654f600e38a7af6043bd546c7a0ec2940add29382a08f6a769bf1d5db150966dd18224789362add691c89c4e89ea31ae24436bd2",
+        "sha256": "24b477630c5f9a01f8a2188e6b1a33bc24723d5217d34285a3bb3509f5a0948a"
+      },
+      "strip_components": 2
+    }
+  ],
+  "binary": [
+    {
+      "host": "x86_64",
+      "distfiles": ["qemu-user-riscv-8.1.2.ruyi-20231121.amd64.tar.zst"]
+    }
+  ],
+  "emulator": {
+    "programs": [
+      {
+        "path": "bin/qemu-riscv32",
+        "flavor": "qemu-linux-user",
+        "supported_arches": ["riscv32"],
+        "binfmt_misc": ":ruyi-qemu-riscv32:M::\\x7fELF\\x01\\x01\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\xf3\\x00:\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\x00\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xfe\\xff\\xff\\xff:$BIN:OCF"
+      },
+      {
+        "path": "bin/qemu-riscv64",
+        "flavor": "qemu-linux-user",
+        "supported_arches": ["riscv64"],
+        "binfmt_misc": ":ruyi-qemu-riscv64:M::\\x7fELF\\x02\\x01\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\xf3\\x00:\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\x00\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xfe\\xff\\xff\\xff:$BIN:OCF"
+      }
+    ]
+  }
+}
 ```
 
 其中：
@@ -113,6 +157,7 @@ packages-index
     - `binary`：该包为二进制包，安装方式为直接解压。
     - `source`：该包为源码包，安装方式为直接解压。
     - `toolchain`：该包提供了一套工具链。
+    - `emulator`：该包提供了一个或多个模拟器二进制。
 * `desc` 是包内容的一句话描述，仅用于向用户展示。
 * `vendor` 提供了包的提供者相关信息。其中：
     - `name`：提供者名称，目前仅用于向用户展示。
@@ -135,6 +180,14 @@ packages-index
         - `xthead`：工具链是由 T-Head 源码构建而成，尤其其 `-mcpu` 取值方式与上游不同。
     - `components` 是该包所含的标准组件及相应（等价）版本的列表。目前暂时没有用上，后续可能会基于此提供展示、过滤、匹配等功能。
     - `included_sysroot` 是可选的字符串。如果该字段存在，则代表在解压该包后，此相对路径是指向目标目录下的一个可供直接复制而为虚拟环境所用的 sysroot 目录。
+* `emulator` 仅在 `kind` 含有 `emulator` 时有意义，表示适用于模拟器包的额外信息。其中：
+    - `programs` 是该包内可用的模拟器二进制的定义列表，每条记录：
+        - `path` 是相对包安装根目录的，指向相应二进制的相对路径。
+        - `flavor` 是该模拟器二进制的性质。可选的值有：
+            - `qemu-linux-user`：该二进制的用法如同静态链接的 QEMU linux-user 模拟器。
+        - `supported_arches` 是该二进制支持模拟的架构列表。架构值的语义与 `binary` 的 `host` 字段相同。
+        - `binfmt_misc` 是适合该二进制的 Linux `binfmt_misc` 配置串。注意转义。其中支持的特殊写法：
+            - `$BIN`：将在渲染时被替换为指向该二进制的绝对路径。
 
 ### `profiles`
 
@@ -166,6 +219,20 @@ packages-index
       "thead-c906": "c906",
       "thead-c910": "c910"
     }
+  },
+  "emulator_presets": {
+    "qemu-linux-user": {
+        "generic": {
+            "env": {
+                "QEMU_CPU": "rv64"
+            }
+        },
+        "thead-c906": {
+            "env": {
+                "QEMU_CPU": "thead-c906"
+            }
+        }
+    }
   }
 }
 ```
@@ -181,6 +248,9 @@ packages-index
     - `need_flavor` 是该配置要求对应的工具链包需要提供的 flavors 列表，如不为空，所有条目必须全部匹配。
     - `mabi` `march` `mcpu` 如果存在，代表此配置的相应编译器参数使用该值，而非通用值。对于 `-mcpu` 参数，如果 `need_flavor` 不为空，实际使用的值会额外经过一层映射，映射关系由 `flavor_specific_mcpus` 定义。
 * `flavor_specific_mcpus` 是当某配置文件需求了某工具链 flavor 时，对 `mcpu` 取值的映射关系。
+* `emulator_presets` 是对应各配置的模拟器预置设定。此键值对的每个键是模拟器包的 flavor，其值是从配置名到预置设定数据的键值对。预置设定数据的结构如下：
+    - `env` 是键值对，每条记录的键为用户需设置的环境变量名，值为该环境变量需取的值。
+
 
 ## 分发
 
