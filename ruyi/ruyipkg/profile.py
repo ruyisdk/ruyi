@@ -4,6 +4,7 @@ from typing import Any, Callable, Iterable, NotRequired, TypedDict
 
 class ProfileDeclType(TypedDict):
     name: str
+    doc_uri: NotRequired[str]
     need_flavor: NotRequired[list[str]]
     # can contain arch-specific free-form str -> str mappings
 
@@ -18,6 +19,7 @@ class ProfileDecl:
         self.arch = arch
         self.name = decl["name"]
         self.need_flavor: set[str] = set()
+        self.doc_uri = decl.get("doc_uri")
         if "need_flavor" in decl:
             self.need_flavor = set(decl["need_flavor"])
 

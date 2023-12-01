@@ -1,7 +1,7 @@
 import glob
 import json
 import os.path
-from typing import Iterable, Tuple, TypedDict
+from typing import Iterable, NotRequired, Tuple, TypedDict
 
 from git import Repo
 
@@ -12,6 +12,7 @@ from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 
 class RepoConfigType(TypedDict):
     dist: str
+    doc_uri: NotRequired[str]
 
 
 class MetadataRepo:

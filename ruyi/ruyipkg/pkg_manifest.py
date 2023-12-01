@@ -44,6 +44,7 @@ class PackageManifestType(TypedDict):
     slug: NotRequired[str]
     kind: list[str]
     desc: str
+    doc_uri: NotRequired[str]
     vendor: VendorDeclType
     distfiles: list[DistfileDeclType]
     binary: NotRequired[BinaryDeclType]
@@ -188,6 +189,10 @@ class PackageManifest:
     @property
     def desc(self) -> str:
         return self._data["desc"]
+
+    @property
+    def doc_uri(self) -> str | None:
+        return self._data.get("doc_uri")
 
     @property
     def vendor_name(self) -> str:
