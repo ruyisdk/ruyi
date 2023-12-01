@@ -221,17 +221,19 @@ packages-index
     }
   },
   "emulator_presets": {
-    "qemu-linux-user": {
-        "generic": {
-            "env": {
-                "QEMU_CPU": "rv64"
-            }
-        },
-        "thead-c906": {
-            "env": {
-                "QEMU_CPU": "thead-c906"
-            }
+    "generic": {
+      "qemu-linux-user": {
+        "env": {
+          "QEMU_CPU": "rv64"
         }
+      }
+    },
+    "thead-c906": {
+      "qemu-linux-user": {
+        "env": {
+          "QEMU_CPU": "thead-c906"
+        }
+      }
     }
   }
 }
@@ -248,10 +250,14 @@ packages-index
     - `need_flavor` 是该配置要求对应的工具链包需要提供的 flavors 列表，如不为空，所有条目必须全部匹配。
     - `mabi` `march` `mcpu` 如果存在，代表此配置的相应编译器参数使用该值，而非通用值。对于 `-mcpu` 参数，如果 `need_flavor` 不为空，实际使用的值会额外经过一层映射，映射关系由 `flavor_specific_mcpus` 定义。
 * `flavor_specific_mcpus` 是当某配置文件需求了某工具链 flavor 时，对 `mcpu` 取值的映射关系。
-* `emulator_presets` 是对应各配置的模拟器预置设定。此键值对的每个键是模拟器包的 flavor，其值是从每种 `mcpu` 取值到相应预置设定数据的键值对。预置设定数据的结构如下：
+* `emulator_presets` 是对应各配置的模拟器预置设定。此键值对的每个键是 `mcpu` 取值，其值是从每种受支持的模拟器包 flavor 到相应预置设定数据的键值对。预置设定数据的结构如下：
     - `env` 是键值对，每条记录的键为用户需设置的环境变量名，值为该环境变量需取的值。
 
 对于模拟器预置设定，如果一个 `mcpu` 取值没有相应的 `emulator_presets` 配置，则应为其适用 `generic` 配置的设定。
+
+对于 `qemu-linux-user` flavor 的模拟器，除了 `env` 所配置的环境变量之外，额外地还会有以下特殊处理：
+
+* 如当前虚拟环境有搭配了 sysroot 配置，那么将新增一个 `QEMU_LD_PREFIX` 环境变量，指向此 sysroot。
 
 ## 分发
 
