@@ -1,3 +1,4 @@
+import platform
 import re
 from typing import Iterable, NotRequired, TypedDict
 
@@ -86,6 +87,10 @@ class BinaryDecl:
 
     def get_distfile_names_for_host(self, host: str) -> list[str] | None:
         return self._data.get(host)
+
+    @property
+    def is_available_for_current_host(self) -> bool:
+        return platform.machine() in self._data
 
 
 class SourceDecl:

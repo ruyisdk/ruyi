@@ -56,16 +56,19 @@ def do_list_non_verbose(mr: MetadataRepo) -> int:
                 latest = True
                 found_latest = True
 
-            comments_str = ""
+            comments: list[str] = []
             if latest or latest_prerelease or prerelease:
-                comments: list[str] = []
                 if prerelease:
                     comments.append("prerelease")
                 if latest:
                     comments.append("latest")
                 if latest_prerelease and not latest:
                     comments.append("latest-prerelease")
-                comments_str = f" ({', '.join(comments)})"
+            if bm := pm.binary_metadata:
+                if not bm.is_available_for_current_host:
+                    comments.append("[red]no binary for current host[/red]")
+
+            comments_str = f" ({', '.join(comments)})"
 
             slug_str = f" slug: [yellow]{pm.slug}[/yellow]" if pm.slug else ""
 
