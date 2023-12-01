@@ -14,14 +14,29 @@ DEFAULT_REPO_BRANCH = "main"
 ENV_VENV_ROOT_KEY = "RUYI_VENV"
 
 
+class GlobalConfigPackagesType(TypedDict):
+    prereleases: NotRequired[bool]
+
+
+class GlobalConfigRootType(TypedDict):
+    packages: NotRequired[GlobalConfigPackagesType]
+
+
 class GlobalConfig:
     resource_name = "ruyi"
 
-    def __init__(self) -> None:
+    def __init__(self, config_data: GlobalConfigRootType | None = None) -> None:
         # all defaults
         self.override_repo_dir: str | None = None
         self.override_repo_url: str | None = None
         self.override_repo_branch: str | None = None
+        self.include_prereleases = False
+
+        if config_data is None:
+            return
+
+        if pkgs_cfg := config_data.get("packages"):
+            self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(
@@ -42,12 +57,6 @@ class GlobalConfig:
     def global_binary_install_root(self, host: str, slug: str) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "binaries" / host / slug
         return str(path)
-
-    @classmethod
-    def init_from_config_data(cls, data: dict[str, Any]) -> Self:
-        obj = cls()
-        # TODO: read from data and override defaults
-        return obj
 
     @classmethod
     def ensure_data_dir(cls) -> str:
@@ -81,7 +90,10 @@ class GlobalConfig:
             return cls()
 
         with open(config_path, "rb") as fp:
-            return cls.init_from_config_data(tomllib.load(fp))
+            data: Any = tomllib.load(fp)
+
+        log.D(f"config data: {data}")
+        return cls(data)
 
 
 class VenvConfigType(TypedDict):

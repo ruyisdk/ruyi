@@ -45,6 +45,33 @@ ruyi list profiles
 # TODO: cmake & meson support
 ```
 
+## Configuration
+
+Various aspects of `ruyi` can be configured with files or environment variables.
+
+### Config search path
+
+`ruyi` respects `$XDG_CONFIG_HOME` and `$XDG_CONFIG_DIRS` settings, and will
+look up its config accordingly. If these are not explicitly set though, as in
+typical use cases, the default config directory is most likely `~/.config/ruyi`.
+
+### Config file
+
+Currently `ruyi` will look for an optional `config.toml` in its XDG config
+directory. The file, if present, looks like this, with all values being default:
+
+```toml
+[packages]
+# Consider pre-release versions when matching packages in repositories.
+prereleases = false
+```
+
+### Environment variables
+
+Currently the following environment variables are supported by `ruyi`:
+
+* `RUYI_VENV` -- explicitly specifies the Ruyi virtual environment to use.
+
 ## License
 
 Copyright &copy; 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).
