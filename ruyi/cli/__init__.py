@@ -49,11 +49,6 @@ def init_argparse() -> argparse.ArgumentParser:
         default=platform.machine(),
         help="Override the host architecture (normally not needed)",
     )
-    extract.add_argument(
-        "--prerelease",
-        action="store_true",
-        help="Do not ignore pre-release package versions",
-    )
     extract.set_defaults(func=cli_extract)
 
     install = sp.add_parser(
@@ -76,11 +71,6 @@ def init_argparse() -> argparse.ArgumentParser:
         type=str,
         default=platform.machine(),
         help="Override the host architecture (normally not needed)",
-    )
-    install.add_argument(
-        "--prerelease",
-        action="store_true",
-        help="Do not ignore pre-release package versions",
     )
     install.add_argument(
         "--reinstall",
