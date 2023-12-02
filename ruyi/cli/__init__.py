@@ -32,7 +32,11 @@ def init_argparse() -> argparse.ArgumentParser:
         prog=RUYI_ENTRYPOINT_NAME,
         description="RuyiSDK Package Manager",
     )
-    sp = root.add_subparsers(required=True)
+
+    sp = root.add_subparsers(
+        required=True,
+        title="subcommands",
+    )
 
     extract = sp.add_parser(
         "extract",
