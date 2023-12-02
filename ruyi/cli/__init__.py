@@ -155,7 +155,9 @@ def init_argparse() -> argparse.ArgumentParser:
         help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
     )
     admin.set_defaults(func=lambda _: admin.print_help())
-    adminsp = admin.add_subparsers()
+    adminsp = admin.add_subparsers(
+        title="subcommands",
+    )
 
     admin_manifest = adminsp.add_parser(
         "manifest",
@@ -175,7 +177,9 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Manage this Ruyi installation",
     )
     self.set_defaults(func=lambda _: self.print_help())
-    selfsp = self.add_subparsers()
+    selfsp = self.add_subparsers(
+        title="subcommands",
+    )
 
     self_uninstall = selfsp.add_parser(
         "uninstall",
