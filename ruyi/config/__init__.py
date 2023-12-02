@@ -38,10 +38,12 @@ class GlobalConfig:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
+    @property
+    def cache_root(self) -> str:
+        return os.path.join(BaseDirectory.xdg_cache_home, self.resource_name)
+
     def get_repo_dir(self) -> str:
-        return self.override_repo_dir or os.path.join(
-            self.ensure_cache_dir(), "packages-index"
-        )
+        return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")
 
     def get_repo_url(self) -> str:
         return self.override_repo_url or DEFAULT_REPO_URL
@@ -55,7 +57,7 @@ class GlobalConfig:
         return str(path)
 
     def global_binary_install_root(self, host: str, slug: str) -> str:
-        path = pathlib.Path(self.ensure_cache_dir()) / "binaries" / host / slug
+        path = pathlib.Path(self.cache_root) / "binaries" / host / slug
         return str(path)
 
     @classmethod
