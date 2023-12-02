@@ -27,6 +27,7 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update import cli_update
     from .self_cli import cli_self_uninstall
+    from .version_cli import cli_version
 
     root = argparse.ArgumentParser(
         prog=RUYI_ENTRYPOINT_NAME,
@@ -182,7 +183,16 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     self_uninstall.set_defaults(func=cli_self_uninstall)
 
+    # Version info
+    # Keep this at the bottom
+    version = sp.add_parser(
+        "version",
+        help="Print version information",
+    )
+    version.set_defaults(func=cli_version)
+
     return root
+
 
 
 def main(argv: List[str]) -> int:
