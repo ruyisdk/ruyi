@@ -7,6 +7,18 @@ from .. import config
 from .. import log
 from . import user_input
 
+UNINSTALL_NOTICE = """
+[bold]Thanks for hacking with [yellow]Ruyi[/yellow]![/bold]
+
+This will uninstall [yellow]Ruyi[/yellow] from your system, and optionally remove
+all installed packages and [yellow]Ruyi[/yellow]-managed repository data if the
+[green]--purge[/green] switch is given on the command line.
+
+Note that your [yellow]Ruyi[/yellow] virtual environments [bold]will become unusable[/bold] after
+[yellow]Ruyi[/yellow] is uninstalled. You should take care of migrating or cleaning
+them yourselves afterwards.
+"""
+
 
 def cli_self_uninstall(args: argparse.Namespace) -> int:
     purge: bool = args.purge
@@ -20,6 +32,7 @@ def cli_self_uninstall(args: argparse.Namespace) -> int:
         return 1
 
     if not consent:
+        log.stdout(UNINSTALL_NOTICE)
         if not user_input.ask_for_yesno_confirmation("Continue?"):
             log.I("aborting uninstallation")
             return 0
