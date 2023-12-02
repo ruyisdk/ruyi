@@ -9,7 +9,7 @@ from . import is_debug
 
 
 def log_time_formatter(x: datetime.datetime) -> Text:
-    return Text(f"debug: [{x.astimezone().isoformat()}]")
+    return Text(f"debug: [{x.isoformat()}]")
 
 
 STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False)
