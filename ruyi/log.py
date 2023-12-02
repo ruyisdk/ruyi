@@ -1,13 +1,19 @@
+import datetime
 from typing import Any, IO, Optional
 import sys
 
 from rich.console import Console
+from rich.text import Text
 
 from . import is_debug
 
 
+def log_time_formatter(x: datetime.datetime) -> Text:
+    return Text(f"debug: [{x.astimezone().isoformat()}]")
+
+
 STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False)
-DEBUG_CONSOLE = Console(file=sys.stderr)
+DEBUG_CONSOLE = Console(file=sys.stderr, log_time_format=log_time_formatter)
 LOG_CONSOLE = Console(file=sys.stderr, highlight=False)
 
 
@@ -29,8 +35,8 @@ def D(
     if not is_debug():
         return
 
-    return DEBUG_CONSOLE.print(
-        f"[cyan]debug:[/cyan] {message}",
+    return DEBUG_CONSOLE.log(
+        message,
         *objects,
         sep=sep,
         end=end,
