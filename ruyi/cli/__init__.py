@@ -26,6 +26,7 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update import cli_update
+    from .self_cli import cli_self_uninstall
 
     root = argparse.ArgumentParser(
         prog=RUYI_ENTRYPOINT_NAME,
@@ -152,6 +153,30 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Path to the distfile(s) to generate manifest for",
     )
     admin_manifest.set_defaults(func=cli_admin_manifest)
+
+    # Self-management commands
+    self = sp.add_parser(
+        "self",
+        help="Manage this Ruyi installation",
+    )
+    selfsp = self.add_subparsers(required=True)
+
+    self_uninstall = selfsp.add_parser(
+        "uninstall",
+        help="Uninstall Ruyi",
+    )
+    self_uninstall.add_argument(
+        "--purge",
+        action="store_true",
+        help="Remove all installed packages and Ruyi-managed remote repo data",
+    )
+    self_uninstall.add_argument(
+        "-y",
+        action="store_true",
+        dest="consent",
+        help="Give consent for uninstallation on CLI; do not ask for confirmation",
+    )
+    self_uninstall.set_defaults(func=cli_self_uninstall)
 
     return root
 

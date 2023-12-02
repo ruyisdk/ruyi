@@ -20,6 +20,7 @@ if __name__ == "__main__":
     # work if it's just `ruyi` so we have to check our parent process in that case
     if hasattr(ruyi, "__compiled__"):
         self_exe = get_nuitka_self_exe()
+        ruyi.IS_PACKAGED = True
     else:
         self_exe = __file__
 

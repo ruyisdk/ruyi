@@ -20,3 +20,7 @@ def self_exe() -> str:
 def record_self_exe(x: str) -> None:
     global _self_exe
     _self_exe = x
+
+
+# This is true if we're packaged
+IS_PACKAGED = False
