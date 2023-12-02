@@ -35,6 +35,15 @@ def init_argparse() -> argparse.ArgumentParser:
     )
     root.set_defaults(func=lambda _: root.print_help())
 
+    root.add_argument(
+        "-V",
+        "--version",
+        action="store_const",
+        dest="func",
+        const=cli_version,
+        help="Print version information",
+    )
+
     sp = root.add_subparsers(
         title="subcommands",
     )
