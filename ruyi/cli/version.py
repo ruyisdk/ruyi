@@ -7,15 +7,6 @@ import semver
 from .. import log
 
 
-def cli_version(args: argparse.Namespace) -> int:
-    pkg_pypi_ver = packaging.version.Version(importlib.metadata.version("ruyi"))
-    log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
-    recovered_semver = convert2semver(pkg_pypi_ver)
-    print(f"Ruyi {str(recovered_semver)}")
-
-    return 0
-
-
 PYPI_PRERELEASE_KINDS_MAP = {
     "a": "alpha",
     "b": "beta",
@@ -37,3 +28,18 @@ def convert2semver(ver: packaging.version.Version) -> semver.Version:
         pre = f"{PYPI_PRERELEASE_KINDS_MAP.get(kind, kind)}.{val}"
 
     return semver.Version(*ver.release, prerelease=pre, build=ver.dev)
+
+
+def init_pkg_semver() -> semver.Version:
+    pkg_pypi_ver = packaging.version.Version(importlib.metadata.version("ruyi"))
+    log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
+    return convert2semver(pkg_pypi_ver)
+
+
+RUYI_SEMVER = init_pkg_semver()
+
+
+def cli_version(_: argparse.Namespace) -> int:
+    print(f"Ruyi {RUYI_SEMVER}")
+
+    return 0

@@ -27,11 +27,11 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update import cli_update
     from .self_cli import cli_self_uninstall
-    from .version_cli import cli_version
+    from .version import RUYI_SEMVER, cli_version
 
     root = argparse.ArgumentParser(
         prog=RUYI_ENTRYPOINT_NAME,
-        description="RuyiSDK Package Manager",
+        description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
     )
     root.set_defaults(func=lambda _: root.print_help())
 
