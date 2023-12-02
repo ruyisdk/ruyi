@@ -39,7 +39,15 @@ def init_pkg_semver() -> semver.Version:
 RUYI_SEMVER = init_pkg_semver()
 
 
+COPYRIGHT_NOTICE = """\
+Copyright (C) 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).
+All rights reserved.
+License: Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0>\
+"""
+
+
 def cli_version(_: argparse.Namespace) -> int:
     print(f"Ruyi {RUYI_SEMVER}")
+    log.stdout(COPYRIGHT_NOTICE)
 
     return 0
