@@ -33,9 +33,9 @@ def init_argparse() -> argparse.ArgumentParser:
         prog=RUYI_ENTRYPOINT_NAME,
         description="RuyiSDK Package Manager",
     )
+    root.set_defaults(func=lambda _: root.print_help())
 
     sp = root.add_subparsers(
-        required=True,
         title="subcommands",
     )
 
@@ -145,7 +145,8 @@ def init_argparse() -> argparse.ArgumentParser:
         # help=argparse.SUPPRESS,
         help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
     )
-    adminsp = admin.add_subparsers(required=True)
+    admin.set_defaults(func=lambda _: admin.print_help())
+    adminsp = admin.add_subparsers()
 
     admin_manifest = adminsp.add_parser(
         "manifest",
@@ -164,7 +165,8 @@ def init_argparse() -> argparse.ArgumentParser:
         "self",
         help="Manage this Ruyi installation",
     )
-    selfsp = self.add_subparsers(required=True)
+    self.set_defaults(func=lambda _: self.print_help())
+    selfsp = self.add_subparsers()
 
     self_uninstall = selfsp.add_parser(
         "uninstall",
@@ -192,7 +194,6 @@ def init_argparse() -> argparse.ArgumentParser:
     version.set_defaults(func=cli_version)
 
     return root
-
 
 
 def main(argv: List[str]) -> int:
