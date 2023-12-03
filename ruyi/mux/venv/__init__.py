@@ -127,7 +127,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         render_template_str(
             "prompt.venv-created.txt",
             {
-                "sysroot": dest.resolve() / "sysroot",
+                "sysroot": maker.sysroot_destdir,
             },
         )
     )

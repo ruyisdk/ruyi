@@ -80,23 +80,28 @@ class VenvMaker:
         self.emulator_root = emulator_root
         self.override_name = override_name
 
+        self.sysroot_destdir = (
+            pathlib.Path(self.dest) / "sysroot"
+            if self.sysroot_srcdir is not None
+            else None
+        )
+
     def provision(self) -> None:
         venv_root = pathlib.Path(self.dest)
         venv_root.mkdir()
 
-        sysroot_destdir: PathLike | None = None
         if self.sysroot_srcdir is not None:
-            sysroot_destdir = venv_root / "sysroot"
+            assert self.sysroot_destdir is not None
             shutil.copytree(
                 self.sysroot_srcdir,
-                sysroot_destdir,
+                self.sysroot_destdir,
                 symlinks=True,
                 ignore_dangling_symlinks=True,
             )
 
         env_data = {
             "profile": self.profile.name,
-            "sysroot": sysroot_destdir,
+            "sysroot": self.sysroot_destdir,
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 
@@ -162,7 +167,7 @@ class VenvMaker:
             "cc": cc_path,
             "cxx": cxx_path,
             "processor": self.profile.arch,
-            "sysroot": sysroot_destdir,
+            "sysroot": self.sysroot_destdir,
             "venv_root": venv_root,
             "cmake_toolchain_file": str(cmake_toolchain_file_path),
             "meson_additional_binaries": meson_additional_binaries,
@@ -185,7 +190,7 @@ class VenvMaker:
                     p,
                     self.emulator_root,
                     self.profile,
-                    sysroot_destdir,
+                    self.sysroot_destdir,
                 )
                 for p in self.emulator_progs
             ]
