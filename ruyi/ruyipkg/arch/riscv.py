@@ -27,15 +27,6 @@ class RISCVProfileDeclType(ProfileDeclType):
 # dict[flavor, dict[generic-mcpu-name, flavor-mcpu-name]]
 FlavorMCPUMap = dict[str, dict[str, str]]
 
-# "emulator_presets": {
-#    "generic": {
-#      "qemu-linux-user": {
-#        "env": {
-#          "QEMU_CPU": "rv64"
-#        }
-#      }
-#    },
-
 
 class RISCVEmulatorPresetForFlavor(TypedDict):
     env: dict[str, str]
