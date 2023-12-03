@@ -64,6 +64,8 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     if len(argv) > 1:
         new_argv.extend(argv[1:])
 
+    ensure_venv_in_path(vcfg)
+
     log.D(f"exec-ing with argv {new_argv}")
     return os.execv(binpath, new_argv)
 
@@ -101,3 +103,19 @@ def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
 
     log.D(f"exec-ing with argv {new_argv}")
     return os.execv(binpath, new_argv)
+
+
+def ensure_venv_in_path(vcfg: RuyiVenvConfig) -> None:
+    venv_root = vcfg.venv_root()
+    assert venv_root is not None
+    venv_bindir = venv_root / "bin"
+    venv_bindir = venv_bindir.resolve()
+
+    orig_path = os.environ.get("PATH", "")
+    for p in orig_path.split(":"):
+        if os.path.samefile(p, venv_bindir):
+            # TODO: what if our bindir actually comes after the system ones?
+            return
+
+    # we're not in PATH, so prepend the bindir to PATH
+    os.environ["PATH"] = f"{venv_bindir}:{orig_path}" if orig_path else str(venv_bindir)
