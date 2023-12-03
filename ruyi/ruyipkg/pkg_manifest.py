@@ -1,3 +1,4 @@
+import os
 import platform
 import re
 from typing import Iterable, Literal, NotRequired, TypedDict
@@ -174,6 +175,30 @@ class ToolchainDecl:
         return self._data.get("included_sysroot")
 
 
+class EmulatorProgDecl:
+    def __init__(self, data: EmulatorProgramDeclType) -> None:
+        self.relative_path = data["path"]
+        self.flavor = data["flavor"]
+        self.supported_arches = set(data["supported_arches"])
+        self.binfmt_misc = data.get("binfmt_misc")
+
+    def get_binfmt_misc_str(self, install_root: os.PathLike) -> str | None:
+        if self.binfmt_misc is None:
+            return None
+        binpath = os.path.join(install_root, self.relative_path)
+        return self.binfmt_misc.replace("$BIN", binpath)
+
+
+class EmulatorDecl:
+    def __init__(self, data: EmulatorDeclType) -> None:
+        self.programs = [EmulatorProgDecl(x) for x in data["programs"]]
+
+    def list_for_arch(self, arch: str) -> Iterable[EmulatorProgDecl]:
+        for p in self.programs:
+            if arch in p.supported_arches:
+                yield p
+
+
 class PackageManifest:
     def __init__(
         self,
@@ -251,6 +276,14 @@ class PackageManifest:
         if "toolchain" not in self._data:
             return None
         return ToolchainDecl(self._data["toolchain"])
+
+    @property
+    def emulator_metadata(self) -> EmulatorDecl | None:
+        if not self.has_kind("emulator"):
+            return None
+        if "emulator" not in self._data:
+            return None
+        return EmulatorDecl(self._data["emulator"])
 
 
 RUYI_DATESTAMP_IN_SEMVER_RE = re.compile(r"^ruyi\.\d+$")
