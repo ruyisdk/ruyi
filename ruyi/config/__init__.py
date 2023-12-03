@@ -1,7 +1,7 @@
 import os.path
 import pathlib
 import tomllib
-from typing import Any, NotRequired, Self, TypedDict
+from typing import Any, Iterable, NotRequired, Self, TypedDict
 
 from xdg import BaseDirectory
 
@@ -25,16 +25,14 @@ class GlobalConfigRootType(TypedDict):
 class GlobalConfig:
     resource_name = "ruyi"
 
-    def __init__(self, config_data: GlobalConfigRootType | None = None) -> None:
+    def __init__(self) -> None:
         # all defaults
         self.override_repo_dir: str | None = None
         self.override_repo_url: str | None = None
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
 
-        if config_data is None:
-            return
-
+    def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
@@ -92,16 +90,32 @@ class GlobalConfig:
         return os.path.join(config_dir, "config.toml")
 
     @classmethod
+    def iter_xdg_configs(cls) -> Iterable[os.PathLike]:
+        """
+        Yields possible Ruyi config files in all XDG config paths, sorted by precedence
+        from lowest to highest (so that each file may be simply applied consecutively).
+        """
+
+        all_config_dirs = list(BaseDirectory.load_config_paths(cls.resource_name))
+        for config_dir in reversed(all_config_dirs):
+            yield pathlib.Path(config_dir) / "config.toml"
+
+    @classmethod
     def load_from_config(cls) -> Self:
-        config_path = cls.get_config_file()
-        if config_path is None:
-            return cls()
+        obj = cls()
 
-        with open(config_path, "rb") as fp:
-            data: Any = tomllib.load(fp)
+        for config_path in cls.iter_xdg_configs():
+            log.D(f"trying config file: {config_path}")
+            try:
+                with open(config_path, "rb") as fp:
+                    data: Any = tomllib.load(fp)
+            except FileNotFoundError:
+                continue
 
-        log.D(f"config data: {data}")
-        return cls(data)
+            log.D(f"applying config: {data}")
+            obj.apply_config(data)
+
+        return obj
 
 
 class VenvConfigType(TypedDict):
