@@ -8,7 +8,7 @@ image_tag_base() {
             echo "ruyi-python-dist:20231125"
             ;;
         arm64)
-            echo "ruyi-pythin-dist:20231201"
+            echo "ruyi-python-dist:20231201"
             ;;
         riscv64)
             echo "ruyi-python-dist:20231125"
