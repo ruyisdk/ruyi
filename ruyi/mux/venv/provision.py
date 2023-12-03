@@ -114,6 +114,13 @@ class VenvMaker:
         toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
         symlink_binaries(toolchain_bindir, bindir)
 
+        make_llvm_tool_aliases(
+            bindir,
+            self.target_tuple,
+            self.binutils_flavor == "llvm",
+            self.toolchain_flavor == "clang",
+        )
+
         template_data = {
             "RUYI_VENV": str(self.dest),
             "RUYI_VENV_NAME": self.override_name,
@@ -209,6 +216,7 @@ class VenvMaker:
 
         # provide initial cached configuration to venv
         initial_cache_data = {
+            "target_tuple": self.target_tuple,
             "toolchain_bindir": str(toolchain_bindir),
             "profile_common_flags": self.profile.get_common_flags(),
             "qemu_bin": qemu_bin,
@@ -239,6 +247,59 @@ def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:
         dest_path = dest_binpath / filename
         log.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
         os.symlink(self_exe_path, dest_path)
+
+
+LLVM_BINUTILS_ALIASES = {
+    "addr2line": "llvm-addr2line",
+    "ar": "llvm-ar",
+    "as": "llvm-as",
+    "c++filt": "llvm-cxxfilt",
+    "gcc-ar": "llvm-ar",
+    "gcc-nm": "llvm-nm",
+    "gcc-ranlib": "llvm-ranlib",
+    # 'gcov': 'llvm-cov',  # I'm not sure if this is correct
+    "ld": "ld.lld",
+    "nm": "llvm-nm",
+    "objcopy": "llvm-objcopy",
+    "objdump": "llvm-objdump",
+    "ranlib": "llvm-ranlib",
+    "readelf": "llvm-readelf",
+    "size": "llvm-size",
+    "strings": "llvm-strings",
+    "strip": "llvm-strip",
+}
+
+CLANG_GCC_ALIASES = {
+    "c++": "clang++",
+    "cc": "clang",
+    "cpp": "clang-cpp",
+    "g++": "clang++",
+    "gcc": "clang",
+}
+
+
+def make_llvm_tool_aliases(
+    dest_bindir: PathLike,
+    target_tuple: str,
+    do_binutils: bool,
+    do_clang: bool,
+) -> None:
+    if do_binutils:
+        make_compat_symlinks(dest_bindir, target_tuple, LLVM_BINUTILS_ALIASES)
+    if do_clang:
+        make_compat_symlinks(dest_bindir, target_tuple, CLANG_GCC_ALIASES)
+
+
+def make_compat_symlinks(
+    dest_bindir: PathLike,
+    target_tuple: str,
+    aliases: dict[str, str],
+) -> None:
+    destdir = pathlib.Path(dest_bindir)
+    for compat_basename, symlink_target in aliases.items():
+        compat_name = f"{target_tuple}-{compat_basename}"
+        log.D(f"making compat symlink: {compat_name} -> {symlink_target}")
+        os.symlink(symlink_target, destdir / compat_name)
 
 
 def is_executable(p: PathLike) -> bool:

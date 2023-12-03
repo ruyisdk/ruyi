@@ -11,6 +11,23 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     basename = os.path.basename(argv[0])
     log.D(f"mux mode: argv = {argv}, basename = {basename}")
 
+    direct_symlink_target: str | None = None
+    try:
+        direct_symlink_target = os.readlink(argv[0])
+    except OSError:
+        # argv[0] is not a symlink
+        pass
+
+    if direct_symlink_target is not None and os.pathsep in direct_symlink_target:
+        # we're not designed to handle such indirections
+        direct_symlink_target = None
+
+    if direct_symlink_target is not None:
+        log.D(
+            f"detected indirect symlink target: {direct_symlink_target}, overriding basename"
+        )
+        basename = direct_symlink_target
+
     vcfg = RuyiVenvConfig.load_from_venv()
     if vcfg is None:
         log.F("the Ruyi toolchain mux is not configured")
@@ -27,7 +44,14 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     argv_to_insert: list[str] | None = None
     if is_proxying_to_cc(basename):
         log.D(f"{basename} is considered a CC")
-        argv_to_insert = shlex.split(vcfg.profile_common_flags)
+
+        argv_to_insert = []
+
+        if is_proxying_to_clang(basename):
+            log.D("adding target for clang: {vcfg.target_tuple}")
+            argv_to_insert.append(f"--target={vcfg.target_tuple}")
+
+        argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
         log.D(f"parsed profile flags: {argv_to_insert}")
 
         if vcfg.sysroot is not None:
@@ -52,6 +76,10 @@ CC_ARGV0_RE = re.compile(
 
 def is_proxying_to_cc(argv0: str) -> bool:
     return CC_ARGV0_RE.search(argv0) is not None
+
+
+def is_proxying_to_clang(basename: str) -> bool:
+    return "clang" in basename
 
 
 def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
