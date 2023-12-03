@@ -50,7 +50,9 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
 
 
 def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -> None:
+    log.D(f"rendering template '{template_name}' with data {data}")
     content = render_template_str(template_name, data).encode("utf-8")
+    log.D(f"writing {dest}")
     with open(dest, "wb") as fp:
         fp.write(content)
 
