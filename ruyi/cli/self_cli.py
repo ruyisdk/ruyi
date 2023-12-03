@@ -49,7 +49,12 @@ def cli_self_uninstall(args: argparse.Namespace) -> int:
         shutil.rmtree(cfg.cache_root, True)
 
     log.I("removing the ruyi binary")
-    os.unlink(ruyi.self_exe())
+    try:
+        os.unlink(ruyi.self_exe())
+    except FileNotFoundError:
+        # we might have already removed ourselves during the purge; nothing to
+        # do now.
+        pass
 
     log.I("[yellow]ruyi[/yellow] is uninstalled")
 
