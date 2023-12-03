@@ -42,6 +42,10 @@ class GlobalConfig:
     def cache_root(self) -> str:
         return os.path.join(BaseDirectory.xdg_cache_home, self.resource_name)
 
+    @property
+    def data_root(self) -> str:
+        return os.path.join(BaseDirectory.xdg_data_home, self.resource_name)
+
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")
 
@@ -57,17 +61,19 @@ class GlobalConfig:
         return str(path)
 
     def global_binary_install_root(self, host: str, slug: str) -> str:
-        path = pathlib.Path(self.cache_root) / "binaries" / host / slug
+        path = pathlib.Path(self.ensure_data_dir()) / "binaries" / host / slug
         return str(path)
+
+    def lookup_binary_install_dir(self, host: str, slug: str) -> str | None:
+        for data_dir in BaseDirectory.load_data_paths(self.resource_name):
+            p = pathlib.Path(data_dir) / "binaries" / host / slug
+            if p.exists():
+                return str(p)
+        return None
 
     @classmethod
     def ensure_data_dir(cls) -> str:
         return BaseDirectory.save_data_path(cls.resource_name)
-
-    @classmethod
-    def get_first_data_dir(cls) -> str | None:
-        for p in BaseDirectory.load_data_paths(cls.resource_name):
-            return p
 
     @classmethod
     def ensure_config_dir(cls) -> str:

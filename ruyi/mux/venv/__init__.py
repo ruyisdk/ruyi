@@ -47,10 +47,13 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F(f"the package is not a toolchain")
         return 1
 
-    toolchain_root = config.global_binary_install_root(
+    toolchain_root = config.lookup_binary_install_dir(
         platform.machine(),  # TODO
         tc_pm.name_for_installation,
     )
+    if toolchain_root is None:
+        log.F("cannot find the installed directory for toolchain")
+        return 1
 
     tc_sysroot_dir: pathlib.Path | None = None
     if with_sysroot:

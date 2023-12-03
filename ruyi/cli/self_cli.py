@@ -40,8 +40,12 @@ def cli_self_uninstall(args: argparse.Namespace) -> int:
         log.I("uninstallation consent given over CLI, proceeding")
 
     if purge:
-        log.I("removing the Ruyi cache")
         cfg = config.GlobalConfig.load_from_config()
+
+        log.I("removing installed packages")
+        shutil.rmtree(cfg.data_root, True)
+
+        log.I("removing cached data")
         shutil.rmtree(cfg.cache_root, True)
 
     log.I("removing the ruyi binary")
