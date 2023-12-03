@@ -17,6 +17,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     override_name: str | None = args.name
     tc_atom_str: str | None = args.toolchain
     emu_atom_str: str | None = args.emulator
+    sysroot_atom_str: str | None = args.sysroot_from
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache
@@ -56,15 +57,29 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F("cannot find the installed directory for the toolchain")
         return 1
 
-    tc_sysroot_dir: pathlib.Path | None = None
+    tc_sysroot_dir: PathLike | None = None
     if with_sysroot:
         tc_sysroot_relpath = tc_pm.toolchain_metadata.included_sysroot
-        if tc_sysroot_relpath is None:
-            log.F(
-                f"sysroot is requested but the toolchain package does not include one"
+        if tc_sysroot_relpath is not None:
+            tc_sysroot_dir = pathlib.Path(toolchain_root) / tc_sysroot_relpath
+        else:
+            if sysroot_atom_str is None:
+                log.F(
+                    f"sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/yellow] is not given"
+                )
+                return 1
+
+            # try extracting from the sysroot package
+            # for now only toolchain packages can provide sysroots, so this is
+            # okay
+            tc_sysroot_dir = get_sysroot_dir_from_toolchain_atom(
+                config, mr, sysroot_atom_str
             )
-            return 1
-        tc_sysroot_dir = pathlib.Path(toolchain_root) / tc_sysroot_relpath
+            if tc_sysroot_dir is None:
+                log.F(
+                    f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/yellow] does not contain one"
+                )
+                return 1
 
     target_arch = tc_pm.toolchain_metadata.target_arch
 
@@ -133,3 +148,34 @@ def cli_venv(args: argparse.Namespace) -> int:
     )
 
     return 0
+
+
+# TODO: hopefully deduplicate further with the code above...
+def get_sysroot_dir_from_toolchain_atom(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom_str: str,
+) -> PathLike | None:
+    atom = Atom.parse(atom_str)
+    tc_pm = atom.match_in_repo(mr, config.include_prereleases)
+    if tc_pm is None:
+        log.F(f"cannot match a toolchain package with [yellow]{atom_str}[/yellow]")
+        return None
+
+    if tc_pm.toolchain_metadata is None:
+        log.F(f"the package [yellow]{atom_str}[/yellow] is not a toolchain")
+        return None
+
+    toolchain_root = config.lookup_binary_install_dir(
+        platform.machine(),  # TODO
+        tc_pm.name_for_installation,
+    )
+    if toolchain_root is None:
+        log.F("cannot find the installed directory for the toolchain")
+        return None
+
+    tc_sysroot_relpath = tc_pm.toolchain_metadata.included_sysroot
+    if tc_sysroot_relpath is None:
+        return None
+
+    return pathlib.Path(toolchain_root) / tc_sysroot_relpath
