@@ -1,6 +1,6 @@
 import platform
 import re
-from typing import Iterable, NotRequired, TypedDict
+from typing import Iterable, Literal, NotRequired, TypedDict
 
 from semver.version import Version
 
@@ -41,6 +41,20 @@ class ToolchainDeclType(TypedDict):
     included_sysroot: NotRequired[str]
 
 
+EmulatorFlavor = Literal["qemu-linux-user"]
+
+
+class EmulatorProgramDeclType(TypedDict):
+    path: str
+    flavor: EmulatorFlavor
+    supported_arches: list[str]
+    binfmt_misc: NotRequired[str]
+
+
+class EmulatorDeclType(TypedDict):
+    programs: list[EmulatorProgramDeclType]
+
+
 class PackageManifestType(TypedDict):
     slug: NotRequired[str]
     kind: list[str]
@@ -51,6 +65,7 @@ class PackageManifestType(TypedDict):
     binary: NotRequired[BinaryDeclType]
     source: NotRequired[SourceDeclType]
     toolchain: NotRequired[ToolchainDeclType]
+    emulator: NotRequired[EmulatorDeclType]
 
 
 class DistfileDecl:
