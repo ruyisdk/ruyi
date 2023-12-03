@@ -55,9 +55,14 @@ class EmulatorDeclType(TypedDict):
     programs: list[EmulatorProgramDeclType]
 
 
+PackageKind = (
+    Literal["binary"] | Literal["source"] | Literal["toolchain"] | Literal["emulator"]
+)
+
+
 class PackageManifestType(TypedDict):
     slug: NotRequired[str]
-    kind: list[str]
+    kind: list[PackageKind]
     desc: str
     doc_uri: NotRequired[str]
     vendor: VendorDeclType
@@ -200,10 +205,10 @@ class PackageManifest:
         return f"{self.name}-{self.ver}"
 
     @property
-    def kind(self) -> list[str]:
+    def kind(self) -> list[PackageKind]:
         return self._data["kind"]
 
-    def has_kind(self, k: str) -> bool:
+    def has_kind(self, k: PackageKind) -> bool:
         return k in self._data["kind"]
 
     @property
