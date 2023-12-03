@@ -141,6 +141,11 @@ class ToolchainDecl:
         return self._data["target"]
 
     @property
+    def target_arch(self) -> str:
+        # TODO: switch to proper mapping later; for now this suffices
+        return self.target.split("-", 1)[0]
+
+    @property
     def flavors(self) -> list[str]:
         return self._data["flavors"]
 
@@ -178,7 +183,8 @@ class ToolchainDecl:
 class EmulatorProgDecl:
     def __init__(self, data: EmulatorProgramDeclType) -> None:
         self.relative_path = data["path"]
-        self.flavor = data["flavor"]
+        # have to explicitly annotate the type to please the type checker...
+        self.flavor: EmulatorFlavor = data["flavor"]
         self.supported_arches = set(data["supported_arches"])
         self.binfmt_misc = data.get("binfmt_misc")
 

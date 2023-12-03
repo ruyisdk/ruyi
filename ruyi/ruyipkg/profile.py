@@ -1,5 +1,8 @@
 import abc
+from os import PathLike
 from typing import Any, Callable, Iterable, NotRequired, TypedDict
+
+from .pkg_manifest import EmulatorFlavor
 
 
 class ProfileDeclType(TypedDict):
@@ -26,6 +29,19 @@ class ProfileDecl:
     @abc.abstractmethod
     def get_common_flags(self) -> str:
         return ""
+
+    @abc.abstractmethod
+    def get_env_config_for_emu_flavor(
+        self,
+        flavor: EmulatorFlavor,
+        sysroot: PathLike | None,
+    ) -> dict[str, str] | None:
+        result: dict[str, str] = {}
+
+        if flavor == "qemu-linux-user" and sysroot is not None:
+            result["QEMU_LD_PREFIX"] = str(sysroot)
+
+        return result
 
 
 # should have been something like (str, T extends ArchProfilesDeclType) -> Iterable[U extends ProfileDecl]

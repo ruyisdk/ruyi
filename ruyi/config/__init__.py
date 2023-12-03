@@ -1,4 +1,5 @@
 import os.path
+from os import PathLike
 import pathlib
 import tomllib
 from typing import Any, Iterable, NotRequired, Self, TypedDict
@@ -62,11 +63,11 @@ class GlobalConfig:
         path = pathlib.Path(self.ensure_data_dir()) / "binaries" / host / slug
         return str(path)
 
-    def lookup_binary_install_dir(self, host: str, slug: str) -> str | None:
+    def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike | None:
         for data_dir in BaseDirectory.load_data_paths(self.resource_name):
             p = pathlib.Path(data_dir) / "binaries" / host / slug
             if p.exists():
-                return str(p)
+                return p
         return None
 
     @classmethod

@@ -1,0 +1,16 @@
+# binfmt_misc config suitable for this Ruyi virtual environment,
+# in systemd-binfmt config format; see `man binfmt.d` for details.
+# You should register one of the following declaration(s), in a way
+# appropriate for your distribution / service manager / etc.
+{% for prog in resolved_progs %}
+# Emulator {{ prog.display_name }}
+{%- if prog.env %}
+#
+# Note that you also have to provide these environment variables at runtime,
+# in order to achieve correct emulation semantics:
+#
+{% for k, v in prog.env.items() %}# - {{ k }}={{ v | sh }}
+{% endfor %}
+{%- endif -%}
+{{ prog.binfmt_misc_str }}
+{%- endfor %}

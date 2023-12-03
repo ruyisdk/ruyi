@@ -129,7 +129,13 @@ def init_argparse() -> argparse.ArgumentParser:
         "--toolchain",
         "-t",
         type=str,
-        help="Specifier (atom) of the toolchain to use",
+        help="Specifier (atom) of the toolchain package to use",
+    )
+    venv.add_argument(
+        "--emulator",
+        "-e",
+        type=str,
+        help="Specifier (atom) of the emulator package to use",
     )
     venv.add_argument(
         "--with-sysroot",

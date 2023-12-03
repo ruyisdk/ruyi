@@ -1,0 +1,38 @@
+import os
+from typing import Self
+
+from ...ruyipkg.pkg_manifest import EmulatorProgDecl
+from ...ruyipkg.profile import ProfileDecl
+
+
+class ResolvedEmulatorProg:
+    def __init__(
+        self,
+        display_name: str,
+        binfmt_misc_str: str | None,
+        env: dict[str, str] | None,
+    ) -> None:
+        self.display_name = display_name
+        self.binfmt_misc_str = binfmt_misc_str
+        self.env = env
+
+    @classmethod
+    def new(
+        cls,
+        prog: EmulatorProgDecl,
+        prog_install_root: os.PathLike,
+        profile: ProfileDecl,
+        sysroot: os.PathLike | None,
+    ) -> Self:
+        return cls(
+            get_display_name_for_emulator(prog, prog_install_root),
+            prog.get_binfmt_misc_str(prog_install_root),
+            profile.get_env_config_for_emu_flavor(prog.flavor, sysroot),
+        )
+
+
+def get_display_name_for_emulator(
+    prog: EmulatorProgDecl,
+    prog_install_root: os.PathLike,
+) -> str:
+    return f"{os.path.basename(prog.relative_path)} from {prog_install_root}"

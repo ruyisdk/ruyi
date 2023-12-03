@@ -12,8 +12,10 @@ import zlib
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
 from ... import log, self_exe
+from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileDecl
 from .data import TEMPLATES
+from .emulator_cfg import ResolvedEmulatorProg
 
 
 def unpack_payload(x: bytes) -> str:
@@ -57,12 +59,14 @@ class VenvMaker:
     def __init__(
         self,
         profile: ProfileDecl,
-        toolchain_install_root: str,
+        toolchain_install_root: PathLike,
         target_tuple: str,
         toolchain_flavor: str,
         binutils_flavor: str,
         dest: PathLike,
         sysroot_srcdir: PathLike | None,
+        emulator_progs: list[EmulatorProgDecl] | None,
+        emulator_root: PathLike | None,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
@@ -72,13 +76,15 @@ class VenvMaker:
         self.toolchain_flavor = toolchain_flavor
         self.dest = dest
         self.sysroot_srcdir = sysroot_srcdir
+        self.emulator_progs = emulator_progs
+        self.emulator_root = emulator_root
         self.override_name = override_name
 
     def provision(self) -> None:
         venv_root = pathlib.Path(self.dest)
         venv_root.mkdir()
 
-        sysroot_destdir = None
+        sysroot_destdir: PathLike | None = None
         if self.sysroot_srcdir is not None:
             sysroot_destdir = venv_root / "sysroot"
             shutil.copytree(
@@ -172,6 +178,25 @@ class VenvMaker:
             "meson-cross.ini",
             toolchain_file_data,
         )
+
+        if self.emulator_root is not None and self.emulator_progs:
+            resolved_emu_progs = [
+                ResolvedEmulatorProg.new(
+                    p,
+                    self.emulator_root,
+                    self.profile,
+                    sysroot_destdir,
+                )
+                for p in self.emulator_progs
+            ]
+            binfmt_data = {
+                "resolved_progs": resolved_emu_progs,
+            }
+            render_and_write(
+                venv_root / "binfmt.conf",
+                "binfmt.conf",
+                binfmt_data,
+            )
 
 
 def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:
