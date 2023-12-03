@@ -75,7 +75,7 @@ class RISCVProfileDecl(ProfileDecl):
         )
 
     def get_common_flags(self) -> str:
-        if self.mcpu is not None:
+        if self.mcpu:
             return f"-mcpu={self.mcpu} -mabi={self.mabi}"
         return f"-march={self.march} -mabi={self.mabi}"
 
