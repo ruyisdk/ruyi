@@ -3,3 +3,8 @@
 [cached]
 toolchain_bindir = "{{ toolchain_bindir }}"
 profile_common_flags = "{{ profile_common_flags }}"
+{% if qemu_bin %}qemu_bin = "{{ qemu_bin }}"{% endif %}
+{% if profile_emu_env %}
+[cached.profile_emu_env]
+{% for k, v in profile_emu_env.items() %}{{ k }} = "{{ v }}"
+{% endfor %}{% endif %}

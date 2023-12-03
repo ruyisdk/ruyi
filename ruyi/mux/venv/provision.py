@@ -105,21 +105,11 @@ class VenvMaker:
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 
-        toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
-        initial_cache_data = {
-            "toolchain_bindir": str(toolchain_bindir),
-            "profile_common_flags": self.profile.get_common_flags(),
-        }
-        render_and_write(
-            venv_root / "ruyi-cache.toml",
-            "ruyi-cache.toml",
-            initial_cache_data,
-        )
-
         bindir = venv_root / "bin"
         bindir.mkdir()
 
         log.D("symlinking binaries into venv")
+        toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
         symlink_binaries(toolchain_bindir, bindir)
 
         template_data = {
@@ -184,6 +174,8 @@ class VenvMaker:
             toolchain_file_data,
         )
 
+        qemu_bin: PathLike | None = None
+        profile_emu_env: dict[str, str] | None = None
         if self.emulator_root is not None and self.emulator_progs:
             resolved_emu_progs = [
                 ResolvedEmulatorProg.new(
@@ -202,6 +194,29 @@ class VenvMaker:
                 "binfmt.conf",
                 binfmt_data,
             )
+
+            for i, p in enumerate(self.emulator_progs):
+                if not p.is_qemu:
+                    continue
+
+                qemu_bin = pathlib.Path(self.emulator_root) / p.relative_path
+                profile_emu_env = resolved_emu_progs[i].env
+
+                log.D("symlinking the ruyi-qemu wrapper")
+                os.symlink(self_exe(), bindir / "ruyi-qemu")
+
+        # provide initial cached configuration to venv
+        initial_cache_data = {
+            "toolchain_bindir": str(toolchain_bindir),
+            "profile_common_flags": self.profile.get_common_flags(),
+            "qemu_bin": qemu_bin,
+            "profile_emu_env": profile_emu_env,
+        }
+        render_and_write(
+            venv_root / "ruyi-cache.toml",
+            "ruyi-cache.toml",
+            initial_cache_data,
+        )
 
 
 def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:

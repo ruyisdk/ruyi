@@ -1,7 +1,8 @@
 # binfmt_misc config suitable for this Ruyi virtual environment,
 # in systemd-binfmt config format; see `man binfmt.d` for details.
 # You should register one of the following declaration(s), in a way
-# appropriate for your distribution / service manager / etc.
+# appropriate for your distribution / service manager / etc, or invoke
+# the emulator binary yourself via the `ruyi-qemu` wrapper.
 {% for prog in resolved_progs %}
 # Emulator {{ prog.display_name }}
 {%- if prog.env %}

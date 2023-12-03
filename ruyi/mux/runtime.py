@@ -17,6 +17,9 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         log.I("check out `ruyi venv` for making a virtual environment")
         return 1
 
+    if basename == "ruyi-qemu":
+        return mux_qemu_main(argv, vcfg)
+
     binpath = os.path.join(vcfg.toolchain_bindir, basename)
 
     log.D(f"binary to exec: {binpath}")
@@ -49,3 +52,24 @@ CC_ARGV0_RE = re.compile(
 
 def is_proxying_to_cc(argv0: str) -> bool:
     return CC_ARGV0_RE.search(argv0) is not None
+
+
+def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
+    binpath = vcfg.qemu_bin
+    if binpath is None:
+        log.F("this virtual environment has no QEMU-like emulator configured")
+        return 1
+
+    if vcfg.profile_emu_env is not None:
+        log.D(f"seeding QEMU environment with {vcfg.profile_emu_env}")
+        for k, v in vcfg.profile_emu_env.items():
+            os.environ[k] = v
+
+    log.D(f"QEMU binary to exec: {binpath}")
+
+    new_argv = [binpath]
+    if len(argv) > 1:
+        new_argv.extend(argv[1:])
+
+    log.D(f"exec-ing with argv {new_argv}")
+    return os.execv(binpath, new_argv)

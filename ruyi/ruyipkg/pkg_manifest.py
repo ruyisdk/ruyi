@@ -194,6 +194,10 @@ class EmulatorProgDecl:
         binpath = os.path.join(install_root, self.relative_path)
         return self.binfmt_misc.replace("$BIN", binpath)
 
+    @property
+    def is_qemu(self) -> bool:
+        return self.flavor == "qemu-linux-user"
+
 
 class EmulatorDecl:
     def __init__(self, data: EmulatorDeclType) -> None:
