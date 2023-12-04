@@ -162,7 +162,14 @@ class RuyiVenvConfig:
             return pathlib.Path(explicit_root)
 
         # check ../.. from argv[0]
-        implied_root = pathlib.Path(os.path.dirname(os.path.dirname(argv0())))
+        # this only works if it contains a path separator, otherwise it's really
+        # hard without an explicit root (/proc/*/exe points to the resolved file,
+        # but we want the path to the first symlink without any symlink dereference)
+        argv0_path = argv0()
+        if os.path.sep not in argv0_path:
+            return None
+
+        implied_root = pathlib.Path(os.path.dirname(os.path.dirname(argv0_path)))
         if (implied_root / "ruyi-venv.toml").exists():
             return implied_root
 
