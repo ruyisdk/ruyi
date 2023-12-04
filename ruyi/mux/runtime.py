@@ -18,7 +18,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         # argv[0] is not a symlink
         pass
 
-    if direct_symlink_target is not None and os.pathsep in direct_symlink_target:
+    if direct_symlink_target is not None and os.path.sep in direct_symlink_target:
         # we're not designed to handle such indirections
         direct_symlink_target = None
 
@@ -112,7 +112,7 @@ def ensure_venv_in_path(vcfg: RuyiVenvConfig) -> None:
     venv_bindir = venv_bindir.resolve()
 
     orig_path = os.environ.get("PATH", "")
-    for p in orig_path.split(":"):
+    for p in orig_path.split(os.pathsep):
         if os.path.samefile(p, venv_bindir):
             # TODO: what if our bindir actually comes after the system ones?
             return
