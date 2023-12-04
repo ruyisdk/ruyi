@@ -49,6 +49,8 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
         return 1
 
+    target_tuple = tc_pm.toolchain_metadata.target
+
     toolchain_root = config.lookup_binary_install_dir(
         platform.machine(),  # TODO
         tc_pm.name_for_installation,
@@ -57,6 +59,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F("cannot find the installed directory for the toolchain")
         return 1
 
+    gcc_install_dir: PathLike | None = None
     tc_sysroot_dir: PathLike | None = None
     if with_sysroot:
         tc_sysroot_relpath = tc_pm.toolchain_metadata.included_sysroot
@@ -70,14 +73,52 @@ def cli_venv(args: argparse.Namespace) -> int:
                 return 1
 
             # try extracting from the sysroot package
-            # for now only toolchain packages can provide sysroots, so this is
+            # for now only GCC toolchain packages can provide sysroots, so this is
             # okay
-            tc_sysroot_dir = get_sysroot_dir_from_toolchain_atom(
-                config, mr, sysroot_atom_str
+            gcc_pkg_atom = Atom.parse(sysroot_atom_str)
+            gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
+            if gcc_pkg_pm is None:
+                log.F(
+                    f"cannot match a toolchain package with [yellow]{sysroot_atom_str}[/yellow]"
+                )
+                return 1
+
+            if gcc_pkg_pm.toolchain_metadata is None:
+                log.F(
+                    f"the package [yellow]{sysroot_atom_str}[/yellow] is not a toolchain"
+                )
+                return 1
+
+            gcc_pkg_root = config.lookup_binary_install_dir(
+                platform.machine(),  # TODO
+                gcc_pkg_pm.name_for_installation,
             )
-            if tc_sysroot_dir is None:
+            if gcc_pkg_root is None:
+                log.F("cannot find the installed directory for the sysroot package")
+                return 1
+
+            tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
+            if tc_sysroot_relpath is None:
                 log.F(
                     f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/yellow] does not contain one"
+                )
+                return 1
+
+            tc_sysroot_dir = pathlib.Path(gcc_pkg_root) / tc_sysroot_relpath
+
+            # also figure the GCC include/libs path out for Clang to be able to
+            # locate them
+            gcc_install_dir = find_gcc_install_dir(
+                gcc_pkg_root,
+                # we should use the GCC-providing package's target tuple as that's
+                # not guaranteed to be the same as llvm's
+                gcc_pkg_pm.toolchain_metadata.target,
+            )
+
+            # for now, require this directory to be present (or clang would barely work)
+            if gcc_install_dir is None:
+                log.F(
+                    "cannot find a GCC include & lib directory in the sysroot package"
                 )
                 return 1
 
@@ -124,7 +165,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     maker = VenvMaker(
         profile,
         toolchain_root,
-        tc_pm.toolchain_metadata.target,
+        target_tuple,
         # assume clang is preferred if package contains clang
         # this is mostly true given most packages don't contain both
         "clang" if tc_pm.toolchain_metadata.has_clang else "gcc",
@@ -132,6 +173,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         "llvm" if tc_pm.toolchain_metadata.has_llvm else "binutils",
         dest.resolve(),
         tc_sysroot_dir,
+        gcc_install_dir,
         emu_progs,
         emu_root,
         override_name,
@@ -150,32 +192,18 @@ def cli_venv(args: argparse.Namespace) -> int:
     return 0
 
 
-# TODO: hopefully deduplicate further with the code above...
-def get_sysroot_dir_from_toolchain_atom(
-    config: GlobalConfig,
-    mr: MetadataRepo,
-    atom_str: str,
+def find_gcc_install_dir(
+    install_root: PathLike,
+    target_tuple: str,
 ) -> PathLike | None:
-    atom = Atom.parse(atom_str)
-    tc_pm = atom.match_in_repo(mr, config.include_prereleases)
-    if tc_pm is None:
-        log.F(f"cannot match a toolchain package with [yellow]{atom_str}[/yellow]")
-        return None
+    # check $PREFIX/lib/gcc/$TARGET/*
+    search_root = pathlib.Path(install_root) / "lib" / "gcc" / target_tuple
+    try:
+        for p in search_root.iterdir():
+            # only want the first one (should be the only one)
+            return p
+    except FileNotFoundError:
+        pass
 
-    if tc_pm.toolchain_metadata is None:
-        log.F(f"the package [yellow]{atom_str}[/yellow] is not a toolchain")
-        return None
-
-    toolchain_root = config.lookup_binary_install_dir(
-        platform.machine(),  # TODO
-        tc_pm.name_for_installation,
-    )
-    if toolchain_root is None:
-        log.F("cannot find the installed directory for the toolchain")
-        return None
-
-    tc_sysroot_relpath = tc_pm.toolchain_metadata.included_sysroot
-    if tc_sysroot_relpath is None:
-        return None
-
-    return pathlib.Path(toolchain_root) / tc_sysroot_relpath
+    # nothing?
+    return None

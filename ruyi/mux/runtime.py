@@ -50,6 +50,9 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         if is_proxying_to_clang(basename):
             log.D(f"adding target for clang: {vcfg.target_tuple}")
             argv_to_insert.append(f"--target={vcfg.target_tuple}")
+            if vcfg.gcc_install_dir is not None:
+                log.D(f"informing clang of GCC install dir: {vcfg.gcc_install_dir}")
+                argv_to_insert.append(f"--gcc-install-dir={vcfg.gcc_install_dir}")
 
         argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
         log.D(f"parsed profile flags: {argv_to_insert}")

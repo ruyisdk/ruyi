@@ -3,6 +3,7 @@
 [cached]
 target_tuple = "{{ target_tuple }}"
 toolchain_bindir = "{{ toolchain_bindir }}"
+{% if gcc_install_dir %}gcc_install_dir = "{{ gcc_install_dir }}"{% endif %}
 profile_common_flags = "{{ profile_common_flags }}"
 {% if qemu_bin %}qemu_bin = "{{ qemu_bin }}"{% endif %}
 {% if profile_emu_env %}

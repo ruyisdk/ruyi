@@ -67,6 +67,7 @@ class VenvMaker:
         binutils_flavor: str,
         dest: PathLike,
         sysroot_srcdir: PathLike | None,
+        gcc_install_dir: PathLike | None,
         emulator_progs: list[EmulatorProgDecl] | None,
         emulator_root: PathLike | None,
         override_name: str | None = None,
@@ -78,6 +79,7 @@ class VenvMaker:
         self.toolchain_flavor = toolchain_flavor
         self.dest = dest
         self.sysroot_srcdir = sysroot_srcdir
+        self.gcc_install_dir = gcc_install_dir
         self.emulator_progs = emulator_progs
         self.emulator_root = emulator_root
         self.override_name = override_name
@@ -218,6 +220,7 @@ class VenvMaker:
         initial_cache_data = {
             "target_tuple": self.target_tuple,
             "toolchain_bindir": str(toolchain_bindir),
+            "gcc_install_dir": str(self.gcc_install_dir),
             "profile_common_flags": self.profile.get_common_flags(),
             "qemu_bin": qemu_bin,
             "profile_emu_env": profile_emu_env,

@@ -131,6 +131,7 @@ class VenvConfigRootType(TypedDict):
 class VenvCacheType(TypedDict):
     target_tuple: str
     toolchain_bindir: str
+    gcc_install_dir: NotRequired[str]
     profile_common_flags: str
     qemu_bin: NotRequired[str]
     profile_emu_env: NotRequired[dict[str, str]]
@@ -146,6 +147,7 @@ class RuyiVenvConfig:
         self.sysroot = cfg["config"].get("sysroot")
         self.target_tuple = cache["cached"]["target_tuple"]
         self.toolchain_bindir = cache["cached"]["toolchain_bindir"]
+        self.gcc_install_dir = cache["cached"].get("gcc_install_dir")
         self.profile_common_flags = cache["cached"]["profile_common_flags"]
         self.qemu_bin = cache["cached"].get("qemu_bin")
         self.profile_emu_env = cache["cached"].get("profile_emu_env")
