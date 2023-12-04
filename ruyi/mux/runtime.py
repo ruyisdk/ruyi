@@ -48,7 +48,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         argv_to_insert = []
 
         if is_proxying_to_clang(basename):
-            log.D("adding target for clang: {vcfg.target_tuple}")
+            log.D(f"adding target for clang: {vcfg.target_tuple}")
             argv_to_insert.append(f"--target={vcfg.target_tuple}")
 
         argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
