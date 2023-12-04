@@ -11,28 +11,18 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     basename = os.path.basename(argv[0])
     log.D(f"mux mode: argv = {argv}, basename = {basename}")
 
-    direct_symlink_target: str | None = None
-    try:
-        direct_symlink_target = os.readlink(argv[0])
-    except OSError:
-        # argv[0] is not a symlink
-        pass
-
-    if direct_symlink_target is not None and os.path.sep in direct_symlink_target:
-        # we're not designed to handle such indirections
-        direct_symlink_target = None
-
-    if direct_symlink_target is not None:
-        log.D(
-            f"detected indirect symlink target: {direct_symlink_target}, overriding basename"
-        )
-        basename = direct_symlink_target
-
     vcfg = RuyiVenvConfig.load_from_venv()
     if vcfg is None:
         log.F("the Ruyi toolchain mux is not configured")
         log.I("check out `ruyi venv` for making a virtual environment")
         return 1
+
+    direct_symlink_target = resolve_direct_symlink_target(argv[0], vcfg)
+    if direct_symlink_target is not None:
+        log.D(
+            f"detected direct symlink target: {direct_symlink_target}, overriding basename"
+        )
+        basename = direct_symlink_target
 
     if basename == "ruyi-qemu":
         return mux_qemu_main(argv, vcfg)
@@ -77,6 +67,32 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 CC_ARGV0_RE = re.compile(
     r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+|clang-cl|clang-cpp)(?:-[0-9.]+)?$"
 )
+
+
+def resolve_direct_symlink_target(argv0: str, vcfg: RuyiVenvConfig) -> str | None:
+    direct_symlink_target = resolve_argv0_symlink(argv0, vcfg)
+    if direct_symlink_target is not None and os.path.sep in direct_symlink_target:
+        # we're not designed to handle such indirections
+        return None
+    return direct_symlink_target
+
+
+def resolve_argv0_symlink(argv0: str, vcfg: RuyiVenvConfig) -> str | None:
+    if os.path.sep in argv0:
+        # argv[0] contains path information that we can just use
+        try:
+            return os.readlink(argv0)
+        except OSError:
+            # argv[0] is not a symlink
+            return None
+
+    # argv[0] is bare command name, in which case we expect venv root to
+    # be available, so we can just check f'{venv_root}/bin/{argv[0]}'.
+    if venv_root := vcfg.venv_root():
+        try:
+            return os.readlink(venv_root / "bin" / argv0)
+        except OSError:
+            return None
 
 
 def is_proxying_to_cc(argv0: str) -> bool:
