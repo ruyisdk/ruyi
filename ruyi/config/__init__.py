@@ -6,7 +6,7 @@ from typing import Any, Iterable, NotRequired, Self, TypedDict
 
 from xdg import BaseDirectory
 
-from .. import log, self_exe
+from .. import log, argv0
 
 
 DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
@@ -159,8 +159,8 @@ class RuyiVenvConfig:
         if explicit_root := cls.explicit_ruyi_venv_root():
             return pathlib.Path(explicit_root)
 
-        # check ../.. from self.exe
-        implied_root = pathlib.Path(os.path.dirname(os.path.dirname(self_exe())))
+        # check ../.. from argv[0]
+        implied_root = pathlib.Path(os.path.dirname(os.path.dirname(argv0())))
         if (implied_root / "ruyi-venv.toml").exists():
             return implied_root
 

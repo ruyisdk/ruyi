@@ -25,6 +25,6 @@ if __name__ == "__main__":
         self_exe = __file__
 
     log.D(f"argv[0] = {sys.argv[0]}, self_exe = {self_exe}")
-    ruyi.record_self_exe(self_exe)
+    ruyi.record_self_exe(sys.argv[0], self_exe)
 
     sys.exit(main(sys.argv))
