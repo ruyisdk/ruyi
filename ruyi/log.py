@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, IO, Optional
+from typing import Any, IO, Iterable, Optional
 import sys
 
 from rich.console import Console
@@ -85,3 +85,17 @@ def W(
         sep=sep,
         end=end,
     )
+
+
+def humanize_list(
+    l: list[str] | set[str],
+    *,
+    sep: str = ", ",
+    item_color: str | None = None,
+    empty_prompt: str = "(none)",
+) -> str:
+    if not l:
+        return empty_prompt
+    if item_color is None:
+        return sep.join(l)
+    return sep.join(f"[{item_color}]{x}[/{item_color}]" for x in l)
