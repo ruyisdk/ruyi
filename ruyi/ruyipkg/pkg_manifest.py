@@ -153,6 +153,10 @@ class ToolchainDecl:
     def has_flavor(self, f: str) -> bool:
         return f in self._data["flavors"]
 
+    def satisfies_flavor_set(self, req: set[str]) -> bool:
+        # req - my_flavors must be the empty set so that my_flavors >= req
+        return len(req.difference(self.flavors)) == 0
+
     @property
     def components(self) -> Iterable[ToolchainComponentDeclType]:
         return self._data["components"]
