@@ -28,7 +28,7 @@ def check_nonessential_binaries() -> None:
     if not absent_cmds:
         return
 
-    cmds_str = ", ".join(f"[yellow]{s}[/yellow]" for s in absent_cmds)
+    cmds_str = log.humanize_list(absent_cmds, item_color="yellow")
     log.W(f"The command(s) {cmds_str} cannot be found in PATH")
     log.I(
         "some features of [yellow]ruyi[/yellow] may depend on those commands; please install them and retry if anything fails due to this"
