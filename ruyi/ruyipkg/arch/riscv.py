@@ -29,6 +29,7 @@ FlavorMCPUMap = dict[str, dict[str, str]]
 
 
 class RISCVEmulatorPresetForFlavor(TypedDict):
+    need_flavor: NotRequired[list[str]]
     env: dict[str, str]
 
 
@@ -78,6 +79,27 @@ class RISCVProfileDecl(ProfileDecl):
         if self.mcpu:
             return f"-mcpu={self.mcpu} -mabi={self.mabi}"
         return f"-march={self.march} -mabi={self.mabi}"
+
+    def get_needed_emulator_pkg_flavors(self, flavor: EmulatorFlavor) -> set[str]:
+        if self.emulator_cfg is None:
+            return set()
+
+        cfg_for_flavor = self.emulator_cfg.get(flavor)
+        if cfg_for_flavor is None:
+            return set()
+
+        return set(cfg_for_flavor.get("need_flavor", ()))
+
+    def check_emulator_flavor(
+        self,
+        flavor: EmulatorFlavor,
+        emulator_pkg_flavors: list[str] | None,
+    ) -> bool:
+        req = self.get_needed_emulator_pkg_flavors(flavor)
+        if not emulator_pkg_flavors:
+            return not req
+        # req - emulator_pkg_flavors must be the empty set so that emulator_pkg_flavors >= req
+        return len(req.difference(emulator_pkg_flavors)) == 0
 
     def get_env_config_for_emu_flavor(
         self,
