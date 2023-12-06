@@ -1,3 +1,4 @@
+from functools import cached_property
 import os
 import platform
 import re
@@ -263,7 +264,7 @@ class PackageManifest:
     def distfiles(self) -> dict[str, DistfileDecl]:
         return {x["name"]: DistfileDecl(x) for x in self._data["distfiles"]}
 
-    @property
+    @cached_property
     def binary_metadata(self) -> BinaryDecl | None:
         if not self.has_kind("binary"):
             return None
@@ -271,7 +272,7 @@ class PackageManifest:
             return None
         return BinaryDecl(self._data["binary"])
 
-    @property
+    @cached_property
     def source_metadata(self) -> SourceDecl | None:
         if not self.has_kind("source"):
             return None
@@ -279,7 +280,7 @@ class PackageManifest:
             return None
         return SourceDecl(self._data["source"])
 
-    @property
+    @cached_property
     def toolchain_metadata(self) -> ToolchainDecl | None:
         if not self.has_kind("toolchain"):
             return None
@@ -287,7 +288,7 @@ class PackageManifest:
             return None
         return ToolchainDecl(self._data["toolchain"])
 
-    @property
+    @cached_property
     def emulator_metadata(self) -> EmulatorDecl | None:
         if not self.has_kind("emulator"):
             return None
