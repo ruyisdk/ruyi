@@ -54,6 +54,7 @@ class EmulatorProgramDeclType(TypedDict):
 
 
 class EmulatorDeclType(TypedDict):
+    flavors: NotRequired[list[str]]
     programs: list[EmulatorProgramDeclType]
 
 
@@ -206,7 +207,12 @@ class EmulatorProgDecl:
 
 class EmulatorDecl:
     def __init__(self, data: EmulatorDeclType) -> None:
+        self._data = data
         self.programs = [EmulatorProgDecl(x) for x in data["programs"]]
+
+    @property
+    def flavors(self) -> list[str] | None:
+        return self._data.get("flavors")
 
     def list_for_arch(self, arch: str) -> Iterable[EmulatorProgDecl]:
         for p in self.programs:

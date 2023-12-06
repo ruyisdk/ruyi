@@ -31,6 +31,21 @@ class ProfileDecl:
         return ""
 
     @abc.abstractmethod
+    def get_needed_emulator_pkg_flavors(
+        self,
+        flavor: EmulatorFlavor,
+    ) -> set[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def check_emulator_flavor(
+        self,
+        flavor: EmulatorFlavor,
+        emulator_pkg_flavors: list[str] | None,
+    ) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_env_config_for_emu_flavor(
         self,
         flavor: EmulatorFlavor,

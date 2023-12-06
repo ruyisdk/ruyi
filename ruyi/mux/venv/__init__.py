@@ -159,6 +159,21 @@ def cli_venv(args: argparse.Namespace) -> int:
             )
             return 1
 
+        for prog in emu_progs:
+            if not profile.check_emulator_flavor(
+                prog.flavor, emu_pm.emulator_metadata.flavors
+            ):
+                log.F(
+                    f"the package [yellow]{emu_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
+                )
+                log.I(
+                    f"feature(s) needed by profile:   {log.humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
+                )
+                log.I(
+                    f"feature(s) provided by package: {log.humanize_list(emu_pm.emulator_metadata.flavors or [], item_color='yellow')}"
+                )
+                return 1
+
         emu_root = config.lookup_binary_install_dir(
             platform.machine(),  # TODO
             emu_pm.name_for_installation,
