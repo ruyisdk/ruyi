@@ -49,6 +49,18 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
         return 1
 
+    if not tc_pm.toolchain_metadata.satisfies_flavor_set(profile.need_flavor):
+        log.F(
+            f"the package [yellow]{tc_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
+        )
+        log.I(
+            f"feature(s) needed by profile:   {log.humanize_list(profile.need_flavor, item_color='cyan')}"
+        )
+        log.I(
+            f"feature(s) provided by package: {log.humanize_list(tc_pm.toolchain_metadata.flavors, item_color='yellow')}"
+        )
+        return 1
+
     target_tuple = tc_pm.toolchain_metadata.target
 
     toolchain_root = config.lookup_binary_install_dir(
