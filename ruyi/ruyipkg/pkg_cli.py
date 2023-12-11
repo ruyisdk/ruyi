@@ -12,6 +12,7 @@ from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
+from .unpack import ensure_unpack_cmd_for_distfile
 
 
 def cli_list(args: argparse.Namespace) -> int:
@@ -175,6 +176,7 @@ def cli_extract(args: argparse.Namespace) -> int:
             df_decl = dfs[df_name]
             url = make_distfile_url(dist_url_base, df_name)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+            ensure_unpack_cmd_for_distfile(dest)
             log.I(f"downloading {url} to {dest}")
             df = Distfile(url, dest, df_decl)
             df.ensure()
@@ -249,6 +251,7 @@ def cli_install(args: argparse.Namespace) -> int:
             df_decl = dfs[df_name]
             url = make_distfile_url(dist_url_base, df_name)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+            ensure_unpack_cmd_for_distfile(dest)
             log.I(f"downloading {url} to {dest}")
             df = Distfile(url, dest, df_decl)
             df.ensure()
