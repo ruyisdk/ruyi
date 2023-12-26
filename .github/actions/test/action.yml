@@ -1,0 +1,38 @@
+name: test ruyi
+description: 'Run basic ruyi test'
+inputs:
+  ruyi:
+    type: string
+    required: false
+    default: "ruyi"
+env:
+  RUYI: ruyi
+runs:
+  using: "composite"
+  steps:
+    - name: ruyi help
+      run: |
+        ${{ inputs.ruyi }} -h
+      shell: bash
+    - name: ruyi update
+      run: |
+        ${{ inputs.ruyi }}  update
+      shell: bash
+    - name: ruyi list
+      run: |
+        ${{ inputs.ruyi }}  list
+      shell: bash
+    - name: ruyi list -v
+      run: |
+        ${{ inputs.ruyi }}  list -v
+      shell: bash
+    - name: ruyi install
+      run: |
+        ${{ inputs.ruyi }}  install gnu-plct
+        ${{ inputs.ruyi }}  install name:gnu-plct
+        ${{ inputs.ruyi }}  install slug:gnu-plct-20231118
+      shell: bash
+    - name: ruyi list profiles
+      run: |
+        ${{ inputs.ruyi }}  list profiles
+      shell: bash
