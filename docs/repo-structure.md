@@ -193,6 +193,35 @@ packages-index
         - `binfmt_misc` 是适合该二进制的 Linux `binfmt_misc` 配置串。注意转义。其中支持的特殊写法：
             - `$BIN`：将在渲染时被替换为指向该二进制的绝对路径。
 
+### `news`
+
+此目录内含 0 或多份 Markdown 格式的通知消息。
+
+每个通知消息文件的文件名应遵循 `YYYY-MM-DD-title[.LANG].md` 格式，
+如 `2024-01-02-foo.md` 或 `2024-01-02-foo.zh-CN.md`。
+其中 `LANG` 的部分，意在对应 Linux 系统上 `$LANG` 环境变量的语言部分；
+如果该部分存在于文件名之中，那么在运行时，带有 `$LANG` 所对应的语言的那些通知消息文件，
+将被视为覆盖了名为 `YYYY-MM-DD-title.md` 的通知消息文件。
+
+通知消息的内容为带有 frontmatter 的 Markdown，形如下：
+
+```markdown
+---
+title: '文章的完整标题'
+if-installed: 'toolchain/plct(<1.0.0)'
+---
+
+# 文章的完整标题
+
+文章正文……
+```
+
+在 frontmatter 中，接受如下的字段：
+
+* `title`: 必须提供，文章的完整标题。
+* `if-installed`: 可选提供，格式为 atom。
+  如果提供了此字段，那么只有当本地已经安装了此字段取值所能匹配到的包版本时，相应的通知消息才会被重点展示。
+
 ### `profiles`
 
 此目录内含 0 或多个 JSON 格式的配置文件定义。目前没有特殊规定文件名的语义，也没有对其特别限制。
