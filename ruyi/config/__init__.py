@@ -7,6 +7,7 @@ from typing import Any, Iterable, NotRequired, Self, TypedDict
 from xdg import BaseDirectory
 
 from .. import log, argv0
+from .news import NewsReadStatusStore
 
 
 DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
@@ -33,6 +34,8 @@ class GlobalConfig:
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
 
+        self._news_read_status_store: NewsReadStatusStore | None = None
+
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
@@ -44,6 +47,19 @@ class GlobalConfig:
     @property
     def data_root(self) -> str:
         return os.path.join(BaseDirectory.xdg_data_home, self.resource_name)
+
+    @property
+    def state_root(self) -> str:
+        return os.path.join(BaseDirectory.xdg_state_home, self.resource_name)
+
+    @property
+    def news_read_status(self) -> NewsReadStatusStore:
+        if self._news_read_status_store is not None:
+            return self._news_read_status_store
+
+        filename = os.path.join(self.ensure_state_dir(), "news.read.txt")
+        self._news_read_status_store = NewsReadStatusStore(filename)
+        return self._news_read_status_store
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")
@@ -81,6 +97,10 @@ class GlobalConfig:
     @classmethod
     def ensure_cache_dir(cls) -> str:
         return BaseDirectory.save_cache_path(cls.resource_name)
+
+    @classmethod
+    def ensure_state_dir(cls) -> str:
+        return BaseDirectory.save_state_path(cls.resource_name)
 
     @classmethod
     def get_config_file(cls) -> str | None:
