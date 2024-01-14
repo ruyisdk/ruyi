@@ -14,6 +14,7 @@ class VendorDeclType(TypedDict):
 
 class DistfileDeclType(TypedDict):
     name: str
+    urls: list[str]
     size: int
     checksums: dict[str, str]
     strip_components: NotRequired[int]
@@ -25,6 +26,10 @@ class BinaryFileDeclType(TypedDict):
 
 
 BinaryDeclType = list[BinaryFileDeclType]
+
+
+class BlobDeclType(TypedDict):
+    distfiles: list[str]
 
 
 class SourceDeclType(TypedDict):
@@ -59,7 +64,11 @@ class EmulatorDeclType(TypedDict):
 
 
 PackageKind = (
-    Literal["binary"] | Literal["source"] | Literal["toolchain"] | Literal["emulator"]
+    Literal["binary"]
+    | Literal["blob"]
+    | Literal["source"]
+    | Literal["toolchain"]
+    | Literal["emulator"]
 )
 
 
@@ -71,6 +80,7 @@ class PackageManifestType(TypedDict):
     vendor: VendorDeclType
     distfiles: list[DistfileDeclType]
     binary: NotRequired[BinaryDeclType]
+    blob: NotRequired[BlobDeclType]
     source: NotRequired[SourceDeclType]
     toolchain: NotRequired[ToolchainDeclType]
     emulator: NotRequired[EmulatorDeclType]
@@ -114,6 +124,15 @@ class BinaryDecl:
     @property
     def is_available_for_current_host(self) -> bool:
         return platform.machine() in self._data
+
+
+class BlobDecl:
+    def __init__(self, data: BlobDeclType) -> None:
+        self._data = data
+
+    def get_distfile_names_for_host(self, host: str) -> list[str] | None:
+        # currently the host parameter is ignored
+        return self._data["distfiles"]
 
 
 class SourceDecl:
@@ -281,6 +300,14 @@ class PackageManifest:
         if "binary" not in self._data:
             return None
         return BinaryDecl(self._data["binary"])
+
+    @cached_property
+    def blob_metadata(self) -> BlobDecl | None:
+        if not self.has_kind("blob"):
+            return None
+        if "blob" not in self._data:
+            return None
+        return BlobDecl(self._data["blob"])
 
     @cached_property
     def source_metadata(self) -> SourceDecl | None:
