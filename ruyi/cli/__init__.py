@@ -23,6 +23,7 @@ def init_debug_status() -> None:
 def init_argparse() -> argparse.ArgumentParser:
     from ..mux.venv import cli_venv
     from ..ruyipkg.admin_cli import cli_admin_manifest
+    from ..ruyipkg.news_cli import cli_news_list, cli_news_read
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update_cli import cli_update
@@ -108,6 +109,43 @@ def init_argparse() -> argparse.ArgumentParser:
     listsp = list.add_subparsers(required=False)
     list_profiles = listsp.add_parser("profiles", help="List all available profiles")
     list_profiles.set_defaults(func=cli_list_profiles)
+
+    news = sp.add_parser(
+        "news",
+        help="List and read news items from configured repository",
+    )
+    news.set_defaults(func=lambda _: news.print_help())
+    newssp = news.add_subparsers(title="subcommands")
+
+    news_list = newssp.add_parser(
+        "list",
+        help="List news items",
+    )
+    news_list.add_argument(
+        "--new",
+        action="store_true",
+        help="List unread news items only",
+    )
+    news_list.set_defaults(func=cli_news_list)
+
+    news_read = newssp.add_parser(
+        "read",
+        help="Read news items",
+        description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
+    )
+    news_read.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Do not output anything and only mark as read",
+    )
+    news_read.add_argument(
+        "item",
+        type=str,
+        nargs="*",
+        help="Ordinal or ID of the news item(s) to read",
+    )
+    news_read.set_defaults(func=cli_news_read)
 
     up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
     up.set_defaults(func=cli_update)
