@@ -4,29 +4,24 @@ from typing import Self
 
 import frontmatter
 
-NEWS_FILENAME_RE = re.compile(r"^(\d+)-(\d{2})-(\d{2})-(.*)\.md$")
+NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*)\.md$")
 
 
 @functools.total_ordering
 class NewsItemNameMetadata:
-    def __init__(self, ymd: int, id: str) -> None:
-        self.ymd = ymd  # e.g. 20240102
+    def __init__(self, id: str) -> None:
         self.id = id
 
     def __eq__(self, other):
         if not isinstance(other, NewsItemNameMetadata):
             return NotImplemented
-        return self.ymd == other.ymd and self.id == other.id
+        return self.id == other.id
 
     def __lt__(self, other):
         if not isinstance(other, NewsItemNameMetadata):
             return NotImplemented
 
-        # order by ymd first, in ascending order so ordinals stay stable
-        if self.ymd != other.ymd:
-            return self.ymd < other.ymd
-
-        # then order by id in lexical order
+        # order by id in lexical order
         return self.id < other.id
 
 
@@ -35,12 +30,8 @@ def parse_news_filename(filename: str) -> NewsItemNameMetadata | None:
     if m is None:
         return None
 
-    year = int(m.group(1))
-    month = int(m.group(2))
-    day = int(m.group(3))
-    ymd = year * 10000 + month * 100 + day
-    id = m.group(4)
-    return NewsItemNameMetadata(ymd, id)
+    id = m.group(1)
+    return NewsItemNameMetadata(id)
 
 
 @functools.total_ordering
