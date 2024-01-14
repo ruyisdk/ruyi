@@ -203,10 +203,9 @@ class MetadataRepo:
 
         cache: list[NewsItem] = []
         for f in glob.iglob("*.md", root_dir=news_dir):
-            news_id = f[:-3]  # strip the guaranteed ".md" suffix
             with open(os.path.join(news_dir, f), "r") as fp:
                 contents = fp.read()
-            ni = NewsItem.new(news_id, contents)
+            ni = NewsItem.new(f, contents)
             if ni is None:
                 # malformed file name or content
                 continue
