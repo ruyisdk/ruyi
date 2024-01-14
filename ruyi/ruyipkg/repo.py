@@ -214,6 +214,10 @@ class MetadataRepo:
         # sort in intended display order
         cache.sort()
 
+        # mark the news item instances with ordinals
+        for i, ni in enumerate(cache):
+            ni.ordinal = i + 1
+
         self._news_cache = cache
 
     def list_newsitems(self) -> list[NewsItem]:
