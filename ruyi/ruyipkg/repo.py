@@ -1,11 +1,13 @@
 import glob
 import json
 import os.path
+import pathlib
 from typing import Iterable, NotRequired, Tuple, TypedDict
 
 from git import Repo
 
 from .. import log
+from .news import NewsItem
 from .pkg_manifest import is_prerelease, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 
@@ -26,6 +28,7 @@ class MetadataRepo:
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
         self._profile_cache: dict[str, ProfileDecl] = {}
+        self._news_cache: list[NewsItem] | None = None
 
     def ensure_git_repo(self) -> Repo:
         if self.repo is not None:
@@ -190,3 +193,35 @@ class MetadataRepo:
             all_semvers = [sv for sv in all_semvers if not is_prerelease(sv)]
         latest_ver = max(all_semvers)
         return pkgset[name][str(latest_ver)]
+
+    def ensure_news_cache(self) -> None:
+        if self._news_cache is not None:
+            return
+
+        self.ensure_git_repo()
+        news_dir = os.path.join(self.root, "news")
+
+        cache: list[NewsItem] = []
+        for f in glob.iglob("*.md", root_dir=news_dir):
+            with open(os.path.join(news_dir, f), "r") as fp:
+                contents = fp.read()
+            ni = NewsItem.new(f, contents)
+            if ni is None:
+                # malformed file name or content
+                continue
+            cache.append(ni)
+
+        # sort in intended display order
+        cache.sort()
+
+        # mark the news item instances with ordinals
+        for i, ni in enumerate(cache):
+            ni.ordinal = i + 1
+
+        self._news_cache = cache
+
+    def list_newsitems(self) -> list[NewsItem]:
+        if self._news_cache is None:
+            self.ensure_news_cache()
+        assert self._news_cache is not None
+        return self._news_cache

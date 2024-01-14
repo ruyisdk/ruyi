@@ -28,6 +28,7 @@ python = ">=3.11"
 
 gitpython = "^3.1"
 jinja2 = "^3"
+python-frontmatter = "^1.0.1"
 pyxdg = "^0.28"
 rich = "^13.5"
 semver = "^3"
