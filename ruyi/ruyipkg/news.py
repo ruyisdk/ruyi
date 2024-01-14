@@ -4,13 +4,14 @@ from typing import Self
 
 import frontmatter
 
-NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*)\.md$")
+NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*)(\.[0-9A-Za-z_-]+)?\.md$")
 
 
 @functools.total_ordering
 class NewsItemNameMetadata:
-    def __init__(self, id: str) -> None:
+    def __init__(self, id: str, lang: str | None = None) -> None:
         self.id = id
+        self.lang = lang
 
     def __eq__(self, other):
         if not isinstance(other, NewsItemNameMetadata):
@@ -31,7 +32,11 @@ def parse_news_filename(filename: str) -> NewsItemNameMetadata | None:
         return None
 
     id = m.group(1)
-    return NewsItemNameMetadata(id)
+    lang = m.group(2)
+    if not lang:
+        lang = None
+
+    return NewsItemNameMetadata(id, lang)
 
 
 @functools.total_ordering
@@ -67,6 +72,10 @@ class NewsItem:
     @property
     def id(self) -> str:
         return self._md.id
+
+    @property
+    def lang(self) -> str | None:
+        return self._md.lang
 
     @property
     def display_title(self) -> str:
