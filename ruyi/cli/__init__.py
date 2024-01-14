@@ -25,7 +25,7 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.admin_cli import cli_admin_manifest
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
-    from ..ruyipkg.update import cli_update
+    from ..ruyipkg.update_cli import cli_update
     from .self_cli import cli_self_uninstall
     from .version import RUYI_SEMVER, cli_version
 
