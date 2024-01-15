@@ -113,13 +113,18 @@ def print_pkg_detail(pm: PackageManifest) -> None:
 
 
 def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
-    if decl.urls:
-        return decl.urls
+    if not decl.is_restricted("mirror"):
+        # urljoin can't be used because it trims the basename part if base is not
+        # `/`-suffixed
+        name = decl.name
+        result = [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
+    else:
+        result: list[str] = []
 
-    # urljoin can't be used because it trims the basename part if base is not
-    # `/`-suffixed
-    name = decl.name
-    return [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
+    if decl.urls:
+        result.extend(decl.urls)
+
+    return result
 
 
 def is_root_likely_populated(root: str) -> bool:

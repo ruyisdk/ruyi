@@ -12,9 +12,13 @@ class VendorDeclType(TypedDict):
     eula: str | None
 
 
+RestrictKind = Literal["fetch"] | Literal["mirror"]
+
+
 class DistfileDeclType(TypedDict):
     name: str
     urls: list[str]
+    restrict: NotRequired[list[RestrictKind]]
     size: int
     checksums: dict[str, str]
     strip_components: NotRequired[int]
@@ -97,6 +101,11 @@ class DistfileDecl:
     @property
     def urls(self) -> list[str] | None:
         return self._data.get("urls")
+
+    def is_restricted(self, kind: RestrictKind) -> bool:
+        if restricts := self._data.get("restrict"):
+            return kind in restricts
+        return False
 
     @property
     def size(self) -> int:
