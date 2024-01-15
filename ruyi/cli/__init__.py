@@ -21,6 +21,7 @@ def init_debug_status() -> None:
 
 
 def init_argparse() -> argparse.ArgumentParser:
+    from ..device.provision_cli import cli_device_provision
     from ..mux.venv import cli_venv
     from ..ruyipkg.admin_cli import cli_admin_manifest
     from ..ruyipkg.news_cli import cli_news_list, cli_news_read
@@ -48,6 +49,22 @@ def init_argparse() -> argparse.ArgumentParser:
     sp = root.add_subparsers(
         title="subcommands",
     )
+
+    # Device management commands
+    device = sp.add_parser(
+        "device",
+        help="Manage devices",
+    )
+    device.set_defaults(func=lambda _: device.print_help())
+    devicesp = device.add_subparsers(
+        title="subcommands",
+    )
+
+    device_provision = devicesp.add_parser(
+        "provision",
+        help="Interactively initialize a device for development",
+    )
+    device_provision.set_defaults(func=cli_device_provision)
 
     extract = sp.add_parser(
         "extract",
