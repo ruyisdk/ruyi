@@ -207,7 +207,6 @@ def cli_install(args: argparse.Namespace) -> int:
     atom_strs: set[str] = set(args.atom)
     fetch_only = args.fetch_only
     reinstall = args.reinstall
-    log.D(f"about to install for host {host}: {atom_strs}")
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
@@ -215,6 +214,27 @@ def cli_install(args: argparse.Namespace) -> int:
         config.get_repo_url(),
         config.get_repo_branch(),
     )
+
+    return do_install_atoms(
+        config,
+        mr,
+        atom_strs,
+        host=host,
+        fetch_only=fetch_only,
+        reinstall=reinstall,
+    )
+
+
+def do_install_atoms(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom_strs: set[str],
+    *,
+    host: str,
+    fetch_only: bool,
+    reinstall: bool,
+) -> int:
+    log.D(f"about to install for host {host}: {atom_strs}")
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
