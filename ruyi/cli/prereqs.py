@@ -38,6 +38,9 @@ def init_cmd_presence_map() -> None:
 
 
 def ensure_cmds(*cmds: str) -> None | NoReturn:
+    if not _CMD_PRESENCE_MAP:
+        init_cmd_presence_map()
+
     absent_cmds = sorted(cmd for cmd in cmds if not _CMD_PRESENCE_MAP.get(cmd, False))
     if not absent_cmds:
         return
@@ -52,4 +55,5 @@ def ensure_cmds(*cmds: str) -> None | NoReturn:
 
 def check_dep_binaries() -> None:
     ensure_git_binary()
-    init_cmd_presence_map()
+    # init_cmd_presence_map() is called on-demand, to avoid having to reach out
+    # to FS at every `ruyi` invocation which can get expensive.
