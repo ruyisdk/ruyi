@@ -206,10 +206,10 @@ def cli_install(args: argparse.Namespace) -> int:
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
-        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
+        config.get_repo_dir(),
+        config.get_repo_url(),
+        config.get_repo_branch(),
     )
-
-    repo_cfg = mr.get_config()
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -219,58 +219,74 @@ def cli_install(args: argparse.Namespace) -> int:
             return 1
         pkg_name = pm.name_for_installation
 
-        bm = pm.binary_metadata
-        if bm is None:
-            log.F(
-                f"don't know how to handle non-binary package [green]{pkg_name}[/green]"
-            )
-            return 2
+        if pm.binary_metadata is not None:
+            ret = do_install_binary_pkg(config, mr, pm, host, fetch_only, reinstall)
+            if ret != 0:
+                return ret
+            continue
 
-        install_root = config.global_binary_install_root(host, pkg_name)
-        if is_root_likely_populated(install_root):
-            if reinstall:
-                log.W(
-                    f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-                )
-                shutil.rmtree(install_root)
-                pathlib.Path(install_root).mkdir(parents=True)
-            else:
-                log.I(f"skipping already installed package [green]{pkg_name}[/green]")
-                continue
+        log.F(f"don't know how to handle non-binary package [green]{pkg_name}[/green]")
+        return 2
+
+    return 0
+
+
+def do_install_binary_pkg(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    host: str,
+    fetch_only: bool,
+    reinstall: bool,
+) -> int:
+    bm = pm.binary_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_binary_install_root(host, pkg_name)
+    if is_root_likely_populated(install_root):
+        if reinstall:
+            log.W(
+                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            )
+            shutil.rmtree(install_root)
+            pathlib.Path(install_root).mkdir(parents=True)
         else:
-            pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            return 0
+    else:
+        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
-        dfs = pm.distfiles()
+    dfs = pm.distfiles()
 
-        distfiles_for_host = bm.get_distfile_names_for_host(host)
-        if not distfiles_for_host:
-            log.F(
-                f"package [green]{pkg_name}[/green] declares no binary for host {host}"
+    distfiles_for_host = bm.get_distfile_names_for_host(host)
+    if not distfiles_for_host:
+        log.F(f"package [green]{pkg_name}[/green] declares no binary for host {host}")
+        return 2
+
+    repo_cfg = mr.get_config()
+    dist_url_base = repo_cfg["dist"]
+    for df_name in distfiles_for_host:
+        df_decl = dfs[df_name]
+        urls = make_distfile_urls(dist_url_base, df_decl)
+        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+        ensure_unpack_cmd_for_distfile(dest)
+        df = Distfile(urls, dest, df_decl)
+        df.ensure()
+
+        if fetch_only:
+            log.D(
+                "skipping installation because [yellow]--fetch-only[/yellow] is given"
             )
-            return 2
-
-        dist_url_base = repo_cfg["dist"]
-        for df_name in distfiles_for_host:
-            df_decl = dfs[df_name]
-            urls = make_distfile_urls(dist_url_base, df_decl)
-            dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-            ensure_unpack_cmd_for_distfile(dest)
-            df = Distfile(urls, dest, df_decl)
-            df.ensure()
-
-            if fetch_only:
-                log.D(
-                    "skipping installation because [yellow]--fetch-only[/yellow] is given"
-                )
-                continue
-
-            log.I(
-                f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
-            )
-            df.unpack(install_root)
+            continue
 
         log.I(
-            f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
+        df.unpack(install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
 
     return 0
