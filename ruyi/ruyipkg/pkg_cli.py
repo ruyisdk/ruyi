@@ -9,7 +9,7 @@ print = log.stdout
 
 from ..config import GlobalConfig
 from .atom import Atom
-from .distfile import Distfile
+from .distfile import Distfile, DistfileDecl
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
 from .unpack import ensure_unpack_cmd_for_distfile
@@ -112,10 +112,19 @@ def print_pkg_detail(pm: PackageManifest) -> None:
             print(f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]')
 
 
-def make_distfile_url(base: str, name: str) -> str:
-    # urljoin can't be used because it trims the basename part if base is not
-    # `/`-suffixed
-    return f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
+def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
+    if not decl.is_restricted("mirror"):
+        # urljoin can't be used because it trims the basename part if base is not
+        # `/`-suffixed
+        name = decl.name
+        result = [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
+    else:
+        result: list[str] = []
+
+    if decl.urls:
+        result.extend(decl.urls)
+
+    return result
 
 
 def is_root_likely_populated(root: str) -> bool:
@@ -174,11 +183,10 @@ def cli_extract(args: argparse.Namespace) -> int:
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
-            url = make_distfile_url(dist_url_base, df_name)
+            urls = make_distfile_urls(dist_url_base, df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             ensure_unpack_cmd_for_distfile(dest)
-            log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl)
+            df = Distfile(urls, dest, df_decl)
             df.ensure()
 
             log.I(
@@ -203,10 +211,10 @@ def cli_install(args: argparse.Namespace) -> int:
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
-        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
+        config.get_repo_dir(),
+        config.get_repo_url(),
+        config.get_repo_branch(),
     )
-
-    repo_cfg = mr.get_config()
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -216,59 +224,140 @@ def cli_install(args: argparse.Namespace) -> int:
             return 1
         pkg_name = pm.name_for_installation
 
-        bm = pm.binary_metadata
-        if bm is None:
-            log.F(
-                f"don't know how to handle non-binary package [green]{pkg_name}[/green]"
-            )
-            return 2
+        if pm.binary_metadata is not None:
+            ret = do_install_binary_pkg(config, mr, pm, host, fetch_only, reinstall)
+            if ret != 0:
+                return ret
+            continue
 
-        install_root = config.global_binary_install_root(host, pkg_name)
-        if is_root_likely_populated(install_root):
-            if reinstall:
-                log.W(
-                    f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-                )
-                shutil.rmtree(install_root)
-                pathlib.Path(install_root).mkdir(parents=True)
-            else:
-                log.I(f"skipping already installed package [green]{pkg_name}[/green]")
-                continue
+        if pm.blob_metadata is not None:
+            ret = do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
+            if ret != 0:
+                return ret
+            continue
+
+        log.F(f"don't know how to handle non-binary package [green]{pkg_name}[/green]")
+        return 2
+
+    return 0
+
+
+def do_install_binary_pkg(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    host: str,
+    fetch_only: bool,
+    reinstall: bool,
+) -> int:
+    bm = pm.binary_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_binary_install_root(host, pkg_name)
+    if is_root_likely_populated(install_root):
+        if reinstall:
+            log.W(
+                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            )
+            shutil.rmtree(install_root)
+            pathlib.Path(install_root).mkdir(parents=True)
         else:
-            pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            return 0
+    else:
+        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
-        dfs = pm.distfiles()
+    dfs = pm.distfiles()
 
-        distfiles_for_host = bm.get_distfile_names_for_host(host)
-        if not distfiles_for_host:
-            log.F(
-                f"package [green]{pkg_name}[/green] declares no binary for host {host}"
+    distfiles_for_host = bm.get_distfile_names_for_host(host)
+    if not distfiles_for_host:
+        log.F(f"package [green]{pkg_name}[/green] declares no binary for host {host}")
+        return 2
+
+    repo_cfg = mr.get_config()
+    dist_url_base = repo_cfg["dist"]
+    for df_name in distfiles_for_host:
+        df_decl = dfs[df_name]
+        urls = make_distfile_urls(dist_url_base, df_decl)
+        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+        ensure_unpack_cmd_for_distfile(dest)
+        df = Distfile(urls, dest, df_decl)
+        df.ensure()
+
+        if fetch_only:
+            log.D(
+                "skipping installation because [yellow]--fetch-only[/yellow] is given"
             )
-            return 2
-
-        dist_url_base = repo_cfg["dist"]
-        for df_name in distfiles_for_host:
-            df_decl = dfs[df_name]
-            url = make_distfile_url(dist_url_base, df_name)
-            dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-            ensure_unpack_cmd_for_distfile(dest)
-            log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl)
-            df.ensure()
-
-            if fetch_only:
-                log.D(
-                    "skipping installation because [yellow]--fetch-only[/yellow] is given"
-                )
-                continue
-
-            log.I(
-                f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
-            )
-            df.unpack(install_root)
+            continue
 
         log.I(
-            f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
+        df.unpack(install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
+
+    return 0
+
+
+def do_install_blob_pkg(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    fetch_only: bool,
+    reinstall: bool,
+) -> int:
+    bm = pm.blob_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_blob_install_root(pkg_name)
+    if is_root_likely_populated(install_root):
+        if reinstall:
+            log.W(
+                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            )
+            shutil.rmtree(install_root)
+            pathlib.Path(install_root).mkdir(parents=True)
+        else:
+            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            return 0
+    else:
+        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+
+    dfs = pm.distfiles()
+
+    distfile_names = bm.get_distfile_names()
+    if not distfile_names:
+        log.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
+        return 2
+
+    repo_cfg = mr.get_config()
+    dist_url_base = repo_cfg["dist"]
+    for df_name in distfile_names:
+        df_decl = dfs[df_name]
+        urls = make_distfile_urls(dist_url_base, df_decl)
+        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+        ensure_unpack_cmd_for_distfile(dest)
+        df = Distfile(urls, dest, df_decl)
+        df.ensure()
+
+        if fetch_only:
+            log.D(
+                "skipping installation because [yellow]--fetch-only[/yellow] is given"
+            )
+            continue
+
+        log.I(
+            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
+        )
+        df.unpack_or_symlink(install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
 
     return 0

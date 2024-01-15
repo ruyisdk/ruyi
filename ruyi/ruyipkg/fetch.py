@@ -6,8 +6,8 @@ from .. import log
 
 
 class BaseFetcher:
-    def __init__(self, url: str, dest: str) -> None:
-        self.url = url
+    def __init__(self, urls: list[str], dest: str) -> None:
+        self.urls = urls
         self.dest = dest
 
     @classmethod
@@ -16,12 +16,25 @@ class BaseFetcher:
         return False
 
     @abc.abstractmethod
+    def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
+        return False
+
     def fetch(self, *, resume: bool = False) -> None:
-        raise NotImplementedError
+        for url in self.urls:
+            log.I(f"downloading {url} to {self.dest}")
+            success = self.fetch_one(url, self.dest, resume)
+            if success:
+                return
+            # add retry logic if necessary; right now this is not needed because
+            # all fetcher commands handle retrying for us
+        # all URLs have been tried and all have failed
+        raise RuntimeError(
+            f"failed to fetch '{self.dest}': all source URLs have failed"
+        )
 
     @classmethod
-    def new(cls, url: str, dest: str) -> Self:
-        return get_usable_fetcher_cls()(url, dest)
+    def new(cls, urls: list[str], dest: str) -> "BaseFetcher":
+        return get_usable_fetcher_cls()(urls, dest)
 
 
 KNOWN_FETCHERS: list[type[BaseFetcher]] = []
@@ -55,8 +68,8 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, url: str, dest: str) -> None:
-        super().__init__(url, dest)
+    def __init__(self, urls: list[str], dest: str) -> None:
+        super().__init__(urls, dest)
 
     @classmethod
     def is_available(cls) -> bool:
@@ -68,7 +81,7 @@ class CurlFetcher(BaseFetcher):
             log.D(f"exception occurred when trying to curl --version:", e)
             return False
 
-    def fetch(self, *, resume: bool = False) -> None:
+    def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
         argv = ["curl"]
         if resume:
             argv.extend(("-C", "-"))
@@ -80,24 +93,27 @@ class CurlFetcher(BaseFetcher):
                 "60",
                 "--ftp-pasv",
                 "-o",
-                self.dest,
-                self.url,
+                dest,
+                url,
             )
         )
 
         retcode = subprocess.call(argv)
         if retcode != 0:
-            raise RuntimeError(
+            log.W(
                 f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
             )
+            return False
+
+        return True
 
 
 register_fetcher(CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, url: str, dest: str) -> None:
-        super().__init__(url, dest)
+    def __init__(self, urls: list[str], dest: str) -> None:
+        super().__init__(urls, dest)
 
     @classmethod
     def is_available(cls) -> bool:
@@ -109,18 +125,21 @@ class WgetFetcher(BaseFetcher):
             log.D(f"exception occurred when trying to wget --version:", e)
             return False
 
-    def fetch(self, *, resume: bool = False) -> None:
+    def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
         # These arguments are taken from Gentoo
         argv = ["wget"]
         if resume:
             argv.append("-c")
-        argv.extend(("-t", "3", "-T", "60", "--passive-ftp", "-O", self.dest, self.url))
+        argv.extend(("-t", "3", "-T", "60", "--passive-ftp", "-O", dest, url))
 
         retcode = subprocess.call(argv)
         if retcode != 0:
-            raise RuntimeError(
+            log.W(
                 f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
             )
+            return False
+
+        return True
 
 
 register_fetcher(WgetFetcher)

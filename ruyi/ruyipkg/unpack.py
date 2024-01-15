@@ -7,6 +7,15 @@ from .. import log
 from ..cli import prereqs
 
 RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.xz|\.zst)?$")
+RE_ZIP = re.compile(r"\.zip$")
+
+
+class UnrecognizedPackFormatError(Exception):
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+
+    def __str__(self) -> str:
+        return f"don't know how to unpack file {self.filename}"
 
 
 def do_unpack(
@@ -16,7 +25,34 @@ def do_unpack(
 ) -> None:
     if RE_TARBALL.search(filename):
         return do_unpack_tar(filename, dest, strip_components)
-    raise RuntimeError(f"don't know how to unpack file {filename}")
+    if RE_ZIP.search(filename):
+        # TODO: handle strip_components somehow; the unzip(1) command currently
+        # does not have such support.
+        return do_unpack_zip(filename, dest)
+    raise UnrecognizedPackFormatError(filename)
+
+
+def do_unpack_or_symlink(
+    filename: str,
+    dest: str | None,
+    strip_components: int,
+) -> None:
+    try:
+        return do_unpack(filename, dest, strip_components)
+    except UnrecognizedPackFormatError:
+        # just symlink into destination
+        return do_symlink(filename, dest)
+
+
+def do_symlink(
+    filename: str,
+    dest: str | None,
+) -> None:
+    if dest is None:
+        # symlink into CWD
+        dest = os.path.basename(filename)
+    symlink_target = os.path.relpath(filename, dest)
+    os.symlink(symlink_target, dest)
 
 
 def do_unpack_tar(
@@ -32,6 +68,19 @@ def do_unpack_tar(
     retcode = subprocess.call(argv, cwd=dest)
     if retcode != 0:
         raise RuntimeError(f"untar failed: command {' '.join(argv)} returned {retcode}")
+
+
+def do_unpack_zip(
+    filename: str,
+    dest: str | None,
+) -> None:
+    argv = ["unzip", filename]
+    if dest is not None:
+        argv.extend(("-d", dest))
+    log.D(f"about to call unzip: argv={argv}")
+    retcode = subprocess.call(argv, cwd=dest)
+    if retcode != 0:
+        raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
 
 
 def ensure_unpack_cmd_for_distfile(dest_filename: str) -> None | NoReturn:
@@ -58,6 +107,8 @@ def ensure_unpack_cmd_for_distfile(dest_filename: str) -> None | NoReturn:
 
     if dest_filename.endswith(".tar"):
         required_cmds.append("tar")
+    elif dest_filename.endswith(".zip"):
+        required_cmds.append("unzip")
 
     if not required_cmds:
         return
