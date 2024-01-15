@@ -29,6 +29,7 @@ _CMDS = (
     "unzip",
     # commands used by the device provisioner
     "dd",
+    "fastboot",
 )
 
 _CMD_PRESENCE_MAP: dict[str, bool] = {}

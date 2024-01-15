@@ -1,6 +1,8 @@
 import argparse
 import platform
-from typing import TypedDict
+import subprocess
+import time
+from typing import Callable, Literal, TypedDict
 
 from .. import log
 from ..cli import user_input
@@ -63,7 +65,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "openEuler RISC-V (headless) for Sipeed LicheePi 4A (8G RAM)",
         "packages": [
             "board-image/oerv-sipeed-lpi4a-headless",
-            "uboot-oerv-sipeed-lpi4a-8g",
+            "board-image/uboot-oerv-sipeed-lpi4a-8g",
         ],
     },
     {
@@ -71,7 +73,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "openEuler RISC-V (XFCE) for Sipeed LicheePi 4A (8G RAM)",
         "packages": [
             "board-image/oerv-sipeed-lpi4a-xfce",
-            "uboot-oerv-sipeed-lpi4a-8g",
+            "board-image/uboot-oerv-sipeed-lpi4a-8g",
         ],
     },
     {
@@ -79,7 +81,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "openEuler RISC-V (headless) for Sipeed LicheePi 4A (16G RAM)",
         "packages": [
             "board-image/oerv-sipeed-lpi4a-headless",
-            "uboot-oerv-sipeed-lpi4a-16g",
+            "board-image/uboot-oerv-sipeed-lpi4a-16g",
         ],
     },
     {
@@ -87,7 +89,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "openEuler RISC-V (XFCE) for Sipeed LicheePi 4A (16G RAM)",
         "packages": [
             "board-image/oerv-sipeed-lpi4a-xfce",
-            "uboot-oerv-sipeed-lpi4a-16g",
+            "board-image/uboot-oerv-sipeed-lpi4a-16g",
         ],
     },
     {
@@ -102,7 +104,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "RevyOS for Sipeed LicheePi 4A (8G RAM)",
         "packages": [
             "board-image/revyos-sipeed-lpi4a",
-            "board-image/uboot-sipeed-lpi4a-8g",
+            "board-image/uboot-revyos-sipeed-lpi4a-8g",
         ],
     },
     {
@@ -110,7 +112,7 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "display_name": "RevyOS for Sipeed LicheePi 4A (16G RAM)",
         "packages": [
             "board-image/revyos-sipeed-lpi4a",
-            "board-image/uboot-sipeed-lpi4a-16g",
+            "board-image/uboot-revyos-sipeed-lpi4a-16g",
         ],
     },
 ]
@@ -340,3 +342,198 @@ We are about to download and install the following packages for your device:
     # TODO: parting words
 
     return 0
+
+
+PartitionKind = (
+    Literal["whole_disk"] | Literal["boot"] | Literal["root"] | Literal["uboot"]
+)
+
+PartitionPathMap = dict[PartitionKind, str]
+
+
+class PackageProvisionStrategy(TypedDict):
+    priority: int  # higher number means earlier
+    need_host_blkdevs: list[PartitionKind]
+    need_cmd: list[str]
+    flash_fn: Callable[[PartitionPathMap, PartitionPathMap], int]
+
+
+def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
+    argv = [
+        "dd",
+        f"if={infile}",
+        f"of={outfile}",
+        f"bs={blocksize}",
+    ]
+
+    log.I(
+        "dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
+    )
+    log.D(f"about to call dd: argv={argv}")
+    retcode = subprocess.call(argv)
+    if retcode == 0:
+        log.I("successfully flashed [green]{outfile}[/green]")
+    else:
+        log.F(f"failed to flash the [green]{outfile}[/green] disk/partition")
+        log.W("the device could be in an inconsistent state now, check now")
+
+    return retcode
+
+
+def flash_dd(img_paths: PartitionPathMap, blkdev_paths: PartitionPathMap) -> int:
+    for part, img_path in img_paths.items():
+        blkdev_path = blkdev_paths[part]
+        ret = _do_dd(img_path, blkdev_path)
+        if ret != 0:
+            return ret
+
+    return 0
+
+
+def _do_fastboot(*args: str) -> int:
+    argv = ["fastboot"]
+    argv.extend(args)
+    log.D(f"about to call fastboot: argv={argv}")
+    return subprocess.call(argv)
+
+
+def _do_fastboot_flash(part: str, img_path: str) -> int:
+    log.I(
+        f"flashing [yellow]{img_path}[/yellow] into device partition [green]{part}[/green]"
+    )
+    ret = _do_fastboot("flash", part, img_path)
+    if ret != 0:
+        log.F(f"failed to flash [green]{part}[/green] image into device storage")
+        log.W("the device could be in an inconsistent state now, check now")
+    else:
+        log.I(f"[green]{part}[/green] image successfully flashed")
+
+    return ret
+
+
+def flash_lpi4a_uboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
+    # Perform the equivalent of the following commands from the Sipeed Wiki:
+    #
+    # sudo ./fastboot flash ram ./images/u-boot-with-spl-lpi4a-16g.bin
+    # sudo ./fastboot reboot
+    # sleep 1
+    # sudo ./fastboot flash uboot ./images/u-boot-with-spl-lpi4a-16g.bin
+    #
+    # See: https://wiki.sipeed.com/hardware/en/lichee/th1520/lpi4a/4_burn_image.html
+    uboot_img_path = img_paths["uboot"]
+
+    log.I("flashing uboot image into device RAM")
+    ret = _do_fastboot("flash", "ram", uboot_img_path)
+    if ret != 0:
+        log.F("failed to flash uboot image into device RAM")
+        log.W("the device state should be intact, but please re-check")
+        return ret
+
+    log.I("rebooting device into new uboot")
+    ret = _do_fastboot("reboot")
+    if ret != 0:
+        log.F("failed to reboot the device")
+        log.W("the device state should be intact, but please re-check")
+        return ret
+
+    wait_secs = 1.0
+    log.I(f"waiting {wait_secs}s for the device to come back online")
+    time.sleep(wait_secs)
+
+    return _do_fastboot_flash("uboot", uboot_img_path)
+
+
+def flash_fastboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
+    for partition, img_path in img_paths.items():
+        ret = _do_fastboot_flash(partition, img_path)
+        if ret != 0:
+            return ret
+
+    return 0
+
+
+STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
+    "priority": 0,
+    "need_host_blkdevs": ["whole_disk"],
+    "need_cmd": ["dd"],
+    "flash_fn": flash_dd,
+}
+
+STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
+    "priority": 0,
+    "need_host_blkdevs": [],
+    "need_cmd": ["fastboot"],
+    "flash_fn": flash_fastboot,
+}
+
+STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
+    "priority": 10,
+    "need_host_blkdevs": [],
+    "need_cmd": ["fastboot"],
+    "flash_fn": flash_lpi4a_uboot,
+}
+
+PKG_PROVISION_STRATEGY: dict[str, PackageProvisionStrategy] = {
+    "board-image/buildroot-sdk-milkv-duo": STRATEGY_WHOLE_DISK_DD,
+    "board-image/buildroot-sdk-milkv-duo256m": STRATEGY_WHOLE_DISK_DD,
+    "board-image/buildroot-sdk-milkv-duo256m-python": STRATEGY_WHOLE_DISK_DD,
+    "board-image/buildroot-sdk-milkv-duo-python": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-sg2042-milkv-pioneer-base": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-sg2042-milkv-pioneer-xfce": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-sipeed-lpi4a-headless": STRATEGY_BOOT_ROOT_FASTBOOT,
+    "board-image/oerv-sipeed-lpi4a-xfce": STRATEGY_BOOT_ROOT_FASTBOOT,
+    "board-image/revyos-sg2042-milkv-pioneer": STRATEGY_WHOLE_DISK_DD,
+    "board-image/revyos-sipeed-lpi4a": STRATEGY_BOOT_ROOT_FASTBOOT,
+    "board-image/uboot-oerv-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+    "board-image/uboot-oerv-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+    "board-image/uboot-revyos-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+    "board-image/uboot-revyos-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+}
+
+PKG_PART_MAPS: dict[str, PartitionPathMap] = {
+    "board-image/buildroot-sdk-milkv-duo": {
+        "whole_disk": "milkv-duo-v1.0.7-2023-1223.img",
+    },
+    "board-image/buildroot-sdk-milkv-duo256m": {
+        "whole_disk": "milkv-duo256m-v1.0.7-2023-1223.img",
+    },
+    "board-image/buildroot-sdk-milkv-duo256m-python": {
+        "whole_disk": "milkv-duo256m-python-v1.0.7-2023-1223.img",
+    },
+    "board-image/buildroot-sdk-milkv-duo-python": {
+        "whole_disk": "milkv-duo-python-v1.0.7-2023-1223.img",
+    },
+    "board-image/oerv-sg2042-milkv-pioneer-base": {
+        "whole_disk": "openEuler-23.09-V1-base-sg2042-preview-refreshed.img",
+    },
+    "board-image/oerv-sg2042-milkv-pioneer-xfce": {
+        "whole_disk": "openEuler-23.09-V1-xfce-sg2042-preview-refreshed.img",
+    },
+    "board-image/oerv-sipeed-lpi4a-headless": {
+        "boot": "boot-20231130-224203.ext4",
+        "root": "root-20231130-224203.ext4",
+    },
+    "board-image/oerv-sipeed-lpi4a-xfce": {
+        "boot": "boot-20231130-224942.ext4",
+        "root": "root-20231130-224942.ext4",
+    },
+    "board-image/revyos-sg2042-milkv-pioneer": {
+        "whole_disk": "revyos-pioneer-20231220-005807.img",
+    },
+    "board-image/revyos-sipeed-lpi4a": {
+        "boot": "boot-lpi4a-20231210_134926.ext4",
+        "root": "root-lpi4a-20231210_134926.ext4",
+    },
+    "board-image/uboot-oerv-sipeed-lpi4a-16g": {
+        "uboot": "u-boot-with-spl-lpi4a-16g.2309.v1.bin",
+    },
+    "board-image/uboot-oerv-sipeed-lpi4a-8g": {
+        "uboot": "u-boot-with-spl-lpi4a-8g.2309.v1.bin",
+    },
+    "board-image/uboot-revyos-sipeed-lpi4a-16g": {
+        "uboot": "u-boot-with-spl-lpi4a-16g.20231210.bin",
+    },
+    "board-image/uboot-revyos-sipeed-lpi4a-8g": {
+        "uboot": "u-boot-with-spl-lpi4a-8g.20231210.bin",
+    },
+}
