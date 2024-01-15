@@ -29,6 +29,15 @@ def do_unpack(
         # TODO: handle strip_components somehow; the unzip(1) command currently
         # does not have such support.
         return do_unpack_zip(filename, dest)
+    if filename_lower.endswith(".gz"):
+        # bare gzip file
+        return do_unpack_bare_gz(filename, dest)
+    if filename_lower.endswith(".bz2"):
+        # bare bzip2 file
+        return do_unpack_bare_bzip2(filename, dest)
+    if filename_lower.endswith(".xz"):
+        # bare xz file
+        return do_unpack_bare_xz(filename, dest)
     if filename_lower.endswith(".zst"):
         # bare zstd file
         return do_unpack_bare_zstd(filename, dest)
@@ -90,6 +99,63 @@ def do_unpack_zip(
     retcode = subprocess.call(argv, cwd=dest)
     if retcode != 0:
         raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
+
+
+def do_unpack_bare_gz(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    dest_filename = os.path.basename(filename)[:-3]  # strip ".gz" suffix
+
+    argv = ["gunzip", "-c", filename]
+    if destdir is not None:
+        os.chdir(destdir)
+
+    log.D(f"about to call gunzip: argv={argv}")
+    with open(dest_filename, "wb") as out:
+        retcode = subprocess.call(argv, stdout=out)
+        if retcode != 0:
+            raise RuntimeError(
+                f"gunzip failed: command {' '.join(argv)} returned {retcode}"
+            )
+
+
+def do_unpack_bare_bzip2(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    dest_filename = os.path.basename(filename)[:-4]  # strip ".bz2" suffix
+
+    argv = ["bzip2", "-dc", filename]
+    if destdir is not None:
+        os.chdir(destdir)
+
+    log.D(f"about to call bzip2: argv={argv}")
+    with open(dest_filename, "wb") as out:
+        retcode = subprocess.call(argv, stdout=out)
+        if retcode != 0:
+            raise RuntimeError(
+                f"bzip2 failed: command {' '.join(argv)} returned {retcode}"
+            )
+
+
+def do_unpack_bare_xz(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    dest_filename = os.path.basename(filename)[:-3]  # strip ".xz" suffix
+
+    argv = ["xz", "-d", "-c", filename]
+    if destdir is not None:
+        os.chdir(destdir)
+
+    log.D(f"about to call xz: argv={argv}")
+    with open(dest_filename, "wb") as out:
+        retcode = subprocess.call(argv, stdout=out)
+        if retcode != 0:
+            raise RuntimeError(
+                f"xz failed: command {' '.join(argv)} returned {retcode}"
+            )
 
 
 def do_unpack_bare_zstd(
