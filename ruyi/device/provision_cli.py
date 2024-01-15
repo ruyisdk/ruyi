@@ -4,7 +4,7 @@ import os.path
 import platform
 import subprocess
 import time
-from typing import Callable, Literal, TypedDict
+from typing import Callable, Literal, NotRequired, TypedDict
 
 from .. import log
 from ..cli import prereqs, user_input
@@ -18,6 +18,24 @@ class ImageComboDecl(TypedDict):
     id: str
     display_name: str
     packages: list[str]
+    postinst_fn: NotRequired[Callable[[], None]]
+
+
+def postinst_oerv_on_milkv_pioneer_nvme_models() -> None:
+    log.stdout(
+        """
+[bold green]NOTE[/bold green]: You will need to tweak the rootfs parameter for openEuler to properly
+boot on Milk-V Pioneer v1.2 and later models, whose rootfs resides on NVMe
+drive instead of TF card.
+
+Since [yellow]ruyi[/yellow] does not run as [yellow]root[/yellow], you will have to perform the following
+actions yourself before booting the target device:
+
+* mount the target device's [green]/boot[/green] partition,
+* check the file [cyan]/extlinux/extlinux.conf[/cyan] in the partition,
+* replace [yellow]mmcblk1p3[/yellow] with [yellow]nvme0n1p3[/yellow] as needed.
+"""
+    )
 
 
 IMAGE_COMBOS: list[ImageComboDecl] = [
@@ -62,6 +80,22 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "packages": [
             "board-image/oerv-sg2042-milkv-pioneer-xfce",
         ],
+    },
+    {
+        "id": "oerv-milkv-pioneer-base-nvme",
+        "display_name": "openEuler RISC-V (base system) for Milk-V Pioneer (rootfs on NVMe)",
+        "packages": [
+            "board-image/oerv-sg2042-milkv-pioneer-base",
+        ],
+        "postinst_fn": postinst_oerv_on_milkv_pioneer_nvme_models,
+    },
+    {
+        "id": "oerv-milkv-pioneer-xfce-nvme",
+        "display_name": "openEuler RISC-V (XFCE) for Milk-V Pioneer (rootfs on NVMe)",
+        "packages": [
+            "board-image/oerv-sg2042-milkv-pioneer-xfce",
+        ],
+        "postinst_fn": postinst_oerv_on_milkv_pioneer_nvme_models,
     },
     {
         "id": "oerv-sipeed-lpi4a-8g-headless",
@@ -165,8 +199,8 @@ DEVICE_MILKV_PIONEER: DeviceDecl = {
             "display_name": "Milk-V Pioneer Box (v1.3)",
             "supported_combos": [
                 # "fedora-milkv-pioneer-v1.2"  # cannot download from Google Drive
-                "oerv-milkv-pioneer-base",
-                "oerv-milkv-pioneer-xfce",
+                "oerv-milkv-pioneer-base-nvme",
+                "oerv-milkv-pioneer-xfce-nvme",
                 "revyos-milkv-pioneer",
             ],
         },
@@ -175,8 +209,8 @@ DEVICE_MILKV_PIONEER: DeviceDecl = {
             "display_name": "Milk-V Pioneer Box (v1.2)",
             "supported_combos": [
                 # "fedora-milkv-pioneer-v1.2"  # cannot download from Google Drive
-                "oerv-milkv-pioneer-base",  # unconfirmed by PM
-                "oerv-milkv-pioneer-xfce",  # unconfirmed by PM
+                "oerv-milkv-pioneer-base-nvme",
+                "oerv-milkv-pioneer-xfce-nvme",
                 # "revyos-milkv-pioneer",  # not indicated by PM
             ],
         },
@@ -429,7 +463,17 @@ Please confirm it yourself before the flashing begins.
             log.F("flashing failed, check your device right now")
             return ret
 
-    # TODO: parting words
+    # parting words
+    log.stdout(
+        """
+It seems the flashing has finished without errors.
+
+[bold green]Happy hacking![/bold green]
+"""
+    )
+
+    if postinst_fn := combo.get("postinst_fn"):
+        postinst_fn()
 
     return 0
 
