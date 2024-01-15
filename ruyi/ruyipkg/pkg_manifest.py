@@ -134,8 +134,7 @@ class BlobDecl:
     def __init__(self, data: BlobDeclType) -> None:
         self._data = data
 
-    def get_distfile_names_for_host(self, host: str) -> list[str] | None:
-        # currently the host parameter is ignored
+    def get_distfile_names(self) -> list[str] | None:
         return self._data["distfiles"]
 
 

@@ -79,6 +79,10 @@ class GlobalConfig:
         path = pathlib.Path(self.ensure_data_dir()) / "binaries" / host / slug
         return str(path)
 
+    def global_blob_install_root(self, slug: str) -> str:
+        path = pathlib.Path(self.ensure_data_dir()) / "blobs" / slug
+        return str(path)
+
     def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike | None:
         for data_dir in BaseDirectory.load_data_paths(self.resource_name):
             p = pathlib.Path(data_dir) / "binaries" / host / slug

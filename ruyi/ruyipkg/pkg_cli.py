@@ -225,6 +225,12 @@ def cli_install(args: argparse.Namespace) -> int:
                 return ret
             continue
 
+        if pm.blob_metadata is not None:
+            ret = do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
+            if ret != 0:
+                return ret
+            continue
+
         log.F(f"don't know how to handle non-binary package [green]{pkg_name}[/green]")
         return 2
 
@@ -267,6 +273,66 @@ def do_install_binary_pkg(
     repo_cfg = mr.get_config()
     dist_url_base = repo_cfg["dist"]
     for df_name in distfiles_for_host:
+        df_decl = dfs[df_name]
+        urls = make_distfile_urls(dist_url_base, df_decl)
+        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
+        ensure_unpack_cmd_for_distfile(dest)
+        df = Distfile(urls, dest, df_decl)
+        df.ensure()
+
+        if fetch_only:
+            log.D(
+                "skipping installation because [yellow]--fetch-only[/yellow] is given"
+            )
+            continue
+
+        log.I(
+            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
+        )
+        df.unpack(install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
+
+    return 0
+
+
+def do_install_blob_pkg(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    fetch_only: bool,
+    reinstall: bool,
+) -> int:
+    bm = pm.blob_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_blob_install_root(pkg_name)
+    if is_root_likely_populated(install_root):
+        if reinstall:
+            log.W(
+                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            )
+            shutil.rmtree(install_root)
+            pathlib.Path(install_root).mkdir(parents=True)
+        else:
+            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            return 0
+    else:
+        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+
+    dfs = pm.distfiles()
+
+    distfile_names = bm.get_distfile_names()
+    if not distfile_names:
+        log.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
+        return 2
+
+    repo_cfg = mr.get_config()
+    dist_url_base = repo_cfg["dist"]
+    for df_name in distfile_names:
         df_decl = dfs[df_name]
         urls = make_distfile_urls(dist_url_base, df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
