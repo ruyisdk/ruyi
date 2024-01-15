@@ -7,7 +7,6 @@ from .. import log
 from ..cli import prereqs
 
 RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.xz|\.zst)?$")
-RE_ZIP = re.compile(r"\.zip$")
 
 
 class UnrecognizedPackFormatError(Exception):
@@ -23,13 +22,14 @@ def do_unpack(
     dest: str | None,
     strip_components: int,
 ) -> None:
-    if RE_TARBALL.search(filename):
+    filename_lower = filename.lower()
+    if RE_TARBALL.search(filename_lower):
         return do_unpack_tar(filename, dest, strip_components)
-    if RE_ZIP.search(filename):
+    if filename_lower.endswith(".zip"):
         # TODO: handle strip_components somehow; the unzip(1) command currently
         # does not have such support.
         return do_unpack_zip(filename, dest)
-    if filename.endswith(".zst"):
+    if filename_lower.endswith(".zst"):
         # bare zstd file
         return do_unpack_bare_zstd(filename, dest)
     raise UnrecognizedPackFormatError(filename)
