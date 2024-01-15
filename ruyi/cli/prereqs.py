@@ -26,6 +26,7 @@ _CMDS = (
     "tar",
     "xz",
     "zstd",
+    "unzip",
 )
 
 _CMD_PRESENCE_MAP: dict[str, bool] = {}
