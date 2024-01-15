@@ -27,6 +27,8 @@ _CMDS = (
     "xz",
     "zstd",
     "unzip",
+    # commands used by the device provisioner
+    "dd",
 )
 
 _CMD_PRESENCE_MAP: dict[str, bool] = {}
