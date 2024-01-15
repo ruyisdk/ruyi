@@ -87,6 +87,7 @@ class CurlFetcher(BaseFetcher):
             argv.extend(("-C", "-"))
         argv.extend(
             (
+                "-L",
                 "--retry",
                 "3",
                 "--connect-timeout",
