@@ -361,9 +361,9 @@ for the information you will need later.
 """
         )
         for part in requested_host_blkdevs:
-            part_desc = "whole disk" if part == "whole_disk" else part
+            part_desc = "whole disk" if part == "whole_disk" else f"'{part}' partition"
             path = user_input.ask_for_file(
-                f"Please give the path for the target's [green]{part_desc}[/green]:"
+                f"Please give the path for the target's {part_desc}:"
             )
             host_blkdev_map[part] = path
 
@@ -458,12 +458,12 @@ def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
     ]
 
     log.I(
-        "dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
+        f"dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
     )
     log.D(f"about to call dd: argv={argv}")
     retcode = subprocess.call(argv)
     if retcode == 0:
-        log.I("successfully flashed [green]{outfile}[/green]")
+        log.I(f"successfully flashed [green]{outfile}[/green]")
     else:
         log.F(f"failed to flash the [green]{outfile}[/green] disk/partition")
         log.W("the device could be in an inconsistent state now, check now")
