@@ -1,8 +1,12 @@
 import argparse
+import platform
 from typing import TypedDict
 
 from .. import log
 from ..cli import user_input
+from ..config import GlobalConfig
+from ..ruyipkg.pkg_cli import do_install_atoms
+from ..ruyipkg.repo import MetadataRepo
 
 
 class ImageComboDecl(TypedDict):
@@ -225,6 +229,15 @@ def cli_device_provision(args: argparse.Namespace) -> int:
 
 
 def do_provision_interactive() -> int:
+    # ensure ruyi repo is present, for good out-of-the-box experience
+    config = GlobalConfig.load_from_config()
+    mr = MetadataRepo(
+        config.get_repo_dir(),
+        config.get_repo_url(),
+        config.get_repo_branch(),
+    )
+    mr.ensure_git_repo()
+
     log.stdout(
         """
 [bold green]RuyiSDK Device Provisioning Wizard[/bold green]
@@ -279,18 +292,44 @@ user is part of the [yellow]disk[/yellow] group; for example, you can
     )
     combo = img_combos_by_id[combo_id]
 
-    return do_provision_combo_interactive(dev, variant, combo)
+    return do_provision_combo_interactive(config, mr, dev, variant, combo)
 
 
 def do_provision_combo_interactive(
+    config: GlobalConfig,
+    mr: MetadataRepo,
     dev_decl: DeviceDecl,
     variant_decl: DeviceVariantDecl,
     combo: ImageComboDecl,
 ) -> int:
     log.D(f"provisioning device variant '{dev_decl['id']}@{variant_decl['id']}'")
-    log.D(f"chosen combo: packages {combo['packages']}")
 
-    # TODO: download packages
+    # download packages
+    pkg_atoms = combo["packages"]
+    pkg_names_for_display = "\n".join(f" * [green]{i}[/green]" for i in pkg_atoms)
+    log.stdout(
+        f"""
+We are about to download and install the following packages for your device:
+
+{pkg_names_for_display}
+"""
+    )
+    if not user_input.ask_for_yesno_confirmation("Proceed?"):
+        log.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+        return 1
+
+    ret = do_install_atoms(
+        config,
+        mr,
+        set(pkg_atoms),
+        host=platform.machine(),
+        fetch_only=False,
+        reinstall=False,
+    )
+    if ret != 0:
+        log.F("failed to download and install packages")
+        log.I("your device was not touched")
+        return 2
 
     # TODO: prompt target block device(s)
 
