@@ -197,6 +197,10 @@ packages-index
         - `binfmt_misc` 是适合该二进制的 Linux `binfmt_misc` 配置串。注意转义。其中支持的特殊写法：
             - `$BIN`：将在渲染时被替换为指向该二进制的绝对路径。
 
+同时请注意，目前 `ruyi` 的参考实现存在如下的特殊情况：
+
+* 目前 Zip 压缩包的解压工作由系统的 `unzip` 命令提供。由于该命令不支持类似 `tar` 的 `--strip-components` 选项，因此 Zip 格式的分发文件的 `strip_components` 配置目前不会被尊重。
+
 ### `news`
 
 此目录内含 0 或多份 Markdown 格式的通知消息。
