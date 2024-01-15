@@ -7,7 +7,7 @@ import time
 from typing import Callable, Literal, TypedDict
 
 from .. import log
-from ..cli import user_input
+from ..cli import prereqs, user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.pkg_cli import do_install_atoms
@@ -395,7 +395,39 @@ We are about to:
         )
         return 1
 
-    # TODO: flash with dd
+    # ensure commands
+    all_needed_cmds = set(
+        itertools.chain(*(strat["need_cmd"] for _, strat in strategies))
+    )
+    if all_needed_cmds:
+        prereqs.ensure_cmds(*all_needed_cmds)
+
+        if "fastboot" in all_needed_cmds:
+            # ask the user to ensure the device shows up
+            # TODO: automate doing so
+            log.stdout(
+                """
+Some flashing steps require the use of fastboot, in which case you should
+ensure the target device is showing up in [yellow]fastboot devices[/yellow] output.
+Please confirm it yourself before the flashing begins.
+"""
+            )
+            if not user_input.ask_for_yesno_confirmation(
+                "Is the device identified by fastboot now?"
+            ):
+                log.stdout(
+                    "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/yellow] is fixed for the device.",
+                    end="\n\n",
+                )
+                return 1
+
+    # flash
+    for pkg, strat in strategies:
+        log.D(f"flashing {pkg} with strategy {strat}")
+        ret = strat["flash_fn"](pkg_part_maps[pkg], host_blkdev_map)
+        if ret != 0:
+            log.F("flashing failed, check your device right now")
+            return ret
 
     # TODO: parting words
 
