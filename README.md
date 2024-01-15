@@ -10,40 +10,10 @@ put inside your `$PATH` and you're ready to go.
 
 [mirror-testing]: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/
 
-```sh
-# Sync the RuyiSDK package repo to local storage
-# By default the repo is cloned to $XDG_CACHE_HOME/ruyi/packages-index
-# if XDG_CACHE_HOME is unset, it defaults to ~/.cache
-ruyi update
+You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
+(only available in Chinese right now).
 
-# List all available packages
-ruyi list
-
-# And the details
-ruyi list -v
-
-# Install a package
-# Either way is okay and equivalent to each other:
-ruyi install plct
-ruyi install name:plct
-ruyi install slug:plct-20231026
-
-# TODO: remove a package
-#ruyi remove plct-20231026
-
-# list available profiles
-ruyi list profiles
-
-# TODO: setup a project
-#cd path/to/your/project
-#ruyi setup --profile=milkv-duo .
-
-# TODO: enjoy your build!
-#source ./.ruyirc
-#./configure --host=riscv64-plct-linux-gnu && make
-
-# TODO: cmake & meson support
-```
+[docs]: https://ruyisdk.github.io/docs/zh/introduction/
 
 ## Configuration
 
