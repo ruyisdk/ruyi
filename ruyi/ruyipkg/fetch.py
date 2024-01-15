@@ -6,14 +6,8 @@ from .. import log
 
 
 class BaseFetcher:
-    def __init__(self, urls: str | list[str], dest: str) -> None:
-        if isinstance(urls, list):
-            self.urls = urls
-        elif isinstance(urls, str):
-            self.urls = [urls]
-        else:
-            raise ValueError("urls must either be str or list[str]")
-
+    def __init__(self, urls: list[str], dest: str) -> None:
+        self.urls = urls
         self.dest = dest
 
     @classmethod
@@ -27,6 +21,7 @@ class BaseFetcher:
 
     def fetch(self, *, resume: bool = False) -> None:
         for url in self.urls:
+            log.I(f"downloading {url} to {self.dest}")
             success = self.fetch_one(url, self.dest, resume)
             if success:
                 return
@@ -38,7 +33,7 @@ class BaseFetcher:
         )
 
     @classmethod
-    def new(cls, urls: str | list[str], dest: str) -> "BaseFetcher":
+    def new(cls, urls: list[str], dest: str) -> "BaseFetcher":
         return get_usable_fetcher_cls()(urls, dest)
 
 
@@ -73,7 +68,7 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, urls: str | list[str], dest: str) -> None:
+    def __init__(self, urls: list[str], dest: str) -> None:
         super().__init__(urls, dest)
 
     @classmethod
@@ -117,7 +112,7 @@ register_fetcher(CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, urls: str | list[str], dest: str) -> None:
+    def __init__(self, urls: list[str], dest: str) -> None:
         super().__init__(urls, dest)
 
     @classmethod

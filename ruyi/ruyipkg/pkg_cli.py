@@ -9,7 +9,7 @@ print = log.stdout
 
 from ..config import GlobalConfig
 from .atom import Atom
-from .distfile import Distfile
+from .distfile import Distfile, DistfileDecl
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
 from .unpack import ensure_unpack_cmd_for_distfile
@@ -112,10 +112,14 @@ def print_pkg_detail(pm: PackageManifest) -> None:
             print(f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]')
 
 
-def make_distfile_url(base: str, name: str) -> str:
+def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
+    if decl.urls:
+        return decl.urls
+
     # urljoin can't be used because it trims the basename part if base is not
     # `/`-suffixed
-    return f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"
+    name = decl.name
+    return [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
 
 
 def is_root_likely_populated(root: str) -> bool:
@@ -174,11 +178,10 @@ def cli_extract(args: argparse.Namespace) -> int:
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
-            url = make_distfile_url(dist_url_base, df_name)
+            urls = make_distfile_urls(dist_url_base, df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             ensure_unpack_cmd_for_distfile(dest)
-            log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl)
+            df = Distfile(urls, dest, df_decl)
             df.ensure()
 
             log.I(
@@ -249,11 +252,10 @@ def cli_install(args: argparse.Namespace) -> int:
         dist_url_base = repo_cfg["dist"]
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
-            url = make_distfile_url(dist_url_base, df_name)
+            urls = make_distfile_urls(dist_url_base, df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             ensure_unpack_cmd_for_distfile(dest)
-            log.I(f"downloading {url} to {dest}")
-            df = Distfile(url, dest, df_decl)
+            df = Distfile(urls, dest, df_decl)
             df.ensure()
 
             if fetch_only:

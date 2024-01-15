@@ -10,11 +10,11 @@ from .unpack import do_unpack
 class Distfile:
     def __init__(
         self,
-        url: str,
+        urls: list[str],
         dest: str,
         decl: DistfileDecl,
     ) -> None:
-        self.url = url
+        self.urls = urls
         self.dest = dest
         self.size = decl.size
         self.csums = decl.checksums
@@ -40,7 +40,7 @@ class Distfile:
                 return
 
             # the file is already gone, re-fetch
-            log.D(f"re-fetching {self.url} to {self.dest}")
+            log.D(f"re-fetching {self.dest}")
             return self.fetch_and_ensure_integrity()
 
         log.W(
@@ -61,7 +61,7 @@ class Distfile:
             return False
 
     def fetch_and_ensure_integrity(self, *, resume: bool = False) -> None:
-        fetcher = BaseFetcher.new(self.url, self.dest)
+        fetcher = BaseFetcher.new(self.urls, self.dest)
         fetcher.fetch(resume=resume)
 
         if not self.ensure_integrity_or_rm():

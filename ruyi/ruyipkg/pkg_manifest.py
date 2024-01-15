@@ -95,6 +95,10 @@ class DistfileDecl:
         return self._data["name"]
 
     @property
+    def urls(self) -> list[str] | None:
+        return self._data.get("urls")
+
+    @property
     def size(self) -> int:
         return self._data["size"]
 
