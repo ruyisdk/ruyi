@@ -45,13 +45,19 @@ def do_unpack_or_symlink(
 
 
 def do_symlink(
-    filename: str,
-    dest: str | None,
+    src_path: str,
+    destdir: str | None,
 ) -> None:
-    if dest is None:
+    src_filename = os.path.basename(src_path)
+    if destdir is None:
         # symlink into CWD
-        dest = os.path.basename(filename)
-    symlink_target = os.path.relpath(filename, dest)
+        dest = src_filename
+    else:
+        dest = os.path.join(destdir, src_filename)
+
+    # avoid the hassle and pitfalls around relative paths and symlinks, and
+    # just point to the target using absolute path
+    symlink_target = os.path.abspath(src_path)
     os.symlink(symlink_target, dest)
 
 
