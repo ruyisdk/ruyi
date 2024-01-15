@@ -20,7 +20,7 @@ class BaseFetcher:
         raise NotImplementedError
 
     @classmethod
-    def new(cls, url: str, dest: str) -> Self:
+    def new(cls, url: str, dest: str) -> "BaseFetcher":
         return get_usable_fetcher_cls()(url, dest)
 
 
