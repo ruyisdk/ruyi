@@ -349,7 +349,7 @@ def do_install_blob_pkg(
         log.I(
             f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
-        df.unpack(install_root)
+        df.unpack_or_symlink(install_root)
 
     log.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"

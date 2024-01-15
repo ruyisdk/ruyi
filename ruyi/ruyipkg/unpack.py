@@ -9,6 +9,14 @@ from ..cli import prereqs
 RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.xz|\.zst)?$")
 
 
+class UnrecognizedPackFormatError(Exception):
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+
+    def __str__(self) -> str:
+        return f"don't know how to unpack file {self.filename}"
+
+
 def do_unpack(
     filename: str,
     dest: str | None,
@@ -16,7 +24,30 @@ def do_unpack(
 ) -> None:
     if RE_TARBALL.search(filename):
         return do_unpack_tar(filename, dest, strip_components)
-    raise RuntimeError(f"don't know how to unpack file {filename}")
+    raise UnrecognizedPackFormatError(filename)
+
+
+def do_unpack_or_symlink(
+    filename: str,
+    dest: str | None,
+    strip_components: int,
+) -> None:
+    try:
+        return do_unpack(filename, dest, strip_components)
+    except UnrecognizedPackFormatError:
+        # just symlink into destination
+        return do_symlink(filename, dest)
+
+
+def do_symlink(
+    filename: str,
+    dest: str | None,
+) -> None:
+    if dest is None:
+        # symlink into CWD
+        dest = os.path.basename(filename)
+    symlink_target = os.path.relpath(filename, dest)
+    os.symlink(symlink_target, dest)
 
 
 def do_unpack_tar(

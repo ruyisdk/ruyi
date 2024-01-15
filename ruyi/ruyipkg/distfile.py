@@ -4,7 +4,7 @@ from .. import log
 from .checksum import Checksummer
 from .fetch import BaseFetcher
 from .pkg_manifest import DistfileDecl
-from .unpack import do_unpack
+from .unpack import do_unpack, do_unpack_or_symlink
 
 
 class Distfile:
@@ -71,3 +71,6 @@ class Distfile:
 
     def unpack(self, root: str | None) -> None:
         return do_unpack(self.dest, root, self.strip_components)
+
+    def unpack_or_symlink(self, root: str | None) -> None:
+        return do_unpack_or_symlink(self.dest, root, self.strip_components)
