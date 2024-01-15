@@ -29,6 +29,9 @@ def do_unpack(
         # TODO: handle strip_components somehow; the unzip(1) command currently
         # does not have such support.
         return do_unpack_zip(filename, dest)
+    if filename.endswith(".zst"):
+        # bare zstd file
+        return do_unpack_bare_zstd(filename, dest)
     raise UnrecognizedPackFormatError(filename)
 
 
@@ -87,6 +90,18 @@ def do_unpack_zip(
     retcode = subprocess.call(argv, cwd=dest)
     if retcode != 0:
         raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
+
+
+def do_unpack_bare_zstd(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    dest_filename = os.path.basename(filename)[:-4]  # strip ".zst" suffix
+    argv = ["zstd", "-d", filename, "-o", f"./{dest_filename}"]
+    log.D(f"about to call zstd: argv={argv}")
+    retcode = subprocess.call(argv, cwd=destdir)
+    if retcode != 0:
+        raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
 
 
 def ensure_unpack_cmd_for_distfile(dest_filename: str) -> None | NoReturn:
