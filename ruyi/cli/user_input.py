@@ -1,3 +1,5 @@
+import os.path
+
 from .. import log
 
 
@@ -60,4 +62,19 @@ def ask_for_choice(prompt: str, choices_texts: list[str]) -> int:
         log.stdout(f"Out-of-range input [yellow]'{user_input}'[/yellow].")
         log.stdout(
             f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+        )
+
+
+def ask_for_file(prompt: str) -> str:
+    while True:
+        try:
+            user_input = input(f"{prompt} ")
+        except EOFError:
+            raise ValueError("EOF while reading user input")
+
+        if os.path.exists(user_input):
+            return user_input
+
+        log.stdout(
+            f"[yellow]'{user_input}'[/yellow] is not a path to an existing file."
         )

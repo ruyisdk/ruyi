@@ -1,4 +1,6 @@
 import argparse
+import itertools
+import os.path
 import platform
 import subprocess
 import time
@@ -7,6 +9,7 @@ from typing import Callable, Literal, TypedDict
 from .. import log
 from ..cli import user_input
 from ..config import GlobalConfig
+from ..ruyipkg.atom import Atom
 from ..ruyipkg.pkg_cli import do_install_atoms
 from ..ruyipkg.repo import MetadataRepo
 
@@ -333,9 +336,64 @@ We are about to download and install the following packages for your device:
         log.I("your device was not touched")
         return 2
 
-    # TODO: prompt target block device(s)
+    # this is hacky: currently correspondence is manually ensured
+    strategies = [(pkg, PKG_PROVISION_STRATEGY[pkg]) for pkg in pkg_atoms]
+    strategies.sort(key=lambda x: x[1]["priority"], reverse=True)
 
-    # TODO: final confirmation
+    # compose a partition map for each image pkg installed
+    # XXX: the data is also hard-coded for now, pending proper integration into
+    # the repo
+    pkg_part_maps = {pkg: make_pkg_part_map(config, mr, pkg) for pkg in pkg_atoms}
+
+    # prompt user to give paths to target block device(s)
+    requested_host_blkdevs = set(
+        itertools.chain(*(strat[1]["need_host_blkdevs"] for strat in strategies))
+    )
+    host_blkdev_map: PartitionPathMap = {}
+    if requested_host_blkdevs:
+        log.stdout(
+            """
+For initializing this target device, you should plug the device's storage (e.g.
+SD card or NVMe SSD) into this host system, and note down the corresponding
+device file path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY,
+/dev/nvmeXnYpZ for partitions. You may consult e.g. [yellow]sudo blkid[/yellow] output
+for the information you will need later.
+"""
+        )
+        for part in requested_host_blkdevs:
+            part_desc = "whole disk" if part == "whole_disk" else part
+            path = user_input.ask_for_file(
+                f"Please give the path for the target's [green]{part_desc}[/green]:"
+            )
+            host_blkdev_map[part] = path
+
+    # final confirmation
+    log.stdout(
+        """
+We have collected enough information for the actual flashing. Now is the last
+chance to re-check and confirm everything is fine.
+
+We are about to:
+"""
+    )
+
+    pretend_steps = "\n".join(
+        f" * {step_str}"
+        for step_str in itertools.chain(
+            *(
+                strat[1]["pretend_fn"](pkg_part_maps[strat[0]], host_blkdev_map)
+                for strat in strategies
+            )
+        )
+    )
+    log.stdout(pretend_steps, end="\n\n")
+
+    if not user_input.ask_for_yesno_confirmation("Proceed with flashing?"):
+        log.stdout(
+            "\nExiting. The device is not touched and you may re-start the wizard at will.",
+            end="\n\n",
+        )
+        return 1
 
     # TODO: flash with dd
 
@@ -355,6 +413,7 @@ class PackageProvisionStrategy(TypedDict):
     priority: int  # higher number means earlier
     need_host_blkdevs: list[PartitionKind]
     need_cmd: list[str]
+    pretend_fn: Callable[[PartitionPathMap, PartitionPathMap], list[str]]
     flash_fn: Callable[[PartitionPathMap, PartitionPathMap], int]
 
 
@@ -378,6 +437,18 @@ def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
         log.W("the device could be in an inconsistent state now, check now")
 
     return retcode
+
+
+def pretend_dd(
+    img_paths: PartitionPathMap, blkdev_paths: PartitionPathMap
+) -> list[str]:
+    result: list[str] = []
+    for part, img_path in img_paths.items():
+        blkdev_path = blkdev_paths[part]
+        result.append(
+            f"write [yellow]{img_path}[/yellow] contents to [green]{blkdev_path}[/green] with dd"
+        )
+    return result
 
 
 def flash_dd(img_paths: PartitionPathMap, blkdev_paths: PartitionPathMap) -> int:
@@ -409,6 +480,15 @@ def _do_fastboot_flash(part: str, img_path: str) -> int:
         log.I(f"[green]{part}[/green] image successfully flashed")
 
     return ret
+
+
+def pretend_lpi4a_uboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> list[str]:
+    p = img_paths["uboot"]
+    return [
+        f"flash [yellow]{p}[/yellow] into device RAM",
+        f"reboot the device",
+        f"flash [yellow]{p}[/yellow] into device partition [green]uboot[/green]",
+    ]
 
 
 def flash_lpi4a_uboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
@@ -443,6 +523,13 @@ def flash_lpi4a_uboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
     return _do_fastboot_flash("uboot", uboot_img_path)
 
 
+def pretend_fastboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> list[str]:
+    return [
+        f"flash [yellow]{f}[/yellow] into device partition [green]{p}[/green]"
+        for p, f in img_paths.items()
+    ]
+
+
 def flash_fastboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
     for partition, img_path in img_paths.items():
         ret = _do_fastboot_flash(partition, img_path)
@@ -456,6 +543,7 @@ STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
     "priority": 0,
     "need_host_blkdevs": ["whole_disk"],
     "need_cmd": ["dd"],
+    "pretend_fn": pretend_dd,
     "flash_fn": flash_dd,
 }
 
@@ -463,6 +551,7 @@ STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
     "priority": 0,
     "need_host_blkdevs": [],
     "need_cmd": ["fastboot"],
+    "pretend_fn": pretend_fastboot,
     "flash_fn": flash_fastboot,
 }
 
@@ -470,6 +559,7 @@ STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
     "priority": 10,
     "need_host_blkdevs": [],
     "need_cmd": ["fastboot"],
+    "pretend_fn": pretend_lpi4a_uboot,
     "flash_fn": flash_lpi4a_uboot,
 }
 
@@ -537,3 +627,17 @@ PKG_PART_MAPS: dict[str, PartitionPathMap] = {
         "uboot": "u-boot-with-spl-lpi4a-8g.20231210.bin",
     },
 }
+
+
+def make_pkg_part_map(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom: str,
+) -> PartitionPathMap:
+    a = Atom.parse(atom)
+    pm = a.match_in_repo(mr, True)
+    assert pm is not None
+    pkg_root = config.global_blob_install_root(pm.name_for_installation)
+
+    relpath_part_map = PKG_PART_MAPS[f"{pm.category}/{pm.name}"]
+    return {p: os.path.join(pkg_root, f) for p, f in relpath_part_map.items()}
