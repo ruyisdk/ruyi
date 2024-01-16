@@ -290,10 +290,9 @@ the device's storage, that you should somehow make available on this host
 system beforehand.
 
 Note that, as Ruyi does not run as [yellow]root[/yellow], but raw disk access is most likely
-required to flash images, you should arrange to allow your user account write
-access to the block device files. This likely means you should ensure your
-user is part of the [yellow]disk[/yellow] group; for example, you can
-[yellow]sudo gpasswd -a <your user> disk[/yellow] then logout and re-login, to achieve this.
+required to flash images, you should arrange to allow your user account [yellow]sudo[/yellow]
+access to necessary commands such as [yellow]dd[/yellow]. Flashing will fail if the [yellow]sudo[/yellow]
+configuration does not allow so.
 """
     )
 
@@ -495,6 +494,7 @@ class PackageProvisionStrategy(TypedDict):
 
 def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
     argv = [
+        "sudo",
         "dd",
         f"if={infile}",
         f"of={outfile}",
@@ -504,7 +504,7 @@ def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
     log.I(
         f"dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
     )
-    log.D(f"about to call dd: argv={argv}")
+    log.D(f"about to call dd with sudo: argv={argv}")
     retcode = subprocess.call(argv)
     if retcode == 0:
         log.I(f"successfully flashed [green]{outfile}[/green]")

@@ -28,6 +28,7 @@ _CMDS = (
     "zstd",
     "unzip",
     # commands used by the device provisioner
+    "sudo",
     "dd",
     "fastboot",
 )
