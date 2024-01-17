@@ -538,7 +538,7 @@ def flash_dd(img_paths: PartitionPathMap, blkdev_paths: PartitionPathMap) -> int
 
 
 def _do_fastboot(*args: str) -> int:
-    argv = ["fastboot"]
+    argv = ["sudo", "fastboot"]
     argv.extend(args)
     log.D(f"about to call fastboot: argv={argv}")
     return subprocess.call(argv)
@@ -618,7 +618,7 @@ def flash_fastboot(img_paths: PartitionPathMap, _: PartitionPathMap) -> int:
 STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
     "priority": 0,
     "need_host_blkdevs": ["whole_disk"],
-    "need_cmd": ["dd"],
+    "need_cmd": ["sudo", "dd"],
     "pretend_fn": pretend_dd,
     "flash_fn": flash_dd,
 }
@@ -626,7 +626,7 @@ STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
 STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
     "priority": 0,
     "need_host_blkdevs": [],
-    "need_cmd": ["fastboot"],
+    "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_fastboot,
     "flash_fn": flash_fastboot,
 }
@@ -634,7 +634,7 @@ STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
 STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
     "priority": 10,
     "need_host_blkdevs": [],
-    "need_cmd": ["fastboot"],
+    "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_lpi4a_uboot,
     "flash_fn": flash_lpi4a_uboot,
 }
