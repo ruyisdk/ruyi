@@ -160,6 +160,7 @@ packages-index
     - `source`：该包为源码包，安装方式为直接解压。
     - `toolchain`：该包提供了一套工具链。
     - `emulator`：该包提供了一个或多个模拟器二进制。
+    - `provisionable`：该包含有可用于 Ruyi 设备安装器的描述信息。
 * `desc` 是包内容的一句话描述，仅用于向用户展示。
 * `doc_uri` 是可选的指向该包的配套文档首页的 URI 字符串。
 * `vendor` 提供了包的提供者相关信息。其中：
@@ -199,6 +200,12 @@ packages-index
         - `supported_arches` 是该二进制支持模拟的架构列表。架构值的语义与 `binary` 的 `host` 字段相同。
         - `binfmt_misc` 是适合该二进制的 Linux `binfmt_misc` 配置串。注意转义。其中支持的特殊写法：
             - `$BIN`：将在渲染时被替换为指向该二进制的绝对路径。
+* `provisionable` 仅在 `kind` 含有 `provisionable` 时有意义，表示可被 Ruyi 设备安装器读取的额外信息。其中：
+    - `partition_map` 是该包提供的分区映像信息，是键值对；每条记录的 key 为目标分区性质，value 为相对于该包安装目录的，对应目标分区的未压缩原始映像文件的路径。目前支持的分区性质有：
+        - `disk`：特殊，表示全盘映像。
+        - `boot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `boot` 分区。
+        - `root`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `root` 分区。
+        - `uboot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `uboot` 分区。
 
 同时请注意，目前 `ruyi` 的参考实现存在如下的特殊情况：
 
