@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Self
+from typing import Any, Self
 
 import frontmatter
 
@@ -13,12 +13,12 @@ class NewsItemNameMetadata:
         self.id = id
         self.lang = lang
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, NewsItemNameMetadata):
             return NotImplemented
         return self.id == other.id
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if not isinstance(other, NewsItemNameMetadata):
             return NotImplemented
 
@@ -59,12 +59,12 @@ class NewsItem:
         post = frontmatter.loads(contents)
         return cls(md, post)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, NewsItem):
             return NotImplemented
         return self._md == other._md
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if not isinstance(other, NewsItem):
             return NotImplemented
         return self._md < other._md
