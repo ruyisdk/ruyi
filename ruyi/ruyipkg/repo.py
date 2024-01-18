@@ -1,7 +1,6 @@
 import glob
 import json
 import os.path
-import pathlib
 from typing import Iterable, NotRequired, Tuple, TypedDict
 
 from git import Repo
