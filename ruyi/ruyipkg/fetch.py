@@ -1,6 +1,5 @@
 import abc
 import subprocess
-from typing import Self
 
 from .. import log
 
@@ -45,23 +44,23 @@ def register_fetcher(f: type[BaseFetcher]) -> None:
     KNOWN_FETCHERS.append(f)
 
 
-_FETCHER_CACHE_POPULATED: bool = False
-_CACHED_USABLE_FETCHER_CLASS: type[BaseFetcher] | None = None
+_fetcher_cache_populated: bool = False
+_cached_usable_fetcher_class: type[BaseFetcher] | None = None
 
 
 def get_usable_fetcher_cls() -> type[BaseFetcher]:
-    global _FETCHER_CACHE_POPULATED
-    global _CACHED_USABLE_FETCHER_CLASS
+    global _fetcher_cache_populated
+    global _cached_usable_fetcher_class
 
-    if _FETCHER_CACHE_POPULATED:
-        if _CACHED_USABLE_FETCHER_CLASS is None:
+    if _fetcher_cache_populated:
+        if _cached_usable_fetcher_class is None:
             raise RuntimeError("no fetcher is available on the system")
-        return _CACHED_USABLE_FETCHER_CLASS
+        return _cached_usable_fetcher_class
 
-    _FETCHER_CACHE_POPULATED = True
+    _fetcher_cache_populated = True
     for cls in KNOWN_FETCHERS:
         if cls.is_available():
-            _CACHED_USABLE_FETCHER_CLASS = cls
+            _cached_usable_fetcher_class = cls
             return cls
 
     raise RuntimeError("no fetcher is available on the system")
