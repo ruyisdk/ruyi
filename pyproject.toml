@@ -29,6 +29,12 @@ show_error_codes = true
 #strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
+# https://github.com/eyeseast/python-frontmatter/issues/112
+# https://github.com/python/mypy/issues/8545
+# have to supply the typing info until upstream releases a new version with
+# the py.typed marker included
+mypy_path = "./stubs"
+
 
 [tool.poetry.dependencies]
 python = ">=3.11"
