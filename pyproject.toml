@@ -10,6 +10,19 @@ authors = [
   # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
   "WANG Xuerui <wangxuerui@iscas.ac.cn>",
 ]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Embedded Systems",
+  "Topic :: System :: Software Distribution",
+  "Typing :: Typed",
+]
 include = ["ruyi/py.typed"]
 
 #requires-python = ">=3.11"
