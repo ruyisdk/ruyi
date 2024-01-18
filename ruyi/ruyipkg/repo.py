@@ -1,8 +1,7 @@
 import glob
 import json
 import os.path
-import pathlib
-from typing import Iterable, NotRequired, Tuple, TypedDict
+from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
 
 from git import Repo
 
@@ -15,6 +14,16 @@ from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 class RepoConfigType(TypedDict):
     dist: str
     doc_uri: NotRequired[str]
+
+
+def is_repo_config(x: Any) -> TypeGuard[RepoConfigType]:
+    if not isinstance(x, dict):
+        return False
+    if "dist" not in x or not isinstance(x["dist"], str):
+        return False
+    if "doc_uri" in x and not isinstance(x["doc_uri"], str):
+        return False
+    return True
 
 
 class MetadataRepo:
@@ -69,7 +78,12 @@ class MetadataRepo:
         # working tree (as opposed to a bare repo)
         path = os.path.join(self.root, "config.json")
         with open(path, "rb") as fp:
-            return json.load(fp)
+            obj = json.load(fp)
+
+        if not is_repo_config(obj):
+            # TODO: more detail in the error message
+            raise RuntimeError("malformed repo config.json")
+        return obj
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         self.ensure_git_repo()

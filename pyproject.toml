@@ -10,6 +10,7 @@ authors = [
   # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
   "WANG Xuerui <wangxuerui@iscas.ac.cn>",
 ]
+include = ["ruyi/py.typed"]
 
 #requires-python = ">=3.11"
 
@@ -23,6 +24,19 @@ build-backend = "poetry.core.masonry.api"
 target-version = ['py311']
 
 
+[tool.mypy]
+files = ["ruyi"]
+show_error_codes = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+# https://github.com/eyeseast/python-frontmatter/issues/112
+# https://github.com/python/mypy/issues/8545
+# have to supply the typing info until upstream releases a new version with
+# the py.typed marker included
+mypy_path = "./stubs"
+
+
 [tool.poetry.dependencies]
 python = ">=3.11"
 
@@ -32,6 +46,8 @@ python-frontmatter = "^1.0.1"
 pyxdg = "^0.28"
 rich = "^13.5"
 semver = "^3"
+
+types-pyxdg = "^0.28.0.20240106"
 
 # build and dev
 black = "^23.10.1"

@@ -94,6 +94,9 @@ def resolve_argv0_symlink(argv0: str, vcfg: RuyiVenvConfig) -> str | None:
         except OSError:
             return None
 
+    # no venv and argv[0] isn't absolute -- no way to figure out
+    return None
+
 
 def is_proxying_to_cc(argv0: str) -> bool:
     return CC_ARGV0_RE.search(argv0) is not None

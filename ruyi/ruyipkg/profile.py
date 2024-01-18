@@ -49,11 +49,13 @@ class ProfileDecl:
     def get_env_config_for_emu_flavor(
         self,
         flavor: EmulatorFlavor,
-        sysroot: PathLike | None,
+        sysroot: PathLike[Any] | None,
     ) -> dict[str, str] | None:
         result: dict[str, str] = {}
 
-        if flavor == "qemu-linux-user" and sysroot is not None:
+        # right now this is the only supported flavor
+        # if flavor == "qemu-linux-user" and sysroot is not None:
+        if sysroot is not None:
             result["QEMU_LD_PREFIX"] = str(sysroot)
 
         return result
@@ -87,4 +89,4 @@ def parse_profiles(data: ArchProfilesDeclType) -> Iterable[ProfileDecl]:
 
 
 # put this last: register the built-in arches
-from . import arch
+from . import arch as _

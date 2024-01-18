@@ -4,6 +4,7 @@
 import base64
 import glob
 import os.path
+from typing import Any
 import zlib
 
 
@@ -20,7 +21,10 @@ def main() -> None:
 
     payloads = {f[:-6]: make_payload_from_file(f) for f in glob.iglob("*.jinja")}
     with open("data.py", "w") as fp:
-        p = lambda *args: print(*args, file=fp)
+
+        def p(*args: Any) -> None:
+            return print(*args, file=fp)
+
         p("# NOTE: This file is auto-generated. DO NOT EDIT!")
         p("# Update by running the __main__.py alongside this file\n")
 

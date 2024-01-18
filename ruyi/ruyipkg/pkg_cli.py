@@ -9,9 +9,9 @@ print = log.stdout
 
 from ..config import GlobalConfig
 from .atom import Atom
-from .distfile import Distfile, DistfileDecl
+from .distfile import Distfile
 from .repo import MetadataRepo
-from .pkg_manifest import PackageManifest
+from .pkg_manifest import DistfileDecl, PackageManifest
 from .unpack import ensure_unpack_cmd_for_distfile
 
 
@@ -113,13 +113,14 @@ def print_pkg_detail(pm: PackageManifest) -> None:
 
 
 def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
+    result: list[str]
     if not decl.is_restricted("mirror"):
         # urljoin can't be used because it trims the basename part if base is not
         # `/`-suffixed
         name = decl.name
         result = [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
     else:
-        result: list[str] = []
+        result = []
 
     if decl.urls:
         result.extend(decl.urls)

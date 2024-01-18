@@ -2,7 +2,7 @@ from functools import cached_property
 import os
 import platform
 import re
-from typing import Iterable, Literal, NotRequired, TypedDict
+from typing import Any, Iterable, Literal, NotRequired, TypedDict
 
 from semver.version import Version
 
@@ -17,7 +17,7 @@ RestrictKind = Literal["fetch"] | Literal["mirror"]
 
 class DistfileDeclType(TypedDict):
     name: str
-    urls: list[str]
+    urls: NotRequired[list[str]]
     restrict: NotRequired[list[RestrictKind]]
     size: int
     checksums: dict[str, str]
@@ -236,7 +236,7 @@ class EmulatorProgDecl:
         self.supported_arches = set(data["supported_arches"])
         self.binfmt_misc = data.get("binfmt_misc")
 
-    def get_binfmt_misc_str(self, install_root: os.PathLike) -> str | None:
+    def get_binfmt_misc_str(self, install_root: os.PathLike[Any]) -> str | None:
         if self.binfmt_misc is None:
             return None
         binpath = os.path.join(install_root, self.relative_path)

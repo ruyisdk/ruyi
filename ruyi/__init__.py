@@ -1,7 +1,7 @@
 _is_debug = False
 
 
-def set_debug(v: bool):
+def set_debug(v: bool) -> None:
     global _is_debug
     _is_debug = v
 

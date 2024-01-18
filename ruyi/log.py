@@ -1,8 +1,8 @@
 import datetime
-from typing import Any, IO, Iterable, Optional
+from typing import Any, IO, Optional
 import sys
 
-from rich.console import Console
+from rich.console import Console, ConsoleRenderable
 from rich.text import Text
 
 from . import is_debug
@@ -16,9 +16,11 @@ STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False)
 DEBUG_CONSOLE = Console(file=sys.stderr, log_time_format=log_time_formatter)
 LOG_CONSOLE = Console(file=sys.stderr, highlight=False)
 
+Renderable = str | ConsoleRenderable
+
 
 def stdout(
-    message,
+    message: Renderable,
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
@@ -27,7 +29,7 @@ def stdout(
 
 
 def D(
-    message,
+    message: Renderable,
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
@@ -44,7 +46,7 @@ def D(
 
 
 def F(
-    message,
+    message: Renderable,
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
@@ -58,7 +60,7 @@ def F(
 
 
 def I(
-    message,
+    message: Renderable,
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
@@ -74,7 +76,7 @@ def I(
 
 
 def W(
-    message,
+    message: Renderable,
     *objects: Any,
     sep: str = " ",
     end: str = "\n",

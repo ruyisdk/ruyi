@@ -27,7 +27,8 @@ def convert2semver(ver: packaging.version.Version) -> semver.Version:
         kind, val = ver.pre
         pre = f"{PYPI_PRERELEASE_KINDS_MAP.get(kind, kind)}.{val}"
 
-    return semver.Version(*ver.release, prerelease=pre, build=ver.dev)
+    maj, min, pat = ver.release[:3]
+    return semver.Version(maj, min, pat, prerelease=pre, build=ver.dev)
 
 
 def init_pkg_semver() -> semver.Version:

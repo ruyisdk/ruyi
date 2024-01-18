@@ -1,7 +1,7 @@
 import argparse
 import os
 import platform
-from typing import List
+from typing import Callable, List
 
 import ruyi
 from .. import log
@@ -18,6 +18,9 @@ def is_called_as_ruyi(argv0: str) -> bool:
 def init_debug_status() -> None:
     debug_env = os.environ.get("RUYI_DEBUG", "")
     ruyi.set_debug(debug_env.lower() in {"1", "true", "x", "y", "yes"})
+
+
+CLIEntrypoint = Callable[[argparse.Namespace], int]
 
 
 def init_argparse() -> argparse.ArgumentParser:
@@ -284,11 +287,9 @@ def main(argv: List[str]) -> int:
     args = p.parse_args(argv[1:])
     log.D(f"args={args}")
 
-    try:
-        return args.func(args)
-    except Exception as e:
-        # print(f"[bold red]fatal error:[/bold red] no command specified {e}")
-        # return 1
-        raise
+    func: CLIEntrypoint = args.func
 
-    return 0
+    try:
+        return func(args)
+    except Exception:
+        raise
