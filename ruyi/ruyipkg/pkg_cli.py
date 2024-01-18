@@ -9,9 +9,9 @@ print = log.stdout
 
 from ..config import GlobalConfig
 from .atom import Atom
-from .distfile import Distfile, DistfileDecl
+from .distfile import Distfile
 from .repo import MetadataRepo
-from .pkg_manifest import PackageManifest
+from .pkg_manifest import DistfileDecl, PackageManifest
 from .unpack import ensure_unpack_cmd_for_distfile
 
 
