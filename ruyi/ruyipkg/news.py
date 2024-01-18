@@ -79,7 +79,8 @@ class NewsItem:
 
     @property
     def display_title(self) -> str:
-        return self._post.get("title") or self.id
+        metadata_title = self._post.get("title")
+        return metadata_title if isinstance(metadata_title, str) else self.id
 
     @property
     def content(self) -> str:
