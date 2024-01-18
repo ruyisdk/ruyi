@@ -17,7 +17,7 @@ RestrictKind = Literal["fetch"] | Literal["mirror"]
 
 class DistfileDeclType(TypedDict):
     name: str
-    urls: list[str]
+    urls: NotRequired[list[str]]
     restrict: NotRequired[list[RestrictKind]]
     size: int
     checksums: dict[str, str]
