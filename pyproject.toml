@@ -26,7 +26,7 @@ target-version = ['py311']
 [tool.mypy]
 files = ["ruyi"]
 show_error_codes = true
-#strict = true
+strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 # https://github.com/eyeseast/python-frontmatter/issues/112
