@@ -67,12 +67,22 @@ class EmulatorDeclType(TypedDict):
     programs: list[EmulatorProgramDeclType]
 
 
+PartitionKind = Literal["disk"] | Literal["boot"] | Literal["root"] | Literal["uboot"]
+
+PartitionMapDecl = dict[PartitionKind, str]
+
+
+class ProvisionableDeclType(TypedDict):
+    partition_map: PartitionMapDecl
+
+
 PackageKind = (
     Literal["binary"]
     | Literal["blob"]
     | Literal["source"]
     | Literal["toolchain"]
     | Literal["emulator"]
+    | Literal["provisionable"]
 )
 
 
@@ -88,6 +98,7 @@ class PackageManifestType(TypedDict):
     source: NotRequired[SourceDeclType]
     toolchain: NotRequired[ToolchainDeclType]
     emulator: NotRequired[EmulatorDeclType]
+    provisionable: NotRequired[ProvisionableDeclType]
 
 
 class DistfileDecl:
@@ -251,6 +262,15 @@ class EmulatorDecl:
                 yield p
 
 
+class ProvisionableDecl:
+    def __init__(self, data: ProvisionableDeclType) -> None:
+        self._data = data
+
+    @property
+    def partition_map(self) -> PartitionMapDecl:
+        return self._data["partition_map"]
+
+
 class PackageManifest:
     def __init__(
         self,
@@ -344,6 +364,14 @@ class PackageManifest:
         if "emulator" not in self._data:
             return None
         return EmulatorDecl(self._data["emulator"])
+
+    @cached_property
+    def provisionable_metadata(self) -> ProvisionableDecl | None:
+        if not self.has_kind("provisionable"):
+            return None
+        if "provisionable" not in self._data:
+            return None
+        return ProvisionableDecl(self._data["provisionable"])
 
 
 RUYI_DATESTAMP_IN_SEMVER_RE = re.compile(r"^ruyi\.\d+$")
