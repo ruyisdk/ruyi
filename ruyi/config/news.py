@@ -1,8 +1,8 @@
 class NewsReadStatusStore:
     def __init__(self, path: str) -> None:
         self._path = path
-        self._status = set()
-        self._orig_status = set()
+        self._status: set[str] = set()
+        self._orig_status: set[str] = set()
 
     def load(self) -> None:
         try:
