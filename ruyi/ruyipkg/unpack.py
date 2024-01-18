@@ -198,6 +198,6 @@ def ensure_unpack_cmd_for_distfile(dest_filename: str) -> None | NoReturn:
         required_cmds.append("unzip")
 
     if not required_cmds:
-        return
+        return None
 
     return prereqs.ensure_cmds(*required_cmds)
