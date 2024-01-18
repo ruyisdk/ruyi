@@ -10,6 +10,7 @@ authors = [
   # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
   "WANG Xuerui <wangxuerui@iscas.ac.cn>",
 ]
+include = ["ruyi/py.typed"]
 
 #requires-python = ">=3.11"
 
