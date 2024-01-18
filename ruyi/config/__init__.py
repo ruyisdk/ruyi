@@ -83,7 +83,7 @@ class GlobalConfig:
         path = pathlib.Path(self.ensure_data_dir()) / "blobs" / slug
         return str(path)
 
-    def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike | None:
+    def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike[Any] | None:
         for data_dir in BaseDirectory.load_data_paths(self.resource_name):
             p = pathlib.Path(data_dir) / "binaries" / host / slug
             if p.exists():
@@ -115,7 +115,7 @@ class GlobalConfig:
         return os.path.join(config_dir, "config.toml")
 
     @classmethod
-    def iter_xdg_configs(cls) -> Iterable[os.PathLike]:
+    def iter_xdg_configs(cls) -> Iterable[os.PathLike[Any]]:
         """
         Yields possible Ruyi config files in all XDG config paths, sorted by precedence
         from lowest to highest (so that each file may be simply applied consecutively).

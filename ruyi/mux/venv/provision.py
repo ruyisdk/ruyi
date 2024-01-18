@@ -49,7 +49,9 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
     return tmpl.render(data)
 
 
-def render_and_write(dest: PathLike, template_name: str, data: dict[str, Any]) -> None:
+def render_and_write(
+    dest: PathLike[Any], template_name: str, data: dict[str, Any]
+) -> None:
     log.D(f"rendering template '{template_name}' with data {data}")
     content = render_template_str(template_name, data).encode("utf-8")
     log.D(f"writing {dest}")
@@ -61,15 +63,15 @@ class VenvMaker:
     def __init__(
         self,
         profile: ProfileDecl,
-        toolchain_install_root: PathLike,
+        toolchain_install_root: PathLike[Any],
         target_tuple: str,
         toolchain_flavor: str,
         binutils_flavor: str,
-        dest: PathLike,
-        sysroot_srcdir: PathLike | None,
-        gcc_install_dir: PathLike | None,
+        dest: PathLike[Any],
+        sysroot_srcdir: PathLike[Any] | None,
+        gcc_install_dir: PathLike[Any] | None,
         emulator_progs: list[EmulatorProgDecl] | None,
-        emulator_root: PathLike | None,
+        emulator_root: PathLike[Any] | None,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
@@ -185,7 +187,7 @@ class VenvMaker:
             toolchain_file_data,
         )
 
-        qemu_bin: PathLike | None = None
+        qemu_bin: PathLike[Any] | None = None
         profile_emu_env: dict[str, str] | None = None
         if self.emulator_root is not None and self.emulator_progs:
             resolved_emu_progs = [
@@ -232,7 +234,7 @@ class VenvMaker:
         )
 
 
-def symlink_binaries(src_bindir: PathLike, dest_bindir: PathLike) -> None:
+def symlink_binaries(src_bindir: PathLike[Any], dest_bindir: PathLike[Any]) -> None:
     src_binpath = pathlib.Path(src_bindir)
     dest_binpath = pathlib.Path(dest_bindir)
     self_exe_path = self_exe()
@@ -282,7 +284,7 @@ CLANG_GCC_ALIASES = {
 
 
 def make_llvm_tool_aliases(
-    dest_bindir: PathLike,
+    dest_bindir: PathLike[Any],
     target_tuple: str,
     do_binutils: bool,
     do_clang: bool,
@@ -294,7 +296,7 @@ def make_llvm_tool_aliases(
 
 
 def make_compat_symlinks(
-    dest_bindir: PathLike,
+    dest_bindir: PathLike[Any],
     target_tuple: str,
     aliases: dict[str, str],
 ) -> None:
@@ -305,7 +307,7 @@ def make_compat_symlinks(
         os.symlink(symlink_target, destdir / compat_name)
 
 
-def is_executable(p: PathLike) -> bool:
+def is_executable(p: PathLike[Any]) -> bool:
     return os.access(p, os.F_OK | os.X_OK)
 
 

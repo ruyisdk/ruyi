@@ -1,10 +1,9 @@
 from os import PathLike
-from typing import Iterable, NotRequired, TypedDict
+from typing import Any, Iterable, NotRequired, TypedDict
 
 from ... import log
 from ..pkg_manifest import EmulatorFlavor
 from ..profile import (
-    ArchProfileParser,
     ArchProfilesDeclType,
     ProfileDecl,
     ProfileDeclType,
@@ -104,7 +103,7 @@ class RISCVProfileDecl(ProfileDecl):
     def get_env_config_for_emu_flavor(
         self,
         flavor: EmulatorFlavor,
-        sysroot: PathLike | None,
+        sysroot: PathLike[Any] | None,
     ) -> dict[str, str] | None:
         result = super().get_env_config_for_emu_flavor(flavor, sysroot)
         if result is None:

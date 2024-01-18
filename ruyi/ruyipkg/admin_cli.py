@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+from typing import Any
 
 from .. import log
 
@@ -20,7 +21,7 @@ def cli_admin_manifest(args: argparse.Namespace) -> int:
     return 0
 
 
-def gen_manifest(path: os.PathLike) -> DistfileDeclType:
+def gen_manifest(path: os.PathLike[Any]) -> DistfileDeclType:
     log.D(f"generating manifest for {path}")
     with open(path, "rb") as fp:
         filesize = os.stat(fp.fileno()).st_size

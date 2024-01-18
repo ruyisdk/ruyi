@@ -49,7 +49,7 @@ class ProfileDecl:
     def get_env_config_for_emu_flavor(
         self,
         flavor: EmulatorFlavor,
-        sysroot: PathLike | None,
+        sysroot: PathLike[Any] | None,
     ) -> dict[str, str] | None:
         result: dict[str, str] = {}
 

@@ -2,6 +2,7 @@ import argparse
 from os import PathLike
 import pathlib
 import platform
+from typing import Any
 
 from ... import log
 from ...config import GlobalConfig
@@ -71,8 +72,8 @@ def cli_venv(args: argparse.Namespace) -> int:
         log.F("cannot find the installed directory for the toolchain")
         return 1
 
-    gcc_install_dir: PathLike | None = None
-    tc_sysroot_dir: PathLike | None = None
+    gcc_install_dir: PathLike[Any] | None = None
+    tc_sysroot_dir: PathLike[Any] | None = None
     if with_sysroot:
         tc_sysroot_relpath = tc_pm.toolchain_metadata.included_sysroot
         if tc_sysroot_relpath is not None:
@@ -138,7 +139,7 @@ def cli_venv(args: argparse.Namespace) -> int:
 
     # Now handle the emulator.
     emu_progs = None
-    emu_root: PathLike | None = None
+    emu_root: PathLike[Any] | None = None
     if emu_atom_str:
         emu_atom = Atom.parse(emu_atom_str)
         emu_pm = emu_atom.match_in_repo(mr, config.include_prereleases)
@@ -220,9 +221,9 @@ def cli_venv(args: argparse.Namespace) -> int:
 
 
 def find_gcc_install_dir(
-    install_root: PathLike,
+    install_root: PathLike[Any],
     target_tuple: str,
-) -> PathLike | None:
+) -> PathLike[Any] | None:
     # check $PREFIX/lib/gcc/$TARGET/*
     search_root = pathlib.Path(install_root) / "lib" / "gcc" / target_tuple
     try:

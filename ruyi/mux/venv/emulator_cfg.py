@@ -1,5 +1,5 @@
 import os
-from typing import Self
+from typing import Any, Self
 
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileDecl
@@ -20,9 +20,9 @@ class ResolvedEmulatorProg:
     def new(
         cls,
         prog: EmulatorProgDecl,
-        prog_install_root: os.PathLike,
+        prog_install_root: os.PathLike[Any],
         profile: ProfileDecl,
-        sysroot: os.PathLike | None,
+        sysroot: os.PathLike[Any] | None,
     ) -> Self:
         return cls(
             get_display_name_for_emulator(prog, prog_install_root),
@@ -33,6 +33,6 @@ class ResolvedEmulatorProg:
 
 def get_display_name_for_emulator(
     prog: EmulatorProgDecl,
-    prog_install_root: os.PathLike,
+    prog_install_root: os.PathLike[Any],
 ) -> str:
     return f"{os.path.basename(prog.relative_path)} from {prog_install_root}"
