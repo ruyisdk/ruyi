@@ -7,13 +7,15 @@ from ruyi import log
 
 def ensure_git_binary() -> None | NoReturn:
     try:
-        import git
+        import git as _
     except ImportError:
         log.F(
             "seems [yellow]git[/yellow] is not available, which [yellow]ruyi[/yellow] requires"
         )
         log.I("please install Git and retry")
         sys.exit(1)
+
+    return None
 
 
 def has_cmd_in_path(cmd: str) -> bool:
@@ -37,8 +39,8 @@ _CMD_PRESENCE_MAP: dict[str, bool] = {}
 
 
 def init_cmd_presence_map() -> None:
-    global _CMD_PRESENCE_MAP
-    _CMD_PRESENCE_MAP = {cmd: has_cmd_in_path(cmd) for cmd in _CMDS}
+    for cmd in _CMDS:
+        _CMD_PRESENCE_MAP[cmd] = has_cmd_in_path(cmd)
 
 
 def ensure_cmds(*cmds: str) -> None | NoReturn:
@@ -47,7 +49,7 @@ def ensure_cmds(*cmds: str) -> None | NoReturn:
 
     absent_cmds = sorted(cmd for cmd in cmds if not _CMD_PRESENCE_MAP.get(cmd, False))
     if not absent_cmds:
-        return
+        return None
 
     cmds_str = log.humanize_list(absent_cmds, item_color="yellow")
     log.F(
