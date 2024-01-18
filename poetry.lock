@@ -516,6 +516,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pyxdg"
+version = "0.28.0.20240106"
+description = "Typing stubs for pyxdg"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-pyxdg-0.28.0.20240106.tar.gz", hash = "sha256:505fc6386d8c0a5d0a914ceb2b76e8e2dbd0b110212b5b395dbeb1c9483edb88"},
+    {file = "types_pyxdg-0.28.0.20240106-py3-none-any.whl", hash = "sha256:963a82433c04c6d28c71c42b1d8d1ccbe13ccf44ea2bd563b6d72d13a5e252a3"},
+]
+
+[[package]]
 name = "zstandard"
 version = "0.22.0"
 description = "Zstandard bindings for Python"
@@ -579,4 +590,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "ea762bb4b7ad06aae7cebbccff58dfe56bacf132483fab72fc3ddc7d2ce7ca03"
+content-hash = "e5dcc50a39c4426d888a762b4e39395901de0013627ec2746df26a30be24e808"

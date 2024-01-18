@@ -33,6 +33,8 @@ pyxdg = "^0.28"
 rich = "^13.5"
 semver = "^3"
 
+types-pyxdg = "^0.28.0.20240106"
+
 # build and dev
 black = "^23.10.1"
 nuitka = "^1.8"
