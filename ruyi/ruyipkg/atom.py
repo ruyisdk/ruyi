@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import Literal, Self, Tuple
+from typing import Literal, Tuple
 
 from .pkg_manifest import PackageManifest
 from .repo import MetadataRepo
@@ -12,7 +12,7 @@ RE_ATOM_EXPR = re.compile(r"^([^:(]+)\((.+)\)$")
 RE_ATOM_NAME = re.compile(r"^[^:()]+$")
 
 
-class Atom:
+class Atom(abc.ABC):
     def __init__(self, s: str, kind: AtomKind) -> None:
         self._s = s
         self._kind: AtomKind = kind
@@ -26,7 +26,7 @@ class Atom:
         return self._kind
 
     @classmethod
-    def parse(cls, s: str) -> Self:
+    def parse(cls, s: str) -> "SlugAtom | NameAtom | ExprAtom | NameAtom":
         if s.startswith("slug:"):
             return SlugAtom(s)
 
