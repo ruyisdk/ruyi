@@ -23,6 +23,13 @@ build-backend = "poetry.core.masonry.api"
 target-version = ['py311']
 
 
+[tool.mypy]
+files = ["ruyi"]
+show_error_codes = true
+#strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+
 [tool.poetry.dependencies]
 python = ">=3.11"
 
