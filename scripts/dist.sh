@@ -37,7 +37,7 @@ if [[ -t 1 ]]; then
 fi
 
 docker_args+=(
-    "$(image_tag_base "$arch")-${arch}"
+    "$(image_tag_base "$arch")"
     /home/b/ruyi/scripts/dist-inner.sh
 )
 
