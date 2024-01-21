@@ -1,10 +1,10 @@
-name: Dist build
+name: Dist build riscv64
 
 on: [push, pull_request]
 
 jobs:
-  dist:
-    runs-on: ubuntu-latest
+  dist-riscv64:
+    runs-on: [self-hosted, Linux, RISCV64]
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20240121
       options: --user root  # https://github.com/actions/checkout/issues/1014
@@ -17,19 +17,13 @@ jobs:
         - /tmp/poetry-cache:/poetry-cache
         - /tmp/ccache:/ccache
 
-    strategy:
-      matrix:
-        arch:
-          - amd64
-          # TODO: arm64 & riscv64
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Cache deps and Nuitka output
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-lock-${{ hashFiles('poetry.lock') }}
+          key: ${{ runner.os }}-tgt-riscv64-lock-${{ hashFiles('poetry.lock') }}
           path: |
             /ccache
             /poetry-cache
@@ -40,6 +34,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruyi.${{ matrix.arch }}
+          name: ruyi.riscv64
           path: /build/ruyi
           compression-level: 0  # the Nuitka onefile payload is already compressed
