@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20240121
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
         - .:/home/b/ruyi:ro
         - /tmp/build:/build
