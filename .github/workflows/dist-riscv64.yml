@@ -13,9 +13,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
         - .:/home/b/ruyi:ro
-        - /tmp/build:/build
-        - /tmp/poetry-cache:/poetry-cache
-        - /tmp/ccache:/ccache
+        - tmp-build:/build
+        - tmp-poetry-cache:/poetry-cache
+        - tmp-ccache:/ccache
 
     steps:
       - uses: actions/checkout@v4
