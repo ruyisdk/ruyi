@@ -45,6 +45,9 @@ def cli_self_uninstall(args: argparse.Namespace) -> int:
         log.I("removing installed packages")
         shutil.rmtree(cfg.data_root, True)
 
+        log.I("removing state data")
+        shutil.rmtree(cfg.state_root, True)
+
         log.I("removing cached data")
         shutil.rmtree(cfg.cache_root, True)
 
