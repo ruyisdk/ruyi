@@ -1,10 +1,17 @@
-name: Dist build riscv64
+name: Dist build
 
 on: [push, pull_request]
 
 jobs:
-  dist-riscv64:
-    runs-on: [self-hosted, Linux, RISCV64]
+  dist:
+    strategy:
+      matrix:
+        # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
+        include:
+          - { arch: amd64, runs_on: ubuntu-latest }
+          - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
+
+    runs-on: ${{ matrix.runs_on }}
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20240121
       options: --user root  # https://github.com/actions/checkout/issues/1014
@@ -23,7 +30,7 @@ jobs:
       - name: Cache deps and Nuitka output
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-riscv64-lock-${{ hashFiles('poetry.lock') }}
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-lock-${{ hashFiles('poetry.lock') }}
           path: |
             /ccache
             /poetry-cache
@@ -34,6 +41,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruyi.riscv64
+          name: ruyi.${{ matrix.arch }}
           path: /build/ruyi
           compression-level: 0  # the Nuitka onefile payload is already compressed
