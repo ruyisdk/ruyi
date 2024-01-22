@@ -1,0 +1,47 @@
+name: Dist build
+
+on: [push, pull_request]
+
+jobs:
+  dist:
+    strategy:
+      matrix:
+        # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
+        include:
+          - { arch: amd64, runs_on: ubuntu-latest }
+          - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
+
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.runs_on }}
+    container:
+      image: ghcr.io/ruyisdk/ruyi-python-dist:20240122
+      options: --user root  # https://github.com/actions/checkout/issues/1014
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      volumes:
+        - .:/home/b/ruyi:ro
+        - tmp-build:/build
+        - tmp-poetry-cache:/poetry-cache
+        - tmp-ccache:/ccache
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache deps and Nuitka output
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}
+          path: |
+            /ccache
+            /poetry-cache
+
+      - name: Run dist
+        run: /home/b/ruyi/scripts/dist-inner.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruyi.${{ matrix.arch }}
+          path: /build/ruyi
+          compression-level: 0  # the Nuitka onefile payload is already compressed
