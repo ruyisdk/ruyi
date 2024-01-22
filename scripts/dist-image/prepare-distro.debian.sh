@@ -25,6 +25,7 @@ package_list=(
     zlib1g-dev  # likely for one-file builds
     patchelf    # for one-file builds
     ccache      # for rebuilds
+    git         # for GHA checkout action
 
     # for the Python build env
     python3.11-venv
