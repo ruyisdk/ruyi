@@ -11,6 +11,7 @@ jobs:
           - { arch: amd64, runs_on: ubuntu-latest }
           - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
 
+    name: ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20240121
