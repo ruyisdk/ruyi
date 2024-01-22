@@ -7,6 +7,25 @@ from .pkg_manifest import DistfileDecl
 from .unpack import do_unpack, do_unpack_or_symlink
 
 
+# https://github.com/ruyisdk/ruyi/issues/46
+HELP_ERROR_FETCHING = """
+Downloads can fail for a multitude of reasons, most of which should not and
+cannot be handled by [yellow]Ruyi[/yellow]. For your convenience though, please check if any
+of the following common failure modes apply to you, and take actions
+accordingly if one of them turns out to be the case:
+
+* Basic connectivity problems
+    - is [yellow]the gateway[/yellow] reachable?
+    - is [yellow]common websites[/yellow] reachable?
+    - is there any [yellow]DNS pollution[/yellow]?
+* Organizational and/or ISP restrictions
+    - is there a [yellow]firewall[/yellow] preventing Ruyi traffic?
+    - is your [yellow]ISP blocking access[/yellow] to the source website?
+* Volatile upstream
+    - is the recorded [yellow]link dead[/yellow]? (Please raise a Ruyi issue for a fix!)
+"""
+
+
 class Distfile:
     def __init__(
         self,
@@ -61,6 +80,14 @@ class Distfile:
             return False
 
     def fetch_and_ensure_integrity(self, *, resume: bool = False) -> None:
+        try:
+            return self._fetch_and_ensure_integrity(resume=resume)
+        except RuntimeError as e:
+            log.F(f"{e}")
+            log.stdout(HELP_ERROR_FETCHING)
+            raise SystemExit(1)
+
+    def _fetch_and_ensure_integrity(self, *, resume: bool = False) -> None:
         fetcher = BaseFetcher.new(self.urls, self.dest)
         fetcher.fetch(resume=resume)
 
