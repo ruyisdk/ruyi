@@ -1,9 +1,9 @@
-name: Dist build
+name: Native dist build
 
 on: [push, pull_request]
 
 jobs:
-  dist:
+  dist-native:
     strategy:
       matrix:
         # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
@@ -20,7 +20,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
-        - .:/home/b/ruyi:ro
         - tmp-build:/build
         - tmp-poetry-cache:/poetry-cache
         - tmp-ccache:/ccache
@@ -37,7 +36,7 @@ jobs:
             /poetry-cache
 
       - name: Run dist
-        run: /home/b/ruyi/scripts/dist-inner.sh
+        run: scripts/dist-inner.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

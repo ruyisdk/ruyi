@@ -8,12 +8,14 @@ export CCACHE_DIR=/ccache
 cd /home/b
 . ./venv/bin/activate
 
-cd ruyi
+# GitHub Actions checks out the repo at CWD instead of /home/b/ruyi
+[[ $GITHUB_ACTIONS != true ]] && cd ruyi
+RUYI_ROOT="$(pwd)"
 poetry install
 
 # patch Nuitka
 pushd /home/b/venv/lib/python*/site-packages > /dev/null
-patch -Np1 < /home/b/ruyi/scripts/patches/0001-Onefile-Respect-XDG_CACHE_HOME-when-rendering-CACHE_.patch
+patch -Np1 < "$RUYI_ROOT"/scripts/patches/0001-Onefile-Respect-XDG_CACHE_HOME-when-rendering-CACHE_.patch
 popd > /dev/null
 
 eval "$(./scripts/_dist_version_helper.py)"
