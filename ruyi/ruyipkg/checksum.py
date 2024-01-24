@@ -4,7 +4,7 @@ from typing import BinaryIO, Iterable
 SUPPORTED_CHECKSUM_KINDS = {"sha256", "sha512"}
 
 
-def get_hash_instance(kind: str) -> hashlib._Hash:
+def get_hash_instance(kind: str) -> "hashlib._Hash":
     if kind not in SUPPORTED_CHECKSUM_KINDS:
         raise ValueError(f"checksum algorithm {kind} not supported")
     return hashlib.new(kind)
