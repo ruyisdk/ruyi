@@ -6,6 +6,7 @@ from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
 from git import Repo
 
 from .. import log
+from ..utils.git_progress import TqdmGitProgress
 from .news import NewsItem
 from .pkg_manifest import is_prerelease, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
@@ -49,8 +50,14 @@ class MetadataRepo:
 
         log.D(f"{self.root} does not exist, cloning from {self.remote}")
 
-        # TODO: progress bar
-        self.repo = Repo.clone_from(self.remote, self.root, branch=self.branch)
+        with TqdmGitProgress() as pr:
+            self.repo = Repo.clone_from(
+                self.remote,
+                self.root,
+                branch=self.branch,
+                progress=pr.update,
+            )
+
         return self.repo
 
     def sync(self) -> None:
@@ -60,7 +67,8 @@ class MetadataRepo:
             log.D(f"updating remote url from {remote.url} to {self.remote}")
             remote.set_url(self.remote, remote.url)
         log.D(f"fetching")
-        remote.fetch()
+        with TqdmGitProgress() as pr:
+            remote.fetch(progress=pr)
         # cosmetic touch-up: sync the local head reference to the remote HEAD too
         main_branch = repo.heads[self.branch]
         tgt_commit = remote.refs[self.branch].commit
