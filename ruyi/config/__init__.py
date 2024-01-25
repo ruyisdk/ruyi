@@ -10,7 +10,7 @@ from .. import log, argv0
 from .news import NewsReadStatusStore
 
 
-DEFAULT_REPO_URL = "https://mirror.iscas.ac.cn/git/ruyisdk/packages-index.git"
+DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
 
 ENV_VENV_ROOT_KEY = "RUYI_VENV"
