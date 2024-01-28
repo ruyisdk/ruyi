@@ -99,6 +99,48 @@ IMAGE_COMBOS: list[ImageComboDecl] = [
         "postinst_fn": postinst_oerv_on_milkv_pioneer_nvme_models,
     },
     {
+        "id": "oerv-awol-d1-base",
+        "display_name": "openEuler RISC-V (base system) for Allwinner D1",
+        "packages": [
+            "board-image/oerv-awol-d1-base",
+        ],
+    },
+    {
+        "id": "oerv-awol-d1-xfce",
+        "display_name": "openEuler RISC-V (XFCE) for Allwinner D1",
+        "packages": [
+            "board-image/oerv-awol-d1-xfce",
+        ],
+    },
+    {
+        "id": "oerv-starfive-visionfive-base",
+        "display_name": "openEuler RISC-V (base system) for StarFive VisionFive",
+        "packages": [
+            "board-image/oerv-starfive-visionfive-base",
+        ],
+    },
+    {
+        "id": "oerv-starfive-visionfive-xfce",
+        "display_name": "openEuler RISC-V (XFCE) for StarFive VisionFive",
+        "packages": [
+            "board-image/oerv-starfive-visionfive-xfce",
+        ],
+    },
+    {
+        "id": "oerv-starfive-visionfive2-base",
+        "display_name": "openEuler RISC-V (base system) for StarFive VisionFive2",
+        "packages": [
+            "board-image/oerv-starfive-visionfive2-base",
+        ],
+    },
+    {
+        "id": "oerv-starfive-visionfive2-xfce",
+        "display_name": "openEuler RISC-V (XFCE) for StarFive VisionFive2",
+        "packages": [
+            "board-image/oerv-starfive-visionfive2-xfce",
+        ],
+    },
+    {
         "id": "oerv-sipeed-lpi4a-8g-headless",
         "display_name": "openEuler RISC-V (headless) for Sipeed LicheePi 4A (8G RAM)",
         "packages": [
@@ -228,6 +270,36 @@ DEVICE_MILKV_PIONEER: DeviceDecl = {
     ],
 }
 
+DEVICE_AWOL_D1DEV: DeviceDecl = {
+    "id": "awol-d1dev",
+    "display_name": "Allwinner Nezha D1",
+    "variants": [
+        {
+            "id": "generic",
+            "display_name": "Allwinner Nezha D1 (generic variant)",
+            "supported_combos": [
+                "oerv-awol-d1-base",
+                "oerv-awol-d1-xfce",
+            ],
+        },
+    ],
+}
+
+DEVICE_SIPEED_LICHEERV: DeviceDecl = {
+    "id": "sipeed-licheerv",
+    "display_name": "Sipeed Lichee RV",
+    "variants": [
+        {
+            "id": "generic",
+            "display_name": "Sipeed Lichee RV (generic variant)",
+            "supported_combos": [
+                "oerv-awol-d1-base",
+                "oerv-awol-d1-xfce",
+            ],
+        },
+    ],
+}
+
 DEVICE_SIPEED_LPI4A: DeviceDecl = {
     "id": "sipeed-lpi4a",
     "display_name": "Sipeed LicheePi 4A",
@@ -253,10 +325,44 @@ DEVICE_SIPEED_LPI4A: DeviceDecl = {
     ],
 }
 
+DEVICE_STARFIVE_VISIONFIVE: DeviceDecl = {
+    "id": "starfive-visionfive",
+    "display_name": "StarFive VisionFive",
+    "variants": [
+        {
+            "id": "generic",
+            "display_name": "StarFive VisionFive (generic variant)",
+            "supported_combos": [
+                "oerv-starfive-visionfive-base",
+                "oerv-starfive-visionfive-xfce",
+            ],
+        },
+    ],
+}
+
+DEVICE_STARFIVE_VISIONFIVE2: DeviceDecl = {
+    "id": "starfive-visionfive2",
+    "display_name": "StarFive VisionFive2",
+    "variants": [
+        {
+            "id": "generic",
+            "display_name": "StarFive VisionFive2 (generic variant)",
+            "supported_combos": [
+                "oerv-starfive-visionfive2-base",
+                "oerv-starfive-visionfive2-xfce",
+            ],
+        },
+    ],
+}
+
 DEVICES: list[DeviceDecl] = [
+    DEVICE_AWOL_D1DEV,
     DEVICE_MILKV_DUO,
     DEVICE_MILKV_PIONEER,
+    DEVICE_SIPEED_LICHEERV,
     DEVICE_SIPEED_LPI4A,
+    DEVICE_STARFIVE_VISIONFIVE,
+    DEVICE_STARFIVE_VISIONFIVE2,
 ]
 
 
@@ -638,8 +744,14 @@ PKG_PROVISION_STRATEGY: dict[str, PackageProvisionStrategy] = {
     "board-image/buildroot-sdk-milkv-duo256m": STRATEGY_WHOLE_DISK_DD,
     "board-image/buildroot-sdk-milkv-duo256m-python": STRATEGY_WHOLE_DISK_DD,
     "board-image/buildroot-sdk-milkv-duo-python": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-awol-d1-base": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-awol-d1-xfce": STRATEGY_WHOLE_DISK_DD,
     "board-image/oerv-sg2042-milkv-pioneer-base": STRATEGY_WHOLE_DISK_DD,
     "board-image/oerv-sg2042-milkv-pioneer-xfce": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-starfive-visionfive-base": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-starfive-visionfive-xfce": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-starfive-visionfive2-base": STRATEGY_WHOLE_DISK_DD,
+    "board-image/oerv-starfive-visionfive2-xfce": STRATEGY_WHOLE_DISK_DD,
     "board-image/oerv-sipeed-lpi4a-headless": STRATEGY_BOOT_ROOT_FASTBOOT,
     "board-image/oerv-sipeed-lpi4a-xfce": STRATEGY_BOOT_ROOT_FASTBOOT,
     "board-image/revyos-sg2042-milkv-pioneer": STRATEGY_WHOLE_DISK_DD,
