@@ -9,39 +9,56 @@ jobs:
         # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
         include:
           - { arch: amd64, runs_on: ubuntu-latest }
-          - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
+          - { arch: arm64, qemu_arch: aarch64, runs_on: ubuntu-latest }
+          - { arch: riscv64, qemu_arch: riscv64, runs_on: ubuntu-latest }
 
     name: ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
-    container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20240122
-      options: --user root  # https://github.com/actions/checkout/issues/1014
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-      volumes:
-        - .:/home/b/ruyi:ro
-        - tmp-build:/build
-        - tmp-poetry-cache:/poetry-cache
-        - tmp-ccache:/ccache
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare directories
+        run: |
+          mkdir ${{ runner.temp }}/build
+          mkdir ${{ runner.temp }}/ccache
+          mkdir ${{ runner.temp }}/poetry-cache
+
 
       - name: Cache deps and Nuitka output
         uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-tgt-${{ matrix.arch }}
           path: |
-            /ccache
-            /poetry-cache
+            ${{ runner.temp }}/ccache
+            ${{ runner.temp }}/poetry-cache
+
+      - name: Set up QEMU
+        if: ${{ matrix.qemu_arch != '' }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ matrix.qemu_arch }}
 
       - name: Run dist
-        run: /home/b/ruyi/scripts/dist-inner.sh
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ghcr.io
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20240122
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          # force running as root: https://github.com/actions/checkout/issues/1014
+          options: |
+            --user root
+            --platform linux/${{ matrix.arch }}
+            -v ${{ github.workspace }}:/home/b/ruyi:ro
+            -v ${{ runner.temp }}/build:/build
+            -v ${{ runner.temp }}/ccache:/ccache
+            -v ${{ runner.temp }}/poetry-cache:/poetry-cache
+          run: /home/b/ruyi/scripts/dist-inner.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ruyi.${{ matrix.arch }}
-          path: /build/ruyi
+          path: ${{ runner.temp }}/build/ruyi
           compression-level: 0  # the Nuitka onefile payload is already compressed
