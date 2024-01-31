@@ -9,6 +9,7 @@ jobs:
         # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
         include:
           - { arch: amd64, runs_on: ubuntu-latest }
+          - { arch: arm64, runs_on: [self-hosted, linux, arm64] }
           - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
 
     name: ${{ matrix.arch }}
@@ -20,7 +21,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
-        - .:/home/b/ruyi:ro
+        - ${{ github.workspace }}:/home/b/ruyi:ro
         - tmp-build:/build
         - tmp-poetry-cache:/poetry-cache
         - tmp-ccache:/ccache
