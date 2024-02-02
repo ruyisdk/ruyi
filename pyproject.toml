@@ -46,7 +46,6 @@ python-frontmatter = "^1.0.1"
 pyxdg = "^0.28"
 rich = "^13.5"
 semver = "^3"
-tqdm = "^4.66.1"
 
 types-pyxdg = "^0.28.0.20240106"
 
