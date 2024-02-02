@@ -8,8 +8,11 @@ end_of_line = lf
 indent_style = space
 insert_final_newline = true
 
-[*.{md,py}]
+[*.{md,py,sh}]
 indent_size = 4
 
-[*.toml]
+[Dockerfile*]
+indent_size = 4
+
+[*.{toml,yml,yaml}]
 indent_size = 2
