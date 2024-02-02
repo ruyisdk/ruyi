@@ -4,6 +4,11 @@ if __name__ == "__main__":
     import sys
     import ruyi
     from ruyi import log
+
+    # this must happen before pygit2 is imported
+    from ruyi.utils import ssl_patch
+
+    del ssl_patch
     from ruyi.cli import init_debug_status, main
     from ruyi.cli.nuitka import get_nuitka_self_exe
 

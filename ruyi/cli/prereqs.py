@@ -5,19 +5,6 @@ from typing import NoReturn
 from ruyi import log
 
 
-def ensure_git_binary() -> None | NoReturn:
-    try:
-        import git as _
-    except ImportError:
-        log.F(
-            "seems [yellow]git[/yellow] is not available, which [yellow]ruyi[/yellow] requires"
-        )
-        log.I("please install Git and retry")
-        sys.exit(1)
-
-    return None
-
-
 def has_cmd_in_path(cmd: str) -> bool:
     return shutil.which(cmd) is not None
 
@@ -57,9 +44,3 @@ def ensure_cmds(*cmds: str) -> None | NoReturn:
     )
     log.I("please install and retry")
     sys.exit(1)
-
-
-def check_dep_binaries() -> None:
-    ensure_git_binary()
-    # init_cmd_presence_map() is called on-demand, to avoid having to reach out
-    # to FS at every `ruyi` invocation which can get expensive.
