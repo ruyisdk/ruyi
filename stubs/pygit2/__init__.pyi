@@ -50,5 +50,7 @@ def clone_repository(
     depth: int = 0,
 ) -> Repository: ...
 
-tree_entry_key: Callable[[Object], SupportsAllComparisons]  # functools.cmp_to_key(tree_entry_cmp)
+tree_entry_key: Callable[
+    [Object], SupportsAllComparisons
+]  # functools.cmp_to_key(tree_entry_cmp)
 settings: Settings

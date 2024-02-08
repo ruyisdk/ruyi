@@ -4,7 +4,18 @@ from tarfile import TarInfo
 from typing import IO, Any, Protocol
 from typing_extensions import TypeAlias, deprecated
 
-from ._pygit2 import Blob, Commit, Diff, Object, Oid, Reference, Repository as _Repository, Signature, Tree, _OidArg
+from ._pygit2 import (
+    Blob,
+    Commit,
+    Diff,
+    Object,
+    Oid,
+    Reference,
+    Repository as _Repository,
+    Signature,
+    Tree,
+    _OidArg,
+)
 from .blame import Blame
 from .callbacks import CheckoutCallbacks, RemoteCallbacks, StashApplyCallbacks
 from .config import Config
@@ -32,22 +43,38 @@ class _SupportsAddfile(Protocol):
     def addfile(self, tarinfo: TarInfo, fileobj: IO[bytes] | None = None) -> None: ...
 
 class BaseRepository(_Repository):
-    def __init__(self, *args: Any, **kwargs: Any) -> None: ...  # not meant for direct use
+    def __init__(
+        self, *args: Any, **kwargs: Any
+    ) -> None: ...  # not meant for direct use
     def read(self, oid: _OidArg) -> tuple[int, int, bytes]: ...
     def write(self, type: int, data: bytes) -> Oid: ...
     def pack(
-        self, path: StrOrBytesPath | None = None, pack_delegate: _PackDelegate | None = None, n_threads: int | None = None
+        self,
+        path: StrOrBytesPath | None = None,
+        pack_delegate: _PackDelegate | None = None,
+        n_threads: int | None = None,
     ) -> int: ...
     def __iter__(self) -> Iterator[Oid]: ...
     @deprecated("Use repo.submodules.add(...)")
-    def add_submodule(self, url: str, path: str, link: bool = True, callbacks: RemoteCallbacks | None = None) -> Submodule: ...
+    def add_submodule(
+        self,
+        url: str,
+        path: str,
+        link: bool = True,
+        callbacks: RemoteCallbacks | None = None,
+    ) -> Submodule: ...
     @deprecated("Use repo.submodules[...]")
     def lookup_submodule(self, path: str) -> Submodule: ...
     @deprecated("Use repo.submodules.init(...)")
-    def init_submodules(self, submodules: Iterable[str] | None = None, overwrite: bool = False) -> None: ...
+    def init_submodules(
+        self, submodules: Iterable[str] | None = None, overwrite: bool = False
+    ) -> None: ...
     @deprecated("Use repo.submodules.update(...)")
     def update_submodules(
-        self, submodules: Iterable[str] | None = None, init: bool = False, callbacks: RemoteCallbacks | None = None
+        self,
+        submodules: Iterable[str] | None = None,
+        init: bool = False,
+        callbacks: RemoteCallbacks | None = None,
     ) -> None: ...
     def get(self, key: _OidArg, default: Object | None = None) -> Object | None: ...
     def __getitem__(self, key: _OidArg) -> Object: ...
@@ -56,7 +83,13 @@ class BaseRepository(_Repository):
     def config(self) -> Config: ...
     @property
     def config_snapshot(self) -> Config: ...
-    def create_reference(self, name: str, target: _OidArg, force: bool = False, message: str | None = None) -> Reference: ...
+    def create_reference(
+        self,
+        name: str,
+        target: _OidArg,
+        force: bool = False,
+        message: str | None = None,
+    ) -> Reference: ...
     def listall_references(self) -> list[str]: ...
     def listall_reference_objects(self) -> list[Reference]: ...
     def resolve_refish(self, refish: str) -> tuple[Commit, Reference]: ...
@@ -119,7 +152,12 @@ class BaseRepository(_Repository):
     ) -> Blame: ...
     @property
     def index(self) -> Index: ...
-    def merge_file_from_index(self, ancestor: IndexEntry | None, ours: IndexEntry | None, theirs: IndexEntry | None) -> str: ...
+    def merge_file_from_index(
+        self,
+        ancestor: IndexEntry | None,
+        ours: IndexEntry | None,
+        theirs: IndexEntry | None,
+    ) -> str: ...
     def merge_commits(
         self,
         ours: str | Oid | Commit,
@@ -137,7 +175,13 @@ class BaseRepository(_Repository):
         flags: MergeFlag = ...,
         file_flags: MergeFileFlag = ...,
     ) -> Index: ...
-    def merge(self, id: Oid | str, favor: MergeFavor = ..., flags: MergeFlag = ..., file_flags: MergeFileFlag = ...) -> None: ...
+    def merge(
+        self,
+        id: Oid | str,
+        favor: MergeFavor = ...,
+        flags: MergeFlag = ...,
+        file_flags: MergeFileFlag = ...,
+    ) -> None: ...
     @property
     def raw_message(self) -> bytes: ...
     @property
@@ -187,16 +231,28 @@ class BaseRepository(_Repository):
         paths: _IntoStrArray = None,
     ) -> None: ...
     def write_archive(
-        self, treeish: _OidArg | Tree, archive: _SupportsAddfile, timestamp: int | None = None, prefix: str = ""
+        self,
+        treeish: _OidArg | Tree,
+        archive: _SupportsAddfile,
+        timestamp: int | None = None,
+        prefix: str = "",
     ) -> None: ...
     def ahead_behind(self, local: _OidArg, upstream: _OidArg) -> tuple[int, int]: ...
     def get_attr(
-        self, path: StrOrBytesPath, name: str | bytes, flags: AttrCheck = ..., commit: Oid | str | None = None
+        self,
+        path: StrOrBytesPath,
+        name: str | bytes,
+        flags: AttrCheck = ...,
+        commit: Oid | str | None = None,
     ) -> bool | None | str: ...
     @property
     def ident(self) -> tuple[str, str]: ...
-    def set_ident(self, name: bytes | str | None, email: bytes | str | None) -> None: ...
-    def revert_commit(self, revert_commit: Commit, our_commit: Commit, mainline: int = 0) -> Index: ...
+    def set_ident(
+        self, name: bytes | str | None, email: bytes | str | None
+    ) -> None: ...
+    def revert_commit(
+        self, revert_commit: Commit, our_commit: Commit, mainline: int = 0
+    ) -> Index: ...
     def amend_commit(
         self,
         commit: Commit | _OidArg,
@@ -209,4 +265,6 @@ class BaseRepository(_Repository):
     ) -> Oid: ...
 
 class Repository(BaseRepository):
-    def __init__(self, path: str | None = None, flags: RepositoryOpenFlag = ...) -> None: ...
+    def __init__(
+        self, path: str | None = None, flags: RepositoryOpenFlag = ...
+    ) -> None: ...
