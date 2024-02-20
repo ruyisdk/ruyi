@@ -34,6 +34,18 @@ directory. The file, if present, looks like this, with all values being default:
 [packages]
 # Consider pre-release versions when matching packages in repositories.
 prereleases = false
+
+[repo]
+# Path to the local RuyiSDK metadata repository. Must be absolute or the setting
+# will be ignored.
+# If unset or empty, $XDG_CACHE_HOME/ruyi/packages-index is used.
+local = ""
+# Remote location of RuyiSDK metadata repository.
+# If unset or empty, this default value is used.
+remote = "https://github.com/ruyisdk/packages-index.git"
+# Name of the branch to use.
+# If unset or empty, this default value is used.
+branch = "main"
 ```
 
 ### Environment variables
