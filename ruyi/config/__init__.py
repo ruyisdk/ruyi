@@ -20,8 +20,15 @@ class GlobalConfigPackagesType(TypedDict):
     prereleases: NotRequired[bool]
 
 
+class GlobalConfigRepoType(TypedDict):
+    local: NotRequired[str]
+    remote: NotRequired[str]
+    branch: NotRequired[str]
+
+
 class GlobalConfigRootType(TypedDict):
     packages: NotRequired[GlobalConfigPackagesType]
+    repo: NotRequired[GlobalConfigRepoType]
 
 
 class GlobalConfig:
@@ -39,6 +46,18 @@ class GlobalConfig:
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
+
+        if section := config_data.get("repo"):
+            self.override_repo_dir = section.get("local", None)
+            self.override_repo_url = section.get("remote", None)
+            self.override_repo_branch = section.get("branch", None)
+
+            if self.override_repo_dir:
+                if not pathlib.Path(self.override_repo_dir).is_absolute():
+                    log.W(
+                        f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
+                    )
+                    self.override_repo_dir = None
 
     @property
     def cache_root(self) -> str:
