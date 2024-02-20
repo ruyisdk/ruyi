@@ -88,7 +88,7 @@ class CurlFetcher(BaseFetcher):
             retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D(f"exception occurred when trying to curl --version:", e)
+            log.D("exception occurred when trying to curl --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -131,7 +131,7 @@ class WgetFetcher(BaseFetcher):
             retcode = subprocess.call(["wget", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D(f"exception occurred when trying to wget --version:", e)
+            log.D("exception occurred when trying to wget --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
