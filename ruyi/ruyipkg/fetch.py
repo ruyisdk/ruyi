@@ -18,14 +18,25 @@ class BaseFetcher:
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
         return False
 
-    def fetch(self, *, resume: bool = False) -> None:
+    def fetch_one_with_retry(
+        self,
+        url: str,
+        dest: str,
+        resume: bool,
+        retries: int,
+    ) -> bool:
+        for t in range(retries):
+            if t > 0:
+                log.I(f"retrying download ({t + 1} of {retries} times)")
+            if self.fetch_one(url, dest, resume):
+                return True
+        return False
+
+    def fetch(self, *, resume: bool = False, retries: int = 3) -> None:
         for url in self.urls:
             log.I(f"downloading {url} to {self.dest}")
-            success = self.fetch_one(url, self.dest, resume)
-            if success:
+            if self.fetch_one_with_retry(url, self.dest, resume, retries):
                 return
-            # add retry logic if necessary; right now this is not needed because
-            # all fetcher commands handle retrying for us
         # all URLs have been tried and all have failed
         raise RuntimeError(
             f"failed to fetch '{self.dest}': all source URLs have failed"
@@ -77,7 +88,7 @@ class CurlFetcher(BaseFetcher):
             retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D(f"exception occurred when trying to curl --version:", e)
+            log.D("exception occurred when trying to curl --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -87,8 +98,6 @@ class CurlFetcher(BaseFetcher):
         argv.extend(
             (
                 "-L",
-                "--retry",
-                "3",
                 "--connect-timeout",
                 "60",
                 "--ftp-pasv",
@@ -122,7 +131,7 @@ class WgetFetcher(BaseFetcher):
             retcode = subprocess.call(["wget", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D(f"exception occurred when trying to wget --version:", e)
+            log.D("exception occurred when trying to wget --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -130,7 +139,7 @@ class WgetFetcher(BaseFetcher):
         argv = ["wget"]
         if resume:
             argv.append("-c")
-        argv.extend(("-t", "3", "-T", "60", "--passive-ftp", "-O", dest, url))
+        argv.extend(("-T", "60", "--passive-ftp", "-O", dest, url))
 
         retcode = subprocess.call(argv)
         if retcode != 0:
