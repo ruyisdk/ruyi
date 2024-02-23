@@ -206,6 +206,10 @@ packages-index
         - `boot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `boot` 分区。
         - `root`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `root` 分区。
         - `uboot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `uboot` 分区。
+    - `strategy` 是 Ruyi 设备安装器在安装该包时所应采取的策略，可选的值有：
+        - `dd-v1`：对 `partition_map` 中声明的每个分区，询问用户相应的设备文件路径，然后分别以 `sudo dd` 方式刷写目标设备。
+        - `fastboot-v1`：按照 `partition_map` 的定义，以 `sudo fastboot` 方式刷写目标设备。
+        - `fastboot-v1(lpi4a-uboot)`：以 LicheePi 4A 文档推荐的方式，按照 `partition_map` 中 `uboot` 分区的定义刷写目标设备。
 
 同时请注意，目前 `ruyi` 的参考实现存在如下的特殊情况：
 

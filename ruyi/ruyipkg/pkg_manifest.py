@@ -71,9 +71,14 @@ PartitionKind = Literal["disk"] | Literal["boot"] | Literal["root"] | Literal["u
 
 PartitionMapDecl = dict[PartitionKind, str]
 
+ProvisionStrategyKind = (
+    Literal["dd-v1"] | Literal["fastboot-v1"] | Literal["fastboot-v1(lpi4a-uboot)"]
+)
+
 
 class ProvisionableDeclType(TypedDict):
     partition_map: PartitionMapDecl
+    strategy: ProvisionStrategyKind
 
 
 PackageKind = (
@@ -269,6 +274,10 @@ class ProvisionableDecl:
     @property
     def partition_map(self) -> PartitionMapDecl:
         return self._data["partition_map"]
+
+    @property
+    def strategy(self) -> ProvisionStrategyKind:
+        return self._data["strategy"]
 
 
 class PackageManifest:

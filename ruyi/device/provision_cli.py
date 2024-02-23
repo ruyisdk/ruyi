@@ -11,7 +11,11 @@ from ..cli import prereqs, user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.pkg_cli import do_install_atoms
-from ..ruyipkg.pkg_manifest import PartitionKind, PartitionMapDecl
+from ..ruyipkg.pkg_manifest import (
+    PartitionKind,
+    PartitionMapDecl,
+    ProvisionStrategyKind,
+)
 from ..ruyipkg.repo import MetadataRepo
 
 
@@ -476,18 +480,26 @@ We are about to download and install the following packages for your device:
         log.I("your device was not touched")
         return 2
 
-    # this is hacky: currently correspondence is manually ensured
-    strategies = [(pkg, PKG_PROVISION_STRATEGY[pkg]) for pkg in pkg_atoms]
+    strategies = [
+        (pkg, get_pkg_provision_strategy(config, mr, pkg)) for pkg in pkg_atoms
+    ]
     strategies.sort(key=lambda x: x[1]["priority"], reverse=True)
 
     # compose a partition map for each image pkg installed
-    # XXX: the data is also hard-coded for now, pending proper integration into
-    # the repo
     pkg_part_maps = {pkg: make_pkg_part_map(config, mr, pkg) for pkg in pkg_atoms}
+    all_parts = list(
+        set(
+            itertools.chain(
+                *(pkg_part_map.keys() for pkg_part_map in pkg_part_maps.values())
+            )
+        )
+    )
 
     # prompt user to give paths to target block device(s)
     requested_host_blkdevs = set(
-        itertools.chain(*(strat[1]["need_host_blkdevs"] for strat in strategies))
+        itertools.chain(
+            *(strat[1]["need_host_blkdevs_fn"](all_parts) for strat in strategies)
+        )
     )
     host_blkdev_map: PartitionMapDecl = {}
     if requested_host_blkdevs:
@@ -586,7 +598,7 @@ It seems the flashing has finished without errors.
 
 class PackageProvisionStrategy(TypedDict):
     priority: int  # higher number means earlier
-    need_host_blkdevs: list[PartitionKind]
+    need_host_blkdevs_fn: Callable[[list[PartitionKind]], list[PartitionKind]]
     need_cmd: list[str]
     pretend_fn: Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
     flash_fn: Callable[[PartitionMapDecl, PartitionMapDecl], int]
@@ -715,9 +727,17 @@ def flash_fastboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> int:
     return 0
 
 
+def need_host_blkdevs_all(x: list[PartitionKind]) -> list[PartitionKind]:
+    return x
+
+
+def need_host_blkdevs_none(_: list[PartitionKind]) -> list[PartitionKind]:
+    return []
+
+
 STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
     "priority": 0,
-    "need_host_blkdevs": ["disk"],
+    "need_host_blkdevs_fn": need_host_blkdevs_all,
     "need_cmd": ["sudo", "dd"],
     "pretend_fn": pretend_dd,
     "flash_fn": flash_dd,
@@ -725,7 +745,7 @@ STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
 
 STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
     "priority": 0,
-    "need_host_blkdevs": [],
+    "need_host_blkdevs_fn": need_host_blkdevs_none,
     "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_fastboot,
     "flash_fn": flash_fastboot,
@@ -733,34 +753,31 @@ STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
 
 STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
     "priority": 10,
-    "need_host_blkdevs": [],
+    "need_host_blkdevs_fn": need_host_blkdevs_none,
     "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_lpi4a_uboot,
     "flash_fn": flash_lpi4a_uboot,
 }
 
-PKG_PROVISION_STRATEGY: dict[str, PackageProvisionStrategy] = {
-    "board-image/buildroot-sdk-milkv-duo": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo256m": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo256m-python": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo-python": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-awol-d1-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-awol-d1-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sg2042-milkv-pioneer-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sg2042-milkv-pioneer-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive2-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive2-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sipeed-lpi4a-headless": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/oerv-sipeed-lpi4a-xfce": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/revyos-sg2042-milkv-pioneer": STRATEGY_WHOLE_DISK_DD,
-    "board-image/revyos-sipeed-lpi4a": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/uboot-oerv-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-oerv-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-revyos-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-revyos-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+PROVISION_STRATEGIES: dict[ProvisionStrategyKind, PackageProvisionStrategy] = {
+    "dd-v1": STRATEGY_WHOLE_DISK_DD,
+    "fastboot-v1": STRATEGY_BOOT_ROOT_FASTBOOT,
+    "fastboot-v1(lpi4a-uboot)": STRATEGY_UBOOT_FASTBOOT_LPI4A,
 }
+
+
+def get_pkg_provision_strategy(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom: str,
+) -> PackageProvisionStrategy:
+    a = Atom.parse(atom)
+    pm = a.match_in_repo(mr, True)
+    assert pm is not None
+
+    pmd = pm.provisionable_metadata
+    assert pmd is not None
+    return PROVISION_STRATEGIES[pmd.strategy]
 
 
 def make_pkg_part_map(
