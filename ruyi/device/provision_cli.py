@@ -4,366 +4,25 @@ import os.path
 import platform
 import subprocess
 import time
-from typing import Callable, NotRequired, TypedDict
+from typing import Callable, TypedDict
 
 from .. import log
 from ..cli import prereqs, user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.pkg_cli import do_install_atoms
-from ..ruyipkg.pkg_manifest import PartitionKind, PartitionMapDecl
+from ..ruyipkg.pkg_manifest import (
+    PartitionKind,
+    PartitionMapDecl,
+    ProvisionStrategyKind,
+)
+from ..ruyipkg.provisioner import (
+    DeviceDecl,
+    DeviceVariantDecl,
+    ImageComboDecl,
+    ProvisionerConfig,
+)
 from ..ruyipkg.repo import MetadataRepo
-
-
-class ImageComboDecl(TypedDict):
-    id: str
-    display_name: str
-    packages: list[str]
-    postinst_fn: NotRequired[Callable[[], None]]
-
-
-def postinst_oerv_on_milkv_pioneer_nvme_models() -> None:
-    log.stdout(
-        """
-[bold green]NOTE[/bold green]: You will need to tweak the rootfs parameter for openEuler to properly
-boot on Milk-V Pioneer v1.2 and later models, whose rootfs resides on NVMe
-drive instead of TF card.
-
-Since [yellow]ruyi[/yellow] does not run as [yellow]root[/yellow], you will have to perform the following
-actions yourself before booting the target device:
-
-* mount the target device's [green]/boot[/green] partition,
-* check the file [cyan]/extlinux/extlinux.conf[/cyan] in the partition,
-* replace [yellow]mmcblk1p3[/yellow] with [yellow]nvme0n1p3[/yellow] as needed.
-"""
-    )
-
-
-IMAGE_COMBOS: list[ImageComboDecl] = [
-    {
-        "id": "buildroot-sdk-milkv-duo",
-        "display_name": "Milk-V Duo Official buildroot SDK (64M RAM)",
-        "packages": [
-            "board-image/buildroot-sdk-milkv-duo",
-        ],
-    },
-    {
-        "id": "buildroot-sdk-milkv-duo-python",
-        "display_name": "Milk-V Duo Official buildroot SDK (64M RAM, with Python)",
-        "packages": [
-            "board-image/buildroot-sdk-milkv-duo-python",
-        ],
-    },
-    {
-        "id": "buildroot-sdk-milkv-duo256m",
-        "display_name": "Milk-V Duo Official buildroot SDK (256M RAM)",
-        "packages": [
-            "board-image/buildroot-sdk-milkv-duo256m",
-        ],
-    },
-    {
-        "id": "buildroot-sdk-milkv-duo256m-python",
-        "display_name": "Milk-V Duo Official buildroot SDK (256M RAM, with Python)",
-        "packages": [
-            "board-image/buildroot-sdk-milkv-duo256m-python",
-        ],
-    },
-    {
-        "id": "oerv-milkv-pioneer-base",
-        "display_name": "openEuler RISC-V (base system) for Milk-V Pioneer",
-        "packages": [
-            "board-image/oerv-sg2042-milkv-pioneer-base",
-        ],
-    },
-    {
-        "id": "oerv-milkv-pioneer-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for Milk-V Pioneer",
-        "packages": [
-            "board-image/oerv-sg2042-milkv-pioneer-xfce",
-        ],
-    },
-    {
-        "id": "oerv-milkv-pioneer-base-nvme",
-        "display_name": "openEuler RISC-V (base system) for Milk-V Pioneer (rootfs on NVMe)",
-        "packages": [
-            "board-image/oerv-sg2042-milkv-pioneer-base",
-        ],
-        "postinst_fn": postinst_oerv_on_milkv_pioneer_nvme_models,
-    },
-    {
-        "id": "oerv-milkv-pioneer-xfce-nvme",
-        "display_name": "openEuler RISC-V (XFCE) for Milk-V Pioneer (rootfs on NVMe)",
-        "packages": [
-            "board-image/oerv-sg2042-milkv-pioneer-xfce",
-        ],
-        "postinst_fn": postinst_oerv_on_milkv_pioneer_nvme_models,
-    },
-    {
-        "id": "oerv-awol-d1-base",
-        "display_name": "openEuler RISC-V (base system) for Allwinner D1",
-        "packages": [
-            "board-image/oerv-awol-d1-base",
-        ],
-    },
-    {
-        "id": "oerv-awol-d1-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for Allwinner D1",
-        "packages": [
-            "board-image/oerv-awol-d1-xfce",
-        ],
-    },
-    {
-        "id": "oerv-starfive-visionfive-base",
-        "display_name": "openEuler RISC-V (base system) for StarFive VisionFive",
-        "packages": [
-            "board-image/oerv-starfive-visionfive-base",
-        ],
-    },
-    {
-        "id": "oerv-starfive-visionfive-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for StarFive VisionFive",
-        "packages": [
-            "board-image/oerv-starfive-visionfive-xfce",
-        ],
-    },
-    {
-        "id": "oerv-starfive-visionfive2-base",
-        "display_name": "openEuler RISC-V (base system) for StarFive VisionFive2",
-        "packages": [
-            "board-image/oerv-starfive-visionfive2-base",
-        ],
-    },
-    {
-        "id": "oerv-starfive-visionfive2-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for StarFive VisionFive2",
-        "packages": [
-            "board-image/oerv-starfive-visionfive2-xfce",
-        ],
-    },
-    {
-        "id": "oerv-sipeed-lpi4a-8g-headless",
-        "display_name": "openEuler RISC-V (headless) for Sipeed LicheePi 4A (8G RAM)",
-        "packages": [
-            "board-image/oerv-sipeed-lpi4a-headless",
-            "board-image/uboot-oerv-sipeed-lpi4a-8g",
-        ],
-    },
-    {
-        "id": "oerv-sipeed-lpi4a-8g-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for Sipeed LicheePi 4A (8G RAM)",
-        "packages": [
-            "board-image/oerv-sipeed-lpi4a-xfce",
-            "board-image/uboot-oerv-sipeed-lpi4a-8g",
-        ],
-    },
-    {
-        "id": "oerv-sipeed-lpi4a-16g-headless",
-        "display_name": "openEuler RISC-V (headless) for Sipeed LicheePi 4A (16G RAM)",
-        "packages": [
-            "board-image/oerv-sipeed-lpi4a-headless",
-            "board-image/uboot-oerv-sipeed-lpi4a-16g",
-        ],
-    },
-    {
-        "id": "oerv-sipeed-lpi4a-16g-xfce",
-        "display_name": "openEuler RISC-V (XFCE) for Sipeed LicheePi 4A (16G RAM)",
-        "packages": [
-            "board-image/oerv-sipeed-lpi4a-xfce",
-            "board-image/uboot-oerv-sipeed-lpi4a-16g",
-        ],
-    },
-    {
-        "id": "revyos-milkv-pioneer",
-        "display_name": "RevyOS for Milk-V Pioneer",
-        "packages": [
-            "board-image/revyos-sg2042-milkv-pioneer",
-        ],
-    },
-    {
-        "id": "revyos-sipeed-lpi4a-8g",
-        "display_name": "RevyOS for Sipeed LicheePi 4A (8G RAM)",
-        "packages": [
-            "board-image/revyos-sipeed-lpi4a",
-            "board-image/uboot-revyos-sipeed-lpi4a-8g",
-        ],
-    },
-    {
-        "id": "revyos-sipeed-lpi4a-16g",
-        "display_name": "RevyOS for Sipeed LicheePi 4A (16G RAM)",
-        "packages": [
-            "board-image/revyos-sipeed-lpi4a",
-            "board-image/uboot-revyos-sipeed-lpi4a-16g",
-        ],
-    },
-]
-
-
-class DeviceVariantDecl(TypedDict):
-    id: str
-    display_name: str
-    supported_combos: list[str]
-
-
-class DeviceDecl(TypedDict):
-    id: str
-    display_name: str
-    variants: list[DeviceVariantDecl]
-
-
-DEVICE_MILKV_DUO: DeviceDecl = {
-    "id": "milkv-duo",
-    "display_name": "Milk-V Duo",
-    "variants": [
-        {
-            "id": "64m",
-            "display_name": "Milk-V Duo (64M RAM)",
-            "supported_combos": [
-                "buildroot-sdk-milkv-duo",
-                "buildroot-sdk-milkv-duo-python",
-            ],
-        },
-        {
-            "id": "256m",
-            "display_name": "Milk-V Duo (256M RAM)",
-            "supported_combos": [
-                "buildroot-sdk-milkv-duo256m",
-                "buildroot-sdk-milkv-duo256m-python",
-            ],
-        },
-    ],
-}
-
-DEVICE_MILKV_PIONEER: DeviceDecl = {
-    "id": "milkv-pioneer",
-    "display_name": "Milk-V Pioneer Box",
-    "variants": [
-        {
-            "id": "v1.3",
-            "display_name": "Milk-V Pioneer Box (v1.3)",
-            "supported_combos": [
-                # "fedora-milkv-pioneer-v1.2"  # cannot download from Google Drive
-                "oerv-milkv-pioneer-base-nvme",
-                "oerv-milkv-pioneer-xfce-nvme",
-                "revyos-milkv-pioneer",
-            ],
-        },
-        {
-            "id": "v1.2",
-            "display_name": "Milk-V Pioneer Box (v1.2)",
-            "supported_combos": [
-                # "fedora-milkv-pioneer-v1.2"  # cannot download from Google Drive
-                "oerv-milkv-pioneer-base-nvme",
-                "oerv-milkv-pioneer-xfce-nvme",
-                # "revyos-milkv-pioneer",  # not indicated by PM
-            ],
-        },
-        {
-            "id": "v1.1",
-            "display_name": "Milk-V Pioneer Box (v1.1)",
-            "supported_combos": [
-                # "fedora-milkv-pioneer-v1.1"  # cannot download from Google Drive
-                "oerv-milkv-pioneer-base",
-                "oerv-milkv-pioneer-xfce",
-                # "revyos-milkv-pioneer",  # not indicated by PM
-            ],
-        },
-    ],
-}
-
-DEVICE_AWOL_D1DEV: DeviceDecl = {
-    "id": "awol-d1dev",
-    "display_name": "Allwinner Nezha D1",
-    "variants": [
-        {
-            "id": "generic",
-            "display_name": "Allwinner Nezha D1 (generic variant)",
-            "supported_combos": [
-                "oerv-awol-d1-base",
-                "oerv-awol-d1-xfce",
-            ],
-        },
-    ],
-}
-
-DEVICE_SIPEED_LICHEERV: DeviceDecl = {
-    "id": "sipeed-licheerv",
-    "display_name": "Sipeed Lichee RV",
-    "variants": [
-        {
-            "id": "generic",
-            "display_name": "Sipeed Lichee RV (generic variant)",
-            "supported_combos": [
-                "oerv-awol-d1-base",
-                "oerv-awol-d1-xfce",
-            ],
-        },
-    ],
-}
-
-DEVICE_SIPEED_LPI4A: DeviceDecl = {
-    "id": "sipeed-lpi4a",
-    "display_name": "Sipeed LicheePi 4A",
-    "variants": [
-        {
-            "id": "8g",
-            "display_name": "Sipeed LicheePi 4A (8G RAM)",
-            "supported_combos": [
-                "oerv-sipeed-lpi4a-8g-headless",
-                "oerv-sipeed-lpi4a-8g-xfce",
-                "revyos-sipeed-lpi4a-8g",
-            ],
-        },
-        {
-            "id": "16g",
-            "display_name": "Sipeed LicheePi 4A (16G RAM)",
-            "supported_combos": [
-                "oerv-sipeed-lpi4a-16g-headless",
-                "oerv-sipeed-lpi4a-16g-xfce",
-                "revyos-sipeed-lpi4a-16g",
-            ],
-        },
-    ],
-}
-
-DEVICE_STARFIVE_VISIONFIVE: DeviceDecl = {
-    "id": "starfive-visionfive",
-    "display_name": "StarFive VisionFive",
-    "variants": [
-        {
-            "id": "generic",
-            "display_name": "StarFive VisionFive (generic variant)",
-            "supported_combos": [
-                "oerv-starfive-visionfive-base",
-                "oerv-starfive-visionfive-xfce",
-            ],
-        },
-    ],
-}
-
-DEVICE_STARFIVE_VISIONFIVE2: DeviceDecl = {
-    "id": "starfive-visionfive2",
-    "display_name": "StarFive VisionFive2",
-    "variants": [
-        {
-            "id": "generic",
-            "display_name": "StarFive VisionFive2 (generic variant)",
-            "supported_combos": [
-                "oerv-starfive-visionfive2-base",
-                "oerv-starfive-visionfive2-xfce",
-            ],
-        },
-    ],
-}
-
-DEVICES: list[DeviceDecl] = [
-    DEVICE_AWOL_D1DEV,
-    DEVICE_MILKV_DUO,
-    DEVICE_MILKV_PIONEER,
-    DEVICE_SIPEED_LICHEERV,
-    DEVICE_SIPEED_LPI4A,
-    DEVICE_STARFIVE_VISIONFIVE,
-    DEVICE_STARFIVE_VISIONFIVE2,
-]
 
 
 def cli_device_provision(args: argparse.Namespace) -> int:
@@ -383,6 +42,17 @@ def do_provision_interactive() -> int:
         config.get_repo_branch(),
     )
     mr.ensure_git_repo()
+
+    dpcfg = mr.get_provisioner_config()
+    if dpcfg is None:
+        log.F("no device provisioner config found in the current Ruyi repository")
+        return 1
+    cfg_ver = dpcfg["ruyi_provisioner_config"]
+    if cfg_ver != "v1":
+        log.F(
+            f"unknown device provisioner config version '{cfg_ver}', please update [yellow]ruyi[/yellow] and retry"
+        )
+        return 1
 
     log.stdout(
         """
@@ -410,8 +80,8 @@ configuration does not allow so.
         )
         return 1
 
-    devices_by_id = {x["id"]: x for x in DEVICES}
-    img_combos_by_id = {x["id"]: x for x in IMAGE_COMBOS}
+    devices_by_id = {x["id"]: x for x in dpcfg["devices"]}
+    img_combos_by_id = {x["id"]: x for x in dpcfg["image_combos"]}
 
     dev_choices = {k: v["display_name"] for k, v in devices_by_id.items()}
     dev_id = user_input.ask_for_kv_choice(
@@ -437,11 +107,12 @@ configuration does not allow so.
     )
     combo = img_combos_by_id[combo_id]
 
-    return do_provision_combo_interactive(config, mr, dev, variant, combo)
+    return do_provision_combo_interactive(config, dpcfg, mr, dev, variant, combo)
 
 
 def do_provision_combo_interactive(
     config: GlobalConfig,
+    dpcfg: ProvisionerConfig,
     mr: MetadataRepo,
     dev_decl: DeviceDecl,
     variant_decl: DeviceVariantDecl,
@@ -476,18 +147,26 @@ We are about to download and install the following packages for your device:
         log.I("your device was not touched")
         return 2
 
-    # this is hacky: currently correspondence is manually ensured
-    strategies = [(pkg, PKG_PROVISION_STRATEGY[pkg]) for pkg in pkg_atoms]
+    strategies = [
+        (pkg, get_pkg_provision_strategy(config, mr, pkg)) for pkg in pkg_atoms
+    ]
     strategies.sort(key=lambda x: x[1]["priority"], reverse=True)
 
     # compose a partition map for each image pkg installed
-    # XXX: the data is also hard-coded for now, pending proper integration into
-    # the repo
     pkg_part_maps = {pkg: make_pkg_part_map(config, mr, pkg) for pkg in pkg_atoms}
+    all_parts = list(
+        set(
+            itertools.chain(
+                *(pkg_part_map.keys() for pkg_part_map in pkg_part_maps.values())
+            )
+        )
+    )
 
     # prompt user to give paths to target block device(s)
     requested_host_blkdevs = set(
-        itertools.chain(*(strat[1]["need_host_blkdevs"] for strat in strategies))
+        itertools.chain(
+            *(strat[1]["need_host_blkdevs_fn"](all_parts) for strat in strategies)
+        )
     )
     host_blkdev_map: PartitionMapDecl = {}
     if requested_host_blkdevs:
@@ -578,15 +257,17 @@ It seems the flashing has finished without errors.
 """
     )
 
-    if postinst_fn := combo.get("postinst_fn"):
-        postinst_fn()
+    if postinst_msgid := combo.get("postinst_msgid"):
+        if postinst_msgs := dpcfg.get("postinst_messages"):
+            postinst_msg = postinst_msgs[postinst_msgid]
+            log.stdout(f"\n{postinst_msg}")
 
     return 0
 
 
 class PackageProvisionStrategy(TypedDict):
     priority: int  # higher number means earlier
-    need_host_blkdevs: list[PartitionKind]
+    need_host_blkdevs_fn: Callable[[list[PartitionKind]], list[PartitionKind]]
     need_cmd: list[str]
     pretend_fn: Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
     flash_fn: Callable[[PartitionMapDecl, PartitionMapDecl], int]
@@ -662,7 +343,7 @@ def pretend_lpi4a_uboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> lis
     p = img_paths["uboot"]
     return [
         f"flash [yellow]{p}[/yellow] into device RAM",
-        f"reboot the device",
+        "reboot the device",
         f"flash [yellow]{p}[/yellow] into device partition [green]uboot[/green]",
     ]
 
@@ -715,9 +396,17 @@ def flash_fastboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> int:
     return 0
 
 
+def need_host_blkdevs_all(x: list[PartitionKind]) -> list[PartitionKind]:
+    return x
+
+
+def need_host_blkdevs_none(_: list[PartitionKind]) -> list[PartitionKind]:
+    return []
+
+
 STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
     "priority": 0,
-    "need_host_blkdevs": ["disk"],
+    "need_host_blkdevs_fn": need_host_blkdevs_all,
     "need_cmd": ["sudo", "dd"],
     "pretend_fn": pretend_dd,
     "flash_fn": flash_dd,
@@ -725,7 +414,7 @@ STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
 
 STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
     "priority": 0,
-    "need_host_blkdevs": [],
+    "need_host_blkdevs_fn": need_host_blkdevs_none,
     "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_fastboot,
     "flash_fn": flash_fastboot,
@@ -733,34 +422,31 @@ STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
 
 STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
     "priority": 10,
-    "need_host_blkdevs": [],
+    "need_host_blkdevs_fn": need_host_blkdevs_none,
     "need_cmd": ["sudo", "fastboot"],
     "pretend_fn": pretend_lpi4a_uboot,
     "flash_fn": flash_lpi4a_uboot,
 }
 
-PKG_PROVISION_STRATEGY: dict[str, PackageProvisionStrategy] = {
-    "board-image/buildroot-sdk-milkv-duo": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo256m": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo256m-python": STRATEGY_WHOLE_DISK_DD,
-    "board-image/buildroot-sdk-milkv-duo-python": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-awol-d1-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-awol-d1-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sg2042-milkv-pioneer-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sg2042-milkv-pioneer-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive2-base": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-starfive-visionfive2-xfce": STRATEGY_WHOLE_DISK_DD,
-    "board-image/oerv-sipeed-lpi4a-headless": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/oerv-sipeed-lpi4a-xfce": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/revyos-sg2042-milkv-pioneer": STRATEGY_WHOLE_DISK_DD,
-    "board-image/revyos-sipeed-lpi4a": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "board-image/uboot-oerv-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-oerv-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-revyos-sipeed-lpi4a-16g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-    "board-image/uboot-revyos-sipeed-lpi4a-8g": STRATEGY_UBOOT_FASTBOOT_LPI4A,
+PROVISION_STRATEGIES: dict[ProvisionStrategyKind, PackageProvisionStrategy] = {
+    "dd-v1": STRATEGY_WHOLE_DISK_DD,
+    "fastboot-v1": STRATEGY_BOOT_ROOT_FASTBOOT,
+    "fastboot-v1(lpi4a-uboot)": STRATEGY_UBOOT_FASTBOOT_LPI4A,
 }
+
+
+def get_pkg_provision_strategy(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom: str,
+) -> PackageProvisionStrategy:
+    a = Atom.parse(atom)
+    pm = a.match_in_repo(mr, True)
+    assert pm is not None
+
+    pmd = pm.provisionable_metadata
+    assert pmd is not None
+    return PROVISION_STRATEGIES[pmd.strategy]
 
 
 def make_pkg_part_map(
