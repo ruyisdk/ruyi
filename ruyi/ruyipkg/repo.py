@@ -4,12 +4,14 @@ import os.path
 from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
 
 from git import Repo
+import yaml
 
 from .. import log
 from ..utils.git_progress import RemoteGitProgressIndicator
 from .news import NewsItem
 from .pkg_manifest import is_prerelease, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
+from .provisioner import ProvisionerConfig
 
 
 class RepoConfigType(TypedDict):
@@ -39,6 +41,7 @@ class MetadataRepo:
         self._slug_cache: dict[str, PackageManifest] = {}
         self._profile_cache: dict[str, ProfileDecl] = {}
         self._news_cache: list[NewsItem] | None = None
+        self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
 
     def ensure_git_repo(self) -> Repo:
         if self.repo is not None:
@@ -247,3 +250,22 @@ class MetadataRepo:
             self.ensure_news_cache()
         assert self._news_cache is not None
         return self._news_cache
+
+    def ensure_provisioner_config_cache(self) -> None:
+        cfg_dir = os.path.join(self.root, "provisioner")
+        parsed_config: ProvisionerConfig | None = None
+        for filename in ("config.yml", "config.yaml"):
+            try:
+                with open(os.path.join(cfg_dir, filename), "r") as fp:
+                    parsed_config = yaml.safe_load(fp)
+                    break
+            except FileNotFoundError:
+                continue
+
+        self._provisioner_config_cache = (parsed_config,)
+
+    def get_provisioner_config(self) -> ProvisionerConfig | None:
+        if self._provisioner_config_cache is None:
+            self.ensure_provisioner_config_cache()
+        assert self._provisioner_config_cache is not None
+        return self._provisioner_config_cache[0]
