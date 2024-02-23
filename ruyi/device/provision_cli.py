@@ -343,7 +343,7 @@ def pretend_lpi4a_uboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> lis
     p = img_paths["uboot"]
     return [
         f"flash [yellow]{p}[/yellow] into device RAM",
-        f"reboot the device",
+        "reboot the device",
         f"flash [yellow]{p}[/yellow] into device partition [green]uboot[/green]",
     ]
 

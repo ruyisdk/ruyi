@@ -69,7 +69,7 @@ class MetadataRepo:
         if remote.url != self.remote:
             log.D(f"updating remote url from {remote.url} to {self.remote}")
             remote.set_url(self.remote, remote.url)
-        log.D(f"fetching")
+        log.D("fetching")
         with RemoteGitProgressIndicator() as pr:
             remote.fetch(progress=pr)
         # cosmetic touch-up: sync the local head reference to the remote HEAD too
