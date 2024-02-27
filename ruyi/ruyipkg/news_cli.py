@@ -2,10 +2,10 @@ import argparse
 
 from rich import box
 from rich.table import Table
-from rich.markdown import Markdown
 
 from ..config import GlobalConfig
 from ..config.news import NewsReadStatusStore
+from ..utils.markdown import MarkdownWithSlimHeadings
 from .. import log
 from .news import NewsItem
 from .repo import MetadataRepo
@@ -127,6 +127,6 @@ def filter_news_items_by_specs(
 
 
 def print_news(ni: NewsItem) -> None:
-    md = Markdown(ni.content)
+    md = MarkdownWithSlimHeadings(ni.content)
     log.stdout(md)
     log.stdout("")
