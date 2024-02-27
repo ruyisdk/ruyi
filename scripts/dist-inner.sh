@@ -28,7 +28,10 @@ nuitka_args=(
     --output-dir=/build
     --no-deployment-flag=self-execution
     --product-version="$RUYI_DIST_NUITKA_VER"
-    --onefile-tempdir-spec="%CACHE_DIR%/ruyi/progcache/${RUYI_DIST_SEMVER}"
+    --onefile-tempdir-spec="{CACHE_DIR}/ruyi/progcache/${RUYI_DIST_SEMVER}"
+    --include-package=pygments.formatters
+    --include-package=pygments.lexers
+    --include-package=pygments.styles
     ./ruyi/__main__.py
 )
 
