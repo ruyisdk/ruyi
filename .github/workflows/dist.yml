@@ -69,7 +69,13 @@ jobs:
           python-version: '3.11'
           cache: poetry
 
-      # TODO: ccache?
+      - name: Cache/restore Nuitka clcache contents
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}
+          path: |
+            /clcache
+
       - name: Install deps
         run: poetry install && mkdir /build
 
