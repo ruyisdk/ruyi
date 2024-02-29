@@ -12,7 +12,7 @@ jobs:
           - { arch: arm64, runs_on: [self-hosted, linux, arm64] }
           - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
 
-    name: ${{ matrix.arch }}
+    name: Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20240122
@@ -45,4 +45,40 @@ jobs:
         with:
           name: ruyi.${{ matrix.arch }}
           path: /build/ruyi
+          compression-level: 0  # the Nuitka onefile payload is already compressed
+
+  dist-windows:
+    strategy:
+      matrix:
+        include:
+          - { arch: amd64, runs_on: windows-latest }
+
+    name: Windows ${{ matrix.arch }}
+    runs-on: ${{ matrix.runs_on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v5
+        with:
+          # Nuitka doesn't officially support Python 3.12 yet (see Nuitka doc),
+          # but '>=3.11' resolves to 3.12.
+          # python-version-file: pyproject.toml
+          python-version: '3.11'
+          cache: poetry
+
+      # TODO: ccache?
+      - name: Install deps
+        run: poetry install && mkdir /build
+
+      - name: Run dist
+        run: "scripts\\dist.ps1"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruyi.windows-${{ matrix.arch }}.exe
+          path: /build/ruyi.exe
           compression-level: 0  # the Nuitka onefile payload is already compressed
