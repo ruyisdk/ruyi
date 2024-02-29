@@ -15,6 +15,7 @@ def main():
         "nuitka",
         "--standalone",
         "--onefile",
+        "--assume-yes-for-downloads",
         "--output-filename=ruyi",
         "--output-dir=/build",
         "--no-deployment-flag=self-execution",
