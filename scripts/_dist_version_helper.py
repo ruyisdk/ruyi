@@ -10,12 +10,20 @@ import semver
 
 
 def main() -> None:
+    vers = {k: shlex.quote(v) for k, v in get_versions().items()}
+    print(f"RUYI_DIST_SEMVER={vers['semver']}")
+    print(f"RUYI_DIST_NUITKA_VER={vers['nuitka_ver']}")
+
+
+def get_versions() -> dict[str, str]:
     with open("pyproject.toml", "rb") as fp:
         pyproject = tomllib.load(fp)
 
     version = pyproject["tool"]["poetry"]["version"]
-    print(f"RUYI_DIST_SEMVER={shlex.quote(version)}")
-    print(f"RUYI_DIST_NUITKA_VER={shlex.quote(to_version_for_nuitka(version))}")
+    return {
+        "semver": version,
+        "nuitka_ver": to_version_for_nuitka(version),
+    }
 
 
 PRERELEASE_NUITKA_PATCH_VER_MAP = {
