@@ -1,6 +1,8 @@
-# ruyi
-
-The WIP package manager for [RuyiSDK](https://github.com/ruyisdk).
+<div align="center">
+<img alt="RuyiSDK Logo" src="resources/ruyi-logo-256.png" height="128" />
+<h3>Ruyi</h3>
+<p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
+</div>
 
 ## Example usage
 
