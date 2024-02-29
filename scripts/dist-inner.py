@@ -24,6 +24,7 @@ def main():
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",
+        "--windows-icon-from-ico=resources/ruyi-logo-256.png",
         "./ruyi/__main__.py",
     )
 
