@@ -7,6 +7,7 @@ def main():
     vers = get_versions()
     print(f"Project SemVer       : {vers['semver']}")
     print(f"Nuitka version to use: {vers['nuitka_ver']}")
+    sys.stdout.flush()
 
     nuitka_args = (
         # https://stackoverflow.com/questions/64761870/python-subprocess-doesnt-inherit-virtual-environment
