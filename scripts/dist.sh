@@ -2,6 +2,28 @@
 
 set -e
 
+do_inner() {
+    export POETRY_CACHE_DIR=/poetry-cache
+    export CCACHE_DIR=/ccache
+
+    cd /home/b
+    . ./venv/bin/activate
+
+    cd ruyi
+    poetry install
+
+    # patch Nuitka
+    pushd /home/b/venv/lib/python*/site-packages > /dev/null
+    patch -Np1 < /home/b/ruyi/scripts/patches/0001-Onefile-Respect-XDG_CACHE_HOME-when-rendering-CACHE_.patch
+    popd > /dev/null
+
+    exec ./scripts/dist-inner.py
+}
+
+if [[ -n $RUYI_DIST_INNER ]]; then
+    do_inner
+fi
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 
 cd "$REPO_ROOT"
@@ -28,6 +50,7 @@ docker_args=(
     -v "$BUILD_DIR":/build
     -v "$POETRY_CACHE_DIR":/poetry-cache
     -v "$CCACHE_DIR":/ccache
+    -e RUYI_DIST_INNER=x
 )
 
 # only allocate pty if currently running interactively
@@ -38,7 +61,7 @@ fi
 
 docker_args+=(
     "$(image_tag_base "$arch")"
-    /home/b/ruyi/scripts/dist-inner.sh
+    /home/b/ruyi/scripts/dist.sh
 )
 
 exec docker run "${docker_args[@]}"
