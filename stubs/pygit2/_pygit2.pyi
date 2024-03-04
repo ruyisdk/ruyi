@@ -383,7 +383,7 @@ class Branch(Reference):  # type: ignore[misc]  # pyright: ignore
     def delete(self) -> None: ...
     def is_checked_out(self) -> bool: ...
     def is_head(self) -> bool: ...
-    def rename(self, name: str, force: bool = False) -> None: ...
+    def rename(self, new_name: str, force: bool = False) -> None: ...
 
 @final
 class Commit(Object):
@@ -778,9 +778,9 @@ class Stash:
 @final
 class Tag(Object):
     message: str
-    name: str
+    name: str  # pyright: ignore
     raw_message: bytes
-    raw_name: bytes
+    raw_name: bytes  # pyright: ignore
     tagger: Signature
     target: Oid
     def get_object(self) -> Object: ...
