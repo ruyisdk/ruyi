@@ -15,7 +15,7 @@ jobs:
     name: Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
     container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20240122
+      image: ghcr.io/ruyisdk/ruyi-python-dist:20240304
       options: --user root  # https://github.com/actions/checkout/issues/1014
       credentials:
         username: ${{ github.actor }}

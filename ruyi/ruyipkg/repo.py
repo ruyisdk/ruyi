@@ -3,11 +3,12 @@ import json
 import os.path
 from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
 
-from git import Repo
+from pygit2 import clone_repository
+from pygit2.repository import Repository
 import yaml
 
 from .. import log
-from ..utils.git_progress import RemoteGitProgressIndicator
+from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .news import NewsItem
 from .pkg_manifest import is_prerelease, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
@@ -34,7 +35,7 @@ class MetadataRepo:
         self.root = path
         self.remote = remote
         self.branch = branch
-        self.repo: Repo | None = None
+        self.repo: Repository | None = None
 
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
@@ -43,44 +44,29 @@ class MetadataRepo:
         self._news_cache: list[NewsItem] | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
 
-    def ensure_git_repo(self) -> Repo:
+    def ensure_git_repo(self) -> Repository:
         if self.repo is not None:
             return self.repo
 
         if os.path.exists(self.root):
-            self.repo = Repo(self.root)
+            self.repo = Repository(self.root)
             return self.repo
 
         log.D(f"{self.root} does not exist, cloning from {self.remote}")
 
         with RemoteGitProgressIndicator() as pr:
-            self.repo = Repo.clone_from(
+            self.repo = clone_repository(
                 self.remote,
                 self.root,
-                branch=self.branch,
-                progress=pr.update,
+                checkout_branch=self.branch,
+                callbacks=pr,
             )
 
         return self.repo
 
     def sync(self) -> None:
         repo = self.ensure_git_repo()
-        remote = repo.remote()
-        if remote.url != self.remote:
-            log.D(f"updating remote url from {remote.url} to {self.remote}")
-            remote.set_url(self.remote, remote.url)
-        log.D("fetching")
-        with RemoteGitProgressIndicator() as pr:
-            remote.fetch(progress=pr)
-        # cosmetic touch-up: sync the local head reference to the remote HEAD too
-        main_branch = repo.heads[self.branch]
-        tgt_commit = remote.refs[self.branch].commit
-        log.D(
-            f"updating branch {self.branch} head {main_branch} to commit {tgt_commit}"
-        )
-        main_branch.commit = tgt_commit
-        log.D("checking out")
-        main_branch.checkout(force=True)
+        return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
     def get_config(self) -> RepoConfigType:
         self.ensure_git_repo()

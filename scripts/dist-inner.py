@@ -8,7 +8,7 @@ import tomllib
 import semver
 
 
-def main():
+def main() -> None:
     vers = get_versions()
     print(f"Project SemVer       : {vers['semver']}")
     print(f"Nuitka version to use: {vers['nuitka_ver']}")
@@ -30,6 +30,7 @@ def main():
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",
+        "--include-package=_cffi_backend",  # https://github.com/Nuitka/Nuitka/issues/2505
         "--windows-icon-from-ico=resources/ruyi.ico",
         "./ruyi/__main__.py",
     )
