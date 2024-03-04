@@ -40,7 +40,6 @@ mypy_path = "./stubs"
 [tool.poetry.dependencies]
 python = ">=3.11"
 
-gitpython = "^3.1"
 jinja2 = "^3"
 pygit2 = "^1.14.0"
 python-frontmatter = "^1.0.1"
