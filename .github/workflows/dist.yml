@@ -38,7 +38,7 @@ jobs:
             /poetry-cache
 
       - name: Run dist
-        run: /home/b/ruyi/scripts/dist-inner.sh
+        run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

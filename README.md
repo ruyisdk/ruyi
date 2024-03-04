@@ -58,7 +58,7 @@ Currently the following environment variables are supported by `ruyi`:
 
 ## License
 
-Copyright &copy; 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).
+Copyright &copy; 2023-2024 Institute of Software, Chinese Academy of Sciences (ISCAS).
 All rights reserved.
 
 `ruyi` is licensed under the [Apache 2.0 license](./LICENSE-Apache.txt).
