@@ -8,7 +8,7 @@ import tomllib
 import semver
 
 
-def main():
+def main() -> None:
     vers = get_versions()
     print(f"Project SemVer       : {vers['semver']}")
     print(f"Nuitka version to use: {vers['nuitka_ver']}")
