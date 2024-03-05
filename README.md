@@ -4,7 +4,7 @@
 <p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
 </div>
 
-## Example usage
+## Installation and usage
 
 You can get pre-built binaries of `ruyi` from [the RuyiSDK mirror][mirror-testing]
 for easier testing. Rename the downloaded file to `ruyi`, make it executable,
