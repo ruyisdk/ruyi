@@ -4,9 +4,6 @@ import pathlib
 import shutil
 
 from .. import log
-
-print = log.stdout
-
 from ..config import GlobalConfig
 from .atom import Atom
 from .distfile import Distfile
@@ -32,7 +29,7 @@ def cli_list(args: argparse.Namespace) -> int:
             if first:
                 first = False
             else:
-                print("\n")
+                log.stdout("\n")
 
             print_pkg_detail(pm)
 
@@ -40,10 +37,10 @@ def cli_list(args: argparse.Namespace) -> int:
 
 
 def do_list_non_verbose(mr: MetadataRepo) -> int:
-    print("List of available packages:\n")
+    log.stdout("List of available packages:\n")
 
     for category, pkg_name, pkg_vers in mr.iter_pkgs():
-        print(f"* [bold green]{category}/{pkg_name}[/bold green]")
+        log.stdout(f"* [bold green]{category}/{pkg_name}[/bold green]")
         semvers = [pm.semver for pm in pkg_vers.values()]
         semvers.sort(reverse=True)
         found_latest = False
@@ -73,43 +70,45 @@ def do_list_non_verbose(mr: MetadataRepo) -> int:
 
             slug_str = f" slug: [yellow]{pm.slug}[/yellow]" if pm.slug else ""
 
-            print(f"  - [blue]{sv}[/blue]{comments_str}{slug_str}")
+            log.stdout(f"  - [blue]{sv}[/blue]{comments_str}{slug_str}")
 
     return 0
 
 
 def print_pkg_detail(pm: PackageManifest) -> None:
-    print(
+    log.stdout(
         f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
 
     if pm.slug is not None:
-        print(f"* Slug: [yellow]{pm.slug}[/yellow]")
+        log.stdout(f"* Slug: [yellow]{pm.slug}[/yellow]")
     else:
-        print("* Slug: (none)")
-    print(f"* Package kind: {sorted(pm.kind)}")
-    print(f"* Vendor: {pm.vendor_name}\n")
+        log.stdout("* Slug: (none)")
+    log.stdout(f"* Package kind: {sorted(pm.kind)}")
+    log.stdout(f"* Vendor: {pm.vendor_name}\n")
 
     df = pm.distfiles()
-    print(f"Package declares {len(df)} distfile(s):\n")
+    log.stdout(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
-        print(f"* [green]{dd.name}[/green]")
-        print(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
+        log.stdout(f"* [green]{dd.name}[/green]")
+        log.stdout(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
         for kind, csum in dd.checksums.items():
-            print(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
+            log.stdout(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
 
     if bm := pm.binary_metadata:
-        print("\n### Binary artifacts\n")
+        log.stdout("\n### Binary artifacts\n")
         for host, distfile_names in bm.data.items():
-            print(f"* Host [green]{host}[/green]: {distfile_names}")
+            log.stdout(f"* Host [green]{host}[/green]: {distfile_names}")
 
     if tm := pm.toolchain_metadata:
-        print("\n### Toolchain metadata\n")
-        print(f"* Target: [bold][green]{tm.target}[/green][/bold]")
-        print(f"* Flavors: {tm.flavors}")
-        print("* Components:")
+        log.stdout("\n### Toolchain metadata\n")
+        log.stdout(f"* Target: [bold][green]{tm.target}[/green][/bold]")
+        log.stdout(f"* Flavors: {tm.flavors}")
+        log.stdout("* Components:")
         for tc in tm.components:
-            print(f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]')
+            log.stdout(
+                f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]'
+            )
 
 
 def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
