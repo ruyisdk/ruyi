@@ -86,7 +86,7 @@ def print_pkg_detail(pm: PackageManifest) -> None:
     if pm.slug is not None:
         print(f"* Slug: [yellow]{pm.slug}[/yellow]")
     else:
-        print(f"* Slug: (none)")
+        print("* Slug: (none)")
     print(f"* Package kind: {sorted(pm.kind)}")
     print(f"* Vendor: {pm.vendor_name}\n")
 
