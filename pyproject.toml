@@ -37,6 +37,16 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 mypy_path = "./stubs"
 
 
+[tool.pylic]
+safe_licenses = [
+  "Apache Software License",
+  "BSD License",
+  "GPLv2 with linking exception",
+  "GNU Lesser General Public License v2 (LGPLv2)", # needs dist script cooperation
+  "MIT License",
+]
+
+
 [tool.poetry.dependencies]
 python = ">=3.11"
 
