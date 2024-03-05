@@ -50,6 +50,6 @@ semver = "^3"
 types-cffi = "^1.16.0.20240106"
 types-pyxdg = "^0.28.0.20240106"
 
-# build and dev
+[tool.poetry.group.dev.dependencies]
 black = "^23.10.1"
 nuitka = "^2.0"
