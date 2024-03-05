@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruyi"
-version = "0.6.0-alpha.20240304"
+version = "0.6.0-alpha.20240305"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 # license = { file = "LICENSE-Apache.txt" }
@@ -37,6 +37,16 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 mypy_path = "./stubs"
 
 
+[tool.pylic]
+safe_licenses = [
+  "Apache Software License",
+  "BSD License",
+  "GPLv2 with linking exception",
+  "GNU Lesser General Public License v2 (LGPLv2)", # needs dist script cooperation
+  "MIT License",
+]
+
+
 [tool.poetry.dependencies]
 python = ">=3.11"
 
@@ -50,6 +60,6 @@ semver = "^3"
 types-cffi = "^1.16.0.20240106"
 types-pyxdg = "^0.28.0.20240106"
 
-# build and dev
+[tool.poetry.group.dev.dependencies]
 black = "^23.10.1"
 nuitka = "^2.0"

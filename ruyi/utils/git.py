@@ -90,24 +90,26 @@ def pull_ff_or_die(
         remote_head = Oid(hex=remote_head_ref.target)
 
     merge_analysis, _ = repo.merge_analysis(remote_head)
-    match merge_analysis:
-        case MergeAnalysis.UP_TO_DATE:
-            # nothing to do
-            log.D("repo state already up-to-date")
-            return
-        case MergeAnalysis.UNBORN | MergeAnalysis.FASTFORWARD:
-            # simple fast-forwarding is enough in both cases
-            log.D(f"fast-forwarding repo to {remote_head.hex}")
-            tgt = repo.get(remote_head)
-            assert tgt is not None
-            repo.checkout_tree(tgt)
 
-            log.D(f"updating branch {branch_name} HEAD")
-            local_branch_ref = repo.lookup_reference(f"refs/heads/{branch_name}")
-            local_branch_ref.set_target(remote_head)
-            repo.head.set_target(remote_head)
-        case MergeAnalysis.NONE | MergeAnalysis.NORMAL:
-            # cannot handle these cases
-            log.F("cannot fast-forward repo to newly fetched state")
-            log.I("manual intervention is required to avoid data loss")
-            raise SystemExit(1)
+    if merge_analysis & MergeAnalysis.UP_TO_DATE:
+        # nothing to do
+        log.D("repo state already up-to-date")
+        return
+
+    if merge_analysis & (MergeAnalysis.UNBORN | MergeAnalysis.FASTFORWARD):
+        # simple fast-forwarding is enough in both cases
+        log.D(f"fast-forwarding repo to {remote_head.hex}")
+        tgt = repo.get(remote_head)
+        assert tgt is not None
+        repo.checkout_tree(tgt)
+
+        log.D(f"updating branch {branch_name} HEAD")
+        local_branch_ref = repo.lookup_reference(f"refs/heads/{branch_name}")
+        local_branch_ref.set_target(remote_head)
+        repo.head.set_target(remote_head)
+        return
+
+    # cannot handle these cases
+    log.F("cannot fast-forward repo to newly fetched state")
+    log.I("manual intervention is required to avoid data loss")
+    raise SystemExit(1)

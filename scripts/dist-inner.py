@@ -8,17 +8,29 @@ import tomllib
 import semver
 
 
+LGPL_MODULES = ("xdg",)
+
+
 def main() -> None:
     vers = get_versions()
     print(f"Project SemVer       : {vers['semver']}")
-    print(f"Nuitka version to use: {vers['nuitka_ver']}")
-    sys.stdout.flush()
+    print(f"Nuitka version to use: {vers['nuitka_ver']}\n", flush=True)
 
-    nuitka_args = (
-        # https://stackoverflow.com/questions/64761870/python-subprocess-doesnt-inherit-virtual-environment
-        sys.executable,  # "python",
-        "-m",
-        "nuitka",
+    ext_outdir = "/build/_exts"
+    try:
+        os.mkdir(ext_outdir)
+    except FileExistsError:
+        pass
+    add_pythonpath(ext_outdir)
+
+    # Compile LGPL module(s) into own extensions
+    print("Building LGPL extension(s)\n", flush=True)
+    for name in LGPL_MODULES:
+        make_nuitka_ext(name, ext_outdir)
+
+    # Finally the main program
+    print("Building Ruyi executable\n", flush=True)
+    call_nuitka(
         "--standalone",
         "--onefile",
         "--assume-yes-for-downloads",
@@ -35,7 +47,34 @@ def main() -> None:
         "./ruyi/__main__.py",
     )
 
+
+def call_nuitka(*args: str) -> None:
+    nuitka_args = [
+        # https://stackoverflow.com/questions/64761870/python-subprocess-doesnt-inherit-virtual-environment
+        sys.executable,  # "python",
+        "-m",
+        "nuitka",
+    ]
+    nuitka_args.extend(args)
     subprocess.run(nuitka_args)
+
+
+def add_pythonpath(path: str) -> None:
+    old_path = os.environ.get("PYTHONPATH", "")
+    new_path = path if not old_path else f"{path}{os.pathsep}{old_path}"
+    os.environ["PYTHONPATH"] = new_path
+
+
+def make_nuitka_ext(module_name: str, out_dir: str) -> None:
+    mod = __import__(module_name)
+    mod_dir = os.path.dirname(mod.__file__)
+    print(f"Building {module_name} at {mod_dir} into extension", flush=True)
+    call_nuitka(
+        "--module",
+        mod_dir,
+        f"--include-package={module_name}",
+        f"--output-dir={out_dir}",
+    )
 
 
 def get_versions() -> dict[str, str]:
