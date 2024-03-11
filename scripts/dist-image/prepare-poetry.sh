@@ -2,6 +2,8 @@
 
 set -e
 
+export MAKEFLAGS="-j$(nproc)"
+
 python3.11 -m venv /home/b/venv
 /home/b/venv/bin/pip install -U pip setuptools wheel
 /home/b/venv/bin/pip install poetry

@@ -24,7 +24,7 @@ def get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
         parts = _query_linux_system_ssl_default_cert_paths()
     except Exception as e:
         log.D(f"cannot get system libssl default cert paths: {e}")
-        return _orig_get_default_verify_paths()
+        return orig_paths
 
     cafile = os.environ.get(parts[0], parts[1])
     capath = os.environ.get(parts[2], parts[3])
@@ -58,11 +58,27 @@ def _decode_fsdefault_or_none(val: int | None) -> str:
     return s.value.decode(sys.getfilesystemencoding())
 
 
-def _query_linux_system_ssl_default_cert_paths() -> tuple[str, str, str, str]:
+def _query_linux_system_ssl_default_cert_paths(
+    soname: str | None = None,
+) -> tuple[str, str, str, str]:
+    if soname is None:
+        for soname in ("libssl.so", "libssl.so.3", "libssl.so.1.1"):
+            try:
+                return _query_linux_system_ssl_default_cert_paths(soname)
+            except OSError as e:
+                log.D(f"soname {soname} not working: {e}")
+                continue
+
+        # cannot proceed without certificates info (pygit2 initialization is
+        # bound to fail anyway)
+        log.F("cannot find the system libssl")
+        log.I("TLS certificates and library are required for Ruyi to function")
+        raise SystemExit(1)
+
     # this can work because right now Nuitka packages the libssl as "libssl.so.X"
     # notice the presence of sover suffix
     # so dlopen-ing "libssl.so" will get us the system library
-    libssl = ctypes.CDLL("libssl.so")
+    libssl = ctypes.CDLL(soname)
     libssl.X509_get_default_cert_file_env.restype = ctypes.c_void_p
     libssl.X509_get_default_cert_file.restype = ctypes.c_void_p
     libssl.X509_get_default_cert_dir_env.restype = ctypes.c_void_p
