@@ -15,16 +15,17 @@ jobs:
     name: Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
     container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20240304
+      image: ghcr.io/ruyisdk/ruyi-python-dist:20240311
       options: --user root  # https://github.com/actions/checkout/issues/1014
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
-        - ${{ github.workspace }}:/home/b/ruyi:ro
+        - ${{ github.workspace }}:/home/b/ruyi
         - tmp-build:/build
         - tmp-poetry-cache:/poetry-cache
         - tmp-ccache:/ccache
+        - tmp-ruyi-dist-cache:/ruyi-dist-cache
 
     steps:
       - uses: actions/checkout@v4
@@ -32,10 +33,11 @@ jobs:
       - name: Cache deps and Nuitka output
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-${{ matrix.arch }}
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r2
           path: |
             /ccache
             /poetry-cache
+            /ruyi-dist-cache
 
       - name: Run dist
         run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh

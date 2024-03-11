@@ -5,7 +5,7 @@ image_tag_base() {
 
     case "$arch" in
         ""|amd64|arm64|riscv64)
-            echo "ghcr.io/ruyisdk/ruyi-python-dist:20240304"
+            echo "ghcr.io/ruyisdk/ruyi-python-dist:20240311"
             ;;
         *)
             echo "error: unsupported arch $arch; supported are: amd64, arm64, riscv64" >&2

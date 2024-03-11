@@ -5,11 +5,18 @@ set -e
 do_inner() {
     export POETRY_CACHE_DIR=/poetry-cache
     export CCACHE_DIR=/ccache
+    export MAKEFLAGS="-j$(nproc)"
 
     cd /home/b
     . ./venv/bin/activate
 
     cd ruyi
+    case "$(uname -m)" in
+    riscv64)
+        ./scripts/build-pygit2.py
+        ;;
+    esac
+
     poetry install
 
     # patch Nuitka
@@ -41,15 +48,17 @@ source "${REPO_ROOT}/scripts/_image_tag_base.sh"
 BUILD_DIR="$REPO_ROOT/tmp/build.${arch}"
 POETRY_CACHE_DIR="$REPO_ROOT/tmp/poetry-cache.${arch}"
 CCACHE_DIR="$REPO_ROOT/tmp/ccache.${arch}"
-mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR"
+RUYI_DIST_CACHE_DIR="$REPO_ROOT/tmp/ruyi-dist-cache.${arch}"
+mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 
 docker_args=(
     --rm
     --platform "linux/${arch}"
-    -v "$REPO_ROOT":/home/b/ruyi:ro
+    -v "$REPO_ROOT":/home/b/ruyi
     -v "$BUILD_DIR":/build
     -v "$POETRY_CACHE_DIR":/poetry-cache
     -v "$CCACHE_DIR":/ccache
+    -v "$RUYI_DIST_CACHE_DIR":/ruyi-dist-cache
     -e RUYI_DIST_INNER=x
 )
 

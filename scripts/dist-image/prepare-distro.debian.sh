@@ -39,8 +39,9 @@ package_list=(
     # Rust openssl-sys
     libssl-dev
     pkgconf
-    # pygit2
-    libgit2-dev
+    # pygit2 build
+    cmake
+    wget
 )
 
 apt-get update
