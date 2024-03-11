@@ -54,7 +54,7 @@ mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 docker_args=(
     --rm
     --platform "linux/${arch}"
-    -v "$REPO_ROOT":/home/b/ruyi:ro
+    -v "$REPO_ROOT":/home/b/ruyi
     -v "$BUILD_DIR":/build
     -v "$POETRY_CACHE_DIR":/poetry-cache
     -v "$CCACHE_DIR":/ccache

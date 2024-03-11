@@ -21,7 +21,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
-        - ${{ github.workspace }}:/home/b/ruyi:ro
+        - ${{ github.workspace }}:/home/b/ruyi
         - tmp-build:/build
         - tmp-poetry-cache:/poetry-cache
         - tmp-ccache:/ccache
