@@ -56,7 +56,7 @@ def call_nuitka(*args: str) -> None:
         "nuitka",
     ]
     nuitka_args.extend(args)
-    subprocess.run(nuitka_args)
+    subprocess.run(nuitka_args, check=True)
 
 
 def add_pythonpath(path: str) -> None:
