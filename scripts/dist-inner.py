@@ -5,16 +5,19 @@ import subprocess
 import sys
 import tomllib
 
+from rich.console import Console
 import semver
 
+# it seems force_terminal is needed for colors to show up on GHA
+INFO = Console(stderr=True, style="bold green", force_terminal=True)
 
 LGPL_MODULES = ("xdg",)
 
 
 def main() -> None:
     vers = get_versions()
-    print(f"Project SemVer       : {vers['semver']}")
-    print(f"Nuitka version to use: {vers['nuitka_ver']}\n", flush=True)
+    INFO.print(f"Project SemVer       : [cyan]{vers['semver']}")
+    INFO.print(f"Nuitka version to use: [cyan]{vers['nuitka_ver']}")
 
     ext_outdir = "/build/_exts"
     try:
@@ -24,12 +27,12 @@ def main() -> None:
     add_pythonpath(ext_outdir)
 
     # Compile LGPL module(s) into own extensions
-    print("Building LGPL extension(s)\n", flush=True)
+    INFO.print("\nBuilding LGPL extension(s)\n")
     for name in LGPL_MODULES:
         make_nuitka_ext(name, ext_outdir)
 
     # Finally the main program
-    print("Building Ruyi executable\n", flush=True)
+    INFO.print("\nBuilding Ruyi executable\n")
     call_nuitka(
         "--standalone",
         "--onefile",
@@ -68,7 +71,7 @@ def add_pythonpath(path: str) -> None:
 def make_nuitka_ext(module_name: str, out_dir: str) -> None:
     mod = __import__(module_name)
     mod_dir = os.path.dirname(mod.__file__)
-    print(f"Building {module_name} at {mod_dir} into extension", flush=True)
+    INFO.print(f"Building [cyan]{module_name}[/] at [cyan]{mod_dir}[/] into extension")
     call_nuitka(
         "--module",
         mod_dir,
