@@ -1,6 +1,18 @@
 name: Dist build
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - pyproject.toml
+      - poetry.lock
+      - '**.py'
+      - 'scripts/**'
+  pull_request:
+    paths:
+      - pyproject.toml
+      - poetry.lock
+      - '**.py'
+      - 'scripts/**'
 
 jobs:
   dist:
