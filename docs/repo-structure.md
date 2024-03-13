@@ -13,7 +13,7 @@ Ruyi 软件源承担两种职能，从而也由两部分构成：
 
 ```
 packages-index
-├── config.json
+├── config.toml
 ├── manifests
 │   └── toolchain
 │       └── plct
@@ -29,18 +29,75 @@ packages-index
 
 不是必须的，目前也没有被用于界面展示等 `ruyi` 命令之内的用途，而仅仅用于网页端浏览。
 
-### `config.json`
+### 全局配置
 
-这是某个具体 Ruyi 软件源的全局配置，JSON 格式。
+每个具体的 Ruyi 软件源都必须包含一个全局配置文件，文件名为
+`config.json` 或 `config.toml`。文件内容的格式必须与其扩展名所表示的格式一致。
+
+当此数据的顶层不包含 `ruyi-repo` 字段时，应将其视作“旧版配置”解读。
+旧版配置支持两种配置字段，如示例：
 
 ```json
 {
-    "dist": "https://path-to-distfiles-host"
+    "dist": "https://path-to-distfiles-host",
+    "doc_uri": "https://ruyisdk.github.io/docs/"
 }
+```
+
+```toml
+dist = "https://path-to-distfiles-host"
+doc_uri = "https://ruyisdk.github.io/docs/"
 ```
 
 * `dist` 字段表示 Ruyi 软件源分发路径，以 `/` 结尾与否均可。以下将此配置值称作 `${config.dist}`。
 * `doc_uri` 是可选的指向该仓库的配套文档首页的 URI 字符串。
+
+当此数据的顶层包含 `ruyi-repo` 字段时，支持以下的配置字段，如示例：
+
+```toml
+ruyi-repo = "v1"
+
+[repo]
+doc_uri = "https://ruyisdk.github.io/docs/"
+
+[[mirror]]
+id = "ruyi-dist"
+urls = [
+  "https://path-to-distfiles-host",
+]
+
+[[mirror]]
+id = "foo"
+urls = [
+  "https://mirrors.foo.com/foo",
+  "https://mirrors.bar.org/dist/foo",
+  "https://mirrors.baz.edu.cn/quux",
+]
+```
+
+其中：
+
+* `repo.doc_uri` 字段含义同旧版配置的 `doc_uri` 字段。
+* `mirror` 是镜像源定义，其中 ID 为 `ruyi-dist` 的镜像具备特殊含义：其
+  `urls` 字段含义是旧版配置的 `dist` 字段含义的超集。
+
+#### 镜像源定义
+
+可以使用“镜像源”的概念，方便地表达某一实体所提供的多种文件分发渠道。
+例如，某软件包定义中的 `urls` 字段的某一条记录形如
+`mirror://foo/bar/baz.tar.zst`，那么如果搭配上述配置示例中的 `foo` 镜像源定义，
+这条记录就与以下几条具体 URLs 等价：
+
+* `https://mirrors.foo.com/foo/bar/baz.tar.zst`
+* `https://mirrors.bar.org/dist/foo/bar/baz.tar.zst`
+* `https://mirrors.baz.edu.cn/quux/bar/baz.tar.zst`
+
+每个镜像源的定义格式如下：
+
+* `id` 是镜像源的 ID。
+* `urls` 是此镜像源下属的所有可用镜像的基础 URL 列表。
+
+虽然目前 Ruyi 在下载文件时的实际行为是按列表顺序逐个尝试下载，但不对此做兼容性保证。
 
 ### `manifests`
 
