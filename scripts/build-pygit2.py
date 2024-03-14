@@ -3,12 +3,19 @@
 import os
 import shutil
 import subprocess
+import sys
 import tomllib
 
 
 def get_pygit2_src_uri(tag: str) -> (str, str):
     filename = f"{tag}.tar.gz"
     return (filename, f"https://github.com/libgit2/pygit2/archive/refs/tags/{filename}")
+
+
+def log(s: str, fgcolor: int = 32) -> None:
+    # we cannot import rich because this script is executed before
+    # `poetry install` in the dist build process
+    print(f"\x1b[1;{fgcolor}m{s}\x1b[m", file=sys.stderr, flush=True)
 
 
 def main() -> None:
@@ -19,7 +26,7 @@ def main() -> None:
     ensure_dir(cache_root)
 
     pygit2_ver = get_pygit2_version()
-    print(f"resolved pygit2 version {pygit2_ver}")
+    log(f"resolved pygit2 version {pygit2_ver}")
 
     pygit2_cache_rev = 1  # bump this to force rebuild (e.g. for bumping indirect deps)
     pygit2_wheel_path = ensure_pygit2_wheel(
@@ -29,10 +36,10 @@ def main() -> None:
         pygit2_cache_rev,
     )
 
-    print(f"\ninstalling {pygit2_wheel_path}")
+    log(f"installing {pygit2_wheel_path}")
     subprocess.run(("pip", "install", pygit2_wheel_path), check=True)
 
-    print("\ninforming poetry about the wheel")
+    log("informing poetry about the wheel")
     subprocess.run(("poetry", "add", pygit2_wheel_path), check=True)
 
 
@@ -51,12 +58,12 @@ def ensure_pygit2_wheel(ver: str, workdir: str, cache_root: str, cache_rev: int)
             i for i in os.listdir(cache_dir) if os.path.splitext(i)[1] == ".whl"
         ][0]
         wheel_path = os.path.join(cache_dir, wheel_file)
-        print(f"found cached pygit2 (cache rev {cache_rev}) at {wheel_path}")
+        log(f"found cached pygit2 (cache rev {cache_rev}) at {wheel_path}")
     except (FileNotFoundError, IndexError):
-        print(f"cached pygit2 (cache rev {cache_rev}) not found, building")
+        log(f"cached pygit2 (cache rev {cache_rev}) not found, building")
         wheel_path = build_pygit2(ver, workdir)
 
-        print(f"caching built wheel {wheel_path} to {cache_dir}")
+        log(f"caching built wheel {wheel_path} to {cache_dir}")
         ensure_dir(cache_dir)
 
         dest_path = os.path.join(cache_dir, os.path.basename(wheel_path))
@@ -71,7 +78,7 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
     pygit2_workdir = os.path.join(workdir, f"pygit2-{pygit2_ver}")
 
     # download the source
-    print(f"\ndownloading {pygit2_src_uri}")
+    log(f"downloading {pygit2_src_uri}")
     subprocess.run(
         ("wget", "-O", pygit2_src_filename, pygit2_src_uri),
         cwd=workdir,
@@ -79,17 +86,17 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
     )
 
     # unpack the source
-    print(f"\nunpacking {pygit2_src_filename}")
+    log(f"unpacking {pygit2_src_filename}")
     subprocess.run(("tar", "-xf", pygit2_src_filename), cwd=workdir, check=True)
 
     # build wheel
     extra_env = get_pygit2_wheel_build_env(pygit2_workdir)
-    print("\nextra envvar(s):")
+    log("extra envvar(s):", fgcolor=36)
     for k, v in extra_env.items():
-        print(f"  {k}: {v}")
+        log(f"  {k}: {v}", fgcolor=36)
         os.environ[k] = v
 
-    print("\nbuilding pygit2 wheel")
+    log("building pygit2 wheel")
     subprocess.run(
         ("sh", "build.sh", "wheel", "bundle"),
         cwd=pygit2_workdir,

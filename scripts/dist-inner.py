@@ -5,16 +5,19 @@ import subprocess
 import sys
 import tomllib
 
+from rich.console import Console
 import semver
 
+# it seems force_terminal is needed for colors to show up on GHA
+INFO = Console(stderr=True, style="bold green", force_terminal=True)
 
 LGPL_MODULES = ("xdg",)
 
 
 def main() -> None:
     vers = get_versions()
-    print(f"Project SemVer       : {vers['semver']}")
-    print(f"Nuitka version to use: {vers['nuitka_ver']}\n", flush=True)
+    INFO.print(f"Project SemVer       : [cyan]{vers['semver']}")
+    INFO.print(f"Nuitka version to use: [cyan]{vers['nuitka_ver']}")
 
     ext_outdir = "/build/_exts"
     try:
@@ -24,12 +27,12 @@ def main() -> None:
     add_pythonpath(ext_outdir)
 
     # Compile LGPL module(s) into own extensions
-    print("Building LGPL extension(s)\n", flush=True)
+    INFO.print("\nBuilding LGPL extension(s)\n")
     for name in LGPL_MODULES:
         make_nuitka_ext(name, ext_outdir)
 
     # Finally the main program
-    print("Building Ruyi executable\n", flush=True)
+    INFO.print("\nBuilding Ruyi executable\n")
     call_nuitka(
         "--standalone",
         "--onefile",
@@ -47,6 +50,9 @@ def main() -> None:
         "./ruyi/__main__.py",
     )
 
+    if "GITHUB_ACTIONS" in os.environ:
+        set_release_mirror_url_for_gha(vers["semver"])
+
 
 def call_nuitka(*args: str) -> None:
     nuitka_args = [
@@ -56,7 +62,7 @@ def call_nuitka(*args: str) -> None:
         "nuitka",
     ]
     nuitka_args.extend(args)
-    subprocess.run(nuitka_args)
+    subprocess.run(nuitka_args, check=True)
 
 
 def add_pythonpath(path: str) -> None:
@@ -68,7 +74,7 @@ def add_pythonpath(path: str) -> None:
 def make_nuitka_ext(module_name: str, out_dir: str) -> None:
     mod = __import__(module_name)
     mod_dir = os.path.dirname(mod.__file__)
-    print(f"Building {module_name} at {mod_dir} into extension", flush=True)
+    INFO.print(f"Building [cyan]{module_name}[/] at [cyan]{mod_dir}[/] into extension")
     call_nuitka(
         "--module",
         mod_dir,
@@ -122,6 +128,31 @@ def to_version_for_nuitka(version: str) -> str:
     n_patch = PRERELEASE_NUITKA_PATCH_VER_MAP[prerelease_kind] + y
     n_extra = md * 10
     return f"{n_major}.{n_minor}.{n_patch}.{n_extra}"
+
+
+def set_release_mirror_url_for_gha(version: str) -> None:
+    release_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/releases/"
+    testing_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/"
+
+    sv = semver.Version.parse(version)
+    url_base = testing_url_base if sv.prerelease else release_url_base
+    url = f"{url_base}{version}/"
+    set_gha_output("release_mirror_url", url)
+
+
+def set_gha_output(k: str, v: str) -> None:
+    if "\n" in v:
+        raise ValueError("this helper is only for small one-line outputs")
+
+    # only do this when the GitHub Actions output file is available
+    # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-output-parameter
+    outfile = os.environ.get("GITHUB_OUTPUT", "")
+    if not outfile:
+        return
+
+    INFO.print(f"GHA: setting output [cyan]{k}[/] to [cyan]{v}[/]")
+    with open(outfile, "a") as fp:
+        fp.write(f"{k}={v}\n")
 
 
 if __name__ == "__main__":
