@@ -73,6 +73,7 @@ mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 
 docker_args=(
     --rm
+    -i  # required to be able to interrupt the build with ^C
     --platform "linux/${arch}"
     -v "$REPO_ROOT":/home/b/ruyi
     -v "$BUILD_DIR":/build
