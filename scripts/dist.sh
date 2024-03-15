@@ -2,6 +2,10 @@
 
 set -e
 
+green() {
+    printf "\x1b[1;32m%s\x1b[m\n" "$1"
+}
+
 do_inner() {
     export POETRY_CACHE_DIR=/poetry-cache
     export CCACHE_DIR=/ccache
@@ -9,6 +13,22 @@ do_inner() {
 
     cd /home/b
     . ./venv/bin/activate
+
+    if [[ -n $CI ]]; then
+        green "current user info"
+        id
+        green "home directory contents"
+        ls -alF .
+        green "repo contents"
+        ls -alF ./ruyi
+        green "ruyi-dist-cache contents"
+        ls -alF /ruyi-dist-cache
+
+        if [[ ! -O ./ruyi ]]; then
+            green "adding the repo to the list of Git safe directories"
+            git config --global --add safe.directory "$(realpath ./ruyi)"
+        fi
+    fi
 
     cd ruyi
     case "$(uname -m)" in
@@ -53,6 +73,7 @@ mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 
 docker_args=(
     --rm
+    -i  # required to be able to interrupt the build with ^C
     --platform "linux/${arch}"
     -v "$REPO_ROOT":/home/b/ruyi
     -v "$BUILD_DIR":/build

@@ -1,29 +1,51 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
+import shutil
 import subprocess
 import sys
+import time
 import tomllib
 
+from pygit2.repository import Repository
 from rich.console import Console
 import semver
 
 # it seems force_terminal is needed for colors to show up on GHA
-INFO = Console(stderr=True, style="bold green", force_terminal=True)
+INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=False)
 
 LGPL_MODULES = ("xdg",)
 
 
 def main() -> None:
+    epoch = int(time.time())
+
     vers = get_versions()
-    INFO.print(f"Project SemVer       : [cyan]{vers['semver']}")
-    INFO.print(f"Nuitka version to use: [cyan]{vers['nuitka_ver']}")
+    INFO.print(f"Project Git commit       : [cyan]{vers['git_commit']}")
+    INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
+    INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
+
+    build_root = "/build"
+    exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
+    output_file = os.path.join(build_root, exe_name)
+
+    cache_root = "/ruyi-dist-cache"
+    ensure_dir(cache_root)
+
+    cache_key = get_cache_key(vers["git_commit"])
+    cached_output_dir = pathlib.Path(cache_root) / cache_key
+    cached_output_file = cached_output_dir / exe_name
+    try:
+        shutil.copyfile(cached_output_file, output_file)
+        os.chmod(output_file, 0o755)
+        INFO.print(f"cache hit at [cyan]{cached_output_file}[/], skipping build")
+        return
+    except FileNotFoundError:
+        pass
 
     ext_outdir = "/build/_exts"
-    try:
-        os.mkdir(ext_outdir)
-    except FileExistsError:
-        pass
+    ensure_dir(ext_outdir)
     add_pythonpath(ext_outdir)
 
     # Compile LGPL module(s) into own extensions
@@ -50,8 +72,61 @@ def main() -> None:
         "./ruyi/__main__.py",
     )
 
+    INFO.print(f"\ncaching output to [cyan]{cached_output_file}")
+    ensure_dir(cached_output_dir)
+    shutil.copyfile(output_file, cached_output_file)
+    os.chmod(cached_output_file, 0o755)
+    ts = cached_output_dir / "timestamp"
+    ts.write_text(f"{epoch}\n")
+
+    delete_cached_files_older_than_days(cache_root, 21, epoch)
+
     if "GITHUB_ACTIONS" in os.environ:
         set_release_mirror_url_for_gha(vers["semver"])
+
+
+def ensure_dir(d: str) -> None:
+    try:
+        os.mkdir(d)
+    except FileExistsError:
+        pass
+
+
+def get_cache_key(git_commit: str) -> str:
+    return f"ruyi-g{git_commit}"
+
+
+def delete_cached_files_older_than_days(root: str, days: int, epoch: int) -> None:
+    max_ts_delta = days * 86400
+
+    epoch_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
+    INFO.print(
+        f"purging cache contents older than [cyan]{days}[/] days from [cyan]now={epoch_str}"
+    )
+
+    root_path = pathlib.Path(root)
+    dirs_to_remove: list[tuple[pathlib.Path, int | None]] = []
+    for f in root_path.iterdir():
+        try:
+            ts = int((f / "timestamp").read_text().strip(), 10)
+        except (FileNotFoundError, ValueError):
+            dirs_to_remove.append((f, None))
+            continue
+
+        if ts - epoch >= max_ts_delta:
+            dirs_to_remove.append((f, ts))
+
+    for f, ts in dirs_to_remove:
+        if ts is None:
+            INFO.print(
+                f"removing [cyan]{f}[/] ([yellow]timestamp absent or invalid)[/]"
+            )
+        else:
+            ts_time = time.gmtime(ts)
+            ts_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", ts_time)
+            INFO.print(f"removing [cyan]{f}[/] (created [yellow]{ts_str}[/])")
+
+        shutil.rmtree(f)
 
 
 def call_nuitka(*args: str) -> None:
@@ -90,10 +165,17 @@ def get_versions() -> dict[str, str]:
         pyproject = tomllib.load(fp)
 
     version = pyproject["tool"]["poetry"]["version"]
+
     return {
+        "git_commit": get_git_commit(),
         "semver": version,
         "nuitka_ver": to_version_for_nuitka(version),
     }
+
+
+def get_git_commit() -> str:
+    repo = Repository(".")
+    return str(repo.head.target)
 
 
 PRERELEASE_NUITKA_PATCH_VER_MAP = {
