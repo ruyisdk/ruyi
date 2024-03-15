@@ -38,6 +38,7 @@ def main() -> None:
     cached_output_file = cached_output_dir / exe_name
     try:
         shutil.copyfile(cached_output_file, output_file)
+        os.chmod(output_file, 0o755)
         INFO.print(f"cache hit at [cyan]{cached_output_file}[/], skipping build")
         return
     except FileNotFoundError:
@@ -74,6 +75,7 @@ def main() -> None:
     INFO.print(f"\ncaching output to [cyan]{cached_output_file}")
     ensure_dir(cached_output_dir)
     shutil.copyfile(output_file, cached_output_file)
+    os.chmod(cached_output_file, 0o755)
     ts = cached_output_dir / "timestamp"
     ts.write_text(f"{epoch}\n")
 
