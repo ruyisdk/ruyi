@@ -2,6 +2,10 @@
 
 set -e
 
+green() {
+    printf "\x1b[1;32m%s\x1b[m\n" "$1"
+}
+
 do_inner() {
     export POETRY_CACHE_DIR=/poetry-cache
     export CCACHE_DIR=/ccache
@@ -9,6 +13,17 @@ do_inner() {
 
     cd /home/b
     . ./venv/bin/activate
+
+    if [[ -n $CI ]]; then
+        green "current user info"
+        id
+        green "home directory contents"
+        ls -alF .
+        green "repo contents"
+        ls -alF ./ruyi
+        green "ruyi-dist-cache contents"
+        ls -alF /ruyi-dist-cache
+    fi
 
     cd ruyi
     case "$(uname -m)" in
