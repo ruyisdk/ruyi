@@ -23,6 +23,11 @@ do_inner() {
         ls -alF ./ruyi
         green "ruyi-dist-cache contents"
         ls -alF /ruyi-dist-cache
+
+        if [[ ! -O ./ruyi ]]; then
+            green "adding the repo to the list of Git safe directories"
+            git config --global --add safe.directory "$(realpath ./ruyi)"
+        fi
     fi
 
     cd ruyi

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import shutil
 import subprocess
 import sys
 import tomllib
 
+from pygit2.repository import Repository
 from rich.console import Console
 import semver
 
@@ -16,14 +18,29 @@ LGPL_MODULES = ("xdg",)
 
 def main() -> None:
     vers = get_versions()
+    INFO.print(f"Project Git commit   : [cyan]{vers['git_commit']}")
     INFO.print(f"Project SemVer       : [cyan]{vers['semver']}")
     INFO.print(f"Nuitka version to use: [cyan]{vers['nuitka_ver']}")
 
-    ext_outdir = "/build/_exts"
+    build_root = "/build"
+    output_file = os.path.join(build_root, exe_name)
+
+    cache_root = "/ruyi-dist-cache"
+    ensure_dir(cache_root)
+
+    cache_key = get_cache_key(vers["git_commit"])
+    exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
+    cached_output_dir = os.path.join(cache_root, cache_key)
+    cached_output_file = os.path.join(cached_output_dir, exe_name)
     try:
-        os.mkdir(ext_outdir)
-    except FileExistsError:
+        shutil.copyfile(cached_output_file, output_file)
+        INFO.print(f"cache hit at {cached_output_file}, skipping build")
+        return
+    except FileNotFoundError:
         pass
+
+    ext_outdir = "/build/_exts"
+    ensure_dir(ext_outdir)
     add_pythonpath(ext_outdir)
 
     # Compile LGPL module(s) into own extensions
@@ -50,8 +67,23 @@ def main() -> None:
         "./ruyi/__main__.py",
     )
 
+    INFO.print(f"\ncaching output to {cached_output_file}")
+    ensure_dir(cached_output_dir)
+    shutil.copyfile(output_file, cached_output_file)
+
     if "GITHUB_ACTIONS" in os.environ:
         set_release_mirror_url_for_gha(vers["semver"])
+
+
+def ensure_dir(d: str) -> None:
+    try:
+        os.mkdir(d)
+    except FileExistsError:
+        pass
+
+
+def get_cache_key(git_commit: str) -> str:
+    return f"ruyi-g{git_commit}"
 
 
 def call_nuitka(*args: str) -> None:
@@ -90,10 +122,17 @@ def get_versions() -> dict[str, str]:
         pyproject = tomllib.load(fp)
 
     version = pyproject["tool"]["poetry"]["version"]
+
     return {
+        "git_commit": get_git_commit(),
         "semver": version,
         "nuitka_ver": to_version_for_nuitka(version),
     }
+
+
+def get_git_commit() -> str:
+    repo = Repository(".")
+    return str(repo.head.target)
 
 
 PRERELEASE_NUITKA_PATCH_VER_MAP = {
