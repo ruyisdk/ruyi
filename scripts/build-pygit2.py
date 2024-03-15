@@ -36,7 +36,7 @@ def main() -> None:
         pygit2_cache_rev,
     )
 
-    log(f"installing {pygit2_wheel_path}")
+    # this will print a header suitable for our logging purposes
     subprocess.run(("pip", "install", pygit2_wheel_path), check=True)
 
     log("informing poetry about the wheel")

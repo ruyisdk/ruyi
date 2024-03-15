@@ -13,7 +13,7 @@ from rich.console import Console
 import semver
 
 # it seems force_terminal is needed for colors to show up on GHA
-INFO = Console(stderr=True, style="bold green", force_terminal=True)
+INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=False)
 
 LGPL_MODULES = ("xdg",)
 
@@ -22,9 +22,9 @@ def main() -> None:
     epoch = int(time.time())
 
     vers = get_versions()
-    INFO.print(f"Project Git commit   : [cyan]{vers['git_commit']}")
-    INFO.print(f"Project SemVer       : [cyan]{vers['semver']}")
-    INFO.print(f"Nuitka version to use: [cyan]{vers['nuitka_ver']}")
+    INFO.print(f"Project Git commit       : [cyan]{vers['git_commit']}")
+    INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
+    INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
 
     build_root = "/build"
     exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
@@ -38,7 +38,7 @@ def main() -> None:
     cached_output_file = cached_output_dir / exe_name
     try:
         shutil.copyfile(cached_output_file, output_file)
-        INFO.print(f"cache hit at {cached_output_file}, skipping build")
+        INFO.print(f"cache hit at [cyan]{cached_output_file}[/], skipping build")
         return
     except FileNotFoundError:
         pass
@@ -71,7 +71,7 @@ def main() -> None:
         "./ruyi/__main__.py",
     )
 
-    INFO.print(f"\ncaching output to {cached_output_file}")
+    INFO.print(f"\ncaching output to [cyan]{cached_output_file}")
     ensure_dir(cached_output_dir)
     shutil.copyfile(output_file, cached_output_file)
     ts = cached_output_dir / "timestamp"
@@ -98,7 +98,9 @@ def delete_cached_files_older_than_days(root: str, days: int, epoch: int) -> Non
     max_ts_delta = days * 86400
 
     epoch_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
-    INFO.print(f"purging cache contents older than {days} days from now={epoch_str}")
+    INFO.print(
+        f"purging cache contents older than [cyan]{days}[/] days from [cyan]now={epoch_str}"
+    )
 
     root_path = pathlib.Path(root)
     dirs_to_remove: list[tuple[pathlib.Path, int | None]] = []
@@ -114,11 +116,13 @@ def delete_cached_files_older_than_days(root: str, days: int, epoch: int) -> Non
 
     for f, ts in dirs_to_remove:
         if ts is None:
-            INFO.print(f"removing {f} (timestamp absent or invalid)")
+            INFO.print(
+                f"removing [cyan]{f}[/] ([yellow]timestamp absent or invalid)[/]"
+            )
         else:
             ts_time = time.gmtime(ts)
             ts_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", ts_time)
-            INFO.print(f"removing {f} (created {ts_str})")
+            INFO.print(f"removing [cyan]{f}[/] (created [yellow]{ts_str}[/])")
 
         shutil.rmtree(f)
 
