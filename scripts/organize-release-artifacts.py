@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import shutil
 import sys
 import tomllib
@@ -11,8 +12,10 @@ def main(argv: list[str]) -> int:
         print(f"usage: {argv[0]} <release-artifacts-dir>", file=sys.stderr)
         return 1
 
-    project_root = os.path.dirname(__file__)
-    with open(os.path.join(project_root, "pyproject.toml"), "rb") as fp:
+    workdir = pathlib.Path(argv[1]).resolve()
+
+    project_root = (pathlib.Path(os.path.dirname(__file__)) / "..").resolve()
+    with open(project_root / "pyproject.toml", "rb") as fp:
         pyproject = tomllib.load(fp)
 
     version = pyproject["tool"]["poetry"]["version"]
@@ -40,7 +43,7 @@ def main(argv: list[str]) -> int:
     # i.e. with the non-Linux build removed, with the directory structure
     # flattened, and with the semver attached.
 
-    os.chdir(argv[1])
+    os.chdir(workdir)
 
     # for now, hardcode the exact artifacts we want
     included_arches = ("amd64", "arm64", "riscv64")
