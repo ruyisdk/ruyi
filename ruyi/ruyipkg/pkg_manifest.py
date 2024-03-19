@@ -67,7 +67,13 @@ class EmulatorDeclType(TypedDict):
     programs: list[EmulatorProgramDeclType]
 
 
-PartitionKind = Literal["disk"] | Literal["boot"] | Literal["root"] | Literal["uboot"]
+PartitionKind = (
+    Literal["boot"]
+    | Literal["disk"]
+    | Literal["live"]
+    | Literal["root"]
+    | Literal["uboot"]
+)
 
 PartitionMapDecl = dict[PartitionKind, str]
 
