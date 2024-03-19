@@ -172,18 +172,17 @@ We are about to download and install the following packages for your device:
     if requested_host_blkdevs:
         log.stdout(
             """
-For initializing this target device, you should plug the device's storage (e.g.
-SD card or NVMe SSD) into this host system, and note down the corresponding
-device file path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY,
-/dev/nvmeXnYpZ for partitions. You may consult e.g. [yellow]sudo blkid[/yellow] output
-for the information you will need later.
+For initializing this target device, you should plug into this host system the
+device's storage (e.g. SD card or NVMe SSD), or a removable disk to be
+reformatted as a live medium, and note down the corresponding device file
+path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY, /dev/nvmeXnYpZ
+for partitions. You may consult e.g. [yellow]sudo blkid[/yellow] output for the
+information you will need later.
 """
         )
         for part in requested_host_blkdevs:
-            part_desc = "whole disk" if part == "disk" else f"'{part}' partition"
-            path = user_input.ask_for_file(
-                f"Please give the path for the target's {part_desc}:"
-            )
+            part_desc = get_part_desc(part)
+            path = user_input.ask_for_file(f"Please give the path for the {part_desc}:")
             host_blkdev_map[part] = path
 
     # final confirmation
@@ -263,6 +262,16 @@ It seems the flashing has finished without errors.
             log.stdout(f"\n{postinst_msg}")
 
     return 0
+
+
+def get_part_desc(part: PartitionKind) -> str:
+    match part:
+        case "disk":
+            return "target's whole disk"
+        case "live":
+            return "removable disk to use as live medium"
+        case _:
+            return f"target's '{part}' partition"
 
 
 class PackageProvisionStrategy(TypedDict):

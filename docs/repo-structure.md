@@ -203,6 +203,7 @@ packages-index
 * `provisionable` 仅在 `kind` 含有 `provisionable` 时有意义，表示可被 Ruyi 设备安装器读取的额外信息。其中：
     - `partition_map` 是该包提供的分区映像信息，是键值对；每条记录的 key 为目标分区性质，value 为相对于该包安装目录的，对应目标分区的未压缩原始映像文件的路径。目前支持的分区性质有：
         - `disk`：特殊，表示全盘映像。
+        - `live`：特殊，表示 Live 介质、安装介质等。
         - `boot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `boot` 分区。
         - `root`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `root` 分区。
         - `uboot`：对于使用 fastboot 烧写的设备，代表 fastboot 视角的 `uboot` 分区。
