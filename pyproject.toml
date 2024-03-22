@@ -65,3 +65,6 @@ types-pyxdg = "^0.28.0.20240106"
 [tool.poetry.group.dev.dependencies]
 black = "^23.10.1"
 nuitka = "^2.0"
+
+[tool.poetry.group.release-worker.dependencies]
+requests = "^2"
