@@ -12,7 +12,7 @@ on:
 
 jobs:
   lint:
-    name: ruff
+    name: 'ruff & mypy'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +22,12 @@ jobs:
         with:
           python-version-file: 'pyproject.toml'
           cache: poetry
-      - name: Run check
-        run: scripts/check-ruff.sh
+      - name: Install deps
+        run: poetry install --with=dev
+      - name: Lint with ruff
+        run: poetry run ruff check
+      - name: Type-check with mypy
+        run: poetry run mypy
 
   pylic:
     name: license compatibility
