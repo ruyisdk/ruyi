@@ -84,12 +84,20 @@ def _query_linux_system_ssl_default_cert_paths(
     libssl.X509_get_default_cert_dir_env.restype = ctypes.c_void_p
     libssl.X509_get_default_cert_dir.restype = ctypes.c_void_p
 
-    return (
+    result = (
         _decode_fsdefault_or_none(libssl.X509_get_default_cert_file_env()),
         _decode_fsdefault_or_none(libssl.X509_get_default_cert_file()),
         _decode_fsdefault_or_none(libssl.X509_get_default_cert_dir_env()),
         _decode_fsdefault_or_none(libssl.X509_get_default_cert_dir()),
     )
+
+    log.D(f"got defaults from system libssl {soname}")
+    log.D(f"X509_get_default_cert_file_env() = {result[0]}")
+    log.D(f"X509_get_default_cert_file() = {result[1]}")
+    log.D(f"X509_get_default_cert_dir_env() = {result[2]}")
+    log.D(f"X509_get_default_cert_dir() = {result[3]}")
+
+    return result
 
 
 ssl.get_default_verify_paths = get_system_ssl_default_verify_paths
