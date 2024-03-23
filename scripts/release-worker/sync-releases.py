@@ -36,18 +36,18 @@ RE_RUYI_RELEASE_ASSET_NAME = re.compile(
 )
 
 LOG = Console(stderr=True, highlight=False)
-IS_DEBUG = False
-PROGRAM_NAME = __file__
+is_debug = False
+program_name = __file__
 
 
 def debug(*args: object) -> None:
-    if not IS_DEBUG:
+    if not is_debug:
         return
     return LOG.log(*args)
 
 
 def usage() -> None:
-    LOG.print(USAGE.format(program_name=PROGRAM_NAME))
+    LOG.print(USAGE.format(program_name=program_name))
 
 
 def getenv_or_die(key: str) -> str:
@@ -65,7 +65,7 @@ def github_get(
     url: str,
     accept: str,
     stream: bool = False,
-    **kwargs: object,
+    **kwargs: str | int,
 ) -> requests.Response:
     return requests.get(
         url,
@@ -205,7 +205,7 @@ class Rsync:
         self.conn_url = conn_url
         self.password = password
 
-    def sync(self, rel: Release, local_dir: str) -> None:
+    def sync(self, rel: Release, local_dir: str | pathlib.Path) -> None:
         new_env: dict[bytes, bytes] | None = None
         if self.password is not None:
             new_env = os.environb.copy()
@@ -237,9 +237,9 @@ class RsyncStagingDir:
 
 
 if __name__ == "__main__":
-    PROGRAM_NAME = sys.argv[0]
+    program_name = sys.argv[0]
     # same as ruyi.cli.init_debug_status
     debug_env = os.environ.get("RUYI_DEBUG", "")
-    IS_DEBUG = debug_env.lower() in {"1", "true", "x", "y", "yes"}
+    is_debug = debug_env.lower() in {"1", "true", "x", "y", "yes"}
 
     sys.exit(main(sys.argv))

@@ -5,9 +5,10 @@ import shutil
 import subprocess
 import sys
 import tomllib
+from typing import cast
 
 
-def get_pygit2_src_uri(tag: str) -> (str, str):
+def get_pygit2_src_uri(tag: str) -> tuple[str, str]:
     filename = f"{tag}.tar.gz"
     return (filename, f"https://github.com/libgit2/pygit2/archive/refs/tags/{filename}")
 
@@ -115,14 +116,14 @@ def get_pygit2_version() -> str:
         info = tomllib.load(fp)
 
     pygit2 = [pkg for pkg in info["package"] if pkg["name"] == "pygit2"][0]
-    return pygit2["version"]
+    return cast(str, pygit2["version"])
 
 
 def get_pygit2_wheel_build_env(pygit2_dir: str) -> dict[str, str]:
     with open(os.path.join(pygit2_dir, "pyproject.toml"), "rb") as fp:
         pyproject = tomllib.load(fp)
 
-    r = pyproject["tool"]["cibuildwheel"]["environment"]
+    r: dict[str, str] = pyproject["tool"]["cibuildwheel"]["environment"]
     if "LIBGIT2" in r:
         # this is unnecessary
         del r["LIBGIT2"]
