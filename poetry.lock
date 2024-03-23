@@ -335,6 +335,17 @@ files = [
 dev = ["black", "mypy", "pytest"]
 
 [[package]]
+name = "packaging"
+version = "24.0"
+description = "Core utilities for Python packages"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
+    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+]
+
+[[package]]
 name = "pycparser"
 version = "2.21"
 description = "C parser in Python"
@@ -723,4 +734,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "d7b9d7fd0402b4383776b3ac334d0e0a21a58e1bd243e7d177623635dd454b8d"
+content-hash = "24566cb5fdaab4bb5a9cbfaff8b6bb7fe249c19f82a103e72e675249442d7c59"
