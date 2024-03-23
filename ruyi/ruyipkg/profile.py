@@ -88,5 +88,7 @@ def parse_profiles(data: ArchProfilesDeclType) -> Iterable[ProfileDecl]:
     return arch_parser(arch, data)
 
 
-# put this last: register the built-in arches
-from . import arch as _
+# register the built-in arches
+from . import arch  # noqa: E402 # intentionally placed last for the side-effect
+
+del arch

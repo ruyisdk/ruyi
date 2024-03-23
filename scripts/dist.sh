@@ -37,7 +37,7 @@ do_inner() {
         ;;
     esac
 
-    poetry install
+    poetry install --with=dist --without=dev
 
     # patch Nuitka
     pushd /home/b/venv/lib/python*/site-packages > /dev/null

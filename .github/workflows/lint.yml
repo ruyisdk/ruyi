@@ -12,11 +12,22 @@ on:
 
 jobs:
   lint:
-    name: black
+    name: 'ruff & mypy'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: psf/black@stable
+      - name: Install Poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: 'pyproject.toml'
+          cache: poetry
+      - name: Install deps
+        run: poetry install --with=dev
+      - name: Lint with ruff
+        run: poetry run ruff check
+      - name: Type-check with mypy
+        run: poetry run mypy
 
   pylic:
     name: license compatibility
@@ -29,5 +40,11 @@ jobs:
         with:
           python-version-file: 'pyproject.toml'
           cache: poetry
-      - name: Run check
-        run: scripts/check-license.sh
+      - name: Install runtime deps
+        run: poetry install --only=main
+      - name: Install pylic
+        run: poetry run pip install pylic
+      - name: List all licenses involved
+        run: poetry run pylic list
+      - name: Check license compatibility with pylic
+        run: poetry run pylic check

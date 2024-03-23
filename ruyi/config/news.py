@@ -7,8 +7,8 @@ class NewsReadStatusStore:
     def load(self) -> None:
         try:
             with open(self._path, "r") as fp:
-                for l in fp:
-                    self._orig_status.add(l.strip())
+                for line in fp:
+                    self._orig_status.add(line.strip())
         except FileNotFoundError:
             return
 

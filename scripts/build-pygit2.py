@@ -41,7 +41,7 @@ def main() -> None:
     subprocess.run(("pip", "install", pygit2_wheel_path), check=True)
 
     log("informing poetry about the wheel")
-    subprocess.run(("poetry", "add", pygit2_wheel_path), check=True)
+    subprocess.run(("poetry", "add", "--lock", pygit2_wheel_path), check=True)
 
 
 def ensure_dir(d: str) -> None:
