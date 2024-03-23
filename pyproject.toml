@@ -62,6 +62,7 @@ semver = "^3"
 types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"
 types-pyxdg = "^0.28.0.20240106"
+types-PyYAML = "^6.0.12.20240311"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
