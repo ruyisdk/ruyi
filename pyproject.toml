@@ -63,7 +63,6 @@ types-pygit2 = "^1.14.0.20240317"
 types-pyxdg = "^0.28.0.20240106"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.10.1"
 nuitka = "^2.0"
 ruff = "^0.3.4"
 
