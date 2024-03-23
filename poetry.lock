@@ -388,12 +388,12 @@ files = [
 
 [[package]]
 name = "nuitka"
-version = "2.1.2"
+version = "2.1.3"
 description = "Python compiler with full language support and CPython compatibility"
 optional = false
 python-versions = "*"
 files = [
-    {file = "Nuitka-2.1.2.tar.gz", hash = "sha256:32d7724c913645c73a8b41f6f57d17f742e132fa3a82eb6c4c847c1629cba7b9"},
+    {file = "Nuitka-2.1.3.tar.gz", hash = "sha256:e0a894637ab405750054109eb28af323a44426276977191bb75b58bf6a6083ce"},
 ]
 
 [package.dependencies]
@@ -709,6 +709,20 @@ files = [
 ]
 
 [[package]]
+name = "types-requests"
+version = "2.31.0.20240311"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-requests-2.31.0.20240311.tar.gz", hash = "sha256:b1c1b66abfb7fa79aae09097a811c4aa97130eb8831c60e47aee4ca344731ca5"},
+    {file = "types_requests-2.31.0.20240311-py3-none-any.whl", hash = "sha256:47872893d65a38e282ee9f277a4ee50d1b28bd592040df7d1fdaffdf3779937d"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "types-setuptools"
 version = "69.2.0.20240317"
 description = "Typing stubs for setuptools"
@@ -800,4 +814,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "4c16e8810fef4c967d86d7c78b4a41b983d283962918b8de6dcd22ef9931a28a"
+content-hash = "d8fa05636b018cf0221f64c00d94cad916cb0886887f9fa5c41986675a8f469a"

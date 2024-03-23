@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import tomllib
+from typing import cast
 
 from pygit2.repository import Repository
 from rich.console import Console
@@ -85,7 +86,7 @@ def main() -> None:
         set_release_mirror_url_for_gha(vers["semver"])
 
 
-def ensure_dir(d: str) -> None:
+def ensure_dir(d: str | pathlib.Path) -> None:
     try:
         os.mkdir(d)
     except FileExistsError:
@@ -111,6 +112,7 @@ def delete_cached_files_older_than_days(root: str, days: int, epoch: int) -> Non
             INFO.print(f"ignoring pygit2 cache [cyan]{f}")
             continue
 
+        ts: int | None
         try:
             ts = int((f / "timestamp").read_text().strip(), 10)
         except (FileNotFoundError, ValueError):
@@ -152,7 +154,7 @@ def add_pythonpath(path: str) -> None:
 
 def make_nuitka_ext(module_name: str, out_dir: str) -> None:
     mod = __import__(module_name)
-    mod_dir = os.path.dirname(mod.__file__)
+    mod_dir = os.path.dirname(cast(str, mod.__file__))
     INFO.print(f"Building [cyan]{module_name}[/] at [cyan]{mod_dir}[/] into extension")
     call_nuitka(
         "--module",

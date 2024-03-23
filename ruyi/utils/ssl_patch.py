@@ -62,7 +62,11 @@ def _query_linux_system_ssl_default_cert_paths(
     soname: str | None = None,
 ) -> tuple[str, str, str, str]:
     if soname is None:
-        for soname in ("libssl.so", "libssl.so.3", "libssl.so.1.1"):
+        # check libcrypto instead of libssl, because if the system libssl is
+        # newer than the bundled one, the system libssl will depend on the
+        # bundled libcrypto that may lack newer ELF symbol version(s). The
+        # functions actually reside in libcrypto, after all.
+        for soname in ("libcrypto.so", "libcrypto.so.3", "libcrypto.so.1.1"):
             try:
                 return _query_linux_system_ssl_default_cert_paths(soname)
             except OSError as e:
@@ -71,25 +75,31 @@ def _query_linux_system_ssl_default_cert_paths(
 
         # cannot proceed without certificates info (pygit2 initialization is
         # bound to fail anyway)
-        log.F("cannot find the system libssl")
+        log.F("cannot find the system libcrypto")
         log.I("TLS certificates and library are required for Ruyi to function")
         raise SystemExit(1)
 
-    # this can work because right now Nuitka packages the libssl as "libssl.so.X"
-    # notice the presence of sover suffix
-    # so dlopen-ing "libssl.so" will get us the system library
-    libssl = ctypes.CDLL(soname)
-    libssl.X509_get_default_cert_file_env.restype = ctypes.c_void_p
-    libssl.X509_get_default_cert_file.restype = ctypes.c_void_p
-    libssl.X509_get_default_cert_dir_env.restype = ctypes.c_void_p
-    libssl.X509_get_default_cert_dir.restype = ctypes.c_void_p
+    # dlopen-ing the bare soname will get us the system library
+    lib = ctypes.CDLL(soname)
+    lib.X509_get_default_cert_file_env.restype = ctypes.c_void_p
+    lib.X509_get_default_cert_file.restype = ctypes.c_void_p
+    lib.X509_get_default_cert_dir_env.restype = ctypes.c_void_p
+    lib.X509_get_default_cert_dir.restype = ctypes.c_void_p
 
-    return (
-        _decode_fsdefault_or_none(libssl.X509_get_default_cert_file_env()),
-        _decode_fsdefault_or_none(libssl.X509_get_default_cert_file()),
-        _decode_fsdefault_or_none(libssl.X509_get_default_cert_dir_env()),
-        _decode_fsdefault_or_none(libssl.X509_get_default_cert_dir()),
+    result = (
+        _decode_fsdefault_or_none(lib.X509_get_default_cert_file_env()),
+        _decode_fsdefault_or_none(lib.X509_get_default_cert_file()),
+        _decode_fsdefault_or_none(lib.X509_get_default_cert_dir_env()),
+        _decode_fsdefault_or_none(lib.X509_get_default_cert_dir()),
     )
+
+    log.D(f"got defaults from system libcrypto {soname}")
+    log.D(f"X509_get_default_cert_file_env() = {result[0]}")
+    log.D(f"X509_get_default_cert_file() = {result[1]}")
+    log.D(f"X509_get_default_cert_dir_env() = {result[2]}")
+    log.D(f"X509_get_default_cert_dir() = {result[3]}")
+
+    return result
 
 
 ssl.get_default_verify_paths = get_system_ssl_default_verify_paths
