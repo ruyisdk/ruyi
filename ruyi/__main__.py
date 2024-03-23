@@ -24,8 +24,11 @@ if __name__ == "__main__":
     # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
     # work if it's just `ruyi` so we have to check our parent process in that case
     if hasattr(ruyi, "__compiled__"):
-        self_exe = get_nuitka_self_exe()
         ruyi.IS_PACKAGED = True
+        log.D(
+            f"__file__ = {__file__}, sys.executable = {sys.executable}, __compiled__ = {ruyi.__compiled__}"
+        )
+        self_exe = get_nuitka_self_exe()
     else:
         self_exe = __file__
 
