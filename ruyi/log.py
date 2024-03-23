@@ -59,7 +59,7 @@ def F(
     )
 
 
-def I(
+def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
     message: Renderable,
     *objects: Any,
     sep: str = " ",
@@ -90,14 +90,14 @@ def W(
 
 
 def humanize_list(
-    l: list[str] | set[str],
+    obj: list[str] | set[str],
     *,
     sep: str = ", ",
     item_color: str | None = None,
     empty_prompt: str = "(none)",
 ) -> str:
-    if not l:
+    if not obj:
         return empty_prompt
     if item_color is None:
-        return sep.join(l)
-    return sep.join(f"[{item_color}]{x}[/{item_color}]" for x in l)
+        return sep.join(obj)
+    return sep.join(f"[{item_color}]{x}[/{item_color}]" for x in obj)
