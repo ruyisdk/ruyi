@@ -20,8 +20,8 @@ on:
 
 jobs:
   # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
-  prepare_matrix:
-    name: "Prepare the job's matrix"
+  prepare_matrix_linux:
+    name: "Prepare the job's matrix (Linux)"
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
@@ -29,16 +29,31 @@ jobs:
       - uses: actions/checkout@v4
       - name: Generate the matrix
         id: gen_matrix
-        run: scripts/gen_matrix.py
+        run: scripts/gen_matrix.py linux
+
+  prepare_matrix_windows:
+    name: "Prepare the job's matrix (Windows)"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen_matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate the matrix
+        id: gen_matrix
+        run: scripts/gen_matrix.py windows
 
   dist:
     needs:
-      - prepare_matrix
+      - prepare_matrix_linux
     strategy:
       # arch: str
-      # runs_on: str | list[str]
-      matrix: ${{ fromJson(needs.prepare_matrix.outputs.matrix) }}
-    name: Linux ${{ matrix.arch }}
+      # build_output_name: str
+      # is_windows: bool
+      # job_name: str
+      # runs_on: RunsOn
+      # upload_artifact_name: str
+      matrix: ${{ fromJson(needs.prepare_matrix_linux.outputs.matrix) }}
+    name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
     outputs:
       run_id: ${{ github.run_id }}
@@ -75,17 +90,23 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruyi.${{ matrix.arch }}
-          path: /build/ruyi
+          name: ${{ matrix.upload_artifact_name }}
+          path: /build/${{ matrix.build_output_name }}
           compression-level: 0  # the Nuitka onefile payload is already compressed
 
   dist-windows:
+    needs:
+      - prepare_matrix_windows
     strategy:
-      matrix:
-        include:
-          - { arch: amd64, runs_on: windows-latest }
+      # arch: str
+      # build_output_name: str
+      # is_windows: bool
+      # job_name: str
+      # runs_on: RunsOn
+      # upload_artifact_name: str
+      matrix: ${{ fromJson(needs.prepare_matrix_windows.outputs.matrix) }}
 
-    name: Windows ${{ matrix.arch }}
+    name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
     steps:
       - uses: actions/checkout@v4
@@ -117,8 +138,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruyi.windows-${{ matrix.arch }}.exe
-          path: /build/ruyi.exe
+          name: ${{ matrix.upload_artifact_name }}
+          path: /build/${{ matrix.build_output_name }}
           compression-level: 0  # the Nuitka onefile payload is already compressed
 
   release:
