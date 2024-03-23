@@ -15,6 +15,8 @@ on:
       - poetry.lock
       - '**.py'
       - 'scripts/**'
+  merge_group:
+    types: [checks_requested]
 
 jobs:
   # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
