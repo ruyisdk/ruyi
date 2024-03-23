@@ -17,15 +17,25 @@ on:
       - 'scripts/**'
 
 jobs:
-  dist:
-    strategy:
-      matrix:
-        # https://stackoverflow.com/questions/66025220/paired-values-in-github-actions-matrix
-        include:
-          - { arch: amd64, runs_on: ubuntu-latest }
-          - { arch: arm64, runs_on: [self-hosted, linux, arm64] }
-          - { arch: riscv64, runs_on: [self-hosted, linux, riscv64] }
+  # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+  prepare_matrix:
+    name: "Prepare the job's matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen_matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate the matrix
+        id: gen_matrix
+        run: scripts/gen_matrix.py
 
+  dist:
+    needs:
+      - prepare_matrix
+    strategy:
+      # arch: str
+      # runs_on: str | list[str]
+      matrix: ${{ fromJson(needs.prepare_matrix.outputs.matrix) }}
     name: Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
     outputs:
