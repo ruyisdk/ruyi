@@ -1,6 +1,10 @@
 import abc
+import mmap
 import os
 import subprocess
+
+import requests
+from rich import progress
 
 from .. import log
 
@@ -171,3 +175,52 @@ class WgetFetcher(BaseFetcher):
 
 
 register_fetcher("wget", WgetFetcher)
+
+
+class PythonRequestsFetcher(BaseFetcher):
+    def __init__(self, urls: list[str], dest: str) -> None:
+        super().__init__(urls, dest)
+
+        self.chunk_size = 4 * mmap.PAGESIZE
+        # TODO: User-Agent
+
+    @classmethod
+    def is_available(cls) -> bool:
+        return True
+
+    def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
+        log.D(f"downloading [cyan]{url}[/] to [cyan]{dest}")
+
+        open_mode = "ab" if resume else "wb"
+        start_from = 0
+        headers = {}
+        if resume:
+            filesize = os.stat(dest).st_size
+            log.D(f"resuming from position {filesize}")
+            start_from = filesize
+            headers["Range"] = f"bytes={filesize}-"
+
+        r = requests.get(url, headers=headers, stream=True)
+        total_len: int | None = None
+        if total_len_str := r.headers.get("Content-Length"):
+            total_len = int(total_len_str) + start_from
+
+        columns = (
+            progress.SpinnerColumn(),
+            progress.BarColumn(),
+            progress.DownloadColumn(),
+            progress.TransferSpeedColumn(),
+            progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True),
+        )
+        dest_filename = os.path.basename(dest)
+        with open(dest, open_mode) as f:
+            with progress.Progress(*columns, console=log.LOG_CONSOLE) as pg:
+                task = pg.add_task(dest_filename, total=total_len, completed=start_from)
+                for chunk in r.iter_content(self.chunk_size):
+                    f.write(chunk)
+                    pg.advance(task, len(chunk))
+
+        return True
+
+
+register_fetcher("requests", PythonRequestsFetcher)
