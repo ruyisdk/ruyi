@@ -12,11 +12,18 @@ on:
 
 jobs:
   lint:
-    name: black
+    name: ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: psf/black@stable
+      - name: Install Poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: 'pyproject.toml'
+          cache: poetry
+      - name: Run check
+        run: scripts/check-ruff.sh
 
   pylic:
     name: license compatibility
