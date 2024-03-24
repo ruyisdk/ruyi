@@ -97,7 +97,10 @@ def main() -> None:
     matrix = {"include": result_includes}
 
     log("resulting matrix:")
-    pprint.pprint(matrix)
+    for entry in result_includes:
+        print(f"::group::Job {entry['job_name']}")
+        pprint.pprint(entry)
+        print("::endgroup::")
 
     outfile = pathlib.Path(os.environ["GITHUB_OUTPUT"])
     outfile.write_text(f"matrix={json.dumps(matrix)}\n")

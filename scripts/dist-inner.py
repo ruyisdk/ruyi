@@ -56,6 +56,7 @@ def main() -> None:
 
     # Finally the main program
     INFO.print("\nBuilding Ruyi executable\n")
+    begin_group("Building Ruyi executable")
     call_nuitka(
         "--standalone",
         "--onefile",
@@ -72,7 +73,9 @@ def main() -> None:
         "--windows-icon-from-ico=resources/ruyi.ico",
         "./ruyi/__main__.py",
     )
+    end_group()
 
+    begin_group("Cache maintenance")
     INFO.print(f"\ncaching output to [cyan]{cached_output_file}")
     ensure_dir(cached_output_dir)
     shutil.copyfile(output_file, cached_output_file)
@@ -81,9 +84,24 @@ def main() -> None:
     ts.write_text(f"{epoch}\n")
 
     delete_cached_files_older_than_days(cache_root, 21, epoch)
+    end_group()
 
     if "GITHUB_ACTIONS" in os.environ:
         set_release_mirror_url_for_gha(vers["semver"])
+
+
+def is_in_gha() -> bool:
+    return "GITHUB_ACTIONS" in os.environ
+
+
+def begin_group(title: str) -> None:
+    if is_in_gha():
+        print(f"::group::{title}", flush=True)
+
+
+def end_group() -> None:
+    if is_in_gha():
+        print("::endgroup::", flush=True)
 
 
 def ensure_dir(d: str | pathlib.Path) -> None:
@@ -156,12 +174,14 @@ def make_nuitka_ext(module_name: str, out_dir: str) -> None:
     mod = __import__(module_name)
     mod_dir = os.path.dirname(cast(str, mod.__file__))
     INFO.print(f"Building [cyan]{module_name}[/] at [cyan]{mod_dir}[/] into extension")
+    begin_group(f"Building {module_name} into extension")
     call_nuitka(
         "--module",
         mod_dir,
         f"--include-package={module_name}",
         f"--output-dir={out_dir}",
     )
+    end_group()
 
 
 def get_versions() -> dict[str, str]:
