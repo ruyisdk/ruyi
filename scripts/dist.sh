@@ -3,7 +3,19 @@
 set -e
 
 green() {
+    if [[ $2 == group ]]; then
+        if [[ -n $GITHUB_ACTIONS ]]; then
+            echo "::group::$1"
+            return
+        fi
+    fi
     printf "\x1b[1;32m%s\x1b[m\n" "$1"
+}
+
+endgroup() {
+    if [[ -n $GITHUB_ACTIONS ]]; then
+        echo "::endgroup::"
+    fi
 }
 
 do_inner() {
@@ -15,14 +27,18 @@ do_inner() {
     . ./venv/bin/activate
 
     if [[ -n $CI ]]; then
-        green "current user info"
+        green "current user info" group
         id
-        green "home directory contents"
+        endgroup
+        green "home directory contents" group
         ls -alF .
-        green "repo contents"
+        endgroup
+        green "repo contents" group
         ls -alF ./ruyi
-        green "ruyi-dist-cache contents"
+        endgroup
+        green "ruyi-dist-cache contents" group
         ls -alF /ruyi-dist-cache
+        endgroup
 
         if [[ ! -O ./ruyi ]]; then
             green "adding the repo to the list of Git safe directories"
@@ -37,12 +53,15 @@ do_inner() {
         ;;
     esac
 
+    green "installing deps" group
     poetry install --with=dist --without=dev
+    endgroup
 
-    # patch Nuitka
+    green "patching Nuitka" group
     pushd /home/b/venv/lib/python*/site-packages > /dev/null
     patch -Np1 < /home/b/ruyi/scripts/patches/0001-Onefile-Respect-XDG_CACHE_HOME-when-rendering-CACHE_.patch
     popd > /dev/null
+    endgroup
 
     exec ./scripts/dist-inner.py
 }

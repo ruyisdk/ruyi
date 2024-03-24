@@ -30,6 +30,7 @@ class MatrixEntry(TypedDict):
     is_windows: bool
     job_name: str
     runs_on: RunsOn
+    skip: bool
     upload_artifact_name: str
 
 
@@ -41,7 +42,8 @@ def runs_on(c: Combo) -> RunsOn:
             return "ubuntu-latest"
         case "windows":
             return "windows-latest"
-    raise ValueError(f"unrecognized combo {c} for deriving runs_on property")
+        case _:
+            raise ValueError(f"unrecognized combo {c} for deriving runs_on property")
 
 
 def upload_artifact_name(c: Combo) -> str:
@@ -54,26 +56,28 @@ def build_output_name(c: Combo) -> str:
     return "ruyi.exe" if c.os == "windows" else "ruyi"
 
 
-def to_matrix_entry(c: Combo) -> MatrixEntry:
+def to_matrix_entry(c: Combo, should_run: bool) -> MatrixEntry:
     return {
         "arch": c.arch,
         "build_output_name": build_output_name(c),
         "is_windows": c.os == "windows",
         "job_name": f"{c.os.title()} {c.arch}",
         "runs_on": runs_on(c),
+        "skip": not should_run,
         "upload_artifact_name": upload_artifact_name(c),
     }
 
 
 class MatrixFilter:
-    def __init__(self, ref: str, event_name: str, os: str) -> None:
+    def __init__(self, ref: str, event_name: str, oses: set[str]) -> None:
         self.ref = ref
         self.event_name = event_name
-        self.os = os
+        self.oses = oses
+
+    def should_include(self, c: Combo) -> bool:
+        return c.os in self.oses
 
     def should_run(self, c: Combo) -> bool:
-        if c.os != self.os:
-            return False
         return c.run_on_pr if self.event_name == "pull_request" else True
 
 
@@ -91,13 +95,31 @@ def main() -> None:
     gh_event = os.environ["GITHUB_EVENT_NAME"]
     log(f"GITHUB_REF={gh_ref}")
     log(f"GITHUB_EVENT_NAME={gh_event}")
-    mf = MatrixFilter(gh_ref, gh_event, sys.argv[1])
+    mf = MatrixFilter(gh_ref, gh_event, set(sys.argv[1:]))
 
-    result_includes = [to_matrix_entry(c) for c in COMBOS if mf.should_run(c)]
+    result_includes = [
+        to_matrix_entry(c, mf.should_run(c)) for c in COMBOS if mf.should_include(c)
+    ]
+
+    # GitHub Actions doesn't like it if the matrix is empty, so we have to keep
+    # at least one entry for the list, but otherwise we're free to drop the
+    # skipped entries.
+    #
+    # This is useful for reducing CI times because self-hosted runner jobs tend
+    # to finish slower even if nothing is to be done, due to the RPC costs.
+    # For example, right now the riscv64 runner takes 1min just for the startup
+    # and teardown overhead.
+    if not all(entry["skip"] for entry in result_includes):
+        # At least one job will remain after filtering.
+        result_includes = [entry for entry in result_includes if not entry["skip"]]
+
     matrix = {"include": result_includes}
 
     log("resulting matrix:")
-    pprint.pprint(matrix)
+    for entry in result_includes:
+        print(f"::group::Job {entry['job_name']}")
+        pprint.pprint(entry)
+        print("::endgroup::")
 
     outfile = pathlib.Path(os.environ["GITHUB_OUTPUT"])
     outfile.write_text(f"matrix={json.dumps(matrix)}\n")

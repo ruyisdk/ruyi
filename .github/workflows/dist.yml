@@ -51,6 +51,7 @@ jobs:
       # is_windows: bool
       # job_name: str
       # runs_on: RunsOn
+      # skip: bool
       # upload_artifact_name: str
       matrix: ${{ fromJson(needs.prepare_matrix_linux.outputs.matrix) }}
     name: ${{ matrix.job_name }}
@@ -75,6 +76,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Cache deps and Nuitka output
+        if: success() && !matrix.skip
         uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r2
@@ -84,10 +86,12 @@ jobs:
             /ruyi-dist-cache
 
       - name: Run dist
+        if: success() && !matrix.skip
         id: run_dist
         run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh
 
       - name: Upload artifact
+        if: success() && !matrix.skip
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.upload_artifact_name }}
@@ -103,6 +107,7 @@ jobs:
       # is_windows: bool
       # job_name: str
       # runs_on: RunsOn
+      # skip: bool
       # upload_artifact_name: str
       matrix: ${{ fromJson(needs.prepare_matrix_windows.outputs.matrix) }}
 
@@ -112,9 +117,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Poetry
+        if: success() && !matrix.skip
         run: pipx install poetry
 
       - uses: actions/setup-python@v5
+        if: success() && !matrix.skip
         with:
           # Nuitka doesn't officially support Python 3.12 yet (see Nuitka doc),
           # but '>=3.11' resolves to 3.12.
@@ -123,6 +130,7 @@ jobs:
           cache: poetry
 
       - name: Cache/restore Nuitka clcache contents
+        if: success() && !matrix.skip
         uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-tgt-${{ matrix.arch }}
@@ -130,12 +138,15 @@ jobs:
             /clcache
 
       - name: Install deps
+        if: success() && !matrix.skip
         run: poetry install && mkdir /build
 
       - name: Run dist
+        if: success() && !matrix.skip
         run: "scripts\\dist.ps1"
 
       - name: Upload artifact
+        if: success() && !matrix.skip
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.upload_artifact_name }}

@@ -13,10 +13,26 @@ def get_pygit2_src_uri(tag: str) -> tuple[str, str]:
     return (filename, f"https://github.com/libgit2/pygit2/archive/refs/tags/{filename}")
 
 
-def log(s: str, fgcolor: int = 32) -> None:
+def log(s: str, fgcolor: int = 32, group: bool = False) -> None:
     # we cannot import rich because this script is executed before
     # `poetry install` in the dist build process
     print(f"\x1b[1;{fgcolor}m{s}\x1b[m", file=sys.stderr, flush=True)
+    if group:
+        begin_group(s)
+
+
+def is_in_gha() -> bool:
+    return "GITHUB_ACTIONS" in os.environ
+
+
+def begin_group(title: str) -> None:
+    if is_in_gha():
+        print(f"::group::{title}", flush=True)
+
+
+def end_group() -> None:
+    if is_in_gha():
+        print("::endgroup::", flush=True)
 
 
 def main() -> None:
@@ -38,10 +54,13 @@ def main() -> None:
     )
 
     # this will print a header suitable for our logging purposes
+    begin_group("pip install the pygit2 wheel")
     subprocess.run(("pip", "install", pygit2_wheel_path), check=True)
+    end_group()
 
-    log("informing poetry about the wheel")
+    log("informing poetry about the wheel", group=True)
     subprocess.run(("poetry", "add", "--lock", pygit2_wheel_path), check=True)
+    end_group()
 
 
 def ensure_dir(d: str) -> None:
@@ -79,12 +98,13 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
     pygit2_workdir = os.path.join(workdir, f"pygit2-{pygit2_ver}")
 
     # download the source
-    log(f"downloading {pygit2_src_uri}")
+    log(f"downloading {pygit2_src_uri}", group=True)
     subprocess.run(
         ("wget", "-O", pygit2_src_filename, pygit2_src_uri),
         cwd=workdir,
         check=True,
     )
+    end_group()
 
     # unpack the source
     log(f"unpacking {pygit2_src_filename}")
@@ -97,12 +117,13 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
         log(f"  {k}: {v}", fgcolor=36)
         os.environ[k] = v
 
-    log("building pygit2 wheel")
+    log("building pygit2 wheel", group=True)
     subprocess.run(
         ("sh", "build.sh", "wheel", "bundle"),
         cwd=pygit2_workdir,
         check=True,
     )
+    end_group()
 
     pygit2_distdir = os.path.join(pygit2_workdir, "wheelhouse")
     pygit2_wheel_name = find_built_wheel_name_in(pygit2_distdir)
