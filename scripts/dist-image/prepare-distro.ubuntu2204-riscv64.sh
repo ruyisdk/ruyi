@@ -9,7 +9,7 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 
 # HTTPS needs ca-certificates to work
-sed -i 's@http://deb\.debian\.org/@http://mirrors.huaweicloud.com/@g' /etc/apt/sources.list.d/debian.sources
+# sed -i 's@http://archive\.ubuntu\.com/@http://mirrors.huaweicloud.com/@g' /etc/apt/sources.list
 
 # Non-interactive configuration of tzdata
 debconf-set-selections <<EOF

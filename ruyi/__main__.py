@@ -5,10 +5,18 @@ if __name__ == "__main__":
     import ruyi
     from ruyi import log
 
-    # this must happen before pygit2 is imported
-    from ruyi.utils import ssl_patch
+    if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
+        # If we're running from a bundle, our bundled libssl may remember a
+        # different path for loading certificates than appropriate for the
+        # current system, in which case the pygit2 import will fail. To avoid
+        # this we have to patch ssl.get_default_verify_paths with additional
+        # logic.
+        #
+        # this must happen before pygit2 is imported
+        from ruyi.utils import ssl_patch
 
-    del ssl_patch
+        del ssl_patch
+
     from ruyi.cli import init_debug_status, main
     from ruyi.cli.nuitka import get_nuitka_self_exe
 
