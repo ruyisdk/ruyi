@@ -9,7 +9,7 @@ amd64|arm64)
     exec ./prepare-distro.ubuntu2004.sh
     ;;
 riscv64)
-    exec ./prepare-distro.debian.sh
+    exec ./prepare-distro.ubuntu2204-riscv64.sh
     ;;
 esac
 
