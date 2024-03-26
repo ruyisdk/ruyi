@@ -1,7 +1,7 @@
 import glob
 import json
 import os.path
-from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
+from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
@@ -15,13 +15,15 @@ from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 from .provisioner import ProvisionerConfig
 
 
-class RepoConfigType(TypedDict):
+class RepoConfigV0Type(TypedDict):
     dist: str
     doc_uri: NotRequired[str]
 
 
-def is_repo_config(x: Any) -> TypeGuard[RepoConfigType]:
+def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
     if not isinstance(x, dict):
+        return False
+    if "ruyi-repo" in x:
         return False
     if "dist" not in x or not isinstance(x["dist"], str):
         return False
@@ -68,7 +70,7 @@ class MetadataRepo:
         repo = self.ensure_git_repo()
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
-    def get_config(self) -> RepoConfigType:
+    def get_config(self) -> RepoConfigV0Type:
         self.ensure_git_repo()
 
         # we can read the config file directly because we're operating from a
@@ -77,7 +79,7 @@ class MetadataRepo:
         with open(path, "rb") as fp:
             obj = json.load(fp)
 
-        if not is_repo_config(obj):
+        if not validate_repo_config_v0(obj):
             # TODO: more detail in the error message
             raise RuntimeError("malformed repo config.json")
         return obj
