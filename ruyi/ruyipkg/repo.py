@@ -1,7 +1,10 @@
 import glob
+import itertools
 import json
 import os.path
-from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard
+import tomllib
+from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
+from urllib import parse
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
@@ -10,24 +13,132 @@ import yaml
 from .. import log
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .news import NewsItem
-from .pkg_manifest import is_prerelease, PackageManifest
+from .pkg_manifest import (
+    InputPackageManifestType,
+    is_prerelease,
+    DistfileDecl,
+    PackageManifest,
+)
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 from .provisioner import ProvisionerConfig
 
 
-class RepoConfigType(TypedDict):
+def urljoin_for_sure(base: str, url: str) -> str:
+    if base.endswith("/"):
+        return parse.urljoin(base, url)
+    return parse.urljoin(base + "/", url)
+
+
+class RepoConfigV0Type(TypedDict):
     dist: str
     doc_uri: NotRequired[str]
 
 
-def is_repo_config(x: Any) -> TypeGuard[RepoConfigType]:
+def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
     if not isinstance(x, dict):
+        return False
+    if "ruyi-repo" in x:
         return False
     if "dist" not in x or not isinstance(x["dist"], str):
         return False
     if "doc_uri" in x and not isinstance(x["doc_uri"], str):
         return False
     return True
+
+
+class RepoConfigV1Repo(TypedDict):
+    doc_uri: NotRequired[str]
+
+
+class RepoConfigV1Mirror(TypedDict):
+    id: str
+    urls: list[str]
+
+
+RepoConfigV1Type = TypedDict(
+    "RepoConfigV1Type",
+    {
+        "ruyi-repo": str,
+        "repo": NotRequired[RepoConfigV1Repo],
+        "mirrors": list[RepoConfigV1Mirror],
+    },
+)
+
+
+def validate_repo_config_v1(x: object) -> TypeGuard[RepoConfigV1Type]:
+    if not isinstance(x, dict):
+        return False
+    x = cast(dict[str, object], x)
+    if x.get("ruyi-repo", "") != "v1":
+        return False
+    return True
+
+
+MIRROR_ID_RUYI_DIST = "ruyi-dist"
+
+
+class RepoConfig:
+    def __init__(
+        self,
+        mirrors: list[RepoConfigV1Mirror],
+        repo: RepoConfigV1Repo | None,
+    ) -> None:
+        self.mirrors = {x["id"]: x["urls"] for x in mirrors}
+        self.repo = repo
+
+    @classmethod
+    def from_object(cls, obj: object) -> "RepoConfig":
+        if not isinstance(obj, dict):
+            raise ValueError("repo config must be a dict")
+        if "ruyi-repo" in obj:
+            return cls.from_v1(cast(object, obj))
+        return cls.from_v0(cast(object, obj))
+
+    @classmethod
+    def from_v0(cls, obj: object) -> "RepoConfig":
+        if not validate_repo_config_v0(obj):
+            # TODO: more detail in the error message
+            raise RuntimeError("malformed v0 repo config")
+
+        v1_mirrors: list[RepoConfigV1Mirror] = [
+            {
+                "id": MIRROR_ID_RUYI_DIST,
+                "urls": [urljoin_for_sure(obj["dist"], "dist/")],
+            },
+        ]
+
+        v1_repo: RepoConfigV1Repo | None = None
+        if "doc_uri" in obj:
+            v1_repo = {"doc_uri": obj["doc_uri"]}
+
+        return cls(v1_mirrors, v1_repo)
+
+    @classmethod
+    def from_v1(cls, obj: object) -> "RepoConfig":
+        if not validate_repo_config_v1(obj):
+            # TODO: more detail in the error message
+            raise RuntimeError("malformed v1 repo config")
+        return cls(obj["mirrors"], obj.get("repo"))
+
+    def get_dist_urls_for_file(self, url: str) -> list[str]:
+        u = parse.urlparse(url)
+        path = u.path.lstrip("/")
+        match u.scheme:
+            case "":
+                return self.get_mirror_urls_for_file(MIRROR_ID_RUYI_DIST, path)
+            case "mirror":
+                return self.get_mirror_urls_for_file(u.netloc, path)
+            case "http" | "https":
+                # pass-through known protocols
+                return [url]
+            case _:
+                # deny others
+                log.W(f"unrecognized dist URL scheme: {u.scheme}")
+                return []
+
+    def get_mirror_urls_for_file(self, mirror_id: str, path: str) -> list[str]:
+        mirror_urls = self.mirrors.get(mirror_id, [])
+        return [parse.urljoin(base, path) for base in mirror_urls]
 
 
 class MetadataRepo:
@@ -37,6 +148,7 @@ class MetadataRepo:
         self.branch = branch
         self.repo: Repository | None = None
 
+        self._cfg: RepoConfig | None = None
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
@@ -68,19 +180,24 @@ class MetadataRepo:
         repo = self.ensure_git_repo()
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
-    def get_config(self) -> RepoConfigType:
+    @property
+    def config(self) -> RepoConfig:
+        if self._cfg is not None:
+            return self._cfg
+
         self.ensure_git_repo()
 
         # we can read the config file directly because we're operating from a
         # working tree (as opposed to a bare repo)
-        path = os.path.join(self.root, "config.json")
-        with open(path, "rb") as fp:
-            obj = json.load(fp)
+        try:
+            with open(os.path.join(self.root, "config.toml"), "rb") as fp:
+                obj = tomllib.load(fp)
+        except FileNotFoundError:
+            with open(os.path.join(self.root, "config.json"), "rb") as fp:
+                obj = json.load(fp)
 
-        if not is_repo_config(obj):
-            # TODO: more detail in the error message
-            raise RuntimeError("malformed repo config.json")
-        return obj
+        self._cfg = RepoConfig.from_object(obj)
+        return self._cfg
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         self.ensure_git_repo()
@@ -98,9 +215,27 @@ class MetadataRepo:
         self.ensure_git_repo()
 
         category = os.path.basename(category_dir)
+
+        seen_pkgs: set[tuple[str, str]] = set()
+
+        for f in glob.iglob("*/*.toml", root_dir=category_dir):
+            pkg_name, pkg_ver = os.path.split(f)
+            pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
+            seen_pkgs.add((pkg_name, pkg_ver))
+            with open(os.path.join(category_dir, f), "rb") as fp:
+                yield PackageManifest(
+                    category,
+                    pkg_name,
+                    pkg_ver,
+                    cast(InputPackageManifestType, tomllib.load(fp)),
+                )
+
         for f in glob.iglob("*/*.json", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
+            if (pkg_name, pkg_ver) in seen_pkgs:
+                # we've already processed the toml format data for this version
+                continue
             with open(os.path.join(category_dir, f), "rb") as fp:
                 yield PackageManifest(category, pkg_name, pkg_ver, json.load(fp))
 
@@ -204,6 +339,21 @@ class MetadataRepo:
             all_semvers = [sv for sv in all_semvers if not is_prerelease(sv)]
         latest_ver = max(all_semvers)
         return pkgset[name][str(latest_ver)]
+
+    def get_distfile_urls(self, decl: DistfileDecl) -> list[str]:
+        urls_to_expand: list[str] = []
+        if not decl.is_restricted("mirror"):
+            urls_to_expand.append(f"mirror://{MIRROR_ID_RUYI_DIST}/{decl.name}")
+
+        if decl.urls:
+            urls_to_expand.extend(decl.urls)
+
+        cfg = self.config
+        return list(
+            itertools.chain(
+                *(cfg.get_dist_urls_for_file(url) for url in urls_to_expand)
+            )
+        )
 
     def ensure_news_cache(self) -> None:
         if self._news_cache is not None:

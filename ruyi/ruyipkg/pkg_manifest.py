@@ -1,8 +1,9 @@
+from copy import deepcopy
 from functools import cached_property
 import os
 import platform
 import re
-from typing import Any, Iterable, Literal, NotRequired, TypedDict
+from typing import Any, Iterable, Literal, NotRequired, TypedDict, cast
 
 from semver.version import Version
 
@@ -96,13 +97,52 @@ PackageKind = (
     | Literal["provisionable"]
 )
 
+ALL_PACKAGE_KINDS: list[PackageKind] = [
+    "binary",
+    "blob",
+    "source",
+    "toolchain",
+    "emulator",
+    "provisionable",
+]
 
-class PackageManifestType(TypedDict):
-    slug: NotRequired[str]
-    kind: list[PackageKind]
+RuyiPkgFormat = Literal["v1"]
+
+
+class PackageMetadataDeclType(TypedDict):
+    slug: NotRequired[str]  # deprecated for v1+
     desc: str
     doc_uri: NotRequired[str]
     vendor: VendorDeclType
+
+
+class InputPackageManifestType(TypedDict):
+    format: NotRequired[RuyiPkgFormat]
+
+    # v0 fields
+    slug: NotRequired[str]
+    kind: NotRequired[list[PackageKind]]  # mandatory in v0
+    desc: NotRequired[str]  # mandatory in v0
+    doc_uri: NotRequired[str]
+    vendor: NotRequired[VendorDeclType]  # mandatory in v0
+
+    # v1+ fields
+    metadata: NotRequired[PackageMetadataDeclType]
+
+    # common fields
+    distfiles: list[DistfileDeclType]
+    binary: NotRequired[BinaryDeclType]
+    blob: NotRequired[BlobDeclType]
+    source: NotRequired[SourceDeclType]
+    toolchain: NotRequired[ToolchainDeclType]
+    emulator: NotRequired[EmulatorDeclType]
+    provisionable: NotRequired[ProvisionableDeclType]
+
+
+class PackageManifestType(TypedDict):
+    format: RuyiPkgFormat
+    kind: list[PackageKind]
+    metadata: PackageMetadataDeclType
     distfiles: list[DistfileDeclType]
     binary: NotRequired[BinaryDeclType]
     blob: NotRequired[BlobDeclType]
@@ -286,15 +326,53 @@ class ProvisionableDecl:
         return self._data["strategy"]
 
 
+class PackageMetadataDecl:
+    def __init__(self, data: PackageMetadataDeclType) -> None:
+        self._data = data
+
+
+def _translate_to_manifest_v1(obj: InputPackageManifestType) -> PackageManifestType:
+    fmt = obj.get("format", "")
+    if fmt == "v1":
+        return cast(PackageManifestType, obj)
+    if fmt != "":
+        # unrecognized package format
+        raise RuntimeError(f"unrecognized Ruyi package format: {fmt}")
+
+    # translate v0 to v1
+    result = deepcopy(obj)
+    result["format"] = "v1"
+
+    md: PackageMetadataDeclType = {"desc": "", "vendor": {"name": "", "eula": None}}
+    if "slug" in result:
+        md["slug"] = result["slug"]
+        del result["slug"]
+    if "desc" in result:
+        md["desc"] = result["desc"]
+        del result["desc"]
+    if "vendor" in result:
+        md["vendor"] = result["vendor"]
+        del result["vendor"]
+    if "doc_uri" in result:
+        md["doc_uri"] = result["doc_uri"]
+        del result["doc_uri"]
+    result["metadata"] = md
+
+    if "kind" not in result:
+        result["kind"] = [k for k in ALL_PACKAGE_KINDS if k in result]
+
+    return cast(PackageManifestType, result)
+
+
 class PackageManifest:
     def __init__(
         self,
         category: str,
         name: str,
         ver: str,
-        data: PackageManifestType,
+        data: InputPackageManifestType,
     ) -> None:
-        self._data = data
+        self._data = _translate_to_manifest_v1(data)
         self.category = category
         self.name = name
         self.ver = ver
@@ -310,7 +388,7 @@ class PackageManifest:
 
     @property
     def slug(self) -> str | None:
-        return self._data.get("slug")
+        return self._data["metadata"].get("slug")
 
     @property
     def name_for_installation(self) -> str:
@@ -325,15 +403,15 @@ class PackageManifest:
 
     @property
     def desc(self) -> str:
-        return self._data["desc"]
+        return self._data["metadata"]["desc"]
 
     @property
     def doc_uri(self) -> str | None:
-        return self._data.get("doc_uri")
+        return self._data["metadata"].get("doc_uri")
 
     @property
     def vendor_name(self) -> str:
-        return self._data["vendor"]["name"]
+        return self._data["metadata"]["vendor"]["name"]
 
     # TODO: vendor_eula
 

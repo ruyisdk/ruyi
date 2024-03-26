@@ -13,7 +13,7 @@ Ruyi 软件源承担两种职能，从而也由两部分构成：
 
 ```
 packages-index
-├── config.json
+├── config.toml
 ├── manifests
 │   └── toolchain
 │       └── plct
@@ -29,18 +29,75 @@ packages-index
 
 不是必须的，目前也没有被用于界面展示等 `ruyi` 命令之内的用途，而仅仅用于网页端浏览。
 
-### `config.json`
+### 全局配置
 
-这是某个具体 Ruyi 软件源的全局配置，JSON 格式。
+每个具体的 Ruyi 软件源都必须包含一个全局配置文件，文件名为
+`config.json` 或 `config.toml`。文件内容的格式必须与其扩展名所表示的格式一致。
+
+当此数据的顶层不包含 `ruyi-repo` 字段时，应将其视作“旧版配置”解读。
+旧版配置支持两种配置字段，如示例：
 
 ```json
 {
-    "dist": "https://path-to-distfiles-host"
+    "dist": "https://path-to-distfiles-host",
+    "doc_uri": "https://ruyisdk.github.io/docs/"
 }
+```
+
+```toml
+dist = "https://path-to-distfiles-host"
+doc_uri = "https://ruyisdk.github.io/docs/"
 ```
 
 * `dist` 字段表示 Ruyi 软件源分发路径，以 `/` 结尾与否均可。以下将此配置值称作 `${config.dist}`。
 * `doc_uri` 是可选的指向该仓库的配套文档首页的 URI 字符串。
+
+当此数据的顶层包含 `ruyi-repo` 字段时，支持以下的配置字段，如示例：
+
+```toml
+ruyi-repo = "v1"
+
+[repo]
+doc_uri = "https://ruyisdk.github.io/docs/"
+
+[[mirror]]
+id = "ruyi-dist"
+urls = [
+  "https://path-to-distfiles-host",
+]
+
+[[mirror]]
+id = "foo"
+urls = [
+  "https://mirrors.foo.com/foo",
+  "https://mirrors.bar.org/dist/foo",
+  "https://mirrors.baz.edu.cn/quux",
+]
+```
+
+其中：
+
+* `repo.doc_uri` 字段含义同旧版配置的 `doc_uri` 字段。
+* `mirror` 是镜像源定义，其中 ID 为 `ruyi-dist` 的镜像具备特殊含义：其
+  `urls` 字段含义是旧版配置的 `dist` 字段含义的超集。
+
+#### 镜像源定义
+
+可以使用“镜像源”的概念，方便地表达某一实体所提供的多种文件分发渠道。
+例如，某软件包定义中的 `urls` 字段的某一条记录形如
+`mirror://foo/bar/baz.tar.zst`，那么如果搭配上述配置示例中的 `foo` 镜像源定义，
+这条记录就与以下几条具体 URLs 等价：
+
+* `https://mirrors.foo.com/foo/bar/baz.tar.zst`
+* `https://mirrors.bar.org/dist/foo/bar/baz.tar.zst`
+* `https://mirrors.baz.edu.cn/quux/bar/baz.tar.zst`
+
+每个镜像源的定义格式如下：
+
+* `id` 是镜像源的 ID。
+* `urls` 是此镜像源下属的所有可用镜像的基础 URL 列表。
+
+虽然目前 Ruyi 在下载文件时的实际行为是按列表顺序逐个尝试下载，但不对此做兼容性保证。
 
 ### `manifests`
 
@@ -51,7 +108,7 @@ packages-index
 合法的软件包名是仅由字母、数字、`-`（中划线）组成的非空字符串，且不以 `_`（下划线）开头。
 以 `_` 开头的软件包名为保留名，留作表示特殊语义用，或用于其他的必要使用场景。
 
-每个软件包的对应目录下，存在 0 或多个对应该包特定版本的具体定义文件；文件名即为版本号，格式为 JSON，后缀为 `.json`。
+每个软件包的对应目录下，存在 0 或多个对应该包特定版本的具体定义文件；文件名即为版本号，格式为 JSON 或 TOML，后缀为 `.json` 或 `.toml`。
 
 举例说明：
 
@@ -151,10 +208,59 @@ packages-index
 }
 ```
 
+```toml
+# 工具链包示例
+format = "v1"
+
+[metadata]
+desc = "RuyiSDK RISC-V Linux Toolchain 20231026 (maintained by PLCT)"
+vendor = {
+  name = "PLCT",
+  eula = null
+}
+
+[[distfiles]]
+name = "RuyiSDK-20231026-HOST-riscv64-linux-gnu-riscv64-plct-linux-gnu.tar.xz"
+size = 162283388
+checksums = {
+  sha256 = "6e7f269e52afd07b5fb03d1d96666fa12561586e5558fc841cb81bb35f2e3b9b",
+  sha512 = "ad5da6ea6a68d5d572619591e767173433db005b78d0e7fbcfe53dc5a17468eb83c72879107e51aa70a42c9bca03f1b0e483eb00ddaf074bf00488d5a4f54914"
+}
+
+[[distfiles]]
+name = "RuyiSDK-20231026-riscv64-plct-linux-gnu.tar.xz"
+size = 171803916
+checksums = {
+  sha256 = "2ae0ad6b513a8cb9541cb6a3373d7d1517a8848137b27cc64823582d3e9c01de",
+  sha512 = "6fabe9642a0b2c60f67cdb6162fe6f4bcf399809ca4e0e216df7bebba480f2965e9cd49e4502efbdcc0174ea7dc1c8784bf9f9c920c33466189cd8990fa7c98e"
+}
+
+[[binary]]
+host = "riscv64"
+distfiles = ["RuyiSDK-20231026-HOST-riscv64-linux-gnu-riscv64-plct-linux-gnu.tar.xz"]
+
+[[binary]]
+host = "x86_64"
+distfiles = ["RuyiSDK-20231026-riscv64-plct-linux-gnu.tar.xz"]
+
+[toolchain]
+target = "riscv64-plct-linux-gnu"
+flavors = []
+components = [
+  {name = "binutils", version = "2.40"},
+  {name = "gcc", version = "13.1.0"},
+  {name = "gdb", version = "13.1"},
+  {name = "glibc", version = "2.38"},
+  {name = "linux-headers", version = "6.4"},
+],
+included_sysroot = "riscv64-plct-linux-gnu/sysroot"
+```
+
 其中：
 
+* `format` 是软件包定义文件的格式版本，目前支持 `v1` 一种。
 * `slug` 是可选的便于称呼该包的全局唯一标识。目前未有任何特定的命名规范，待后续出现第三方软件源再行定义。
-* `kind` 说明软件包的性质。目前定义了以下几种：
+* `kind` 说明软件包的性质。如果不提供此字段，则 Ruyi 将根据本数据中提及的额外信息种类自动为其赋值。目前定义了以下几种：
     - `binary`：该包为二进制包，安装方式为直接解压。
     - `blob`：该包为不需安装动作、非结构化的纯二进制数据。
     - `source`：该包为源码包，安装方式为直接解压。
