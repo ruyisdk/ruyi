@@ -15,6 +15,12 @@ from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 from .provisioner import ProvisionerConfig
 
 
+def urljoin_for_sure(base: str, url: str) -> str:
+    if base.endswith("/"):
+        return parse.urljoin(base, url)
+    return parse.urljoin(base + "/", url)
+
+
 class RepoConfigV0Type(TypedDict):
     dist: str
     doc_uri: NotRequired[str]
@@ -32,17 +38,56 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
     return True
 
 
+class RepoConfigV1Repo(TypedDict):
+    doc_uri: NotRequired[str]
+
+
+class RepoConfigV1Mirror(TypedDict):
+    id: str
+    urls: list[str]
+
+
+RepoConfigV1Type = TypedDict(
+    "RepoConfigV1Type",
+    {
+        "ruyi-repo": str,
+        "repo": NotRequired[RepoConfigV1Repo],
+        "mirrors": list[RepoConfigV1Mirror],
+    },
+)
+
+
+def validate_repo_config_v1(x: object) -> TypeGuard[RepoConfigV1Type]:
+    if not isinstance(x, dict):
+        return False
+    x = cast(dict[str, object], x)
+    if x.get("ruyi-repo", "") != "v1":
+        return False
+    return True
+
+
+MIRROR_ID_RUYI_DIST = "ruyi-dist"
+
+
 class RepoConfig:
-    def __init__(self, dist: str, doc_uri: str | None) -> None:
-        self.dist = dist
-        self.doc_uri = doc_uri
+    def __init__(
+        self,
+        mirrors: list[RepoConfigV1Mirror],
+        repo: RepoConfigV1Repo | None,
+    ) -> None:
+        self.mirrors = {x["id"]: x["urls"] for x in mirrors}
+        self.repo = repo
+
+    @property
+    def dist(self) -> str:
+        return self.mirrors[MIRROR_ID_RUYI_DIST][0]
 
     @classmethod
     def from_object(cls, obj: object) -> "RepoConfig":
         if not isinstance(obj, dict):
             raise ValueError("repo config must be a dict")
         if "ruyi-repo" in obj:
-            raise NotImplementedError
+            return cls.from_v1(cast(object, obj))
         return cls.from_v0(cast(object, obj))
 
     @classmethod
@@ -50,7 +95,26 @@ class RepoConfig:
         if not validate_repo_config_v0(obj):
             # TODO: more detail in the error message
             raise RuntimeError("malformed v0 repo config")
-        return cls(obj["dist"], obj.get("doc_uri"))
+
+        v1_mirrors: list[RepoConfigV1Mirror] = [
+            {
+                "id": MIRROR_ID_RUYI_DIST,
+                "urls": [urljoin_for_sure(obj["dist"], "dist/")],
+            },
+        ]
+
+        v1_repo: RepoConfigV1Repo | None = None
+        if "doc_uri" in obj:
+            v1_repo = {"doc_uri": obj["doc_uri"]}
+
+        return cls(v1_mirrors, v1_repo)
+
+    @classmethod
+    def from_v1(cls, obj: object) -> "RepoConfig":
+        if not validate_repo_config_v1(obj):
+            # TODO: more detail in the error message
+            raise RuntimeError("malformed v1 repo config")
+        return cls(obj["mirrors"], obj.get("repo"))
 
 
 class MetadataRepo:
