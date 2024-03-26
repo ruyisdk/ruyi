@@ -13,7 +13,12 @@ import yaml
 from .. import log
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .news import NewsItem
-from .pkg_manifest import is_prerelease, DistfileDecl, PackageManifest
+from .pkg_manifest import (
+    InputPackageManifestType,
+    is_prerelease,
+    DistfileDecl,
+    PackageManifest,
+)
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 from .provisioner import ProvisionerConfig
 
@@ -210,9 +215,27 @@ class MetadataRepo:
         self.ensure_git_repo()
 
         category = os.path.basename(category_dir)
+
+        seen_pkgs: set[tuple[str, str]] = set()
+
+        for f in glob.iglob("*/*.toml", root_dir=category_dir):
+            pkg_name, pkg_ver = os.path.split(f)
+            pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
+            seen_pkgs.add((pkg_name, pkg_ver))
+            with open(os.path.join(category_dir, f), "rb") as fp:
+                yield PackageManifest(
+                    category,
+                    pkg_name,
+                    pkg_ver,
+                    cast(InputPackageManifestType, tomllib.load(fp)),
+                )
+
         for f in glob.iglob("*/*.json", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
+            if (pkg_name, pkg_ver) in seen_pkgs:
+                # we've already processed the toml format data for this version
+                continue
             with open(os.path.join(category_dir, f), "rb") as fp:
                 yield PackageManifest(category, pkg_name, pkg_ver, json.load(fp))
 
