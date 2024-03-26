@@ -1,7 +1,7 @@
 import glob
 import json
 import os.path
-from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard
+from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
@@ -32,6 +32,27 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
     return True
 
 
+class RepoConfig:
+    def __init__(self, dist: str, doc_uri: str | None) -> None:
+        self.dist = dist
+        self.doc_uri = doc_uri
+
+    @classmethod
+    def from_object(cls, obj: object) -> "RepoConfig":
+        if not isinstance(obj, dict):
+            raise ValueError("repo config must be a dict")
+        if "ruyi-repo" in obj:
+            raise NotImplementedError
+        return cls.from_v0(cast(object, obj))
+
+    @classmethod
+    def from_v0(cls, obj: object) -> "RepoConfig":
+        if not validate_repo_config_v0(obj):
+            # TODO: more detail in the error message
+            raise RuntimeError("malformed v0 repo config")
+        return cls(obj["dist"], obj.get("doc_uri"))
+
+
 class MetadataRepo:
     def __init__(self, path: str, remote: str, branch: str) -> None:
         self.root = path
@@ -39,6 +60,7 @@ class MetadataRepo:
         self.branch = branch
         self.repo: Repository | None = None
 
+        self._cfg: RepoConfig | None = None
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
@@ -70,7 +92,11 @@ class MetadataRepo:
         repo = self.ensure_git_repo()
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
-    def get_config(self) -> RepoConfigV0Type:
+    @property
+    def config(self) -> RepoConfig:
+        if self._cfg is not None:
+            return self._cfg
+
         self.ensure_git_repo()
 
         # we can read the config file directly because we're operating from a
@@ -79,10 +105,8 @@ class MetadataRepo:
         with open(path, "rb") as fp:
             obj = json.load(fp)
 
-        if not validate_repo_config_v0(obj):
-            # TODO: more detail in the error message
-            raise RuntimeError("malformed repo config.json")
-        return obj
+        self._cfg = RepoConfig.from_object(obj)
+        return self._cfg
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         self.ensure_git_repo()
