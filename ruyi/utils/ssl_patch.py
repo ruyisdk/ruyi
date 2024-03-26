@@ -130,12 +130,12 @@ class WellKnownCALocation(NamedTuple):
 
 
 WELL_KNOWN_CA_LOCATIONS: list[WellKnownCALocation] = [
-    # Most others
-    WellKnownCALocation("/etc/ssl/cert.pem", "/etc/ssl/certs"),
     # Debian-based distros
     WellKnownCALocation("/usr/lib/ssl/cert.pem", "/usr/lib/ssl/certs"),
     # RPM-based distros
     WellKnownCALocation("/etc/pki/tls/cert.pem", "/etc/pki/tls/certs"),
+    # Most others
+    WellKnownCALocation("/etc/ssl/cert.pem", "/etc/ssl/certs"),
 ]
 
 
