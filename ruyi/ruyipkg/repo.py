@@ -1,7 +1,9 @@
 import glob
+import itertools
 import json
 import os.path
 from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
+from urllib import parse
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
@@ -10,7 +12,7 @@ import yaml
 from .. import log
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .news import NewsItem
-from .pkg_manifest import is_prerelease, PackageManifest
+from .pkg_manifest import is_prerelease, DistfileDecl, PackageManifest
 from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
 from .provisioner import ProvisionerConfig
 
@@ -78,10 +80,6 @@ class RepoConfig:
         self.mirrors = {x["id"]: x["urls"] for x in mirrors}
         self.repo = repo
 
-    @property
-    def dist(self) -> str:
-        return self.mirrors[MIRROR_ID_RUYI_DIST][0]
-
     @classmethod
     def from_object(cls, obj: object) -> "RepoConfig":
         if not isinstance(obj, dict):
@@ -115,6 +113,26 @@ class RepoConfig:
             # TODO: more detail in the error message
             raise RuntimeError("malformed v1 repo config")
         return cls(obj["mirrors"], obj.get("repo"))
+
+    def get_dist_urls_for_file(self, url: str) -> list[str]:
+        u = parse.urlparse(url)
+        path = u.path.lstrip("/")
+        match u.scheme:
+            case "":
+                return self.get_mirror_urls_for_file(MIRROR_ID_RUYI_DIST, path)
+            case "mirror":
+                return self.get_mirror_urls_for_file(u.netloc, path)
+            case "http" | "https":
+                # pass-through known protocols
+                return [url]
+            case _:
+                # deny others
+                log.W(f"unrecognized dist URL scheme: {u.scheme}")
+                return []
+
+    def get_mirror_urls_for_file(self, mirror_id: str, path: str) -> list[str]:
+        mirror_urls = self.mirrors.get(mirror_id, [])
+        return [parse.urljoin(base, path) for base in mirror_urls]
 
 
 class MetadataRepo:
@@ -294,6 +312,21 @@ class MetadataRepo:
             all_semvers = [sv for sv in all_semvers if not is_prerelease(sv)]
         latest_ver = max(all_semvers)
         return pkgset[name][str(latest_ver)]
+
+    def get_distfile_urls(self, decl: DistfileDecl) -> list[str]:
+        urls_to_expand: list[str] = []
+        if not decl.is_restricted("mirror"):
+            urls_to_expand.append(f"mirror://{MIRROR_ID_RUYI_DIST}/{decl.name}")
+
+        if decl.urls:
+            urls_to_expand.extend(decl.urls)
+
+        cfg = self.config
+        return list(
+            itertools.chain(
+                *(cfg.get_dist_urls_for_file(url) for url in urls_to_expand)
+            )
+        )
 
     def ensure_news_cache(self) -> None:
         if self._news_cache is not None:

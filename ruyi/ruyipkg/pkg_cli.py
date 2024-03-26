@@ -8,7 +8,7 @@ from ..config import GlobalConfig
 from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
-from .pkg_manifest import DistfileDecl, PackageManifest
+from .pkg_manifest import PackageManifest
 from .unpack import ensure_unpack_cmd_for_distfile
 
 
@@ -111,22 +111,6 @@ def print_pkg_detail(pm: PackageManifest) -> None:
             )
 
 
-def make_distfile_urls(base: str, decl: DistfileDecl) -> list[str]:
-    result: list[str]
-    if not decl.is_restricted("mirror"):
-        # urljoin can't be used because it trims the basename part if base is not
-        # `/`-suffixed
-        name = decl.name
-        result = [f"{base}dist/{name}" if base[-1] == "/" else f"{base}/dist/{name}"]
-    else:
-        result = []
-
-    if decl.urls:
-        result.extend(decl.urls)
-
-    return result
-
-
 def is_root_likely_populated(root: str) -> bool:
     try:
         return any(os.scandir(root))
@@ -143,8 +127,6 @@ def cli_extract(args: argparse.Namespace) -> int:
     mr = MetadataRepo(
         config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
     )
-
-    repo_cfg = mr.config
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -180,10 +162,9 @@ def cli_extract(args: argparse.Namespace) -> int:
 
         dfs = pm.distfiles()
 
-        dist_url_base = repo_cfg.dist
         for df_name in distfiles_for_host:
             df_decl = dfs[df_name]
-            urls = make_distfile_urls(dist_url_base, df_decl)
+            urls = mr.get_distfile_urls(df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             ensure_unpack_cmd_for_distfile(dest)
             df = Distfile(urls, dest, df_decl)
@@ -295,11 +276,9 @@ def do_install_binary_pkg(
         log.F(f"package [green]{pkg_name}[/green] declares no binary for host {host}")
         return 2
 
-    repo_cfg = mr.config
-    dist_url_base = repo_cfg.dist
     for df_name in distfiles_for_host:
         df_decl = dfs[df_name]
-        urls = make_distfile_urls(dist_url_base, df_decl)
+        urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_distfile(dest)
         df = Distfile(urls, dest, df_decl)
@@ -355,11 +334,9 @@ def do_install_blob_pkg(
         log.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
         return 2
 
-    repo_cfg = mr.config
-    dist_url_base = repo_cfg.dist
     for df_name in distfile_names:
         df_decl = dfs[df_name]
-        urls = make_distfile_urls(dist_url_base, df_decl)
+        urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_distfile(dest)
         df = Distfile(urls, dest, df_decl)
