@@ -2,6 +2,7 @@ import glob
 import itertools
 import json
 import os.path
+import tomllib
 from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
 from urllib import parse
 
@@ -183,9 +184,12 @@ class MetadataRepo:
 
         # we can read the config file directly because we're operating from a
         # working tree (as opposed to a bare repo)
-        path = os.path.join(self.root, "config.json")
-        with open(path, "rb") as fp:
-            obj = json.load(fp)
+        try:
+            with open(os.path.join(self.root, "config.toml"), "rb") as fp:
+                obj = tomllib.load(fp)
+        except FileNotFoundError:
+            with open(os.path.join(self.root, "config.json"), "rb") as fp:
+                obj = json.load(fp)
 
         self._cfg = RepoConfig.from_object(obj)
         return self._cfg
