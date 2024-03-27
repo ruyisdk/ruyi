@@ -1,59 +1,78 @@
 import os
-import re
+import shutil
 import subprocess
 from typing import NoReturn
 
 from .. import log
 from ..cli import prereqs
-
-RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.xz|\.zst)?$")
-
-
-class UnrecognizedPackFormatError(Exception):
-    def __init__(self, filename: str) -> None:
-        self.filename = filename
-
-    def __str__(self) -> str:
-        return f"don't know how to unpack file {self.filename}"
+from .unpack_method import UnpackMethod, UnrecognizedPackFormatError
 
 
 def do_unpack(
     filename: str,
     dest: str | None,
     strip_components: int,
+    unpack_method: UnpackMethod,
 ) -> None:
-    filename_lower = filename.lower()
-    if RE_TARBALL.search(filename_lower):
-        return do_unpack_tar(filename, dest, strip_components)
-    if filename_lower.endswith(".zip"):
-        # TODO: handle strip_components somehow; the unzip(1) command currently
-        # does not have such support.
-        return do_unpack_zip(filename, dest)
-    if filename_lower.endswith(".gz"):
-        # bare gzip file
-        return do_unpack_bare_gz(filename, dest)
-    if filename_lower.endswith(".bz2"):
-        # bare bzip2 file
-        return do_unpack_bare_bzip2(filename, dest)
-    if filename_lower.endswith(".xz"):
-        # bare xz file
-        return do_unpack_bare_xz(filename, dest)
-    if filename_lower.endswith(".zst"):
-        # bare zstd file
-        return do_unpack_bare_zstd(filename, dest)
-    raise UnrecognizedPackFormatError(filename)
+    match unpack_method:
+        case UnpackMethod.AUTO:
+            raise ValueError("the auto unpack method must be resolved prior to use")
+        case UnpackMethod.RAW:
+            return do_copy_raw(filename, dest)
+        case (
+            UnpackMethod.TAR_AUTO
+            | UnpackMethod.TAR
+            | UnpackMethod.TAR_BZ2
+            | UnpackMethod.TAR_GZ
+            | UnpackMethod.TAR_XZ
+            | UnpackMethod.TAR_ZST
+        ):
+            return do_unpack_tar(filename, dest, strip_components, unpack_method)
+        case UnpackMethod.ZIP:
+            # TODO: handle strip_components somehow; the unzip(1) command currently
+            # does not have such support.
+            return do_unpack_zip(filename, dest)
+        case UnpackMethod.GZ:
+            # bare gzip file
+            return do_unpack_bare_gz(filename, dest)
+        case UnpackMethod.BZ2:
+            # bare bzip2 file
+            return do_unpack_bare_bzip2(filename, dest)
+        case UnpackMethod.XZ:
+            # bare xz file
+            return do_unpack_bare_xz(filename, dest)
+        case UnpackMethod.ZST:
+            # bare zstd file
+            return do_unpack_bare_zstd(filename, dest)
+        case _:
+            raise UnrecognizedPackFormatError(filename)
 
 
 def do_unpack_or_symlink(
     filename: str,
     dest: str | None,
     strip_components: int,
+    unpack_method: UnpackMethod,
 ) -> None:
     try:
-        return do_unpack(filename, dest, strip_components)
+        return do_unpack(filename, dest, strip_components, unpack_method)
     except UnrecognizedPackFormatError:
         # just symlink into destination
         return do_symlink(filename, dest)
+
+
+def do_copy_raw(
+    src_path: str,
+    destdir: str | None,
+) -> None:
+    src_filename = os.path.basename(src_path)
+    if destdir is None:
+        # symlink into CWD
+        dest = src_filename
+    else:
+        dest = os.path.join(destdir, src_filename)
+
+    shutil.copy(src_path, dest)
 
 
 def do_symlink(
@@ -77,8 +96,26 @@ def do_unpack_tar(
     filename: str,
     dest: str | None,
     strip_components: int,
+    unpack_method: UnpackMethod,
 ) -> None:
     argv = ["tar", "-x"]
+
+    match unpack_method:
+        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+            pass
+        case UnpackMethod.TAR_GZ:
+            argv.append("-z")
+        case UnpackMethod.TAR_BZ2:
+            argv.append("-j")
+        case UnpackMethod.TAR_XZ:
+            argv.append("-J")
+        case UnpackMethod.TAR_ZST:
+            argv.append("--zstd")
+        case _:
+            raise ValueError(
+                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
+            )
+
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
     if dest is not None:
         argv.extend(("-C", dest))
@@ -105,7 +142,8 @@ def do_unpack_bare_gz(
     filename: str,
     destdir: str | None,
 ) -> None:
-    dest_filename = os.path.basename(filename)[:-3]  # strip ".gz" suffix
+    # the suffix may not be ".gz" so do this generically
+    dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
     argv = ["gunzip", "-c", filename]
     if destdir is not None:
@@ -124,7 +162,8 @@ def do_unpack_bare_bzip2(
     filename: str,
     destdir: str | None,
 ) -> None:
-    dest_filename = os.path.basename(filename)[:-4]  # strip ".bz2" suffix
+    # the suffix may not be ".bz2" so do this generically
+    dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
     argv = ["bzip2", "-dc", filename]
     if destdir is not None:
@@ -143,7 +182,8 @@ def do_unpack_bare_xz(
     filename: str,
     destdir: str | None,
 ) -> None:
-    dest_filename = os.path.basename(filename)[:-3]  # strip ".xz" suffix
+    # the suffix may not be ".xz" so do this generically
+    dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
     argv = ["xz", "-d", "-c", filename]
     if destdir is not None:
@@ -162,7 +202,9 @@ def do_unpack_bare_zstd(
     filename: str,
     destdir: str | None,
 ) -> None:
-    dest_filename = os.path.basename(filename)[:-4]  # strip ".zst" suffix
+    # the suffix may not be ".zst" so do this generically
+    dest_filename = os.path.splitext(os.path.basename(filename))[0]
+
     argv = ["zstd", "-d", filename, "-o", f"./{dest_filename}"]
     log.D(f"about to call zstd: argv={argv}")
     retcode = subprocess.call(argv, cwd=destdir)
@@ -170,33 +212,36 @@ def do_unpack_bare_zstd(
         raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
 
 
-def ensure_unpack_cmd_for_distfile(dest_filename: str) -> None | NoReturn:
-    dest_filename = dest_filename.lower()
-    dest_filename = os.path.basename(dest_filename)
+def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
+    match m:
+        case UnpackMethod.UNKNOWN | UnpackMethod.RAW:
+            return []
+        case UnpackMethod.GZ:
+            return ["gunzip"]
+        case UnpackMethod.BZ2:
+            return ["bzip2"]
+        case UnpackMethod.XZ:
+            return ["xz"]
+        case UnpackMethod.ZST:
+            return ["zstd"]
+        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+            return ["tar"]
+        case UnpackMethod.TAR_GZ:
+            return ["tar", "gunzip"]
+        case UnpackMethod.TAR_BZ2:
+            return ["tar", "bzip2"]
+        case UnpackMethod.TAR_XZ:
+            return ["tar", "xz"]
+        case UnpackMethod.TAR_ZST:
+            return ["tar", "zstd"]
+        case UnpackMethod.ZIP:
+            return ["unzip"]
+        case UnpackMethod.AUTO:
+            raise ValueError(f"the unpack method {m} must be resolved prior to use")
 
-    required_cmds: list[str] = []
-    strip_one_ext = False
-    if dest_filename.endswith(".gz"):
-        required_cmds.append("gunzip")
-        strip_one_ext = True
-    elif dest_filename.endswith(".bz2"):
-        required_cmds.append("bzip2")
-        strip_one_ext = True
-    elif dest_filename.endswith(".xz"):
-        required_cmds.append("xz")
-        strip_one_ext = True
-    elif dest_filename.endswith(".zst"):
-        required_cmds.append("zstd")
-        strip_one_ext = True
 
-    if strip_one_ext:
-        dest_filename = dest_filename.rsplit(".", 1)[0]
-
-    if dest_filename.endswith(".tar"):
-        required_cmds.append("tar")
-    elif dest_filename.endswith(".zip"):
-        required_cmds.append("unzip")
-
+def ensure_unpack_cmd_for_method(m: UnpackMethod) -> None | NoReturn:
+    required_cmds = _get_unpack_cmds_for_method(m)
     if not required_cmds:
         return None
 
