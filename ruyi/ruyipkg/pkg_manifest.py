@@ -6,6 +6,8 @@ from typing import Any, Iterable, Literal, NotRequired, TypedDict
 
 from semver.version import Version
 
+from .unpack_method import UnpackMethod, determine_unpack_method
+
 
 class VendorDeclType(TypedDict):
     name: str
@@ -22,6 +24,7 @@ class DistfileDeclType(TypedDict):
     size: int
     checksums: dict[str, str]
     strip_components: NotRequired[int]
+    unpack: NotRequired[UnpackMethod]
 
 
 class BinaryFileDeclType(TypedDict):
@@ -143,6 +146,13 @@ class DistfileDecl:
     @property
     def strip_components(self) -> int:
         return self._data.get("strip_components", 1)
+
+    @property
+    def unpack_method(self) -> UnpackMethod:
+        x = self._data.get("unpack", UnpackMethod.AUTO)
+        if x == UnpackMethod.AUTO:
+            return determine_unpack_method(self.name)
+        return x
 
 
 class BinaryDecl:
