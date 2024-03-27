@@ -9,7 +9,7 @@ from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
 from .pkg_manifest import PackageManifest
-from .unpack import ensure_unpack_cmd_for_distfile
+from .unpack import ensure_unpack_cmd_for_method
 
 
 def cli_list(args: argparse.Namespace) -> int:
@@ -166,7 +166,7 @@ def cli_extract(args: argparse.Namespace) -> int:
             df_decl = dfs[df_name]
             urls = mr.get_distfile_urls(df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-            ensure_unpack_cmd_for_distfile(dest)
+            ensure_unpack_cmd_for_method(df_decl.unpack_method)
             df = Distfile(urls, dest, df_decl)
             df.ensure()
 
@@ -280,7 +280,7 @@ def do_install_binary_pkg(
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_distfile(dest)
+        ensure_unpack_cmd_for_method(df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl)
         df.ensure()
 
@@ -338,7 +338,7 @@ def do_install_blob_pkg(
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_distfile(dest)
+        ensure_unpack_cmd_for_method(df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl)
         df.ensure()
 

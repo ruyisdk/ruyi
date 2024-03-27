@@ -38,6 +38,7 @@ class Distfile:
         self.size = decl.size
         self.csums = decl.checksums
         self.strip_components = decl.strip_components
+        self.unpack_method = decl.unpack_method
 
     def ensure(self) -> None:
         log.D(f"checking {self.dest}")
@@ -97,7 +98,12 @@ class Distfile:
             )
 
     def unpack(self, root: str | None) -> None:
-        return do_unpack(self.dest, root, self.strip_components)
+        return do_unpack(self.dest, root, self.strip_components, self.unpack_method)
 
     def unpack_or_symlink(self, root: str | None) -> None:
-        return do_unpack_or_symlink(self.dest, root, self.strip_components)
+        return do_unpack_or_symlink(
+            self.dest,
+            root,
+            self.strip_components,
+            self.unpack_method,
+        )
