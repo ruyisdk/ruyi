@@ -55,7 +55,9 @@ project's sources from the project's official website:
 
 
 def cli_version(_: argparse.Namespace) -> int:
-    print(f"Ruyi {RUYI_SEMVER}")
+    from ..ruyipkg.host import get_native_host
+
+    print(f"Ruyi {RUYI_SEMVER}\n\nRunning on {get_native_host()}.\n")
     log.stdout(COPYRIGHT_NOTICE)
 
     return 0
