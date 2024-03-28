@@ -1,6 +1,5 @@
 import argparse
 import os
-import platform
 from typing import Callable, List
 
 import ruyi
@@ -26,12 +25,15 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..device.provision_cli import cli_device_provision
     from ..mux.venv import cli_venv
     from ..ruyipkg.admin_cli import cli_admin_manifest
+    from ..ruyipkg.host import get_native_host
     from ..ruyipkg.news_cli import cli_news_list, cli_news_read
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update_cli import cli_update
     from .self_cli import cli_self_uninstall
     from .version import RUYI_SEMVER, cli_version
+
+    native_host_str = get_native_host()
 
     root = argparse.ArgumentParser(
         prog=RUYI_ENTRYPOINT_NAME,
@@ -81,7 +83,7 @@ def init_argparse() -> argparse.ArgumentParser:
     extract.add_argument(
         "--host",
         type=str,
-        default=platform.machine(),
+        default=native_host_str,
         help="Override the host architecture (normally not needed)",
     )
     extract.set_defaults(func=cli_extract)
@@ -104,7 +106,7 @@ def init_argparse() -> argparse.ArgumentParser:
     install.add_argument(
         "--host",
         type=str,
-        default=platform.machine(),
+        default=native_host_str,
         help="Override the host architecture (normally not needed)",
     )
     install.add_argument(

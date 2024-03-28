@@ -1,12 +1,12 @@
 import argparse
 from os import PathLike
 import pathlib
-import platform
 from typing import Any
 
 from ... import log
 from ...config import GlobalConfig
 from ...ruyipkg.atom import Atom
+from ...ruyipkg.host import get_native_host
 from ...ruyipkg.repo import MetadataRepo
 from .provision import render_template_str, VenvMaker
 
@@ -19,6 +19,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     tc_atom_str: str | None = args.toolchain
     emu_atom_str: str | None = args.emulator
     sysroot_atom_str: str | None = args.sysroot_from
+    host = get_native_host()
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache
@@ -65,7 +66,7 @@ def cli_venv(args: argparse.Namespace) -> int:
     target_tuple = tc_pm.toolchain_metadata.target
 
     toolchain_root = config.lookup_binary_install_dir(
-        platform.machine(),  # TODO
+        host,
         tc_pm.name_for_installation,
     )
     if toolchain_root is None:
@@ -103,7 +104,7 @@ def cli_venv(args: argparse.Namespace) -> int:
                 return 1
 
             gcc_pkg_root = config.lookup_binary_install_dir(
-                platform.machine(),  # TODO
+                host,
                 gcc_pkg_pm.name_for_installation,
             )
             if gcc_pkg_root is None:
@@ -176,7 +177,7 @@ def cli_venv(args: argparse.Namespace) -> int:
                 return 1
 
         emu_root = config.lookup_binary_install_dir(
-            platform.machine(),  # TODO
+            host,
             emu_pm.name_for_installation,
         )
         if emu_root is None:

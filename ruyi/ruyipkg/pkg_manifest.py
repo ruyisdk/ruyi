@@ -1,12 +1,12 @@
 from copy import deepcopy
 from functools import cached_property
 import os
-import platform
 import re
 from typing import Any, Iterable, Literal, NotRequired, TypedDict, cast
 
 from semver.version import Version
 
+from .host import canonicalize_host_str, get_native_host
 from .unpack_method import UnpackMethod, determine_unpack_method
 
 
@@ -197,18 +197,18 @@ class DistfileDecl:
 
 class BinaryDecl:
     def __init__(self, data: BinaryDeclType) -> None:
-        self._data = {d["host"]: d["distfiles"] for d in data}
+        self._data = {canonicalize_host_str(d["host"]): d["distfiles"] for d in data}
 
     @property
     def data(self) -> dict[str, list[str]]:
         return self._data
 
     def get_distfile_names_for_host(self, host: str) -> list[str] | None:
-        return self._data.get(host)
+        return self._data.get(canonicalize_host_str(host))
 
     @property
     def is_available_for_current_host(self) -> bool:
-        return platform.machine() in self._data
+        return get_native_host() in self._data
 
 
 class BlobDecl:

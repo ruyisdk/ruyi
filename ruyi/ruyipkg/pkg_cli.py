@@ -3,6 +3,8 @@ import os.path
 import pathlib
 import shutil
 
+from .host import canonicalize_host_str
+
 from .. import log
 from ..config import GlobalConfig
 from .atom import Atom
@@ -200,7 +202,7 @@ def cli_install(args: argparse.Namespace) -> int:
         config,
         mr,
         atom_strs,
-        host=host,
+        canonicalized_host=canonicalize_host_str(host),
         fetch_only=fetch_only,
         reinstall=reinstall,
     )
@@ -211,11 +213,11 @@ def do_install_atoms(
     mr: MetadataRepo,
     atom_strs: set[str],
     *,
-    host: str,
+    canonicalized_host: str,
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
-    log.D(f"about to install for host {host}: {atom_strs}")
+    log.D(f"about to install for host {canonicalized_host}: {atom_strs}")
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -226,7 +228,14 @@ def do_install_atoms(
         pkg_name = pm.name_for_installation
 
         if pm.binary_metadata is not None:
-            ret = do_install_binary_pkg(config, mr, pm, host, fetch_only, reinstall)
+            ret = do_install_binary_pkg(
+                config,
+                mr,
+                pm,
+                canonicalized_host,
+                fetch_only,
+                reinstall,
+            )
             if ret != 0:
                 return ret
             continue
@@ -247,7 +256,7 @@ def do_install_binary_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: PackageManifest,
-    host: str,
+    canonicalized_host: str,
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
@@ -255,7 +264,7 @@ def do_install_binary_pkg(
     assert bm is not None
 
     pkg_name = pm.name_for_installation
-    install_root = config.global_binary_install_root(host, pkg_name)
+    install_root = config.global_binary_install_root(canonicalized_host, pkg_name)
     if is_root_likely_populated(install_root):
         if reinstall:
             log.W(
@@ -271,9 +280,11 @@ def do_install_binary_pkg(
 
     dfs = pm.distfiles()
 
-    distfiles_for_host = bm.get_distfile_names_for_host(host)
+    distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
     if not distfiles_for_host:
-        log.F(f"package [green]{pkg_name}[/green] declares no binary for host {host}")
+        log.F(
+            f"package [green]{pkg_name}[/green] declares no binary for host {canonicalized_host}"
+        )
         return 2
 
     for df_name in distfiles_for_host:

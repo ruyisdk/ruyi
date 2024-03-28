@@ -1,7 +1,6 @@
 import argparse
 import itertools
 import os.path
-import platform
 import subprocess
 import time
 from typing import Callable, TypedDict
@@ -10,6 +9,7 @@ from .. import log
 from ..cli import prereqs, user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
+from ..ruyipkg.host import get_native_host
 from ..ruyipkg.pkg_cli import do_install_atoms
 from ..ruyipkg.pkg_manifest import (
     PartitionKind,
@@ -150,7 +150,7 @@ We are about to download and install the following packages for your device:
         config,
         mr,
         set(pkg_atoms),
-        host=platform.machine(),
+        canonicalized_host=get_native_host(),
         fetch_only=False,
         reinstall=False,
     )

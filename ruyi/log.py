@@ -42,6 +42,7 @@ def D(
         *objects,
         sep=sep,
         end=end,
+        _stack_offset=2,
     )
 
 

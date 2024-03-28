@@ -57,12 +57,6 @@ do_inner() {
     poetry install --with=dist --without=dev
     endgroup
 
-    green "patching Nuitka" group
-    pushd /home/b/venv/lib/python*/site-packages > /dev/null
-    patch -Np1 < /home/b/ruyi/scripts/patches/0001-Onefile-Respect-XDG_CACHE_HOME-when-rendering-CACHE_.patch
-    popd > /dev/null
-    endgroup
-
     exec ./scripts/dist-inner.py
 }
 
