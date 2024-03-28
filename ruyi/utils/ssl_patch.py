@@ -4,6 +4,8 @@ import ssl
 import sys
 from typing import NamedTuple
 
+import certifi
+
 from .. import log
 
 _orig_get_default_verify_paths = ssl.get_default_verify_paths
@@ -38,13 +40,6 @@ def _get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
     if result is None:
         log.D("falling back to probing hard-coded paths")
         result = probe_fallback_verify_paths()
-
-    if result is None:
-        # cannot proceed without certificates info (pygit2 initialization is
-        # bound to fail anyway)
-        log.F("cannot find the system libcrypto and/or TLS certificates")
-        log.I("TLS certificates and library are required for Ruyi to function")
-        raise SystemExit(1)
 
     if result != orig_paths:
         log.D(
@@ -139,7 +134,7 @@ WELL_KNOWN_CA_LOCATIONS: list[WellKnownCALocation] = [
 ]
 
 
-def probe_fallback_verify_paths() -> ssl.DefaultVerifyPaths | None:
+def probe_fallback_verify_paths() -> ssl.DefaultVerifyPaths:
     for loc in WELL_KNOWN_CA_LOCATIONS:
         is_file_present = os.path.isfile(loc.cafile)
         is_dir_present = os.path.isdir(loc.capath)
@@ -155,7 +150,16 @@ def probe_fallback_verify_paths() -> ssl.DefaultVerifyPaths | None:
             loc.capath,
         )
 
-    return None
+    # fall back to certifi
+    cafile = certifi.where()
+    return ssl.DefaultVerifyPaths(
+        cafile,
+        None,  # type: ignore[arg-type]
+        "SSL_CERT_FILE",
+        cafile,
+        "SSL_CERT_DIR",
+        "/etc/ssl/certs",
+    )
 
 
 ssl.get_default_verify_paths = get_system_ssl_default_verify_paths
