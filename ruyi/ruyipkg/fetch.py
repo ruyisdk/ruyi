@@ -1,7 +1,10 @@
 import abc
+import os
 import subprocess
 
 from .. import log
+
+ENV_OVERRIDE_FETCHER = "RUYI_OVERRIDE_FETCHER"
 
 
 class BaseFetcher:
@@ -69,6 +72,20 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
         return _cached_usable_fetcher_class
 
     _fetcher_cache_populated = True
+
+    if override_name := os.environ.get(ENV_OVERRIDE_FETCHER):
+        log.D(f"forcing fetcher '{override_name}'")
+
+        cls = KNOWN_FETCHERS.get(override_name)
+        if cls is None:
+            raise RuntimeError(f"unknown fetcher '{override_name}'")
+        if not cls.is_available():
+            raise RuntimeError(
+                f"the requested fetcher '{override_name}' is unavailable on the system"
+            )
+        _cached_usable_fetcher_class = cls
+        return cls
+
     for name, cls in KNOWN_FETCHERS.items():
         if not cls.is_available():
             log.D(f"fetcher '{name}' is unavailable")
