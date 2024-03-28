@@ -16,6 +16,13 @@ DEFAULT_REPO_BRANCH = "main"
 ENV_VENV_ROOT_KEY = "RUYI_VENV"
 
 
+def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:
+    # e.g. linux/amd64 -> amd64; "windows/amd64" -> "windows-amd64"
+    if canonicalized_host.startswith("linux/"):
+        return canonicalized_host[6:]
+    return canonicalized_host.replace("/", "-")
+
+
 class GlobalConfigPackagesType(TypedDict):
     prereleases: NotRequired[bool]
 
@@ -95,7 +102,8 @@ class GlobalConfig:
         return str(path)
 
     def global_binary_install_root(self, host: str, slug: str) -> str:
-        path = pathlib.Path(self.ensure_data_dir()) / "binaries" / host / slug
+        host_path = get_host_path_fragment_for_binary_install_dir(host)
+        path = pathlib.Path(self.ensure_data_dir()) / "binaries" / host_path / slug
         return str(path)
 
     def global_blob_install_root(self, slug: str) -> str:
@@ -103,8 +111,9 @@ class GlobalConfig:
         return str(path)
 
     def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike[Any] | None:
+        host_path = get_host_path_fragment_for_binary_install_dir(host)
         for data_dir in BaseDirectory.load_data_paths(self.resource_name):
-            p = pathlib.Path(data_dir) / "binaries" / host / slug
+            p = pathlib.Path(data_dir) / "binaries" / host_path / slug
             if p.exists():
                 return p
         return None
