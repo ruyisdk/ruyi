@@ -45,7 +45,6 @@ safe_licenses = [
   "GNU Lesser General Public License v2 (LGPLv2)", # needs dist script cooperation
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
-  "Python Software Foundation License",
 ]
 
 
