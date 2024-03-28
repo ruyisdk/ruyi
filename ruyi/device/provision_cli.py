@@ -122,6 +122,18 @@ def do_provision_combo_interactive(
 
     # download packages
     pkg_atoms = combo["packages"]
+    if not pkg_atoms:
+        if postinst_msgid := combo.get("postinst_msgid"):
+            if postinst_msgs := dpcfg.get("postinst_messages"):
+                postinst_msg = postinst_msgs[postinst_msgid]
+                log.stdout(f"\n{postinst_msg}")
+                return 0
+
+        log.F(
+            f"malformed config: device variant '{dev_decl['id']}@{variant_decl['id']}' asks for no packages but provides no messages either"
+        )
+        return 1
+
     pkg_names_for_display = "\n".join(f" * [green]{i}[/green]" for i in pkg_atoms)
     log.stdout(
         f"""
