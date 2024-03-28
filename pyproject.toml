@@ -56,6 +56,7 @@ pygit2 = "^1.14.0"
 python-frontmatter = "^1.0.1"
 pyxdg = "^0.28"
 pyyaml = "^6.0.1"
+requests = "^2"
 rich = "^13.5"
 semver = "^3"
 
@@ -63,6 +64,7 @@ types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"
 types-pyxdg = "^0.28.0.20240106"
 types-PyYAML = "^6.0.12.20240311"
+types-requests = "^2.31.0.20240311"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
@@ -72,6 +74,3 @@ ruff = "^0.3.4"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
-requests = "^2"
-
-types-requests = "^2.31.0.20240311"
