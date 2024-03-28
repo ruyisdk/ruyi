@@ -61,6 +61,7 @@ pyyaml = "^6.0.1"
 requests = "^2"
 rich = "^13.5"
 semver = "^3"
+tomlkit = "^0.12.4"
 
 types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"

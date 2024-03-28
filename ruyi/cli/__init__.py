@@ -233,6 +233,20 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Generate manifest for the distfiles given",
     )
     admin_manifest.add_argument(
+        "--format",
+        "-f",
+        type=str,
+        choices=["json", "toml"],
+        default="json",
+        help="Format of manifest to generate",
+    )
+    admin_manifest.add_argument(
+        "--restrict",
+        type=str,
+        default="",
+        help="the 'restrict' field to use for all mentioned distfiles, separated with comma",
+    )
+    admin_manifest.add_argument(
         "file",
         type=str,
         nargs="+",
