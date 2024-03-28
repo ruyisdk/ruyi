@@ -45,13 +45,13 @@ safe_licenses = [
   "GNU Lesser General Public License v2 (LGPLv2)", # needs dist script cooperation
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
-  "Python Software Foundation License",
 ]
 
 
 [tool.poetry.dependencies]
 python = ">=3.11"
 
+certifi = "^2024.2"
 jinja2 = "^3"
 packaging = "^24.0"
 pygit2 = "^1.14.0"
