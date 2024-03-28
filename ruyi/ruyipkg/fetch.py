@@ -47,12 +47,12 @@ class BaseFetcher:
         return get_usable_fetcher_cls()(urls, dest)
 
 
-KNOWN_FETCHERS: list[type[BaseFetcher]] = []
+KNOWN_FETCHERS: dict[str, type[BaseFetcher]] = {}
 
 
-def register_fetcher(f: type[BaseFetcher]) -> None:
+def register_fetcher(name: str, f: type[BaseFetcher]) -> None:
     # NOTE: can add priority support if needed
-    KNOWN_FETCHERS.append(f)
+    KNOWN_FETCHERS[name] = f
 
 
 _fetcher_cache_populated: bool = False
@@ -69,10 +69,12 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
         return _cached_usable_fetcher_class
 
     _fetcher_cache_populated = True
-    for cls in KNOWN_FETCHERS:
-        if cls.is_available():
-            _cached_usable_fetcher_class = cls
-            return cls
+    for name, cls in KNOWN_FETCHERS.items():
+        if not cls.is_available():
+            log.D(f"fetcher '{name}' is unavailable")
+            continue
+        _cached_usable_fetcher_class = cls
+        return cls
 
     raise RuntimeError("no fetcher is available on the system")
 
@@ -117,7 +119,7 @@ class CurlFetcher(BaseFetcher):
         return True
 
 
-register_fetcher(CurlFetcher)
+register_fetcher("curl", CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
@@ -151,4 +153,4 @@ class WgetFetcher(BaseFetcher):
         return True
 
 
-register_fetcher(WgetFetcher)
+register_fetcher("wget", WgetFetcher)
