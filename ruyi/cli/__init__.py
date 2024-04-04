@@ -2,7 +2,6 @@ import argparse
 import os
 from typing import Callable, List
 
-import ruyi
 from .. import log
 from ..mux.runtime import mux_main
 
@@ -11,11 +10,6 @@ RUYI_ENTRYPOINT_NAME = "ruyi"
 
 def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0) in {RUYI_ENTRYPOINT_NAME, "__main__.py"}
-
-
-def init_debug_status() -> None:
-    debug_env = os.environ.get("RUYI_DEBUG", "")
-    ruyi.set_debug(debug_env.lower() in {"1", "true", "x", "y", "yes"})
 
 
 CLIEntrypoint = Callable[[argparse.Namespace], int]

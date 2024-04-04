@@ -1,4 +1,18 @@
+import os
 import typing
+
+TRUTHY_ENV_VAR_VALUES = {"1", "true", "x", "y", "yes"}
+
+
+def is_env_var_truthy(var: str) -> bool:
+    if v := os.environ.get(var):
+        return v.lower() in TRUTHY_ENV_VAR_VALUES
+    return False
+
+
+ENV_DEBUG = "RUYI_DEBUG"
+ENV_FORCE_ALLOW_ROOT = "RUYI_FORCE_ALLOW_ROOT"
+
 
 _is_debug = False
 
@@ -10,6 +24,10 @@ def set_debug(v: bool) -> None:
 
 def is_debug() -> bool:
     return _is_debug
+
+
+def init_debug_status() -> None:
+    set_debug(is_env_var_truthy(ENV_DEBUG))
 
 
 _argv0: str = ""
@@ -29,6 +47,14 @@ def record_self_exe(argv0: str, x: str) -> None:
     global _self_exe
     _argv0 = argv0
     _self_exe = x
+
+
+def is_running_as_root() -> bool:
+    # this is way too simplistic but works on *nix systems which is all we
+    # support currently
+    if hasattr(os, "getuid"):
+        return os.getuid() == 0
+    return False
 
 
 # This is true if we're packaged

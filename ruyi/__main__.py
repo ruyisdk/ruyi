@@ -5,6 +5,23 @@ if __name__ == "__main__":
     import ruyi
     from ruyi import log
 
+    if ruyi.is_running_as_root() and not ruyi.is_env_var_truthy(
+        ruyi.ENV_FORCE_ALLOW_ROOT
+    ):
+        log.F("refusing to run as super user without explicit consent")
+
+        choices = ", ".join(f"'{x}'" for x in ruyi.TRUTHY_ENV_VAR_VALUES)
+        log.I(
+            f"re-run with environment variable [yellow]{ruyi.ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
+        )
+        sys.exit(1)
+
+    ruyi.init_debug_status()
+
+    if not sys.argv:
+        log.F("no argv?")
+        sys.exit(1)
+
     if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
         # If we're running from a bundle, our bundled libssl may remember a
         # different path for loading certificates than appropriate for the
@@ -17,14 +34,8 @@ if __name__ == "__main__":
 
         del ssl_patch
 
-    from ruyi.cli import init_debug_status, main
+    from ruyi.cli import main
     from ruyi.cli.nuitka import get_nuitka_self_exe
-
-    init_debug_status()
-
-    if not sys.argv:
-        log.F("no argv?")
-        sys.exit(1)
 
     # note down our own executable path, for identity-checking in mux, if not
     # we're not already Nuitka-compiled
