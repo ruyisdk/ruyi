@@ -16,6 +16,8 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    ruyi.init_debug_status()
+
     if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
         # If we're running from a bundle, our bundled libssl may remember a
         # different path for loading certificates than appropriate for the
@@ -28,10 +30,8 @@ if __name__ == "__main__":
 
         del ssl_patch
 
-    from ruyi.cli import init_debug_status, main
+    from ruyi.cli import main
     from ruyi.cli.nuitka import get_nuitka_self_exe
-
-    init_debug_status()
 
     if not sys.argv:
         log.F("no argv?")
