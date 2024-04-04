@@ -294,9 +294,30 @@ class PackageProvisionStrategy(TypedDict):
     flash_fn: Callable[[PartitionMapDecl, PartitionMapDecl], int]
 
 
+def call_subprocess_with_ondemand_elevation(argv: list[str]) -> int:
+    """Executes subprocess.call, asking for sudo if the subprocess fails for
+    whatever reason.
+    """
+
+    log.D(f"about to spawn subprocess: argv={argv}")
+    ret = subprocess.call(argv)
+    if ret == 0:
+        return ret
+
+    log.W(
+        f"The command failed with return code [yellow]{ret}[/], that may or may not be caused by lack of privileges."
+    )
+    if not user_input.ask_for_yesno_confirmation(
+        "Do you want to retry the command with [yellow]sudo[/]?"
+    ):
+        return ret
+
+    log.D(f"about to spawn subprocess with sudo: argv=['sudo'] + {argv}")
+    return subprocess.call(["sudo"] + argv)
+
+
 def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
     argv = [
-        "sudo",
         "dd",
         f"if={infile}",
         f"of={outfile}",
@@ -306,8 +327,7 @@ def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
     log.I(
         f"dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
     )
-    log.D(f"about to call dd with sudo: argv={argv}")
-    retcode = subprocess.call(argv)
+    retcode = call_subprocess_with_ondemand_elevation(argv)
     if retcode == 0:
         log.I(f"successfully flashed [green]{outfile}[/green]")
     else:
@@ -340,10 +360,9 @@ def flash_dd(img_paths: PartitionMapDecl, blkdev_paths: PartitionMapDecl) -> int
 
 
 def _do_fastboot(*args: str) -> int:
-    argv = ["sudo", "fastboot"]
+    argv = ["fastboot"]
     argv.extend(args)
-    log.D(f"about to call fastboot: argv={argv}")
-    return subprocess.call(argv)
+    return call_subprocess_with_ondemand_elevation(argv)
 
 
 def _do_fastboot_flash(part: str, img_path: str) -> int:
