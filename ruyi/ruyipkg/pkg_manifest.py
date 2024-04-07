@@ -368,9 +368,6 @@ def _translate_to_manifest_v1(obj: InputPackageManifestType) -> PackageManifestT
         del result["doc_uri"]
     result["metadata"] = md
 
-    if "kind" not in result:
-        result["kind"] = [k for k in ALL_PACKAGE_KINDS if k in result]
-
     return cast(PackageManifestType, result)
 
 
@@ -383,6 +380,8 @@ class PackageManifest:
         data: InputPackageManifestType,
     ) -> None:
         self._data = _translate_to_manifest_v1(data)
+        if "kind" not in self._data:
+            self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
         self.category = category
         self.name = name
         self.ver = ver
