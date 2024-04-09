@@ -1,8 +1,6 @@
 import os
-import pathlib
 import shutil
 import subprocess
-import tempfile
 from typing import NoReturn
 
 from .. import log
@@ -11,26 +9,6 @@ from .unpack_method import UnpackMethod, UnrecognizedPackFormatError
 
 
 def do_unpack(
-    filename: str,
-    dest: str | None,
-    strip_components: int,
-    unpack_method: UnpackMethod,
-) -> None:
-    if dest is None:
-        return _do_unpack_inner(filename, dest, strip_components, unpack_method)
-
-    # dest is a directory, create a temp directory besides it
-    dest_path = pathlib.Path(dest)
-    dest_parent = dest_path.resolve().parent
-    with tempfile.TemporaryDirectory(
-        prefix=f".{dest_path.name}.tmp",
-        dir=dest_parent,
-    ) as tmpdir_path:
-        _do_unpack_inner(filename, tmpdir_path, strip_components, unpack_method)
-        os.replace(tmpdir_path, dest)
-
-
-def _do_unpack_inner(
     filename: str,
     dest: str | None,
     strip_components: int,
