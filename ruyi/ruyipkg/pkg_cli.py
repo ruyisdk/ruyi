@@ -2,6 +2,7 @@ import argparse
 import os.path
 import pathlib
 import shutil
+import tempfile
 
 from .host import canonicalize_host_str
 
@@ -266,20 +267,50 @@ def do_install_binary_pkg(
     pkg_name = pm.name_for_installation
     install_root = config.global_binary_install_root(canonicalized_host, pkg_name)
     if is_root_likely_populated(install_root):
-        if reinstall:
-            log.W(
-                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-            )
-            shutil.rmtree(install_root)
-            pathlib.Path(install_root).mkdir(parents=True)
-        else:
+        if not reinstall:
             log.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
-    else:
-        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+
+        log.W(
+            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        shutil.rmtree(install_root)
+
+    ir_parent = pathlib.Path(install_root).resolve().parent
+    ir_parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
+        ret = do_install_binary_pkg_to(
+            config,
+            mr,
+            pm,
+            canonicalized_host,
+            fetch_only,
+            tmp_root,
+        )
+        if ret != 0:
+            return ret
+        os.rename(tmp_root, install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
+    return 0
+
+
+def do_install_binary_pkg_to(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    canonicalized_host: str,
+    fetch_only: bool,
+    install_root: str,
+) -> int:
+    bm = pm.binary_metadata
+    assert bm is not None
 
     dfs = pm.distfiles()
 
+    pkg_name = pm.name_for_installation
     distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
     if not distfiles_for_host:
         log.F(
@@ -306,10 +337,6 @@ def do_install_binary_pkg(
         )
         df.unpack(install_root)
 
-    log.I(
-        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
-    )
-
     return 0
 
 
@@ -326,20 +353,47 @@ def do_install_blob_pkg(
     pkg_name = pm.name_for_installation
     install_root = config.global_blob_install_root(pkg_name)
     if is_root_likely_populated(install_root):
-        if reinstall:
-            log.W(
-                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-            )
-            shutil.rmtree(install_root)
-            pathlib.Path(install_root).mkdir(parents=True)
-        else:
+        if not reinstall:
             log.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
-    else:
-        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
+        log.W(
+            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        shutil.rmtree(install_root)
+
+    ir_parent = pathlib.Path(install_root).resolve().parent
+    ir_parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
+        ret = do_install_blob_pkg_to(
+            config,
+            mr,
+            pm,
+            fetch_only,
+            tmp_root,
+        )
+        if ret != 0:
+            return ret
+        os.rename(tmp_root, install_root)
+
+    log.I(
+        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
+    )
+    return 0
+
+
+def do_install_blob_pkg_to(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pm: PackageManifest,
+    fetch_only: bool,
+    install_root: str,
+) -> int:
+    bm = pm.blob_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
     dfs = pm.distfiles()
-
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
         log.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
@@ -363,9 +417,5 @@ def do_install_blob_pkg(
             f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
         df.unpack_or_symlink(install_root)
-
-    log.I(
-        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
-    )
 
     return 0
