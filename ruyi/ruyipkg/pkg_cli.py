@@ -266,17 +266,16 @@ def do_install_binary_pkg(
     pkg_name = pm.name_for_installation
     install_root = config.global_binary_install_root(canonicalized_host, pkg_name)
     if is_root_likely_populated(install_root):
-        if reinstall:
-            log.W(
-                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-            )
-            shutil.rmtree(install_root)
-            pathlib.Path(install_root).mkdir(parents=True)
-        else:
+        if not reinstall:
             log.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
-    else:
-        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+
+        log.W(
+            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        shutil.rmtree(install_root)
+
+    pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
     dfs = pm.distfiles()
 
@@ -326,17 +325,16 @@ def do_install_blob_pkg(
     pkg_name = pm.name_for_installation
     install_root = config.global_blob_install_root(pkg_name)
     if is_root_likely_populated(install_root):
-        if reinstall:
-            log.W(
-                f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
-            )
-            shutil.rmtree(install_root)
-            pathlib.Path(install_root).mkdir(parents=True)
-        else:
+        if not reinstall:
             log.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
-    else:
-        pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
+
+        log.W(
+            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        shutil.rmtree(install_root)
+
+    pathlib.Path(install_root).mkdir(parents=True, exist_ok=True)
 
     dfs = pm.distfiles()
 
