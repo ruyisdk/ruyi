@@ -24,6 +24,7 @@ def do_unpack(
             | UnpackMethod.TAR
             | UnpackMethod.TAR_BZ2
             | UnpackMethod.TAR_GZ
+            | UnpackMethod.TAR_LZ4
             | UnpackMethod.TAR_XZ
             | UnpackMethod.TAR_ZST
         ):
@@ -38,6 +39,9 @@ def do_unpack(
         case UnpackMethod.BZ2:
             # bare bzip2 file
             return do_unpack_bare_bzip2(filename, dest)
+        case UnpackMethod.LZ4:
+            # bare lz4 file
+            return do_unpack_bare_lz4(filename, dest)
         case UnpackMethod.XZ:
             # bare xz file
             return do_unpack_bare_xz(filename, dest)
@@ -107,6 +111,8 @@ def do_unpack_tar(
             argv.append("-z")
         case UnpackMethod.TAR_BZ2:
             argv.append("-j")
+        case UnpackMethod.TAR_LZ4:
+            argv.append("--use-compress-program=lz4")
         case UnpackMethod.TAR_XZ:
             argv.append("-J")
         case UnpackMethod.TAR_ZST:
@@ -178,6 +184,20 @@ def do_unpack_bare_bzip2(
             )
 
 
+def do_unpack_bare_lz4(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    # the suffix may not be ".lz4" so do this generically
+    dest_filename = os.path.splitext(os.path.basename(filename))[0]
+
+    argv = ["lz4", "-dk", filename, f"./{dest_filename}"]
+    log.D(f"about to call lz4: argv={argv}")
+    retcode = subprocess.call(argv, cwd=destdir)
+    if retcode != 0:
+        raise RuntimeError(f"lz4 failed: command {' '.join(argv)} returned {retcode}")
+
+
 def do_unpack_bare_xz(
     filename: str,
     destdir: str | None,
@@ -220,6 +240,8 @@ def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
             return ["gunzip"]
         case UnpackMethod.BZ2:
             return ["bzip2"]
+        case UnpackMethod.LZ4:
+            return ["lz4"]
         case UnpackMethod.XZ:
             return ["xz"]
         case UnpackMethod.ZST:
@@ -230,6 +252,8 @@ def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
             return ["tar", "gunzip"]
         case UnpackMethod.TAR_BZ2:
             return ["tar", "bzip2"]
+        case UnpackMethod.TAR_LZ4:
+            return ["tar", "lz4"]
         case UnpackMethod.TAR_XZ:
             return ["tar", "xz"]
         case UnpackMethod.TAR_ZST:

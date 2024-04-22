@@ -287,8 +287,8 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `auto`：按 `name` 字段所示的文件扩展名，自动处理。如遇到不知道如何处理的扩展名则应当报错。
         - `tar.auto`：视作 tarball，但交由 `tar` 命令检查、处理具体的压缩格式。
         - `raw`：不解包。解包动作等价于复制。
-        - `tar` `tar.gz` `tar.bz2` `tar.xz` `tar.zst`：视作相应压缩算法（或未压缩）的 tarball 处理。
-        - `gz` `bz2` `xz` `zst`：视作相应压缩算法的字节流处理，解包后的文件名为 `name` 所示文件名去除最后一层后缀后的结果。
+        - `tar` `tar.gz` `tar.bz2` `tar.lz4` `tar.xz` `tar.zst`：视作相应压缩算法（或未压缩）的 tarball 处理。
+        - `gz` `bz2` `lz4` `xz` `zst`：视作相应压缩算法的字节流处理，解包后的文件名为 `name` 所示文件名去除最后一层后缀后的结果。
         - `zip` ：视作 Zip 归档文件处理。
 * `binary` 仅在 `kind` 含有 `binary` 时有意义，表示适用于二进制包的额外信息。其类型为列表，每条记录：
     - `host` 代表该条记录所指的二进制包适用的宿主架构与操作系统，格式为 `os/arch` 或 `arch`；当 `os` 部分省略时，视作 `linux`。`arch` 部分的语义与 Python 的 `platform.machine()` 返回值相同。`os` 部分的语义与 Python 的 `sys.platform` 相同，但将 `win32` 变为 `windows`。
