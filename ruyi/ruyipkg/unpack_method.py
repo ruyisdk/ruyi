@@ -1,7 +1,7 @@
 import enum
 import re
 
-RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.xz|\.zst)?$")
+RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.lz4|\.xz|\.zst)?$")
 
 
 class UnpackMethod(enum.StrEnum):
@@ -12,12 +12,14 @@ class UnpackMethod(enum.StrEnum):
     RAW = "raw"
     GZ = "gz"
     BZ2 = "bz2"
+    LZ4 = "lz4"
     XZ = "xz"
     ZST = "zst"
 
     TAR = "tar"
     TAR_GZ = "tar.gz"
     TAR_BZ2 = "tar.bz2"
+    TAR_LZ4 = "tar.lz4"
     TAR_XZ = "tar.xz"
     TAR_ZST = "tar.zst"
 
@@ -46,6 +48,9 @@ def determine_unpack_method(
     if filename_lower.endswith(".bz2"):
         # bare bzip2 file
         return UnpackMethod.BZ2
+    if filename_lower.endswith(".lz4"):
+        # bare lz4 file
+        return UnpackMethod.LZ4
     if filename_lower.endswith(".xz"):
         # bare xz file
         return UnpackMethod.XZ
