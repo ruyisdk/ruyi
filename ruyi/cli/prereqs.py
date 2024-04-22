@@ -35,6 +35,11 @@ def ensure_cmds(*cmds: str) -> None | NoReturn:
     if not _CMD_PRESENCE_MAP:
         init_cmd_presence_map()
 
+    # in case any command's availability is not cached in advance
+    for cmd in cmds:
+        if cmd not in _CMD_PRESENCE_MAP:
+            _CMD_PRESENCE_MAP[cmd] = has_cmd_in_path(cmd)
+
     absent_cmds = sorted(cmd for cmd in cmds if not _CMD_PRESENCE_MAP.get(cmd, False))
     if not absent_cmds:
         return None
