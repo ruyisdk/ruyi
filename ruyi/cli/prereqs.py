@@ -12,6 +12,7 @@ def has_cmd_in_path(cmd: str) -> bool:
 _CMDS = (
     "bzip2",
     "gunzip",
+    "lz4",
     "tar",
     "xz",
     "zstd",
