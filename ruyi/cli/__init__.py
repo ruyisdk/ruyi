@@ -44,6 +44,12 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Print version information",
     )
 
+    root.add_argument(
+        "--porcelain",
+        action="store_true",
+        help="Give the output in a machine-friendly format if applicable",
+    )
+
     sp = root.add_subparsers(
         title="subcommands",
     )
