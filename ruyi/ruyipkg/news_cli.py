@@ -13,7 +13,6 @@ from .repo import MetadataRepo
 
 def print_news_item_titles(
     newsitems: list[NewsItem],
-    rs_store: NewsReadStatusStore,
 ) -> None:
     tbl = Table(box=box.SIMPLE, show_edge=False)
     tbl.add_column("No.")
@@ -21,7 +20,7 @@ def print_news_item_titles(
     tbl.add_column("Title")
 
     for ni in newsitems:
-        unread = ni.id not in rs_store
+        unread = not ni.is_read
         ord = f"[bold green]{ni.ordinal}[/bold green]" if unread else f"{ni.ordinal}"
         id = f"[bold green]{ni.id}[/bold green]" if unread else ni.id
 
@@ -47,16 +46,18 @@ def cli_news_list(args: argparse.Namespace) -> int:
     newsitems = mr.list_newsitems()
     rs_store = config.news_read_status
     rs_store.load()
+    for ni in newsitems:
+        ni.is_read = ni.id in rs_store
 
     if only_unread:
-        newsitems = [ni for ni in newsitems if ni.id not in rs_store]
+        newsitems = [ni for ni in newsitems if not ni.is_read]
 
     log.stdout("[bold green]News items:[/bold green]\n")
     if not newsitems:
         log.stdout("  (no unread item)" if only_unread else "  (no item)")
         return 0
 
-    print_news_item_titles(newsitems, rs_store)
+    print_news_item_titles(newsitems)
 
     return 0
 

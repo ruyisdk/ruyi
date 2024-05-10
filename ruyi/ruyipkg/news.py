@@ -48,7 +48,10 @@ class NewsItem:
     ) -> None:
         self._md = md
         self._post = post
-        self.ordinal = 0  # may be updated later in repo code
+
+        # these fields may be updated later in repo code
+        self.ordinal = 0
+        self.is_read = False
 
     @classmethod
     def new(cls, filename: str, contents: str) -> Self | None:
