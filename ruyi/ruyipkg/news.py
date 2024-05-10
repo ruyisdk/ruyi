@@ -4,6 +4,8 @@ from typing import Any, Self
 
 import frontmatter
 
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
+
 NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*)(\.[0-9A-Za-z_-]+)?\.md$")
 
 
@@ -88,3 +90,23 @@ class NewsItem:
     @property
     def content(self) -> str:
         return self._post.content
+
+    def to_porcelain(self) -> "PorcelainNewsItem":
+        return {
+            "ty": PorcelainEntityType.NewsItemV1,
+            "id": self.id,
+            "ord": self.ordinal,
+            "is_read": self.is_read,
+            "lang": self.lang or "zh_CN",  # TODO: kill after l10n work is complete
+            "display_title": self.display_title,
+            "content": self.content,
+        }
+
+
+class PorcelainNewsItem(PorcelainEntity):
+    id: str
+    ord: int
+    is_read: bool
+    lang: str
+    display_title: str
+    content: str
