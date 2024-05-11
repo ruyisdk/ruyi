@@ -28,6 +28,18 @@ JSON 对象。不保证此 JSON 序列化结果仅包含 ASCII 字符：目前�
 所有的 porcelain 输出对象都有 `ty` 字段，用来指示此对象的类型。目前已定义的类型有以下几种：
 
 ```python
+# ty: "log-v1"
+class PorcelainLog(PorcelainEntity):
+    t: int
+    """Timestamp of the message line in microseconds"""
+
+    lvl: str
+    """Log level of the message line (one of D, F, I, W)"""
+
+    msg: str
+    """Message content"""
+
+
 # ty: "newsitem-v1"
 class PorcelainNewsItem(PorcelainEntity):
     id: str  # 文章的标识符，字符串
@@ -37,6 +49,9 @@ class PorcelainNewsItem(PorcelainEntity):
     display_title: str  # 文章标题
     content: str  # 完整的正文内容，目前保证为 Markdown 格式的字符串
 ```
+
+当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
+每条消息都带时间戳、日志级别，消息正文末尾不会被自动附加 1 个换行（但如果某条日志的末尾碰巧有一个或一些换行，那么这些换行将不会被删除）。
 
 ## 已适配 porcelain 输出模式的命令
 
