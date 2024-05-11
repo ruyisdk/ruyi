@@ -2,7 +2,7 @@ import argparse
 import os
 from typing import Callable, List
 
-from .. import log
+from .. import log, set_porcelain
 from ..mux.runtime import mux_main
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -298,6 +298,7 @@ def main(argv: List[str]) -> int:
 
     p = init_argparse()
     args = p.parse_args(argv[1:])
+    set_porcelain(args.porcelain)
     log.D(f"args={args}")
 
     func: CLIEntrypoint = args.func

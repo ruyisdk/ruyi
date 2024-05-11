@@ -7,7 +7,7 @@ from ..config import GlobalConfig
 from ..config.news import NewsReadStatusStore
 from ..utils.markdown import MarkdownWithSlimHeadings
 from ..utils.porcelain import PorcelainOutput
-from .. import log
+from .. import is_porcelain, log
 from .news import NewsItem
 from .repo import MetadataRepo
 
@@ -53,7 +53,7 @@ def cli_news_list(args: argparse.Namespace) -> int:
     if only_unread:
         newsitems = [ni for ni in newsitems if not ni.is_read]
 
-    if args.porcelain:
+    if is_porcelain():
         with PorcelainOutput() as po:
             for ni in newsitems:
                 po.emit(ni.to_porcelain())

@@ -15,6 +15,7 @@ ENV_FORCE_ALLOW_ROOT = "RUYI_FORCE_ALLOW_ROOT"
 
 
 _is_debug = False
+_is_porcelain = False
 
 
 def set_debug(v: bool) -> None:
@@ -22,8 +23,17 @@ def set_debug(v: bool) -> None:
     _is_debug = v
 
 
+def set_porcelain(v: bool) -> None:
+    global _is_porcelain
+    _is_porcelain = v
+
+
 def is_debug() -> bool:
     return _is_debug
+
+
+def is_porcelain() -> bool:
+    return _is_porcelain
 
 
 def init_debug_status() -> None:
