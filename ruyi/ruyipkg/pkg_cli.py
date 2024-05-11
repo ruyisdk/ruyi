@@ -1,17 +1,19 @@
 import argparse
+from enum import StrEnum
 import os.path
 import pathlib
 import shutil
 import tempfile
+from typing import Iterable, Self
 
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .host import canonicalize_host_str
-
-from .. import log
+from .. import is_porcelain, log
 from ..config import GlobalConfig
 from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
-from .pkg_manifest import PackageManifest
+from .pkg_manifest import PackageManifest, PackageManifestType
 from .unpack import ensure_unpack_cmd_for_method
 
 
@@ -20,60 +22,117 @@ def cli_list(args: argparse.Namespace) -> int:
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(
-        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
+        config.get_repo_dir(),
+        config.get_repo_url(),
+        config.get_repo_branch(),
     )
 
+    augmented_pkgs = list(AugmentedPkgManifest.yield_from_repo(mr))
+
+    if is_porcelain():
+        return do_list_porcelain(augmented_pkgs)
+
     if not verbose:
-        return do_list_non_verbose(mr)
+        return do_list_non_verbose(augmented_pkgs)
 
-    first = True
-    for _, _, pkg_vers in mr.iter_pkgs():
-        for pm in pkg_vers.values():
-            if first:
-                first = False
-            else:
-                log.stdout("\n")
+    for i, ap in enumerate(augmented_pkgs):
+        if i > 0:
+            log.stdout("\n")
 
-            print_pkg_detail(pm)
+        print_pkg_detail(ap.pm)
 
     return 0
 
 
-def do_list_non_verbose(mr: MetadataRepo) -> int:
+class PkgRemark(StrEnum):
+    Latest = "latest"
+    LatestPreRelease = "latest-prerelease"
+    NoBinaryForCurrentHost = "no-binary-for-current-host"
+    PreRelease = "prerelease"
+
+    def as_rich_markup(self) -> str:
+        match self:
+            case self.Latest:
+                return "latest"
+            case self.LatestPreRelease:
+                return "latest-prerelease"
+            case self.NoBinaryForCurrentHost:
+                return "[red]no binary for current host[/red]"
+            case self.PreRelease:
+                return "prerelease"
+        return ""
+
+
+class AugmentedPkgManifest:
+    def __init__(self, pm: PackageManifest, remarks: list[PkgRemark]) -> None:
+        self.pm = pm
+        self.remarks = remarks
+
+    def to_porcelain(self) -> "PorcelainPkgListOutputV1":
+        return {
+            "ty": PorcelainEntityType.PkgListOutputV1,
+            "category": self.pm.category,
+            "name": self.pm.name,
+            "semver": str(self.pm.semver),
+            "pm": self.pm.to_raw(),
+            "remarks": self.remarks,
+        }
+
+    @classmethod
+    def yield_from_repo(cls, mr: MetadataRepo) -> Iterable[Self]:
+        for _, _, pkg_vers in mr.iter_pkgs():
+            semvers = [pm.semver for pm in pkg_vers.values()]
+            semvers.sort(reverse=True)
+            found_latest = False
+            for i, sv in enumerate(semvers):
+                pm = pkg_vers[str(sv)]
+
+                latest = False
+                latest_prerelease = i == 0
+                prerelease = pm.is_prerelease
+                if not found_latest and not prerelease:
+                    latest = True
+                    found_latest = True
+
+                remarks: list[PkgRemark] = []
+                if latest or latest_prerelease or prerelease:
+                    if prerelease:
+                        remarks.append(PkgRemark.PreRelease)
+                    if latest:
+                        remarks.append(PkgRemark.Latest)
+                    if latest_prerelease and not latest:
+                        remarks.append(PkgRemark.LatestPreRelease)
+                if bm := pm.binary_metadata:
+                    if not bm.is_available_for_current_host:
+                        remarks.append(PkgRemark.NoBinaryForCurrentHost)
+
+                yield cls(pm, remarks)
+
+
+def do_list_non_verbose(augmented_pkgs: list[AugmentedPkgManifest]) -> int:
     log.stdout("List of available packages:\n")
 
-    for category, pkg_name, pkg_vers in mr.iter_pkgs():
-        log.stdout(f"* [bold green]{category}/{pkg_name}[/bold green]")
-        semvers = [pm.semver for pm in pkg_vers.values()]
-        semvers.sort(reverse=True)
-        found_latest = False
-        for i, sv in enumerate(semvers):
-            pm = pkg_vers[str(sv)]
+    for ap in augmented_pkgs:
+        log.stdout(f"* [bold green]{ap.pm.category}/{ap.pm.name}[/bold green]")
+        comments_str = f" ({', '.join(r.as_rich_markup() for r in ap.remarks)})"
+        slug_str = f" slug: [yellow]{ap.pm.slug}[/yellow]" if ap.pm.slug else ""
+        log.stdout(f"  - [blue]{ap.pm.semver}[/blue]{comments_str}{slug_str}")
 
-            latest = False
-            latest_prerelease = i == 0
-            prerelease = pm.is_prerelease
-            if not found_latest and not prerelease:
-                latest = True
-                found_latest = True
+    return 0
 
-            comments: list[str] = []
-            if latest or latest_prerelease or prerelease:
-                if prerelease:
-                    comments.append("prerelease")
-                if latest:
-                    comments.append("latest")
-                if latest_prerelease and not latest:
-                    comments.append("latest-prerelease")
-            if bm := pm.binary_metadata:
-                if not bm.is_available_for_current_host:
-                    comments.append("[red]no binary for current host[/red]")
 
-            comments_str = f" ({', '.join(comments)})"
+class PorcelainPkgListOutputV1(PorcelainEntity):
+    category: str
+    name: str
+    semver: str
+    pm: PackageManifestType
+    remarks: list[PkgRemark]
 
-            slug_str = f" slug: [yellow]{pm.slug}[/yellow]" if pm.slug else ""
 
-            log.stdout(f"  - [blue]{sv}[/blue]{comments_str}{slug_str}")
+def do_list_porcelain(augmented_pkgs: list[AugmentedPkgManifest]) -> int:
+    with PorcelainOutput() as po:
+        for ap in augmented_pkgs:
+            po.emit(ap.to_porcelain())
 
     return 0
 
