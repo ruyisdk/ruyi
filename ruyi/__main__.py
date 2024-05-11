@@ -44,14 +44,10 @@ if __name__ == "__main__":
     # work if it's just `ruyi` so we have to check our parent process in that case
     if hasattr(ruyi, "__compiled__"):
         ruyi.IS_PACKAGED = True
-        log.D(
-            f"__file__ = {__file__}, sys.executable = {sys.executable}, __compiled__ = {ruyi.__compiled__}"
-        )
         self_exe = get_nuitka_self_exe()
     else:
         self_exe = __file__
 
-    log.D(f"argv[0] = {sys.argv[0]}, self_exe = {self_exe}")
-    ruyi.record_self_exe(sys.argv[0], self_exe)
+    ruyi.record_self_exe(sys.argv[0], __file__, self_exe)
 
     sys.exit(main(sys.argv))

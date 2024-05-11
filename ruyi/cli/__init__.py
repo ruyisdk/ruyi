@@ -1,8 +1,10 @@
 import argparse
 import os
+import sys
 from typing import Callable, List
 
-from .. import log, set_porcelain
+import ruyi
+from .. import log, set_porcelain, self_exe, main_file
 from ..mux.runtime import mux_main
 
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -299,6 +301,15 @@ def main(argv: List[str]) -> int:
     p = init_argparse()
     args = p.parse_args(argv[1:])
     set_porcelain(args.porcelain)
+
+    nuitka_info = "not compiled"
+    if hasattr(ruyi, "__compiled__"):
+        nuitka_info = f"__compiled__ = {ruyi.__compiled__}"
+
+    log.D(
+        f"__main__.__file__ = {main_file()}, sys.executable = {sys.executable}, {nuitka_info}"
+    )
+    log.D(f"argv[0] = {argv[0]}, self_exe = {self_exe()}")
     log.D(f"args={args}")
 
     func: CLIEntrypoint = args.func

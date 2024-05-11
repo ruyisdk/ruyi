@@ -6,6 +6,10 @@ import semver
 
 from .. import log
 
+# NOTE: one cannot print logs in the version helpers, because the version info
+# is initialized so early (before argparse can look at argv because --version
+# requires version info to be ready) that the porcelain status is not yet
+# available.
 
 PYPI_PRERELEASE_KINDS_MAP = {
     "a": "alpha",
@@ -16,7 +20,6 @@ PYPI_PRERELEASE_KINDS_MAP = {
 
 # based on https://python-semver.readthedocs.io/en/3.0.2/advanced/convert-pypi-to-semver.html
 def convert2semver(ver: packaging.version.Version) -> semver.Version:
-    log.D(f"epoch {ver.epoch} pre {ver.pre} post {ver.post}")
     if ver.epoch:
         raise ValueError("Can't convert an epoch to semver")
     if ver.post:
@@ -33,7 +36,7 @@ def convert2semver(ver: packaging.version.Version) -> semver.Version:
 
 def init_pkg_semver() -> semver.Version:
     pkg_pypi_ver = packaging.version.Version(importlib.metadata.version("ruyi"))
-    log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
+    # log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
     return convert2semver(pkg_pypi_ver)
 
 
