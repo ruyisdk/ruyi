@@ -9,6 +9,7 @@ from typing import BinaryIO, Self, TypedDict
 class PorcelainEntityType(StrEnum):
     LogV1 = "log-v1"
     NewsItemV1 = "newsitem-v1"
+    PkgListOutputV1 = "pkglistoutput-v1"
 
 
 class PorcelainEntity(TypedDict):

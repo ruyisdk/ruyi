@@ -48,12 +48,36 @@ class PorcelainNewsItem(PorcelainEntity):
     lang: str  # 语言代码，如 en / zh_CN
     display_title: str  # 文章标题
     content: str  # 完整的正文内容，目前保证为 Markdown 格式的字符串
+
+
+# ty: "pkglistoutput-v1"
+class PorcelainPkgListOutputV1(PorcelainEntity):
+    category: str
+    name: str
+    semver: str
+    pm: PackageManifestType
+    remarks: list[PkgRemark]
 ```
 
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
 每条消息都带时间戳、日志级别，消息正文末尾不会被自动附加 1 个换行（但如果某条日志的末尾碰巧有一个或一些换行，那么这些换行将不会被删除）。
 
 ## 已适配 porcelain 输出模式的命令
+
+### `ruyi list`
+
+调用方式：
+
+```sh
+ruyi --porcelain list
+```
+
+输出格式：
+
+* stdout：一行一个 `pkglistoutput-v1` 类型的对象
+* stderr：无意义
+
+请注意：`-v` 选项在 porcelain 输出模式下会被无视。
 
 ### `ruyi news list`
 

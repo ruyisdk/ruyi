@@ -387,6 +387,9 @@ class PackageManifest:
         self.ver = ver
         self._semver = Version.parse(ver)
 
+    def to_raw(self) -> PackageManifestType:
+        return deepcopy(self._data)
+
     @property
     def semver(self) -> Version:
         return self._semver
