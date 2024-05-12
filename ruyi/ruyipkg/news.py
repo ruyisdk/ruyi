@@ -7,7 +7,7 @@ import frontmatter
 from ..config.news import NewsReadStatusStore
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 
-NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*)(\.[0-9A-Za-z_-]+)?\.md$")
+NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*?)(\.[0-9A-Za-z_-]+)?\.md$")
 
 
 @functools.total_ordering
@@ -38,6 +38,8 @@ def parse_news_filename(filename: str) -> NewsItemNameMetadata | None:
     lang = m.group(2)
     if not lang:
         lang = "zh_CN"  # TODO: kill after l10n work is complete
+    else:
+        lang = lang[1:]  # strip the dot prefix
 
     return NewsItemNameMetadata(id, lang)
 
