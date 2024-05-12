@@ -4,11 +4,10 @@ from rich import box
 from rich.table import Table
 
 from ..config import GlobalConfig
-from ..config.news import NewsReadStatusStore
 from ..utils.markdown import MarkdownWithSlimHeadings
 from ..utils.porcelain import PorcelainOutput
 from .. import is_porcelain, log
-from .news import NewsItem
+from .news import NewsItem, NewsItemContent, NewsItemStore
 from .repo import MetadataRepo
 
 
@@ -28,7 +27,7 @@ def print_news_item_titles(
         tbl.add_row(
             ord,
             id,
-            ni.display_title,
+            ni.get_content_for_lang().display_title,  # TODO: query lang code earlier
         )
 
     log.stdout(tbl)
@@ -39,15 +38,8 @@ def cli_news_list(args: argparse.Namespace) -> int:
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
-
-    newsitems = mr.list_newsitems()
-    rs_store = config.news_read_status
-    rs_store.load()
-    for ni in newsitems:
-        ni.is_read = ni.id in rs_store
-
-    if only_unread:
-        newsitems = [ni for ni in newsitems if not ni.is_read]
+    store = mr.news_store()
+    newsitems = store.list(only_unread)
 
     if is_porcelain():
         with PorcelainOutput() as po:
@@ -71,13 +63,10 @@ def cli_news_read(args: argparse.Namespace) -> int:
 
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
-
-    all_ni = mr.list_newsitems()
-    rs_store = config.news_read_status
-    rs_store.load()
+    store = mr.news_store()
 
     # filter out requested news items
-    items = filter_news_items_by_specs(all_ni, items_strs, rs_store)
+    items = filter_news_items_by_specs(store, items_strs)
     if items is None:
         return 1
 
@@ -85,27 +74,25 @@ def cli_news_read(args: argparse.Namespace) -> int:
     if not quiet:
         if items:
             for ni in items:
-                print_news(ni)
+                print_news(ni.get_content_for_lang())
         else:
             log.stdout("No news to display.")
 
     # record read statuses
-    for ni in items:
-        rs_store.add(ni.id)
-    rs_store.save()
+    store.mark_as_read(*(ni.id for ni in items))
 
     return 0
 
 
 def filter_news_items_by_specs(
-    all_ni: list[NewsItem],
+    store: NewsItemStore,
     specs: list[str],
-    rs_store: NewsReadStatusStore,
 ) -> list[NewsItem] | None:
     if not specs:
         # all unread items
-        return [ni for ni in all_ni if ni.id not in rs_store]
+        return store.list(True)
 
+    all_ni = store.list(False)
     items: list[NewsItem] = []
     ni_by_ord = {ni.ordinal: ni for ni in all_ni}
     ni_by_id = {ni.id: ni for ni in all_ni}
@@ -126,7 +113,7 @@ def filter_news_items_by_specs(
     return items
 
 
-def print_news(ni: NewsItem) -> None:
-    md = MarkdownWithSlimHeadings(ni.content)
+def print_news(nic: NewsItemContent) -> None:
+    md = MarkdownWithSlimHeadings(nic.content)
     log.stdout(md)
     log.stdout("")

@@ -13,7 +13,7 @@ import yaml
 from .. import log
 from ..config import GlobalConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
-from .news import NewsItem
+from .news import NewsItemStore
 from .pkg_manifest import (
     InputPackageManifestType,
     is_prerelease,
@@ -155,7 +155,7 @@ class MetadataRepo:
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
         self._profile_cache: dict[str, ProfileDecl] = {}
-        self._news_cache: list[NewsItem] | None = None
+        self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
 
     def ensure_git_repo(self) -> Repository:
@@ -364,26 +364,19 @@ class MetadataRepo:
         self.ensure_git_repo()
         news_dir = os.path.join(self.root, "news")
 
-        cache: list[NewsItem] = []
+        rs_store = self._gc.news_read_status
+        rs_store.load()
+
+        cache = NewsItemStore(rs_store)
         for f in glob.iglob("*.md", root_dir=news_dir):
             with open(os.path.join(news_dir, f), "r") as fp:
                 contents = fp.read()
-            ni = NewsItem.new(f, contents)
-            if ni is None:
-                # malformed file name or content
-                continue
-            cache.append(ni)
+            cache.add(f, contents)  # may fail but failures are harmless
 
-        # sort in intended display order
-        cache.sort()
-
-        # mark the news item instances with ordinals
-        for i, ni in enumerate(cache):
-            ni.ordinal = i + 1
-
+        cache.finalize()
         self._news_cache = cache
 
-    def list_newsitems(self) -> list[NewsItem]:
+    def news_store(self) -> NewsItemStore:
         if self._news_cache is None:
             self.ensure_news_cache()
         assert self._news_cache is not None

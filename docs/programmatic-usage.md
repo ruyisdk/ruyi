@@ -42,16 +42,16 @@ class PorcelainLog(PorcelainEntity):
 
 
 # ty: "newsitem-v1"
-class PorcelainNewsItem(PorcelainEntity):
-    id: str  # 文章的标识符，字符串
-    ord: int  # 文章的序号
-    is_read: bool  # 是否已读
-    lang: str  # 语言代码，如 en / zh_CN
-    display_title: str  # 文章标题
-    content: str  # 完整的正文内容，目前保证为 Markdown 格式的字符串
+# see ruyipkg/news.py
+class PorcelainNewsItemV1(PorcelainEntity):
+    id: str
+    ord: int
+    is_read: bool
+    langs: list[PorcelainNewsItemContentV1]
 
 
 # ty: "pkglistoutput-v1"
+# see ruyipkg/pkg_cli.py
 class PorcelainPkgListOutputV1(PorcelainEntity):
     category: str
     name: str
