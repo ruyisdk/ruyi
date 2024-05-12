@@ -6,7 +6,7 @@ import time
 from typing import Callable, TypedDict
 
 from .. import log
-from ..cli import prereqs, user_input
+from ..cli import user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.host import get_native_host
@@ -23,6 +23,7 @@ from ..ruyipkg.provisioner import (
     ProvisionerConfig,
 )
 from ..ruyipkg.repo import MetadataRepo
+from ..utils import prereqs
 
 
 def cli_device_provision(args: argparse.Namespace) -> int:
@@ -36,11 +37,7 @@ def cli_device_provision(args: argparse.Namespace) -> int:
 def do_provision_interactive() -> int:
     # ensure ruyi repo is present, for good out-of-the-box experience
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
     mr.ensure_git_repo()
 
     dpcfg = mr.get_provisioner_config()

@@ -35,7 +35,7 @@ if __name__ == "__main__":
         del ssl_patch
 
     from ruyi.cli import main
-    from ruyi.cli.nuitka import get_nuitka_self_exe
+    from ruyi.utils.nuitka import get_nuitka_self_exe
 
     # note down our own executable path, for identity-checking in mux, if not
     # we're not already Nuitka-compiled

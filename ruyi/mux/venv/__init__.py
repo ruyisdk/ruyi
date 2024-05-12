@@ -30,11 +30,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         return 1
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
 
     profile = mr.get_profile(profile_name)
     if profile is None:
