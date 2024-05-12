@@ -1,3 +1,4 @@
+import locale
 import os.path
 from os import PathLike
 import pathlib
@@ -21,6 +22,11 @@ def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> st
     if canonicalized_host.startswith("linux/"):
         return canonicalized_host[6:]
     return canonicalized_host.replace("/", "-")
+
+
+def _get_lang_code() -> str:
+    lang = locale.getlocale()[0]
+    return lang or "en_US"
 
 
 class GlobalConfigPackagesType(TypedDict):
@@ -50,6 +56,8 @@ class GlobalConfig:
 
         self._news_read_status_store: NewsReadStatusStore | None = None
 
+        self._lang_code = _get_lang_code()
+
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
@@ -65,6 +73,10 @@ class GlobalConfig:
                         f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
                     )
                     self.override_repo_dir = None
+
+    @property
+    def lang_code(self) -> str:
+        return self._lang_code
 
     @property
     def cache_root(self) -> str:

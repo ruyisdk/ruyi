@@ -1,5 +1,4 @@
 import functools
-import locale
 import re
 from typing import Any, TypedDict
 
@@ -125,12 +124,7 @@ class NewsItem:
     def __delitem__(self, lang: str) -> None:
         del self._content_by_lang[lang]
 
-    def get_content_for_lang(self, lang: str | None = None) -> "NewsItemContent":
-        if lang is None:
-            lang = locale.getlocale()[0]
-        if lang is None:
-            lang = "en_US"
-
+    def get_content_for_lang(self, lang: str) -> "NewsItemContent":
         if lang in self:
             return self[lang]
 

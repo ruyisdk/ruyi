@@ -13,6 +13,7 @@ from .repo import MetadataRepo
 
 def print_news_item_titles(
     newsitems: list[NewsItem],
+    lang: str,
 ) -> None:
     tbl = Table(box=box.SIMPLE, show_edge=False)
     tbl.add_column("No.")
@@ -27,7 +28,7 @@ def print_news_item_titles(
         tbl.add_row(
             ord,
             id,
-            ni.get_content_for_lang().display_title,  # TODO: query lang code earlier
+            ni.get_content_for_lang(lang).display_title,
         )
 
     log.stdout(tbl)
@@ -52,7 +53,7 @@ def cli_news_list(args: argparse.Namespace) -> int:
         log.stdout("  (no unread item)" if only_unread else "  (no item)")
         return 0
 
-    print_news_item_titles(newsitems)
+    print_news_item_titles(newsitems, config.lang_code)
 
     return 0
 
@@ -74,7 +75,7 @@ def cli_news_read(args: argparse.Namespace) -> int:
     if not quiet:
         if items:
             for ni in items:
-                print_news(ni.get_content_for_lang())
+                print_news(ni.get_content_for_lang(config.lang_code))
         else:
             log.stdout("No news to display.")
 
