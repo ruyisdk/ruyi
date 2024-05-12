@@ -6,7 +6,7 @@ import time
 from typing import Callable, TypedDict
 
 from .. import log
-from ..cli import prereqs, user_input
+from ..cli import user_input
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.host import get_native_host
@@ -23,6 +23,7 @@ from ..ruyipkg.provisioner import (
     ProvisionerConfig,
 )
 from ..ruyipkg.repo import MetadataRepo
+from ..utils import prereqs
 
 
 def cli_device_provision(args: argparse.Namespace) -> int:

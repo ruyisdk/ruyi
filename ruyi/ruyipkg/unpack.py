@@ -4,7 +4,7 @@ import subprocess
 from typing import NoReturn
 
 from .. import log
-from ..cli import prereqs
+from ..utils import prereqs
 from .unpack_method import UnpackMethod, UnrecognizedPackFormatError
 
 
