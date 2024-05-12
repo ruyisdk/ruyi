@@ -21,11 +21,7 @@ def cli_list(args: argparse.Namespace) -> int:
     verbose = args.verbose
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
 
     augmented_pkgs = list(AugmentedPkgManifest.yield_from_repo(mr))
 
@@ -186,9 +182,7 @@ def cli_extract(args: argparse.Namespace) -> int:
     log.D(f"about to extract for host {host}: {atom_strs}")
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
-    )
+    mr = MetadataRepo(config)
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -252,11 +246,7 @@ def cli_install(args: argparse.Namespace) -> int:
     reinstall = args.reinstall
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
 
     return do_install_atoms(
         config,

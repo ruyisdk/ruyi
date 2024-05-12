@@ -7,9 +7,7 @@ from .repo import MetadataRepo
 
 def cli_list_profiles(args: argparse.Namespace) -> int:
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(), config.get_repo_url(), config.get_repo_branch()
-    )
+    mr = MetadataRepo(config)
 
     for p in mr.iter_profiles():
         if not p.need_flavor:

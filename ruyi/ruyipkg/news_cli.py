@@ -38,11 +38,7 @@ def cli_news_list(args: argparse.Namespace) -> int:
     only_unread = args.new
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
 
     newsitems = mr.list_newsitems()
     rs_store = config.news_read_status
@@ -74,11 +70,7 @@ def cli_news_read(args: argparse.Namespace) -> int:
     items_strs = args.item
 
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
 
     all_ni = mr.list_newsitems()
     rs_store = config.news_read_status

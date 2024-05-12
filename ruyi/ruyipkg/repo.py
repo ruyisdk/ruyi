@@ -11,6 +11,7 @@ from pygit2.repository import Repository
 import yaml
 
 from .. import log
+from ..config import GlobalConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .news import NewsItem
 from .pkg_manifest import (
@@ -142,10 +143,11 @@ class RepoConfig:
 
 
 class MetadataRepo:
-    def __init__(self, path: str, remote: str, branch: str) -> None:
-        self.root = path
-        self.remote = remote
-        self.branch = branch
+    def __init__(self, gc: GlobalConfig) -> None:
+        self._gc = gc
+        self.root = gc.get_repo_dir()
+        self.remote = gc.get_repo_url()
+        self.branch = gc.get_repo_branch()
         self.repo: Repository | None = None
 
         self._cfg: RepoConfig | None = None

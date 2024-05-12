@@ -37,11 +37,7 @@ def cli_device_provision(args: argparse.Namespace) -> int:
 def do_provision_interactive() -> int:
     # ensure ruyi repo is present, for good out-of-the-box experience
     config = GlobalConfig.load_from_config()
-    mr = MetadataRepo(
-        config.get_repo_dir(),
-        config.get_repo_url(),
-        config.get_repo_branch(),
-    )
+    mr = MetadataRepo(config)
     mr.ensure_git_repo()
 
     dpcfg = mr.get_provisioner_config()
