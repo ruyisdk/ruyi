@@ -484,17 +484,6 @@ docs = ["sphinx"]
 test = ["mypy", "pyaml", "pytest", "toml", "types-PyYAML", "types-toml"]
 
 [[package]]
-name = "pyxdg"
-version = "0.28"
-description = "PyXDG contains implementations of freedesktop.org standards in python."
-optional = false
-python-versions = "*"
-files = [
-    {file = "pyxdg-0.28-py2.py3-none-any.whl", hash = "sha256:bdaf595999a0178ecea4052b7f4195569c1ff4d344567bccdc12dfdf02d545ab"},
-    {file = "pyxdg-0.28.tar.gz", hash = "sha256:3267bb3074e934df202af2ee0868575484108581e6f3cb006af1da35395e88b4"},
-]
-
-[[package]]
 name = "pyyaml"
 version = "6.0.1"
 description = "YAML parser and emitter for Python"
@@ -685,17 +674,6 @@ files = [
 types-cffi = "*"
 
 [[package]]
-name = "types-pyxdg"
-version = "0.28.0.20240106"
-description = "Typing stubs for pyxdg"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types-pyxdg-0.28.0.20240106.tar.gz", hash = "sha256:505fc6386d8c0a5d0a914ceb2b76e8e2dbd0b110212b5b395dbeb1c9483edb88"},
-    {file = "types_pyxdg-0.28.0.20240106-py3-none-any.whl", hash = "sha256:963a82433c04c6d28c71c42b1d8d1ccbe13ccf44ea2bd563b6d72d13a5e252a3"},
-]
-
-[[package]]
 name = "types-pyyaml"
 version = "6.0.12.20240311"
 description = "Typing stubs for PyYAML"
@@ -823,4 +801,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "4699f83d1bb75461d5419937b9bd890fc8fff7867af5ea6ed35b12993421fbee"
+content-hash = "fd55418a5945b1d7dc6f4d15963c19a3661c3f6f3547b3dcb50ff3168d3d922a"
