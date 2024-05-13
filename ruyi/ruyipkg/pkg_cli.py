@@ -1,10 +1,11 @@
 import argparse
 from enum import StrEnum
+from itertools import chain
 import os.path
 import pathlib
 import shutil
 import tempfile
-from typing import Iterable, Self
+from typing import Iterable, Self, TypedDict
 
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .host import canonicalize_host_str
@@ -23,7 +24,7 @@ def cli_list(args: argparse.Namespace) -> int:
     config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
 
-    augmented_pkgs = list(AugmentedPkgManifest.yield_from_repo(mr))
+    augmented_pkgs = list(AugmentedPkg.yield_from_repo(mr))
 
     if is_porcelain():
         return do_list_porcelain(augmented_pkgs)
@@ -31,11 +32,11 @@ def cli_list(args: argparse.Namespace) -> int:
     if not verbose:
         return do_list_non_verbose(augmented_pkgs)
 
-    for i, ap in enumerate(augmented_pkgs):
+    for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
         if i > 0:
             log.stdout("\n")
 
-        print_pkg_detail(ap.pm)
+        print_pkg_detail(ver.pm)
 
     return 0
 
@@ -64,19 +65,37 @@ class AugmentedPkgManifest:
         self.pm = pm
         self.remarks = remarks
 
-    def to_porcelain(self) -> "PorcelainPkgListOutputV1":
+    def to_porcelain(self) -> "PorcelainPkgVersionV1":
         return {
-            "ty": PorcelainEntityType.PkgListOutputV1,
-            "category": self.pm.category,
-            "name": self.pm.name,
             "semver": str(self.pm.semver),
             "pm": self.pm.to_raw(),
             "remarks": self.remarks,
         }
 
+
+class AugmentedPkg:
+    def __init__(self) -> None:
+        self.versions: list[AugmentedPkgManifest] = []
+
+    def add_version(self, v: AugmentedPkgManifest) -> None:
+        if self.versions:
+            if v.pm.category != self.category or v.pm.name != self.name:
+                raise ValueError("cannot add a version of a different pkg")
+        self.versions.append(v)
+
+    @property
+    def category(self) -> str | None:
+        return self.versions[0].pm.category if self.versions else None
+
+    @property
+    def name(self) -> str | None:
+        return self.versions[0].pm.name if self.versions else None
+
     @classmethod
     def yield_from_repo(cls, mr: MetadataRepo) -> Iterable[Self]:
         for _, _, pkg_vers in mr.iter_pkgs():
+            pkg = cls()
+
             semvers = [pm.semver for pm in pkg_vers.values()]
             semvers.sort(reverse=True)
             found_latest = False
@@ -102,30 +121,45 @@ class AugmentedPkgManifest:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
 
-                yield cls(pm, remarks)
+                pkg.add_version(AugmentedPkgManifest(pm, remarks))
+
+            yield pkg
+
+    def to_porcelain(self) -> "PorcelainPkgListOutputV1":
+        return {
+            "ty": PorcelainEntityType.PkgListOutputV1,
+            "category": self.category or "",
+            "name": self.name or "",
+            "vers": [x.to_porcelain() for x in self.versions],
+        }
 
 
-def do_list_non_verbose(augmented_pkgs: list[AugmentedPkgManifest]) -> int:
+def do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
     log.stdout("List of available packages:\n")
 
     for ap in augmented_pkgs:
-        log.stdout(f"* [bold green]{ap.pm.category}/{ap.pm.name}[/bold green]")
-        comments_str = f" ({', '.join(r.as_rich_markup() for r in ap.remarks)})"
-        slug_str = f" slug: [yellow]{ap.pm.slug}[/yellow]" if ap.pm.slug else ""
-        log.stdout(f"  - [blue]{ap.pm.semver}[/blue]{comments_str}{slug_str}")
+        log.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
+        for ver in ap.versions:
+            comments_str = f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
+            slug_str = f" slug: [yellow]{ver.pm.slug}[/yellow]" if ver.pm.slug else ""
+            log.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
 
     return 0
 
 
-class PorcelainPkgListOutputV1(PorcelainEntity):
-    category: str
-    name: str
+class PorcelainPkgVersionV1(TypedDict):
     semver: str
     pm: PackageManifestType
     remarks: list[PkgRemark]
 
 
-def do_list_porcelain(augmented_pkgs: list[AugmentedPkgManifest]) -> int:
+class PorcelainPkgListOutputV1(PorcelainEntity):
+    category: str
+    name: str
+    vers: list[PorcelainPkgVersionV1]
+
+
+def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     with PorcelainOutput() as po:
         for ap in augmented_pkgs:
             po.emit(ap.to_porcelain())

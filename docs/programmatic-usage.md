@@ -55,9 +55,7 @@ class PorcelainNewsItemV1(PorcelainEntity):
 class PorcelainPkgListOutputV1(PorcelainEntity):
     category: str
     name: str
-    semver: str
-    pm: PackageManifestType
-    remarks: list[PkgRemark]
+    vers: list[PorcelainPkgVersionV1]
 ```
 
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
