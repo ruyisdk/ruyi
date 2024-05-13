@@ -16,7 +16,7 @@ import semver
 # it seems force_terminal is needed for colors to show up on GHA
 INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=False)
 
-LGPL_MODULES = ("xdg",)
+LGPL_MODULES = ()
 
 
 def main() -> None:
@@ -49,10 +49,11 @@ def main() -> None:
     ensure_dir(ext_outdir)
     add_pythonpath(ext_outdir)
 
-    # Compile LGPL module(s) into own extensions
-    INFO.print("\nBuilding LGPL extension(s)\n")
-    for name in LGPL_MODULES:
-        make_nuitka_ext(name, ext_outdir)
+    # Compile LGPL module(s) into own extensions, if any
+    if LGPL_MODULES:
+        INFO.print("\nBuilding LGPL extension(s)\n")
+        for name in LGPL_MODULES:
+            make_nuitka_ext(name, ext_outdir)
 
     # Finally the main program
     INFO.print("\nBuilding Ruyi executable\n")

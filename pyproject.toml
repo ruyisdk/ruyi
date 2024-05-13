@@ -42,7 +42,6 @@ safe_licenses = [
   "Apache Software License",
   "BSD License",
   "GPLv2 with linking exception",
-  "GNU Lesser General Public License v2 (LGPLv2)", # needs dist script cooperation
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
 ]
@@ -56,7 +55,6 @@ jinja2 = "^3"
 packaging = "^24.0"
 pygit2 = "^1.14.0"
 python-frontmatter = "^1.0.1"
-pyxdg = "^0.28"
 pyyaml = "^6.0.1"
 requests = "^2"
 rich = "^13.5"
@@ -65,7 +63,6 @@ tomlkit = "^0.12.4"
 
 types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"
-types-pyxdg = "^0.28.0.20240106"
 types-PyYAML = "^6.0.12.20240311"
 types-requests = "^2.31.0.20240311"
 

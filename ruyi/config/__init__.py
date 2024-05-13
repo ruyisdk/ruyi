@@ -5,12 +5,11 @@ import pathlib
 import tomllib
 from typing import Any, Iterable, NotRequired, Self, TypedDict
 
-from xdg import BaseDirectory
-
 from .. import log, argv0
+from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 
-
+DEFAULT_APP_NAME = "ruyi"
 DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
 
@@ -45,8 +44,6 @@ class GlobalConfigRootType(TypedDict):
 
 
 class GlobalConfig:
-    resource_name = "ruyi"
-
     def __init__(self) -> None:
         # all defaults
         self.override_repo_dir: str | None = None
@@ -57,6 +54,8 @@ class GlobalConfig:
         self._news_read_status_store: NewsReadStatusStore | None = None
 
         self._lang_code = _get_lang_code()
+
+        self._dirs = XDGBaseDir(DEFAULT_APP_NAME)
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
@@ -79,16 +78,16 @@ class GlobalConfig:
         return self._lang_code
 
     @property
-    def cache_root(self) -> str:
-        return os.path.join(BaseDirectory.xdg_cache_home, self.resource_name)
+    def cache_root(self) -> os.PathLike[Any]:
+        return self._dirs.app_cache
 
     @property
-    def data_root(self) -> str:
-        return os.path.join(BaseDirectory.xdg_data_home, self.resource_name)
+    def data_root(self) -> os.PathLike[Any]:
+        return self._dirs.app_data
 
     @property
-    def state_root(self) -> str:
-        return os.path.join(BaseDirectory.xdg_state_home, self.resource_name)
+    def state_root(self) -> os.PathLike[Any]:
+        return self._dirs.app_state
 
     @property
     def news_read_status(self) -> NewsReadStatusStore:
@@ -124,52 +123,46 @@ class GlobalConfig:
 
     def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike[Any] | None:
         host_path = get_host_path_fragment_for_binary_install_dir(host)
-        for data_dir in BaseDirectory.load_data_paths(self.resource_name):
-            p = pathlib.Path(data_dir) / "binaries" / host_path / slug
+        for data_dir in self._dirs.data_dirs:
+            p = data_dir / "binaries" / host_path / slug
             if p.exists():
                 return p
         return None
 
-    @classmethod
-    def ensure_data_dir(cls) -> str:
-        return BaseDirectory.save_data_path(cls.resource_name)
+    def ensure_data_dir(self) -> os.PathLike[Any]:
+        p = self._dirs.app_data
+        p.mkdir(parents=True, exist_ok=True)
+        return p
 
-    @classmethod
-    def ensure_config_dir(cls) -> str:
-        return BaseDirectory.save_config_path(cls.resource_name)
+    def ensure_cache_dir(self) -> os.PathLike[Any]:
+        p = self._dirs.app_cache
+        p.mkdir(parents=True, exist_ok=True)
+        return p
 
-    @classmethod
-    def ensure_cache_dir(cls) -> str:
-        return BaseDirectory.save_cache_path(cls.resource_name)
+    def ensure_config_dir(self) -> os.PathLike[Any]:
+        p = self._dirs.app_config
+        p.mkdir(parents=True, exist_ok=True)
+        return p
 
-    @classmethod
-    def ensure_state_dir(cls) -> str:
-        return BaseDirectory.save_state_path(cls.resource_name)
+    def ensure_state_dir(self) -> os.PathLike[Any]:
+        p = self._dirs.app_state
+        p.mkdir(parents=True, exist_ok=True)
+        return p
 
-    @classmethod
-    def get_config_file(cls) -> str | None:
-        # TODO: maybe allow customization of config root
-        config_dir = BaseDirectory.load_first_config(cls.resource_name)
-        if config_dir is None:
-            return None
-        return os.path.join(config_dir, "config.toml")
-
-    @classmethod
-    def iter_xdg_configs(cls) -> Iterable[os.PathLike[Any]]:
+    def iter_xdg_configs(self) -> Iterable[os.PathLike[Any]]:
         """
         Yields possible Ruyi config files in all XDG config paths, sorted by precedence
         from lowest to highest (so that each file may be simply applied consecutively).
         """
 
-        all_config_dirs = list(BaseDirectory.load_config_paths(cls.resource_name))
-        for config_dir in reversed(all_config_dirs):
-            yield pathlib.Path(config_dir) / "config.toml"
+        for config_dir in reversed(list(self._dirs.app_config_dirs)):
+            yield config_dir / "config.toml"
 
     @classmethod
     def load_from_config(cls) -> Self:
         obj = cls()
 
-        for config_path in cls.iter_xdg_configs():
+        for config_path in obj.iter_xdg_configs():
             log.D(f"trying config file: {config_path}")
             try:
                 with open(config_path, "rb") as fp:
