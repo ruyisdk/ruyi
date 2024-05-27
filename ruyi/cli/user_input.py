@@ -8,7 +8,8 @@ def ask_for_yesno_confirmation(prompt: str, default: bool = False) -> bool:
 
     while True:
         try:
-            user_input = input(f"{prompt} {choices_help} ")
+            log.stdout(f"{prompt} {choices_help} ", end='')
+            user_input = input()
         except EOFError:
             yesno = "YES" if default else "NO"
             log.W(f"EOF while reading user input, assuming the default choice {yesno}")
