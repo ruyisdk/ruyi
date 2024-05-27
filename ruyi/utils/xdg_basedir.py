@@ -69,10 +69,12 @@ class XDGBaseDir:
     def app_config_dirs(self) -> Iterable[pathlib.Path]:
         # from highest precedence to lowest
         yield self.app_config
-        yield from self.config_dirs
+        for p in self.config_dirs:
+            yield p / self.app_name
 
     @property
     def app_data_dirs(self) -> Iterable[pathlib.Path]:
         # from highest precedence to lowest
         yield self.app_data
-        yield from self.data_dirs
+        for p in self.data_dirs:
+            yield p / self.app_name

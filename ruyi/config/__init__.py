@@ -123,7 +123,7 @@ class GlobalConfig:
 
     def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike[Any] | None:
         host_path = get_host_path_fragment_for_binary_install_dir(host)
-        for data_dir in self._dirs.data_dirs:
+        for data_dir in self._dirs.app_data_dirs:
             p = data_dir / "binaries" / host_path / slug
             if p.exists():
                 return p
