@@ -98,7 +98,7 @@ def pull_ff_or_die(
 
     if merge_analysis & (MergeAnalysis.UNBORN | MergeAnalysis.FASTFORWARD):
         # simple fast-forwarding is enough in both cases
-        log.D(f"fast-forwarding repo to {remote_head.hex}")
+        log.D(f"fast-forwarding repo to {remote_head}")
         tgt = repo.get(remote_head)
         assert tgt is not None
         repo.checkout_tree(tgt)
