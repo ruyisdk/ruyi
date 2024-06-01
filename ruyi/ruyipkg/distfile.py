@@ -5,6 +5,7 @@ from .checksum import Checksummer
 from .fetch import BaseFetcher
 from .pkg_manifest import DistfileDecl
 from .unpack import do_unpack, do_unpack_or_symlink
+from .unpack_method import UnpackMethod
 
 
 # https://github.com/ruyisdk/ruyi/issues/46
@@ -35,10 +36,23 @@ class Distfile:
     ) -> None:
         self.urls = urls
         self.dest = dest
-        self.size = decl.size
-        self.csums = decl.checksums
-        self.strip_components = decl.strip_components
-        self.unpack_method = decl.unpack_method
+        self._decl = decl
+
+    @property
+    def size(self) -> int:
+        return self._decl.size
+
+    @property
+    def csums(self) -> dict[str, str]:
+        return self._decl.checksums
+
+    @property
+    def strip_components(self) -> int:
+        return self._decl.strip_components
+
+    @property
+    def unpack_method(self) -> UnpackMethod:
+        return self._decl.unpack_method
 
     def ensure(self) -> None:
         log.D(f"checking {self.dest}")
