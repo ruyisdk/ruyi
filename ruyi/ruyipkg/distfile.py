@@ -4,6 +4,7 @@ from .. import log
 from .checksum import Checksummer
 from .fetch import BaseFetcher
 from .pkg_manifest import DistfileDecl
+from .repo import MetadataRepo
 from .unpack import do_unpack, do_unpack_or_symlink
 from .unpack_method import UnpackMethod
 
@@ -33,10 +34,12 @@ class Distfile:
         urls: list[str],
         dest: str,
         decl: DistfileDecl,
+        mr: MetadataRepo,
     ) -> None:
         self.urls = urls
         self.dest = dest
         self._decl = decl
+        self._mr = mr
 
     @property
     def size(self) -> int:
@@ -53,6 +56,17 @@ class Distfile:
     @property
     def unpack_method(self) -> UnpackMethod:
         return self._decl.unpack_method
+
+    @property
+    def is_fetch_restricted(self) -> bool:
+        return self._decl.is_restricted("fetch")
+
+    def render_fetch_instructions(self, lang_code: str) -> str:
+        fr = self._decl.fetch_restriction
+        if fr is None:
+            return ""
+
+        return self._mr.messages.render_message(fr["msgid"], lang_code, fr["params"])
 
     def ensure(self) -> None:
         log.D(f"checking {self.dest}")
@@ -95,6 +109,18 @@ class Distfile:
             return False
 
     def fetch_and_ensure_integrity(self, *, resume: bool = False) -> None:
+        if self.is_fetch_restricted:
+            # the file must be re-fetched if we arrive here, but we cannot,
+            # because of the fetch restriction.
+            #
+            # notify the user and die
+            # TODO: allow rendering instructions for all missing fetch-restricted
+            # files at once
+            log.F(f"the file [yellow]'{self.dest}'[/] cannot be automatically fetched")
+            log.I("instructions on fetching this file:")
+            log.I(self.render_fetch_instructions(self._mr.global_config.lang_code))
+            raise SystemExit(1)
+
         try:
             return self._fetch_and_ensure_integrity(resume=resume)
         except RuntimeError as e:
