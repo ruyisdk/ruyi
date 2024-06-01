@@ -34,7 +34,7 @@ class XDGBaseDir:
 
     @property
     def state_home(self) -> pathlib.Path:
-        v = os.environ.get("XDG_DATA_HOME", "")
+        v = os.environ.get("XDG_STATE_HOME", "")
         return pathlib.Path(v) if v else pathlib.Path.home() / ".local" / "state"
 
     @property
