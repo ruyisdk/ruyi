@@ -13,6 +13,7 @@ import yaml
 from .. import log
 from ..config import GlobalConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
+from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
     InputPackageManifestType,
@@ -151,6 +152,7 @@ class MetadataRepo:
         self.repo: Repository | None = None
 
         self._cfg: RepoConfig | None = None
+        self._messages: RepoMessageStore | None = None
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
@@ -183,6 +185,10 @@ class MetadataRepo:
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
     @property
+    def global_config(self) -> GlobalConfig:
+        return self._gc
+
+    @property
     def config(self) -> RepoConfig:
         if self._cfg is not None:
             return self._cfg
@@ -200,6 +206,23 @@ class MetadataRepo:
 
         self._cfg = RepoConfig.from_object(obj)
         return self._cfg
+
+    @property
+    def messages(self) -> RepoMessageStore:
+        if self._messages is not None:
+            return self._messages
+
+        self.ensure_git_repo()
+
+        obj: dict[str, object] = {}
+        try:
+            with open(os.path.join(self.root, "messages.toml"), "rb") as fp:
+                obj = tomllib.load(fp)
+        except FileNotFoundError:
+            pass
+
+        self._messages = RepoMessageStore.from_object(obj)
+        return self._messages
 
     def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
         self.ensure_git_repo()

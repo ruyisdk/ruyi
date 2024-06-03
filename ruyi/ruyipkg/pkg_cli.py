@@ -257,7 +257,7 @@ def cli_extract(args: argparse.Namespace) -> int:
             urls = mr.get_distfile_urls(df_decl)
             dest = os.path.join(config.ensure_distfiles_dir(), df_name)
             ensure_unpack_cmd_for_method(df_decl.unpack_method)
-            df = Distfile(urls, dest, df_decl)
+            df = Distfile(urls, dest, df_decl, mr)
             df.ensure()
 
             log.I(
@@ -406,7 +406,7 @@ def do_install_binary_pkg_to(
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_method(df_decl.unpack_method)
-        df = Distfile(urls, dest, df_decl)
+        df = Distfile(urls, dest, df_decl, mr)
         df.ensure()
 
         if fetch_only:
@@ -487,7 +487,7 @@ def do_install_blob_pkg_to(
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_method(df_decl.unpack_method)
-        df = Distfile(urls, dest, df_decl)
+        df = Distfile(urls, dest, df_decl, mr)
         df.ensure()
 
         if fetch_only:

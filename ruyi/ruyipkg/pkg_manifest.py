@@ -18,6 +18,11 @@ class VendorDeclType(TypedDict):
 RestrictKind = Literal["fetch"] | Literal["mirror"]
 
 
+class FetchRestrictionDeclType(TypedDict):
+    msgid: str
+    params: dict[str, str]
+
+
 class DistfileDeclType(TypedDict):
     name: str
     urls: NotRequired[list[str]]
@@ -26,6 +31,7 @@ class DistfileDeclType(TypedDict):
     checksums: dict[str, str]
     strip_components: NotRequired[int]
     unpack: NotRequired[UnpackMethod]
+    fetch_restriction: NotRequired[FetchRestrictionDeclType]
 
 
 class BinaryFileDeclType(TypedDict):
@@ -193,6 +199,10 @@ class DistfileDecl:
         if x == UnpackMethod.AUTO:
             return determine_unpack_method(self.name)
         return x
+
+    @property
+    def fetch_restriction(self) -> FetchRestrictionDeclType | None:
+        return self._data.get("fetch_restriction")
 
 
 class BinaryDecl:
