@@ -9,7 +9,7 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 
 # HTTPS needs ca-certificates to work
-# sed -i 's@http://archive\.ubuntu\.com/@http://mirrors.huaweicloud.com/@g' /etc/apt/sources.list
+sed -i 's@http://ports\.ubuntu\.com/@http://mirrors.tuna.tsinghua.edu.cn/@g' /etc/apt/sources.list
 
 # Non-interactive configuration of tzdata
 debconf-set-selections <<EOF
@@ -45,7 +45,27 @@ package_list=(
 )
 
 apt-get update
-# apt-get upgrade -qqy  # assume the base snapshots are reasonably up-to-date
-apt-get install -y "${package_list[@]}"
+apt-get upgrade -qqy
+apt-get install -qqy "${package_list[@]}"
 
 apt-get clean
+
+# Nuitka now requires final versions of Python, but unfortunately the python3.11
+# in the jammy repo is 3.11.0rc1, so we have to build our own Python for now.
+#
+# See: https://github.com/Nuitka/Nuitka/commit/54f2a2222abedf92d45b8f397233cfb3bef340c5
+
+PYTHON_V=3.11.9
+pushd /tmp
+wget https://www.python.org/ftp/python/${PYTHON_V}/Python-${PYTHON_V}.tar.xz
+mkdir py-src py-build
+tar -xf "Python-${PYTHON_V}.tar.xz" --strip-components=1 -C py-src
+
+pushd py-build
+../py-src/configure --prefix=/usr/local
+make -j
+make install
+popd
+
+rm -rf py-src py-build Python-*.tar.xz
+popd
