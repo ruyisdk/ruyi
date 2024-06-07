@@ -10,6 +10,7 @@ export DEBCONF_NONINTERACTIVE_SEEN=true
 
 # HTTPS needs ca-certificates to work
 sed -i 's@http://archive\.ubuntu\.com/@http://mirrors.huaweicloud.com/@g' /etc/apt/sources.list
+sed -i 's@http://ports\.ubuntu\.com/@http://mirrors.tuna.tsinghua.edu.cn/@g' /etc/apt/sources.list
 
 # Non-interactive configuration of tzdata
 debconf-set-selections <<EOF
