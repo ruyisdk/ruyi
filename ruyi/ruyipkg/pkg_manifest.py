@@ -489,14 +489,16 @@ class PackageManifest:
         return ProvisionableDecl(self._data["provisionable"])
 
 
-RUYI_DATESTAMP_IN_SEMVER_RE = re.compile(r"^ruyi\.\d+$")
+PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|rc)\.\d+$")
 
 
 def is_prerelease(sv: Version) -> bool:
     if sv.prerelease is None:
         return False
 
-    # don't consider "ruyi.*" versions as prerelease
-    # if the prerelease string only contains a "ruyi.\d+" part, then that's
-    # considered as just a datestamp, and not a prerelease in ruyi's interpretation.
-    return RUYI_DATESTAMP_IN_SEMVER_RE.match(sv.prerelease) is None
+    # only consider "(alpha|beta|rc).*" versions as prerelease, to accommodate
+    # various semver "hacks" as incorporated by upstream(s), and ourselves
+    # ("ruyi.YYYYMMDD" are used as ordinary datestamps that affects sorting
+    # order, in contrast to build tags).
+    # see https://github.com/ruyisdk/ruyi/issues/156
+    return PRERELEASE_TAGS_RE.match(sv.prerelease) is not None
