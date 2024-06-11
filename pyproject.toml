@@ -33,10 +33,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 
-[tool.black]
-target-version = ['py311']
-
-
 [tool.mypy]
 files = ["ruyi", "scripts"]
 show_error_codes = true
