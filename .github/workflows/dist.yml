@@ -60,7 +60,7 @@ jobs:
       run_id: ${{ github.run_id }}
       release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
     container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20240328
+      image: ghcr.io/ruyisdk/ruyi-python-dist:20240611
       options: --user root  # https://github.com/actions/checkout/issues/1014
       credentials:
         username: ${{ github.actor }}
@@ -79,7 +79,7 @@ jobs:
         if: success() && !matrix.skip
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r3
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
           path: |
             /ccache
             /poetry-cache
@@ -123,10 +123,10 @@ jobs:
       - uses: actions/setup-python@v5
         if: success() && !matrix.skip
         with:
-          # Nuitka doesn't officially support Python 3.12 yet (see Nuitka doc),
-          # but '>=3.11' resolves to 3.12.
+          # don't let the ">=" directive bump the Python version without letting
+          # us know
           # python-version-file: pyproject.toml
-          python-version: '3.11'
+          python-version: '3.12'
           cache: poetry
 
       - name: Cache/restore Nuitka clcache contents
