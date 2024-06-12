@@ -26,7 +26,7 @@ class Atom(abc.ABC):
         return self._kind
 
     @classmethod
-    def parse(cls, s: str) -> "SlugAtom | NameAtom | ExprAtom | NameAtom":
+    def parse(cls, s: str) -> "SlugAtom | NameAtom | ExprAtom":
         if s.startswith("slug:"):
             return SlugAtom(s)
 
