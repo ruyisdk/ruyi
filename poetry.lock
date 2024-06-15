@@ -725,6 +725,30 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "xingque"
+version = "0.1.0"
+description = "Yet another typed Python binding to starlark-rust"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "xingque-0.1.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:243afc9d93c3b178fd99c87141eddc029ce089d8c9ca872fc5ccb05b85a88231"},
+    {file = "xingque-0.1.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8190daab9eed53e885af07686bab3e51617e3653c42c99a0b3d96b80056036de"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:42eadd80184013e5e69f45d7798bae170edca10231990f6b0b5516c84efddf24"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d7a56fc8214aa53b7fddfacd0c939e25e15cae8a0693ab742f2f72d60764eecd"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5955c1fdc8af42e08ac77b457a85a4ae2d7104f33553aeec6b45796193b1d560"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b145192150f0f4a1918c8deb37c855ee716aff4fd8641a69562a636a487a9a49"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dd3b869f7651592b87f7bf5ef95fd6cadaf61a0866e5bef24be2cc645f6b57de"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:ed383b7074328226e6068dc8c0d5ff68cdf1b356f69ebd41716cc9bfe10b86b7"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2e1dfdf404b4ddfa7c97abb3d15efb03abd9ef18a9305cf0e59baf123715cd28"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:ec112dfd7b9ec3aeb37bc8d2b91949a6fb8e37b0f3d33991600fcea062c2952b"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:2609f2c0993ecf8daa6ed923fb5fa7884b22ed46f771cbc065b2294d3640385a"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:791ed19d260485e33cff038c4d06f027de9e2ef5ad63b55128eb213c9a33ebef"},
+    {file = "xingque-0.1.0-cp38-abi3-win32.whl", hash = "sha256:3cc26acce004421de4fb69c529eb1775b973f0a2c034c36dd3ebf0cdd39faeee"},
+    {file = "xingque-0.1.0-cp38-abi3-win_amd64.whl", hash = "sha256:8040910aaaac618b0d7844125d4cbf4b3f7ab3877b38865399aa73cf0daf3b05"},
+    {file = "xingque-0.1.0.tar.gz", hash = "sha256:bf6bc33c0404a07d5e8370f60e34c2903e0df38b641286439243a662e94e18fa"},
+]
+
+[[package]]
 name = "zstandard"
 version = "0.22.0"
 description = "Zstandard bindings for Python"
@@ -788,4 +812,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "fd55418a5945b1d7dc6f4d15963c19a3661c3f6f3547b3dcb50ff3168d3d922a"
+content-hash = "65751e2144d7c2752fd6c9c37b8540858db60dc9457f62b152ca04cb680f7ef5"
