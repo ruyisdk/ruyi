@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruyi"
-version = "0.13.0-alpha.20240611"
+version = "0.13.0-alpha.20240621"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 # license = { file = "LICENSE-Apache.txt" }
