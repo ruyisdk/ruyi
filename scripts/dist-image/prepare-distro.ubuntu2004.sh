@@ -22,6 +22,6 @@ apt-get update
 apt-get upgrade -qqy
 apt-get install -y software-properties-common build-essential patchelf zlib1g-dev ccache git libgit2-dev
 add-apt-repository ppa:deadsnakes/ppa
-apt-get install -y python3.11-dev python3.11-venv
+apt-get install -y python3.12-dev python3.12-venv
 
 apt-get clean

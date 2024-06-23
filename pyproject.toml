@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruyi"
-version = "0.13.0-alpha.20240607"
+version = "0.13.0-alpha.20240611"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 # license = { file = "LICENSE-Apache.txt" }
@@ -31,10 +31,6 @@ include = ["ruyi/py.typed"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-
-[tool.black]
-target-version = ['py311']
 
 
 [tool.mypy]
