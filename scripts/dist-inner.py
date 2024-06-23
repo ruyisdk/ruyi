@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -22,7 +23,9 @@ LGPL_MODULES = ()
 def main() -> None:
     epoch = int(time.time())
 
+    arch = platform.machine()
     vers = get_versions()
+    INFO.print(f"Target arch              : [cyan]{arch}")
     INFO.print(f"Project Git commit       : [cyan]{vers['git_commit']}")
     INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
     INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
@@ -66,7 +69,7 @@ def main() -> None:
         "--output-dir=/build",
         "--no-deployment-flag=self-execution",
         f"--product-version={vers['nuitka_ver']}",
-        f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}",
+        f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}/{arch}",
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",
