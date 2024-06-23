@@ -14,6 +14,10 @@ def log(s: str, fgcolor: int = 32) -> None:
     print(f"\x1b[1;{fgcolor}m{s}\x1b[m", file=sys.stderr, flush=True)
 
 
+def is_ci_forced_for_all(pr_title: str) -> bool:
+    return "[ci force-all]" in pr_title.lower()
+
+
 class Combo(NamedTuple):
     os: str
     arch: str
@@ -69,16 +73,25 @@ def to_matrix_entry(c: Combo, should_run: bool) -> MatrixEntry:
 
 
 class MatrixFilter:
-    def __init__(self, ref: str, event_name: str, oses: set[str]) -> None:
+    def __init__(
+        self,
+        ref: str,
+        event_name: str,
+        pr_title: str,
+        oses: set[str],
+    ) -> None:
         self.ref = ref
         self.event_name = event_name
+        self.force_all = is_ci_forced_for_all(pr_title)
         self.oses = oses
 
     def should_include(self, c: Combo) -> bool:
         return c.os in self.oses
 
     def should_run(self, c: Combo) -> bool:
-        return c.run_on_pr if self.event_name == "pull_request" else True
+        if self.event_name == "pull_request":
+            return True if self.force_all else c.run_on_pr
+        return True
 
 
 COMBOS: list[Combo] = [
@@ -93,9 +106,11 @@ def main() -> None:
     # https://docs.github.com/en/actions/learn-github-actions/variables
     gh_ref = os.environ["GITHUB_REF"]
     gh_event = os.environ["GITHUB_EVENT_NAME"]
+    pr_title = os.environ.get("RUYI_PR_TITLE", "")
     log(f"GITHUB_REF={gh_ref}")
     log(f"GITHUB_EVENT_NAME={gh_event}")
-    mf = MatrixFilter(gh_ref, gh_event, set(sys.argv[1:]))
+    log(f"RUYI_PR_TITLE='{pr_title}'")
+    mf = MatrixFilter(gh_ref, gh_event, pr_title, set(sys.argv[1:]))
 
     result_includes = [
         to_matrix_entry(c, mf.should_run(c)) for c in COMBOS if mf.should_include(c)

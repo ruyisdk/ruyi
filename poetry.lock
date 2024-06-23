@@ -365,12 +365,12 @@ files = [
 
 [[package]]
 name = "nuitka"
-version = "2.3"
+version = "2.3.9"
 description = "Python compiler with full language support and CPython compatibility"
 optional = false
 python-versions = "*"
 files = [
-    {file = "Nuitka-2.3.tar.gz", hash = "sha256:44f628d8b644e5166e5f47a2ee4aa192ca08f23f7fd784222d59cbf1a99733c1"},
+    {file = "Nuitka-2.3.9.tar.gz", hash = "sha256:7053e7d8954b55486ea22010e7914c89ff5e95f4c48a89fddcdea96832734362"},
 ]
 
 [package.dependencies]
@@ -393,13 +393,13 @@ dev = ["black", "mypy", "pytest"]
 
 [[package]]
 name = "packaging"
-version = "24.0"
+version = "24.1"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
-    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+    {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
+    {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
 ]
 
 [[package]]
@@ -673,13 +673,13 @@ files = [
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20240602"
+version = "2.32.0.20240622"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-requests-2.32.0.20240602.tar.gz", hash = "sha256:3f98d7bbd0dd94ebd10ff43a7fbe20c3b8528acace6d8efafef0b6a184793f06"},
-    {file = "types_requests-2.32.0.20240602-py3-none-any.whl", hash = "sha256:ed3946063ea9fbc6b5fc0c44fa279188bae42d582cb63760be6cb4b9d06c3de8"},
+    {file = "types-requests-2.32.0.20240622.tar.gz", hash = "sha256:ed5e8a412fcc39159d6319385c009d642845f250c63902718f605cd90faade31"},
+    {file = "types_requests-2.32.0.20240622-py3-none-any.whl", hash = "sha256:97bac6b54b5bd4cf91d407e62f0932a74821bc2211f22116d9ee1dd643826caf"},
 ]
 
 [package.dependencies]
@@ -698,24 +698,24 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.12.1"
+version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.12.1-py3-none-any.whl", hash = "sha256:6024b58b69089e5a89c347397254e35f1bf02a907728ec7fee9bf0fe837d203a"},
-    {file = "typing_extensions-4.12.1.tar.gz", hash = "sha256:915f5e35ff76f56588223f15fdd5938f9a1cf9195c0de25130c627e4d597f6d1"},
+    {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
+    {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
 ]
 
 [[package]]
 name = "urllib3"
-version = "2.2.1"
+version = "2.2.2"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "urllib3-2.2.1-py3-none-any.whl", hash = "sha256:450b20ec296a467077128bff42b73080516e71b56ff59a60a02bef2232c4fa9d"},
-    {file = "urllib3-2.2.1.tar.gz", hash = "sha256:d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19"},
+    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
+    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
 ]
 
 [package.extras]
@@ -723,6 +723,30 @@ brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
 h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
+
+[[package]]
+name = "xingque"
+version = "0.1.0"
+description = "Yet another typed Python binding to starlark-rust"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "xingque-0.1.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:243afc9d93c3b178fd99c87141eddc029ce089d8c9ca872fc5ccb05b85a88231"},
+    {file = "xingque-0.1.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8190daab9eed53e885af07686bab3e51617e3653c42c99a0b3d96b80056036de"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:42eadd80184013e5e69f45d7798bae170edca10231990f6b0b5516c84efddf24"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d7a56fc8214aa53b7fddfacd0c939e25e15cae8a0693ab742f2f72d60764eecd"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5955c1fdc8af42e08ac77b457a85a4ae2d7104f33553aeec6b45796193b1d560"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b145192150f0f4a1918c8deb37c855ee716aff4fd8641a69562a636a487a9a49"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dd3b869f7651592b87f7bf5ef95fd6cadaf61a0866e5bef24be2cc645f6b57de"},
+    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:ed383b7074328226e6068dc8c0d5ff68cdf1b356f69ebd41716cc9bfe10b86b7"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2e1dfdf404b4ddfa7c97abb3d15efb03abd9ef18a9305cf0e59baf123715cd28"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:ec112dfd7b9ec3aeb37bc8d2b91949a6fb8e37b0f3d33991600fcea062c2952b"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:2609f2c0993ecf8daa6ed923fb5fa7884b22ed46f771cbc065b2294d3640385a"},
+    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:791ed19d260485e33cff038c4d06f027de9e2ef5ad63b55128eb213c9a33ebef"},
+    {file = "xingque-0.1.0-cp38-abi3-win32.whl", hash = "sha256:3cc26acce004421de4fb69c529eb1775b973f0a2c034c36dd3ebf0cdd39faeee"},
+    {file = "xingque-0.1.0-cp38-abi3-win_amd64.whl", hash = "sha256:8040910aaaac618b0d7844125d4cbf4b3f7ab3877b38865399aa73cf0daf3b05"},
+    {file = "xingque-0.1.0.tar.gz", hash = "sha256:bf6bc33c0404a07d5e8370f60e34c2903e0df38b641286439243a662e94e18fa"},
+]
 
 [[package]]
 name = "zstandard"
@@ -788,4 +812,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "fd55418a5945b1d7dc6f4d15963c19a3661c3f6f3547b3dcb50ff3168d3d922a"
+content-hash = "65751e2144d7c2752fd6c9c37b8540858db60dc9457f62b152ca04cb680f7ef5"

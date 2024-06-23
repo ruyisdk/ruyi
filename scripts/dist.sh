@@ -50,6 +50,7 @@ do_inner() {
     case "$(uname -m)" in
     riscv64)
         ./scripts/build-pygit2.py
+        ./scripts/build-xingque.py
         ;;
     esac
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruyi"
-version = "0.13.0-alpha.20240611"
+version = "0.13.0-alpha.20240621"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 # license = { file = "LICENSE-Apache.txt" }
@@ -69,6 +69,7 @@ requests = "^2"
 rich = "^13.5"
 semver = "^3"
 tomlkit = "^0.12.4"
+xingque = "^0.1.0"
 
 types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"
