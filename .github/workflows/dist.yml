@@ -30,6 +30,8 @@ jobs:
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py linux
+        env:
+          RUYI_PR_TITLE: ${{ github.event.pull_request.title }}
 
   prepare_matrix_windows:
     name: "Prepare the job's matrix (Windows)"
@@ -41,6 +43,8 @@ jobs:
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py windows
+        env:
+          RUYI_PR_TITLE: ${{ github.event.pull_request.title }}
 
   dist:
     needs:
