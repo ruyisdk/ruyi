@@ -489,14 +489,14 @@ class PackageManifest:
         return ProvisionableDecl(self._data["provisionable"])
 
 
-PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|rc)\.\d+$")
+PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|pre|rc)\.\d+$")
 
 
 def is_prerelease(sv: Version) -> bool:
     if sv.prerelease is None:
         return False
 
-    # only consider "(alpha|beta|rc).*" versions as prerelease, to accommodate
+    # only consider "(alpha|beta|pre|rc).*" versions as prerelease, to accommodate
     # various semver "hacks" as incorporated by upstream(s), and ourselves
     # ("ruyi.YYYYMMDD" are used as ordinary datestamps that affects sorting
     # order, in contrast to build tags).
