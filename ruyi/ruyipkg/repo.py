@@ -2,6 +2,7 @@ import glob
 import itertools
 import json
 import os.path
+import pathlib
 import tomllib
 from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
 from urllib import parse
@@ -12,6 +13,7 @@ import yaml
 
 from .. import log
 from ..config import GlobalConfig
+from ..pluginhost import PluginHostContext
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .msg import RepoMessageStore
 from .news import NewsItemStore
@@ -159,6 +161,14 @@ class MetadataRepo:
         self._profile_cache: dict[str, ProfileDecl] = {}
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
+        self._plugin_host_ctx = PluginHostContext(self.plugin_root)
+
+    @property
+    def plugin_root(self) -> pathlib.Path:
+        return pathlib.Path(self.root) / "plugins"
+
+    def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
+        return self._plugin_host_ctx.get_from_plugin(plugin_id, key)
 
     def ensure_git_repo(self) -> Repository:
         if self.repo is not None:
