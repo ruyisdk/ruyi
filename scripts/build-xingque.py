@@ -13,11 +13,6 @@ def get_xingque_src_uri(tag: str) -> tuple[str, str]:
     return (filename, f"https://github.com/xen0n/xingque/archive/refs/tags/{filename}")
 
 
-def build_env_tool(name: str) -> str:
-    # TODO: allow overriding
-    return os.path.join("/home/b/poetry-venv/bin", name)
-
-
 def log(s: str, fgcolor: int = 32, group: bool = False) -> None:
     # we cannot import rich because this script is executed before
     # `poetry install` in the dist build process
@@ -120,7 +115,7 @@ def build_xingque(xingque_ver: str, workdir: str) -> str:
     # build wheel
     log("building xingque wheel", group=True)
     subprocess.run(
-        (build_env_tool("maturin"), "build", "--release"),
+        ("maturin", "build", "--release"),
         cwd=xingque_workdir,
         check=True,
     )
@@ -130,7 +125,7 @@ def build_xingque(xingque_ver: str, workdir: str) -> str:
         find_built_wheel_name_in(maturin_out_path),
     )
     subprocess.run(
-        (build_env_tool("auditwheel"), "repair", tmp_wheel_path),
+        ("auditwheel", "repair", tmp_wheel_path),
         cwd=xingque_workdir,
         check=True,
     )
