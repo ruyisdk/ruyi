@@ -2,7 +2,7 @@ import abc
 import re
 from typing import Literal, Tuple
 
-from .pkg_manifest import PackageManifest
+from .pkg_manifest import PackageManifest, is_prerelease
 from .repo import MetadataRepo
 
 
@@ -108,7 +108,7 @@ class ExprAtom(Atom):
 
         semvers = [pm.semver for pm in matching_pms.values()]
         if not include_prerelease_vers:
-            semvers = [sv for sv in semvers if sv.prerelease is None]
+            semvers = [sv for sv in semvers if not is_prerelease(sv)]
         if not semvers:
             return None
         latest_ver = max(semvers)
@@ -126,6 +126,6 @@ class SlugAtom(Atom):
         include_prerelease_vers: bool,
     ) -> PackageManifest | None:
         pm = repo.get_pkg_by_slug(self.slug)
-        if pm and pm.semver.prerelease:
+        if pm and is_prerelease(pm.semver):
             return pm if include_prerelease_vers else None
         return pm
