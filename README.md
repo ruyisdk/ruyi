@@ -11,10 +11,12 @@
 
 ## Installation and usage
 
-You can get pre-built binaries of `ruyi` from [the RuyiSDK mirror][mirror-testing]
-for easier testing. Rename the downloaded file to `ruyi`, make it executable,
+You can get pre-built binaries of `ruyi` from [GitHub Releases][ghr] or
+[the RuyiSDK mirror][mirror-testing] for easier testing.
+Rename the downloaded file to `ruyi`, make it executable,
 put inside your `$PATH` and you're ready to go.
 
+[ghr]: https://github.com/ruyisdk/ruyi/releases
 [mirror-testing]: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/
 
 You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
