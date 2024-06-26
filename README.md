@@ -4,6 +4,11 @@
 <p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
 </div>
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/dist.yml)
+![GitHub License](https://img.shields.io/github/license/ruyisdk/ruyi)
+![Python Version](https://img.shields.io/badge/python-%3E%3D3.11-blue)
+![GitHub Tag](https://img.shields.io/github/v/tag/ruyisdk/ruyi?label=latest%20tag)
+
 ## Installation and usage
 
 You can get pre-built binaries of `ruyi` from [the RuyiSDK mirror][mirror-testing]
