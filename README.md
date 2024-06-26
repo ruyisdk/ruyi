@@ -4,12 +4,19 @@
 <p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
 </div>
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/dist.yml)
+![GitHub License](https://img.shields.io/github/license/ruyisdk/ruyi)
+![Python Version](https://img.shields.io/badge/python-%3E%3D3.11-blue)
+![GitHub Tag](https://img.shields.io/github/v/tag/ruyisdk/ruyi?label=latest%20tag)
+
 ## Installation and usage
 
-You can get pre-built binaries of `ruyi` from [the RuyiSDK mirror][mirror-testing]
-for easier testing. Rename the downloaded file to `ruyi`, make it executable,
+You can get pre-built binaries of `ruyi` from [GitHub Releases][ghr] or
+[the RuyiSDK mirror][mirror-testing] for easier testing.
+Rename the downloaded file to `ruyi`, make it executable,
 put inside your `$PATH` and you're ready to go.
 
+[ghr]: https://github.com/ruyisdk/ruyi/releases
 [mirror-testing]: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/
 
 You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
