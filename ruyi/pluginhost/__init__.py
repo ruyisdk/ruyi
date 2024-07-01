@@ -14,6 +14,8 @@ class PluginHostContext:
         self._module_cache: dict[str, xingque.FrozenModule] = {}
         # plugin id: frozen plugin module
         self._loaded_plugins: dict[str, xingque.FrozenModule] = {}
+        # plugin id: {key: value}
+        self._value_cache: dict[str, dict[str, object]] = {}
 
     def load_plugin(self, plugin_id: str) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
@@ -33,7 +35,15 @@ class PluginHostContext:
         if not self.is_plugin_loaded(plugin_id):
             self.load_plugin(plugin_id)
 
-        return self._loaded_plugins[plugin_id].get_option(key)
+        if plugin_id not in self._value_cache:
+            self._value_cache[plugin_id] = {}
+
+        try:
+            return self._value_cache[plugin_id][key]
+        except KeyError:
+            v = self._loaded_plugins[plugin_id].get_option(key)
+            self._value_cache[plugin_id][key] = v
+            return v
 
 
 class Loader:
