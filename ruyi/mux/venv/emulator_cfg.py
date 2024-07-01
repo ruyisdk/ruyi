@@ -2,7 +2,7 @@ import os
 from typing import Any, Self
 
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
-from ...ruyipkg.profile import ProfileDecl
+from ...ruyipkg.profile import ProfileProxy
 
 
 class ResolvedEmulatorProg:
@@ -21,7 +21,7 @@ class ResolvedEmulatorProg:
         cls,
         prog: EmulatorProgDecl,
         prog_install_root: os.PathLike[Any],
-        profile: ProfileDecl,
+        profile: ProfileProxy,
         sysroot: os.PathLike[Any] | None,
     ) -> Self:
         return cls(

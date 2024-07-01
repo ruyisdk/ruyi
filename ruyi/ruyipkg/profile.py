@@ -1,94 +1,181 @@
-import abc
 from os import PathLike
-from typing import Any, Callable, Iterable, NotRequired, TypedDict
+from typing import Any, Iterable, TypeGuard, cast
+
+import xingque
+
+from ..pluginhost import PluginHostContext
 
 from .pkg_manifest import EmulatorFlavor
 
 
-class ProfileDeclType(TypedDict):
-    name: str
-    doc_uri: NotRequired[str]
-    need_flavor: NotRequired[list[str]]
-    # can contain arch-specific free-form str -> str mappings
+class InvalidProfilePluginError(RuntimeError):
+    def __init__(self, s: str) -> None:
+        super().__init__(f"invalid arch profile plugin: {s}")
 
 
-class ArchProfilesDeclType(TypedDict):
-    arch: str
-    # rest are arch-specific free-form KVs
+def validate_list_str(x: object) -> TypeGuard[list[str]]:
+    if not isinstance(x, list):
+        return False
+    x = cast(list[object], x)
+    return all(isinstance(y, str) for y in x)
 
 
-class ProfileDecl:
-    def __init__(self, arch: str, decl: ProfileDeclType) -> None:
-        self.arch = arch
-        self.name = decl["name"]
-        self.need_flavor: set[str] = set()
-        self.doc_uri = decl.get("doc_uri")
-        if "need_flavor" in decl:
-            self.need_flavor = set(decl["need_flavor"])
+def validate_list_str_or_none(x: object) -> TypeGuard[list[str] | None]:
+    return True if x is None else validate_list_str(x)
 
-    @abc.abstractmethod
+
+def validate_dict_str_str(x: object) -> TypeGuard[dict[str, str]]:
+    if not isinstance(x, dict):
+        return False
+    for k, v in cast(dict[object, object], x).items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            return False
+    return True
+
+
+class PluginProfileProvider:
+    def __init__(self, phctx: PluginHostContext, plugin_id: str) -> None:
+        self._phctx = phctx
+        self._plugin_id = plugin_id
+        self._ev = xingque.Evaluator()
+
+    def _must_get(self, name: str) -> object:
+        if v := self._phctx.get_from_plugin(self._plugin_id, name):
+            return v
+        raise InvalidProfilePluginError(
+            f"'{name}' not found in plugin '{self._plugin_id}'"
+        )
+
+    def list_all_profile_ids(self) -> list[str]:
+        fn = self._must_get("list_all_profile_ids_v1")
+        ret = self._ev.eval_function(fn)
+        if not validate_list_str(ret):
+            raise InvalidProfilePluginError(
+                "list_all_profile_ids must return list[str]"
+            )
+
+        return ret
+
+    def list_needed_flavors(self, profile_id: str) -> list[str] | None:
+        fn = self._must_get("list_needed_flavors_v1")
+        ret = self._ev.eval_function(fn, profile_id)
+        if not validate_list_str_or_none(ret):
+            raise InvalidProfilePluginError(
+                "list_needed_flavors_v1 must return list[str] | None"
+            )
+
+        return ret
+
+    def get_common_flags(self, profile_id: str) -> str:
+        fn = self._must_get("get_common_flags_v1")
+        ret = self._ev.eval_function(fn, profile_id)
+        if not isinstance(ret, str):
+            raise InvalidProfilePluginError("get_common_flags_v1 must return str")
+
+        return ret
+
+    def get_needed_emulator_pkg_flavors(
+        self,
+        profile_id: str,
+        flavor: EmulatorFlavor,
+    ) -> Iterable[str]:
+        fn = self._must_get("get_needed_emulator_pkg_flavors_v1")
+        ret = self._ev.eval_function(
+            fn,
+            profile_id,
+            flavor,
+        )
+        if not validate_list_str(ret):
+            raise InvalidProfilePluginError(
+                "get_needed_emulator_pkg_flavors_v1 must return list[str]"
+            )
+
+        return ret
+
+    def check_emulator_flavor(
+        self,
+        profile_id: str,
+        flavor: EmulatorFlavor,
+        emulator_pkg_flavors: list[str] | None,
+    ) -> bool:
+        fn = self._must_get("check_emulator_flavor_v1")
+        ret = self._ev.eval_function(
+            fn,
+            profile_id,
+            flavor,
+            emulator_pkg_flavors,
+        )
+        if not isinstance(ret, bool):
+            raise InvalidProfilePluginError("check_emulator_flavor_v1 must return bool")
+
+        return ret
+
+    def get_env_config_for_emu_flavor(
+        self,
+        profile_id: str,
+        flavor: EmulatorFlavor,
+        sysroot: PathLike[Any] | None,
+    ) -> dict[str, str] | None:
+        fn = self._must_get("get_env_config_for_emu_flavor_v1")
+        ret = self._ev.eval_function(
+            fn,
+            profile_id,
+            flavor,
+            str(sysroot) if sysroot is not None else None,
+        )
+        if not validate_dict_str_str(ret):
+            raise InvalidProfilePluginError(
+                "get_env_config_for_emu_flavor_v1 must return dict[str, str]"
+            )
+
+        return ret
+
+
+class ProfileProxy:
+    def __init__(
+        self,
+        provider: PluginProfileProvider,
+        arch: str,
+        profile_id: str,
+    ) -> None:
+        self._provider = provider
+        self._arch = arch
+        self._id = profile_id
+
+    @property
+    def arch(self) -> str:
+        return self._arch
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def need_flavor(self) -> set[str]:
+        r = self._provider.list_needed_flavors(self._id)
+        return set(r) if r else set()
+
     def get_common_flags(self) -> str:
-        return ""
+        return self._provider.get_common_flags(self._id)
 
-    @abc.abstractmethod
     def get_needed_emulator_pkg_flavors(
         self,
         flavor: EmulatorFlavor,
     ) -> set[str]:
-        raise NotImplementedError
+        return set(self._provider.get_needed_emulator_pkg_flavors(self._id, flavor))
 
-    @abc.abstractmethod
     def check_emulator_flavor(
         self,
         flavor: EmulatorFlavor,
         emulator_pkg_flavors: list[str] | None,
     ) -> bool:
-        raise NotImplementedError
+        return self._provider.check_emulator_flavor(
+            self._id, flavor, emulator_pkg_flavors
+        )
 
-    @abc.abstractmethod
     def get_env_config_for_emu_flavor(
         self,
         flavor: EmulatorFlavor,
         sysroot: PathLike[Any] | None,
     ) -> dict[str, str] | None:
-        result: dict[str, str] = {}
-
-        # right now this is the only supported flavor
-        # if flavor == "qemu-linux-user" and sysroot is not None:
-        if sysroot is not None:
-            result["QEMU_LD_PREFIX"] = str(sysroot)
-
-        return result
-
-
-# should have been something like (str, T extends ArchProfilesDeclType) -> Iterable[U extends ProfileDecl]
-# but apparently not supported: https://github.com/python/mypy/issues/7435
-ArchProfileParser = Callable[[str, Any], Iterable[ProfileDecl]]
-
-KNOWN_ARCHES: dict[str, ArchProfileParser] = {}
-
-
-def register_arch_profile_parser(fn: ArchProfileParser, *arches: str) -> None:
-    for a in arches:
-        if a in KNOWN_ARCHES:
-            raise ValueError(
-                f"code bug: arch '{a}' is already registered as {KNOWN_ARCHES[a]}"
-            )
-
-        KNOWN_ARCHES[a] = fn
-
-
-def parse_profiles(data: ArchProfilesDeclType) -> Iterable[ProfileDecl]:
-    arch = data["arch"]
-    try:
-        arch_parser = KNOWN_ARCHES[arch]
-    except KeyError:
-        raise RuntimeError(f"arch '{arch}' is unknown to ruyi")
-
-    return arch_parser(arch, data)
-
-
-# register the built-in arches
-from . import arch  # noqa: E402 # intentionally placed last for the side-effect
-
-del arch
+        return self._provider.get_env_config_for_emu_flavor(self._id, flavor, sysroot)

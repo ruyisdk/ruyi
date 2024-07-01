@@ -2,6 +2,7 @@ import glob
 import itertools
 import json
 import os.path
+import pathlib
 import tomllib
 from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
 from urllib import parse
@@ -12,6 +13,7 @@ import yaml
 
 from .. import log
 from ..config import GlobalConfig
+from ..pluginhost import PluginHostContext
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .msg import RepoMessageStore
 from .news import NewsItemStore
@@ -21,7 +23,7 @@ from .pkg_manifest import (
     DistfileDecl,
     PackageManifest,
 )
-from .profile import ArchProfilesDeclType, ProfileDecl, parse_profiles
+from .profile import PluginProfileProvider, ProfileProxy
 from .provisioner import ProvisionerConfig
 
 
@@ -143,6 +145,36 @@ class RepoConfig:
         return [parse.urljoin(base, path) for base in mirror_urls]
 
 
+class ArchProfileStore:
+    def __init__(self, phctx: PluginHostContext, arch: str) -> None:
+        self._arch = arch
+        plugin_id = f"ruyi-profile-{arch}"
+        self._provider = PluginProfileProvider(phctx, plugin_id)
+        self._init_cache()
+
+    def _init_cache(self) -> None:
+        self._profiles_cache: dict[str, ProfileProxy] = {}
+        for profile_id in self._provider.list_all_profile_ids():
+            self._profiles_cache[profile_id] = ProfileProxy(
+                self._provider, self._arch, profile_id
+            )
+
+    def __contains__(self, profile_id: str) -> bool:
+        return profile_id in self._profiles_cache
+
+    def __getitem__(self, profile_id: str) -> ProfileProxy:
+        try:
+            return self._profiles_cache[profile_id]
+        except KeyError:
+            raise KeyError(f"profile '{profile_id}' is not supported by this arch")
+
+    def get(self, profile_id: str) -> ProfileProxy | None:
+        return self._profiles_cache.get(profile_id)
+
+    def iter_profiles(self) -> Iterable[ProfileProxy]:
+        return self._profiles_cache.values()
+
+
 class MetadataRepo:
     def __init__(self, gc: GlobalConfig) -> None:
         self._gc = gc
@@ -156,9 +188,26 @@ class MetadataRepo:
         self._pkgs: dict[str, dict[str, PackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
         self._slug_cache: dict[str, PackageManifest] = {}
-        self._profile_cache: dict[str, ProfileDecl] = {}
+        self._supported_arches: set[str] | None = None
+        self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
+        self._plugin_host_ctx = PluginHostContext(self.plugin_root)
+
+    @property
+    def plugin_root(self) -> pathlib.Path:
+        return pathlib.Path(self.root) / "plugins"
+
+    def iter_plugin_ids(self) -> Iterable[str]:
+        try:
+            for p in self.plugin_root.iterdir():
+                if p.is_dir():
+                    yield p.name
+        except (FileNotFoundError, NotADirectoryError):
+            pass
+
+    def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
+        return self._plugin_host_ctx.get_from_plugin(plugin_id, key)
 
     def ensure_git_repo(self) -> Repository:
         if self.repo is not None:
@@ -264,33 +313,42 @@ class MetadataRepo:
             with open(os.path.join(category_dir, f), "rb") as fp:
                 yield PackageManifest(category, pkg_name, pkg_ver, json.load(fp))
 
-    def get_profile(self, name: str) -> ProfileDecl | None:
-        if not self._profile_cache:
-            self.ensure_profile_cache()
+    def get_supported_arches(self) -> list[str]:
+        if self._supported_arches is not None:
+            return list(self._supported_arches)
 
-        return self._profile_cache.get(name)
+        res: set[str] = set()
+        for plugin_id in self.iter_plugin_ids():
+            if plugin_id.startswith("ruyi-profile-"):
+                res.add(plugin_id[13:])
+        self._supported_arches = res
+        return list(res)
 
-    def iter_profiles(self) -> Iterable[ProfileDecl]:
-        if not self._profile_cache:
-            self.ensure_profile_cache()
+    def get_profile(self, name: str) -> ProfileProxy | None:
+        # TODO: deprecate this after making sure every call site has gained
+        # arch-awareness
+        for arch in self.get_supported_arches():
+            store = self.ensure_profile_store_for_arch(arch)
+            if p := store.get(name):
+                return p
+        return None
 
-        return self._profile_cache.values()
+    def get_profile_for_arch(self, arch: str, name: str) -> ProfileProxy | None:
+        store = self.ensure_profile_store_for_arch(arch)
+        return store.get(name)
 
-    def ensure_profile_cache(self) -> None:
-        if self._profile_cache:
-            return
+    def iter_profiles_for_arch(self, arch: str) -> Iterable[ProfileProxy]:
+        store = self.ensure_profile_store_for_arch(arch)
+        return store.iter_profiles()
+
+    def ensure_profile_store_for_arch(self, arch: str) -> ArchProfileStore:
+        if arch in self._arch_profile_stores:
+            return self._arch_profile_stores[arch]
 
         self.ensure_git_repo()
-        profiles_dir = os.path.join(self.root, "profiles")
-
-        cache: dict[str, ProfileDecl] = {}
-        for f in glob.iglob("*.json", root_dir=profiles_dir):
-            with open(os.path.join(profiles_dir, f), "rb") as fp:
-                arch_profiles_decl: ArchProfilesDeclType = json.load(fp)
-                for p in parse_profiles(arch_profiles_decl):
-                    cache[p.name] = p
-
-        self._profile_cache = cache
+        store = ArchProfileStore(self._plugin_host_ctx, arch)
+        self._arch_profile_stores[arch] = store
+        return store
 
     def ensure_pkg_cache(self) -> None:
         if self._pkgs:

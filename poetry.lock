@@ -726,26 +726,26 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "xingque"
-version = "0.1.0"
+version = "0.2.0"
 description = "Yet another typed Python binding to starlark-rust"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "xingque-0.1.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:243afc9d93c3b178fd99c87141eddc029ce089d8c9ca872fc5ccb05b85a88231"},
-    {file = "xingque-0.1.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8190daab9eed53e885af07686bab3e51617e3653c42c99a0b3d96b80056036de"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:42eadd80184013e5e69f45d7798bae170edca10231990f6b0b5516c84efddf24"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d7a56fc8214aa53b7fddfacd0c939e25e15cae8a0693ab742f2f72d60764eecd"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5955c1fdc8af42e08ac77b457a85a4ae2d7104f33553aeec6b45796193b1d560"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b145192150f0f4a1918c8deb37c855ee716aff4fd8641a69562a636a487a9a49"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dd3b869f7651592b87f7bf5ef95fd6cadaf61a0866e5bef24be2cc645f6b57de"},
-    {file = "xingque-0.1.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:ed383b7074328226e6068dc8c0d5ff68cdf1b356f69ebd41716cc9bfe10b86b7"},
-    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2e1dfdf404b4ddfa7c97abb3d15efb03abd9ef18a9305cf0e59baf123715cd28"},
-    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:ec112dfd7b9ec3aeb37bc8d2b91949a6fb8e37b0f3d33991600fcea062c2952b"},
-    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:2609f2c0993ecf8daa6ed923fb5fa7884b22ed46f771cbc065b2294d3640385a"},
-    {file = "xingque-0.1.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:791ed19d260485e33cff038c4d06f027de9e2ef5ad63b55128eb213c9a33ebef"},
-    {file = "xingque-0.1.0-cp38-abi3-win32.whl", hash = "sha256:3cc26acce004421de4fb69c529eb1775b973f0a2c034c36dd3ebf0cdd39faeee"},
-    {file = "xingque-0.1.0-cp38-abi3-win_amd64.whl", hash = "sha256:8040910aaaac618b0d7844125d4cbf4b3f7ab3877b38865399aa73cf0daf3b05"},
-    {file = "xingque-0.1.0.tar.gz", hash = "sha256:bf6bc33c0404a07d5e8370f60e34c2903e0df38b641286439243a662e94e18fa"},
+    {file = "xingque-0.2.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:d4fb551b06ab915d3f197e703818e7f7ca05e15629e038e77dfca376804fb4a6"},
+    {file = "xingque-0.2.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:3377090b9ec25e0be194b5cdf93e109e75ae3cd4d5f67e77e6d106ae46494896"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2dd41d688c44f375a10e0d65a7bc4ed168f0ac38679bb1fca3160c4eec5838d7"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0fc678a16a093de5d86d8fca4bbdece7f5c4b46646b79e549ade46c66ae9ebc3"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:6a124ffd5fd1db68db5fbb64138522ebe693e18a3d129d4310a78d7c9fed8e6a"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:447684846442c32e9dadf90b35072b6b3136c7f6151791a4d66fed264f93386a"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3d78a555360c883d340da48cbc264d61afe81c80ca3b6170b8b1e2bdac29d112"},
+    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:1fba58fbd203c98547533ccf593d244f4883c50fb25d6086028ab466857397a1"},
+    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2d3de8be0d002f000ed78c29f45610c5312f2ac106c4a5650223ef121a2b63e3"},
+    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:ae860ce761e2d7b6a54a9946c8fecf48ad652faa8bee44f9fa72918fec3165e4"},
+    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:dc09d6bc3a0cb83cf84dec4f1b5a42466ccceb0302ebbb97d2f97b4bc79d7dd3"},
+    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:489183e366ad32c512b706c05c43017c2057843ac9a005c8537c88acf91d4368"},
+    {file = "xingque-0.2.0-cp38-abi3-win32.whl", hash = "sha256:6d5d4064087701bcc6aa8d88ad019428aab253b143b98f580a25ba4f5a45e33f"},
+    {file = "xingque-0.2.0-cp38-abi3-win_amd64.whl", hash = "sha256:935cca6871aa1a417fda5f8e336e8a7a1a75ea356fa9783fa0fc3df0d561d6f7"},
+    {file = "xingque-0.2.0.tar.gz", hash = "sha256:60b4e58ed0c47dd36c274405a3c6d8629d442e528b8058c08d0ff56cbb2328b6"},
 ]
 
 [[package]]
@@ -812,4 +812,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "65751e2144d7c2752fd6c9c37b8540858db60dc9457f62b152ca04cb680f7ef5"
+content-hash = "00935a3c874d2f2ea183eb4cd66bea1661e24f33e76ecb6587425c31371dc237"

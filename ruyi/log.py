@@ -77,6 +77,7 @@ def D(
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
+    _stack_offset_delta: int = 0,
 ) -> None:
     if not is_debug():
         return
@@ -89,7 +90,7 @@ def D(
         *objects,
         sep=sep,
         end=end,
-        _stack_offset=2,
+        _stack_offset=2 + _stack_offset_delta,
     )
 
 
