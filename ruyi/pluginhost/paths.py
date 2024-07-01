@@ -95,7 +95,7 @@ def resolve_plain_load_path(
     plugin_id: str | None = None,
 ) -> pathlib.Path:
     if originating_file is None and plugin_id is None:
-        raise ValueError("one of originating_file and plugin_id must be specified")
+        raise ValueError("one of originating_file or plugin_id must be specified")
 
     if plugin_id is None:
         assert originating_file is not None
