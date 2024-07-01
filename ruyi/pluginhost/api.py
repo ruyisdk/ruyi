@@ -4,7 +4,7 @@ from typing import Any, Callable
 
 from ruyi import log
 from ruyi.cli.version import RUYI_SEMVER
-from . import resolve_ruyi_load_path
+from .paths import resolve_ruyi_load_path
 
 
 class RuyiHostAPI:
