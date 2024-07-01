@@ -1,7 +1,8 @@
 import pathlib
 import tomllib
-from typing import Callable
+from typing import Any, Callable
 
+from ruyi import log
 from ruyi.cli.version import RUYI_SEMVER
 from . import resolve_ruyi_load_path
 
@@ -16,6 +17,8 @@ class RuyiHostAPI:
         self._plugin_root = plugin_root
         self._this_file = this_file
         self._this_plugin_dir = this_plugin_dir
+
+        self._logger = RuyiPluginLogger()
 
     @property
     def ruyi_version(self) -> str:
@@ -34,6 +37,60 @@ class RuyiHostAPI:
         )
         with open(resolved_path, "rb") as f:
             return tomllib.load(f)
+
+    @property
+    def log(self) -> "RuyiPluginLogger":
+        return self._logger
+
+
+class RuyiPluginLogger:
+    def __init__(self) -> None:
+        pass
+
+    def stdout(
+        self,
+        message: str,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        log.stdout(message, *objects, sep=sep, end=end)
+
+    def D(
+        self,
+        message: str,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        log.D(message, *objects, sep=sep, end=end, _stack_offset_delta=1)
+
+    def W(
+        self,
+        message: str,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        log.W(message, *objects, sep=sep, end=end)
+
+    def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
+        self,
+        message: str,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        log.I(message, *objects, sep=sep, end=end)
+
+    def F(
+        self,
+        message: str,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        log.F(message, *objects, sep=sep, end=end)
 
 
 def _ruyi_plugin_rev(
