@@ -110,7 +110,7 @@ def resolve_plain_load_path(
     if p.is_absolute():
         return plugin_dir / p.relative_to("/")
 
-    resolved = plugin_dir / p
+    resolved = (plugin_dir / p).resolve()
     if not resolved.is_relative_to(plugin_dir):
         raise ValueError("plain load paths are not allowed to cross plugin boundary")
 
