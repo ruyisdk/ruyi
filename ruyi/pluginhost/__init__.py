@@ -105,4 +105,3 @@ class Loader:
         fm = m.freeze()
         self.module_cache[resolved_path_str] = fm
         return fm
-

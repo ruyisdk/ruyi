@@ -13,7 +13,7 @@ from jinja2 import BaseLoader, Environment, TemplateNotFound
 
 from ... import log, self_exe
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
-from ...ruyipkg.profile import ProfileDecl
+from ...ruyipkg.profile import ProfileProxy
 from .data import TEMPLATES
 from .emulator_cfg import ResolvedEmulatorProg
 
@@ -62,7 +62,7 @@ def render_and_write(
 class VenvMaker:
     def __init__(
         self,
-        profile: ProfileDecl,
+        profile: ProfileProxy,
         toolchain_install_root: PathLike[Any],
         target_tuple: str,
         toolchain_flavor: str,
@@ -106,7 +106,7 @@ class VenvMaker:
             )
 
         env_data = {
-            "profile": self.profile.name,
+            "profile": self.profile.id,
             "sysroot": self.sysroot_destdir,
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
