@@ -222,7 +222,7 @@ class VenvMaker:
         initial_cache_data = {
             "target_tuple": self.target_tuple,
             "toolchain_bindir": str(toolchain_bindir),
-            "gcc_install_dir": str(self.gcc_install_dir),
+            "gcc_install_dir": self.gcc_install_dir,
             "profile_common_flags": self.profile.get_common_flags(),
             "qemu_bin": qemu_bin,
             "profile_emu_env": profile_emu_env,
