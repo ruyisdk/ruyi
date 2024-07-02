@@ -489,7 +489,7 @@ class PackageManifest:
         return ProvisionableDecl(self._data["provisionable"])
 
 
-PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|pre|rc)\.\d+$")
+PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|pre|rc)")
 
 
 def is_prerelease(sv: Version) -> bool:
