@@ -7,6 +7,20 @@ import sys
 import tomllib
 from typing import cast
 
+PYGIT2_SETUPTOOLS_PATCH = """
+--- a/build.sh
++++ b/build.sh
+@@ -82,6 +82,8 @@ if [ "$CIBUILDWHEEL" = "1" ]; then
+ else
+     # Create a virtual environment
+     $PYTHON -m venv $PREFIX
++    # install setuptools in the venv for python3.12+
++    $PREFIX/bin/pip install -U setuptools
+     cd ci
+ fi
+ 
+"""
+
 
 def get_pygit2_src_uri(tag: str) -> tuple[str, str]:
     filename = f"{tag}.tar.gz"
@@ -109,6 +123,14 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
     # unpack the source
     log(f"unpacking {pygit2_src_filename}")
     subprocess.run(("tar", "-xf", pygit2_src_filename), cwd=workdir, check=True)
+
+    log("patching pygit2 for Python 3.12+ builds")
+    subprocess.run(
+        ("patch", "-Np1"),
+        cwd=pygit2_workdir,
+        input=PYGIT2_SETUPTOOLS_PATCH.encode("utf-8"),
+        check=True,
+    )
 
     # build wheel
     extra_env = get_pygit2_wheel_build_env(pygit2_workdir)
