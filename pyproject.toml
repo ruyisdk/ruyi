@@ -86,3 +86,6 @@ ruff = "^0.3.4"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
