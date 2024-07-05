@@ -1,11 +1,22 @@
+import mmap
 import os
 import shutil
 import subprocess
-from typing import NoReturn
+from typing import BinaryIO, NoReturn, Protocol
+
+import arpy
 
 from .. import log
 from ..utils import prereqs
-from .unpack_method import UnpackMethod, UnrecognizedPackFormatError
+from .unpack_method import (
+    UnpackMethod,
+    UnrecognizedPackFormatError,
+    determine_unpack_method,
+)
+
+
+class SupportsRead(Protocol):
+    def read(self, n: int = -1, /) -> bytes: ...
 
 
 def do_unpack(
@@ -13,6 +24,7 @@ def do_unpack(
     dest: str | None,
     strip_components: int,
     unpack_method: UnpackMethod,
+    stream: BinaryIO | SupportsRead | None = None,
 ) -> None:
     match unpack_method:
         case UnpackMethod.AUTO:
@@ -28,11 +40,19 @@ def do_unpack(
             | UnpackMethod.TAR_XZ
             | UnpackMethod.TAR_ZST
         ):
-            return do_unpack_tar(filename, dest, strip_components, unpack_method)
+            return do_unpack_tar(
+                filename,
+                dest,
+                strip_components,
+                unpack_method,
+                stream,
+            )
         case UnpackMethod.ZIP:
             # TODO: handle strip_components somehow; the unzip(1) command currently
             # does not have such support.
             return do_unpack_zip(filename, dest)
+        case UnpackMethod.DEB:
+            return do_unpack_deb(filename, dest)
         case UnpackMethod.GZ:
             # bare gzip file
             return do_unpack_bare_gz(filename, dest)
@@ -101,6 +121,7 @@ def do_unpack_tar(
     dest: str | None,
     strip_components: int,
     unpack_method: UnpackMethod,
+    stream: SupportsRead | None,
 ) -> None:
     argv = ["tar", "-x"]
 
@@ -122,11 +143,31 @@ def do_unpack_tar(
                 f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
             )
 
+    stdin: int | None = None
+    if stream is not None:
+        filename = "-"
+        stdin = subprocess.PIPE
+
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
     if dest is not None:
         argv.extend(("-C", dest))
     log.D(f"about to call tar: argv={argv}")
-    retcode = subprocess.call(argv, cwd=dest)
+    p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
+    assert p.stdin is not None
+
+    retcode: int
+    if stream is None:
+        retcode = p.wait()
+    else:
+        bufsize = 4 * mmap.PAGESIZE
+        while True:
+            buf = stream.read(bufsize)
+            if not buf:
+                break
+            p.stdin.write(buf)
+        p.stdin.close()
+        retcode = p.wait()
+
     if retcode != 0:
         raise RuntimeError(f"untar failed: command {' '.join(argv)} returned {retcode}")
 
@@ -232,9 +273,29 @@ def do_unpack_bare_zstd(
         raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
 
 
+def do_unpack_deb(
+    filename: str,
+    destdir: str | None,
+) -> None:
+    with arpy.Archive(filename) as ar:
+        for f in ar.infolist():
+            name = f.name.decode("utf-8")
+            if name.startswith("data.tar"):
+                inner_unpack_method = determine_unpack_method(name)
+                return do_unpack_tar(
+                    name,
+                    destdir,
+                    0,
+                    inner_unpack_method,
+                    ar.open(f),
+                )
+
+    raise RuntimeError(f"file '{filename}' does not appear to be a deb")
+
+
 def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
     match m:
-        case UnpackMethod.UNKNOWN | UnpackMethod.RAW:
+        case UnpackMethod.UNKNOWN | UnpackMethod.RAW | UnpackMethod.DEB:
             return []
         case UnpackMethod.GZ:
             return ["gunzip"]
