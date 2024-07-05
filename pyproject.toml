@@ -79,6 +79,7 @@ types-requests = "^2.31.0.20240311"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
+pytest = "^8.2.2"
 ruff = "^0.3.4"
 
 [tool.poetry.group.dist.dependencies]
