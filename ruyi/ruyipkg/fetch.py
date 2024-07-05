@@ -193,7 +193,7 @@ class PythonRequestsFetcher(BaseFetcher):
 
         open_mode = "ab" if resume else "wb"
         start_from = 0
-        headers = {}
+        headers: dict[str, str] = {}
         if resume:
             filesize = os.stat(dest).st_size
             log.D(f"resuming from position {filesize}")
