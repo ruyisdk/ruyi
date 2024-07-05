@@ -59,6 +59,7 @@ safe_licenses = [
 [tool.poetry.dependencies]
 python = ">=3.11"
 
+arpy = "^2.3.0"
 certifi = "^2024.2"
 jinja2 = "^3"
 packaging = "^24.0"
