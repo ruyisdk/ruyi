@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.mypy]
-files = ["ruyi", "scripts"]
+files = ["ruyi", "scripts", "tests"]
 show_error_codes = true
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
