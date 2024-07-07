@@ -306,6 +306,7 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `tar` `tar.gz` `tar.bz2` `tar.lz4` `tar.xz` `tar.zst`：视作相应压缩算法（或未压缩）的 tarball 处理。
         - `gz` `bz2` `lz4` `xz` `zst`：视作相应压缩算法的字节流处理，解包后的文件名为 `name` 所示文件名去除最后一层后缀后的结果。
         - `zip` ：视作 Zip 归档文件处理。
+        - `deb`：视作 Debian 软件包文件处理。
     - `fetch_restriction` 是可选的该文件所受的下载限制信息，具体来说是一条面向用户的、描述如何手工下载该文件的字符串。其中：
         - `msgid`：该文件的下载步骤说明文案，在 `messages.toml` 中的消息 ID。
         - `params`：键、值类型均为字符串的键值对，是渲染该消息时要传入的参数。

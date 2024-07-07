@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.mypy]
-files = ["ruyi", "scripts"]
+files = ["ruyi", "scripts", "tests"]
 show_error_codes = true
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -59,6 +59,7 @@ safe_licenses = [
 [tool.poetry.dependencies]
 python = ">=3.11"
 
+arpy = "^2.3.0"
 certifi = "^2024.2"
 jinja2 = "^3"
 packaging = "^24.0"
@@ -78,9 +79,13 @@ types-requests = "^2.31.0.20240311"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
+pytest = "^8.2.2"
 ruff = "^0.3.4"
 
 [tool.poetry.group.dist.dependencies]
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

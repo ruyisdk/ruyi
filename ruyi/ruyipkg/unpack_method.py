@@ -24,6 +24,7 @@ class UnpackMethod(enum.StrEnum):
     TAR_ZST = "tar.zst"
 
     ZIP = "zip"
+    DEB = "deb"
 
 
 class UnrecognizedPackFormatError(Exception):
@@ -40,6 +41,8 @@ def determine_unpack_method(
     filename_lower = filename.lower()
     if m := RE_TARBALL.search(filename_lower):
         return UnpackMethod(m.group(0)[1:])
+    if filename_lower.endswith(".deb"):
+        return UnpackMethod.DEB
     if filename_lower.endswith(".zip"):
         return UnpackMethod.ZIP
     if filename_lower.endswith(".gz"):
