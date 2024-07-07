@@ -75,6 +75,13 @@ jobs:
         - tmp-poetry-cache:/poetry-cache
         - tmp-ccache:/ccache
         - tmp-ruyi-dist-cache:/ruyi-dist-cache
+      env:
+        # this has to mirror the setup in scripts/dist.sh
+        BUILD_DIR: /build
+        CCACHE_DIR: /ccache
+        POETRY_CACHE_DIR: /poetry-cache
+        RUYI_DIST_CACHE_DIR: /ruyi-dist-cache
+        RUYI_DIST_INNER_CONTAINERIZED: x
 
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +99,7 @@ jobs:
       - name: Run dist
         if: success() && !matrix.skip
         id: run_dist
-        run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh
+        run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh ${{ matrix.arch }}
 
       - name: Upload artifact
         if: success() && !matrix.skip

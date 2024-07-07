@@ -2,6 +2,11 @@
 
 set -e
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+cd "$REPO_ROOT"
+
+source "${REPO_ROOT}/scripts/_image_tag_base.sh"
+
 green() {
     if [[ $2 == group ]]; then
         if [[ -n $GITHUB_ACTIONS ]]; then
@@ -19,12 +24,22 @@ endgroup() {
 }
 
 do_inner() {
-    export POETRY_CACHE_DIR=/poetry-cache
-    export CCACHE_DIR=/ccache
-    export MAKEFLAGS="-j$(nproc)"
+    local arch="$1"
 
-    cd /home/b
-    . ./venv/bin/activate
+    if [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]]; then
+        cd /home/b
+        . ./venv/bin/activate
+    else
+        # we're running in the host environment
+        local tmp_prefix="$REPO_ROOT/tmp"
+        export BUILD_DIR="$tmp_prefix/build.$arch"
+        export POETRY_CACHE_DIR="$tmp_prefix/poetry-cache.$arch"
+        export CCACHE_DIR="$tmp_prefix/ccache.$arch"
+        export RUYI_DIST_CACHE_DIR="$tmp_prefix/ruyi-dist-cache.$arch"
+        mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
+    fi
+
+    export MAKEFLAGS="-j$(nproc)"
 
     if [[ -n $CI ]]; then
         green "current user info" group
@@ -37,7 +52,7 @@ do_inner() {
         ls -alF ./ruyi
         endgroup
         green "ruyi-dist-cache contents" group
-        ls -alF /ruyi-dist-cache
+        ls -alF "$RUYI_DIST_CACHE_DIR"
         endgroup
 
         if [[ ! -O ./ruyi ]]; then
@@ -46,12 +61,17 @@ do_inner() {
         fi
     fi
 
-    cd ruyi
-    case "$(uname -m)" in
-    riscv64)
-        ./scripts/build-pygit2.py
-        ./scripts/build-xingque.py
-        ;;
+    [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd ruyi
+
+    # build pygit2 and/or xingque if no prebuilt artifact is available on PyPI
+    case "$arch" in
+    amd64|arm64|ppc64el) ;;  # current as of 1.15.1
+    *) ./scripts/build-pygit2.py ;;
+    esac
+
+    case "$arch" in
+    amd64|arm64|armhf|i386|ppc64el|s390x) ;;  # current as of 0.2.0
+    *) ./scripts/build-xingque.py ;;
     esac
 
     green "installing deps" group
@@ -61,51 +81,71 @@ do_inner() {
     exec ./scripts/dist-inner.py
 }
 
-if [[ -n $RUYI_DIST_INNER ]]; then
-    do_inner
-fi
+do_docker_build() {
+    local arch="$1"
+    local goarch="${RUYI_DIST_GOARCH:-$arch}"
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+    local BUILD_DIR="$REPO_ROOT/tmp/build.${arch}"
+    local POETRY_CACHE_DIR="$REPO_ROOT/tmp/poetry-cache.${arch}"
+    local CCACHE_DIR="$REPO_ROOT/tmp/ccache.${arch}"
+    local RUYI_DIST_CACHE_DIR="$REPO_ROOT/tmp/ruyi-dist-cache.${arch}"
+    mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 
-cd "$REPO_ROOT"
+    docker_args=(
+        --rm
+        -i  # required to be able to interrupt the build with ^C
+        --platform "linux/${goarch}"
+        -v "$REPO_ROOT":/home/b/ruyi
+        -v "$BUILD_DIR":/build
+        -v "$POETRY_CACHE_DIR":/poetry-cache
+        -v "$CCACHE_DIR":/ccache
+        -v "$RUYI_DIST_CACHE_DIR":/ruyi-dist-cache
+        -e RUYI_DIST_INNER=x
+        -e RUYI_DIST_INNER_CONTAINERIZED=x
+        -e BUILD_DIR=/build
+        -e POETRY_CACHE_DIR=/poetry-cache
+        -e CCACHE_DIR=/ccache
+        -e RUYI_DIST_CACHE_DIR=/ruyi-dist-cache
+    )
 
-arch="$1"
-if [[ -z $arch ]]; then
-    echo "usage: $0 <arch>" >&2
-    echo >&2
-    echo "see scripts/dist-image for available arch choices" >&2
-    exit 1
-fi
+    # only allocate pty if currently running interactively
+    # check if stdout is a tty
+    if [[ -t 1 ]]; then
+        docker_args+=( -t )
+    fi
 
-source "${REPO_ROOT}/scripts/_image_tag_base.sh"
+    docker_args+=(
+        "$(image_tag_base "$arch")"
+        /home/b/ruyi/scripts/dist.sh "$arch"
+    )
 
-BUILD_DIR="$REPO_ROOT/tmp/build.${arch}"
-POETRY_CACHE_DIR="$REPO_ROOT/tmp/poetry-cache.${arch}"
-CCACHE_DIR="$REPO_ROOT/tmp/ccache.${arch}"
-RUYI_DIST_CACHE_DIR="$REPO_ROOT/tmp/ruyi-dist-cache.${arch}"
-mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
+    exec docker run "${docker_args[@]}"
+}
 
-docker_args=(
-    --rm
-    -i  # required to be able to interrupt the build with ^C
-    --platform "linux/${arch}"
-    -v "$REPO_ROOT":/home/b/ruyi
-    -v "$BUILD_DIR":/build
-    -v "$POETRY_CACHE_DIR":/poetry-cache
-    -v "$CCACHE_DIR":/ccache
-    -v "$RUYI_DIST_CACHE_DIR":/ruyi-dist-cache
-    -e RUYI_DIST_INNER=x
-)
+main() {
+    if [[ -n $RUYI_DIST_INNER ]]; then
+        do_inner "$@"
+    fi
 
-# only allocate pty if currently running interactively
-# check if stdout is a tty
-if [[ -t 1 ]]; then
-    docker_args+=( -t )
-fi
+    local arch="$1"
+    if [[ -z $arch ]]; then
+        arch="$(convert_uname_arch_to_ruyi "$(uname -m)")"
+        echo "usage: $0 [arch]" >&2
+        echo "info: defaulting to host arch $arch" >&2
+    fi
 
-docker_args+=(
-    "$(image_tag_base "$arch")"
-    /home/b/ruyi/scripts/dist.sh
-)
+    if is_docker_dist_build_supported "$arch"; then
+        do_docker_build "$arch"
+    else
+        echo "warning: Docker-based dist builds for architecture $arch is not supported" >&2
+        if [[ -n "$RUYI_DIST_FORCE_IMAGE_TAG" ]]; then
+            # but this is explicitly requested so...
+            do_docker_build "$arch"
+        else
+            echo "warning: your build may not be reproducible" >&2
+            do_inner "$@"
+        fi
+    fi
+}
 
-exec docker run "${docker_args[@]}"
+main "$@"

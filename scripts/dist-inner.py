@@ -30,11 +30,11 @@ def main() -> None:
     INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
     INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
 
-    build_root = "/build"
+    build_root = os.environ.get("BUILD_DIR", "/build")
     exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
     output_file = os.path.join(build_root, exe_name)
 
-    cache_root = "/ruyi-dist-cache"
+    cache_root = os.environ.get("RUYI_DIST_CACHE_DIR", "/ruyi-dist-cache")
     ensure_dir(cache_root)
 
     cache_key = get_cache_key(vers["git_commit"])
@@ -48,7 +48,7 @@ def main() -> None:
     except FileNotFoundError:
         pass
 
-    ext_outdir = "/build/_exts"
+    ext_outdir = os.path.join(build_root, "_exts")
     ensure_dir(ext_outdir)
     add_pythonpath(ext_outdir)
 
@@ -66,7 +66,7 @@ def main() -> None:
         "--onefile",
         "--assume-yes-for-downloads",
         "--output-filename=ruyi",
-        "--output-dir=/build",
+        f"--output-dir={build_root}",
         "--no-deployment-flag=self-execution",
         f"--product-version={vers['nuitka_ver']}",
         f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}/{arch}",
