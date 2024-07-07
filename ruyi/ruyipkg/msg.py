@@ -25,10 +25,15 @@ def group_messages_by_lang_code(decl: RepoMessagesV1Type) -> dict[str, dict[str,
 
     result: dict[str, dict[str, str]] = {}
     for msgid, msg_decl in obj.items():
+        # skip the file type marker
+        if msgid == "ruyi-repo-messages":
+            continue
+
         for lang_code, msg in msg_decl.items():
             if lang_code not in result:
                 result[lang_code] = {}
             result[lang_code][msgid] = msg
+
     return result
 
 

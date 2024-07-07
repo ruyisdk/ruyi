@@ -66,7 +66,22 @@ class Distfile:
         if fr is None:
             return ""
 
-        return self._mr.messages.render_message(fr["msgid"], lang_code, fr["params"])
+        params = {
+            "dest_path": self.dest,
+        }
+        if "params" in fr:
+            for k in params.keys():
+                # Don't allow package-defined params to override preset params,
+                # to reduce surprises for packagers.
+                if k in fr["params"]:
+                    log.F(
+                        f"malformed package fetch instructions: the param named '{k}' is reserved and cannot be overridden by packages"
+                    )
+                    raise RuntimeError("malformed package fetch instructions")
+
+            params.update(fr["params"])
+
+        return self._mr.messages.render_message(fr["msgid"], lang_code, params)
 
     def ensure(self) -> None:
         log.D(f"checking {self.dest}")
