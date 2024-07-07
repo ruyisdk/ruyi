@@ -105,7 +105,7 @@ urls = [
 如题，示例：
 
 ```toml
-ruyi-repo-message = "v1"
+ruyi-repo-messages = "v1"
 
 [foo]
 en_US = "A message template in Jinja"
