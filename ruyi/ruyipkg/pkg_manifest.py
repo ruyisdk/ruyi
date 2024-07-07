@@ -20,7 +20,7 @@ RestrictKind = Literal["fetch"] | Literal["mirror"]
 
 class FetchRestrictionDeclType(TypedDict):
     msgid: str
-    params: dict[str, str]
+    params: NotRequired[dict[str, str]]
 
 
 class DistfileDeclType(TypedDict):
