@@ -715,13 +715,13 @@ types-setuptools = "*"
 
 [[package]]
 name = "types-pygit2"
-version = "1.15.0.20240520"
+version = "1.15.0.20240708"
 description = "Typing stubs for pygit2"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-pygit2-1.15.0.20240520.tar.gz", hash = "sha256:cd9aafb4c559273451490138ad32b6e0dbfa44e5b2fed5695203ee917a9546ff"},
-    {file = "types_pygit2-1.15.0.20240520-py3-none-any.whl", hash = "sha256:cea4269abcea8ee8976e16965f2ad50cb84ee8e7663368c29d140f3d06265697"},
+    {file = "types-pygit2-1.15.0.20240708.tar.gz", hash = "sha256:b27f34957b7dc5fe7f2101d7de3f2f3c08c34456acd60a3cbb42263acebd5fbe"},
+    {file = "types_pygit2-1.15.0.20240708-py3-none-any.whl", hash = "sha256:f2019d609a1475f47f92862ddfff13b38e32165e6268d56f366589df3b098298"},
 ]
 
 [package.dependencies]
@@ -793,26 +793,26 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "xingque"
-version = "0.2.0"
+version = "0.2.1"
 description = "Yet another typed Python binding to starlark-rust"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "xingque-0.2.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:d4fb551b06ab915d3f197e703818e7f7ca05e15629e038e77dfca376804fb4a6"},
-    {file = "xingque-0.2.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:3377090b9ec25e0be194b5cdf93e109e75ae3cd4d5f67e77e6d106ae46494896"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2dd41d688c44f375a10e0d65a7bc4ed168f0ac38679bb1fca3160c4eec5838d7"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0fc678a16a093de5d86d8fca4bbdece7f5c4b46646b79e549ade46c66ae9ebc3"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:6a124ffd5fd1db68db5fbb64138522ebe693e18a3d129d4310a78d7c9fed8e6a"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:447684846442c32e9dadf90b35072b6b3136c7f6151791a4d66fed264f93386a"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3d78a555360c883d340da48cbc264d61afe81c80ca3b6170b8b1e2bdac29d112"},
-    {file = "xingque-0.2.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:1fba58fbd203c98547533ccf593d244f4883c50fb25d6086028ab466857397a1"},
-    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2d3de8be0d002f000ed78c29f45610c5312f2ac106c4a5650223ef121a2b63e3"},
-    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:ae860ce761e2d7b6a54a9946c8fecf48ad652faa8bee44f9fa72918fec3165e4"},
-    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:dc09d6bc3a0cb83cf84dec4f1b5a42466ccceb0302ebbb97d2f97b4bc79d7dd3"},
-    {file = "xingque-0.2.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:489183e366ad32c512b706c05c43017c2057843ac9a005c8537c88acf91d4368"},
-    {file = "xingque-0.2.0-cp38-abi3-win32.whl", hash = "sha256:6d5d4064087701bcc6aa8d88ad019428aab253b143b98f580a25ba4f5a45e33f"},
-    {file = "xingque-0.2.0-cp38-abi3-win_amd64.whl", hash = "sha256:935cca6871aa1a417fda5f8e336e8a7a1a75ea356fa9783fa0fc3df0d561d6f7"},
-    {file = "xingque-0.2.0.tar.gz", hash = "sha256:60b4e58ed0c47dd36c274405a3c6d8629d442e528b8058c08d0ff56cbb2328b6"},
+    {file = "xingque-0.2.1-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c709b06b35965a5ebad76ffc550ffe7c11c6988d43f079cd0d2799789be117be"},
+    {file = "xingque-0.2.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:0f51c06d9ab1d5e91950cb1c3cc9b413b2039ce38e79b059cbeba8e2b17399ab"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0b02c4e9359b6c3a78e8d172cc5a3b78340a7cd35c0610577be3dd0b9a17f0cc"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f431906a0f13a14bcbec7507490db910964219f4b01f712d742ebd5c483ebdaf"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:d4de66132e589135522bcc8254bbd6ccd5903e643de8005faf569b05d72698f1"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c6e0ec7dde4786f4a8085a61a271198b944bcc97ba0ac05f12cbd804f2a67fd8"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7784d9bdf74585c776d0ceb2754fd5423983bd33a41493858c914693d334ce3e"},
+    {file = "xingque-0.2.1-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:9fb7eb0ed3d4cd2834852e91d3c935c03d5ba8a118fe09ee523f0bdcf905f6c3"},
+    {file = "xingque-0.2.1-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:b5782ced27b412d83b6402dc7979e0d5fd19f149d031a067358f62a315704720"},
+    {file = "xingque-0.2.1-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:7834d0ca6e4c8e5d5328924de2b2c19f868b907097b7c16bb35ec118f65d6ddf"},
+    {file = "xingque-0.2.1-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:73363c7245b0afcd0e027dc5b0fd3cfc9a67b9164ba86acb17c60cc9a24e41d5"},
+    {file = "xingque-0.2.1-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:819f91c595c236113051f454ed4d20b48663cd79029d4ff6dd1dfc5f709d3116"},
+    {file = "xingque-0.2.1-cp38-abi3-win32.whl", hash = "sha256:a78f4fa5ff06109d3de2f9fb71b1ecfa8c3d0969995bb695ccdb98c7a2c59820"},
+    {file = "xingque-0.2.1-cp38-abi3-win_amd64.whl", hash = "sha256:6ad177e50311bd6f646c47882c314113e09ece4bcb9edd7bddf3bdeef30c82ff"},
+    {file = "xingque-0.2.1.tar.gz", hash = "sha256:03fcd14b7d9e33f09abb27884b29dd0902b30dafc7710a1fdac83e23b2fbc395"},
 ]
 
 [[package]]
