@@ -36,10 +36,12 @@ def end_group() -> None:
 
 
 def main() -> None:
-    workdir = "/build/ruyi-xingque"
+    build_root = os.environ["RUYI_DIST_BUILD_DIR"]
+
+    workdir = os.path.join(build_root, "ruyi-xingque")
     ensure_dir(workdir)
 
-    cache_root = "/ruyi-dist-cache"
+    cache_root = os.environ["RUYI_DIST_CACHE_DIR"]
     ensure_dir(cache_root)
 
     xingque_ver = get_xingque_version()

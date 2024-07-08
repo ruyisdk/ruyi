@@ -50,10 +50,12 @@ def end_group() -> None:
 
 
 def main() -> None:
-    workdir = "/build/ruyi-pygit2"
+    build_root = os.environ["RUYI_DIST_BUILD_DIR"]
+
+    workdir = os.path.join(build_root, "ruyi-pygit2")
     ensure_dir(workdir)
 
-    cache_root = "/ruyi-dist-cache"
+    cache_root = os.environ["RUYI_DIST_CACHE_DIR"]
     ensure_dir(cache_root)
 
     pygit2_ver = get_pygit2_version()
