@@ -153,12 +153,16 @@ def do_unpack_tar(
         argv.extend(("-C", dest))
     log.D(f"about to call tar: argv={argv}")
     p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
-    assert p.stdin is not None
 
     retcode: int
     if stream is None:
         retcode = p.wait()
     else:
+        # this is only for pleasing the type-checker; it's statically true
+        # because the assignment always happens due to the earlier
+        # "stream is not None" branch.
+        assert p.stdin is not None
+
         bufsize = 4 * mmap.PAGESIZE
         while True:
             buf = stream.read(bufsize)
