@@ -30,11 +30,11 @@ def main() -> None:
     INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
     INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
 
-    build_root = os.environ.get("BUILD_DIR", "/build")
+    build_root = os.environ["BUILD_DIR"]
     exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
     output_file = os.path.join(build_root, exe_name)
 
-    cache_root = os.environ.get("RUYI_DIST_CACHE_DIR", "/ruyi-dist-cache")
+    cache_root = os.environ["RUYI_DIST_CACHE_DIR"]
     ensure_dir(cache_root)
 
     cache_key = get_cache_key(vers["git_commit"])
