@@ -31,15 +31,18 @@ do_inner() {
         . ./venv/bin/activate
     else
         # we're running in the host environment
+        # give defaults for the directories
         local tmp_prefix="$REPO_ROOT/tmp"
-        export BUILD_DIR="$tmp_prefix/build.$arch"
-        export POETRY_CACHE_DIR="$tmp_prefix/poetry-cache.$arch"
-        export CCACHE_DIR="$tmp_prefix/ccache.$arch"
-        export RUYI_DIST_CACHE_DIR="$tmp_prefix/ruyi-dist-cache.$arch"
-        mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
+        : "${CCACHE_DIR:=$tmp_prefix/ccache.$arch}"
+        : "${POETRY_CACHE_DIR:=$tmp_prefix/poetry-cache.$arch}"
+        : "${RUYI_DIST_BUILD_DIR:=$tmp_prefix/build.$arch}"
+        : "${RUYI_DIST_CACHE_DIR:=$tmp_prefix/ruyi-dist-cache.$arch}"
+        export CCACHE_DIR POETRY_CACHE_DIR RUYI_DIST_BUILD_DIR RUYI_DIST_CACHE_DIR
+        mkdir -p "$RUYI_DIST_BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
     fi
 
-    export MAKEFLAGS="-j$(nproc)"
+    : "${MAKEFLAGS:=-j$(nproc)}"
+    export MAKEFLAGS
 
     if [[ -n $CI ]]; then
         green "current user info" group
@@ -49,19 +52,19 @@ do_inner() {
         ls -alF .
         endgroup
         green "repo contents" group
-        ls -alF ./ruyi
+        ls -alF "$REPO_ROOT"
         endgroup
         green "ruyi-dist-cache contents" group
         ls -alF "$RUYI_DIST_CACHE_DIR"
         endgroup
 
-        if [[ ! -O ./ruyi ]]; then
+        if [[ ! -O $REPO_ROOT ]]; then
             green "adding the repo to the list of Git safe directories"
-            git config --global --add safe.directory "$(realpath ./ruyi)"
+            git config --global --add safe.directory "$REPO_ROOT"
         fi
     fi
 
-    [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd ruyi
+    [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd "$REPO_ROOT"
 
     # build pygit2 and/or xingque if no prebuilt artifact is available on PyPI
     case "$arch" in
@@ -85,26 +88,26 @@ do_docker_build() {
     local arch="$1"
     local goarch="${RUYI_DIST_GOARCH:-$arch}"
 
-    local BUILD_DIR="$REPO_ROOT/tmp/build.${arch}"
-    local POETRY_CACHE_DIR="$REPO_ROOT/tmp/poetry-cache.${arch}"
     local CCACHE_DIR="$REPO_ROOT/tmp/ccache.${arch}"
+    local POETRY_CACHE_DIR="$REPO_ROOT/tmp/poetry-cache.${arch}"
+    local RUYI_DIST_BUILD_DIR="$REPO_ROOT/tmp/build.${arch}"
     local RUYI_DIST_CACHE_DIR="$REPO_ROOT/tmp/ruyi-dist-cache.${arch}"
-    mkdir -p "$BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
+    mkdir -p "$CCACHE_DIR" "$POETRY_CACHE_DIR" "$RUYI_DIST_BUILD_DIR" "$RUYI_DIST_CACHE_DIR"
 
     docker_args=(
         --rm
         -i  # required to be able to interrupt the build with ^C
         --platform "linux/${goarch}"
         -v "$REPO_ROOT":/home/b/ruyi
-        -v "$BUILD_DIR":/build
-        -v "$POETRY_CACHE_DIR":/poetry-cache
         -v "$CCACHE_DIR":/ccache
+        -v "$POETRY_CACHE_DIR":/poetry-cache
+        -v "$RUYI_DIST_BUILD_DIR":/build
         -v "$RUYI_DIST_CACHE_DIR":/ruyi-dist-cache
         -e RUYI_DIST_INNER=x
         -e RUYI_DIST_INNER_CONTAINERIZED=x
-        -e BUILD_DIR=/build
-        -e POETRY_CACHE_DIR=/poetry-cache
         -e CCACHE_DIR=/ccache
+        -e POETRY_CACHE_DIR=/poetry-cache
+        -e RUYI_DIST_BUILD_DIR=/build
         -e RUYI_DIST_CACHE_DIR=/ruyi-dist-cache
     )
 

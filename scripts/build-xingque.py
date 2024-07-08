@@ -36,7 +36,7 @@ def end_group() -> None:
 
 
 def main() -> None:
-    build_root = os.environ["BUILD_DIR"]
+    build_root = os.environ["RUYI_DIST_BUILD_DIR"]
 
     workdir = os.path.join(build_root, "ruyi-xingque")
     ensure_dir(workdir)

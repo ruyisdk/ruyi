@@ -30,7 +30,7 @@ def main() -> None:
     INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
     INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
 
-    build_root = os.environ["BUILD_DIR"]
+    build_root = os.environ["RUYI_DIST_BUILD_DIR"]
     exe_name = "ruyi.exe" if sys.platform == "win32" else "ruyi"
     output_file = os.path.join(build_root, exe_name)
 
