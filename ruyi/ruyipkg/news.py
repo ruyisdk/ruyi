@@ -6,6 +6,7 @@ import frontmatter
 
 from ..config.news import NewsReadStatusStore
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
+from ..utils.l10n import match_lang_code
 
 NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*?)(\.[0-9A-Za-z_-]+)?\.md$")
 
@@ -127,12 +128,8 @@ class NewsItem:
         del self._content_by_lang[lang]
 
     def get_content_for_lang(self, lang: str) -> "NewsItemContent":
-        if lang in self:
-            return self[lang]
-
-        # fallback to the first (or indeed, only) language that's present
-        # this should be enough for our use
-        return list(self._content_by_lang.values())[0]
+        resolved_lang_code = match_lang_code(lang, self._content_by_lang.keys())
+        return self[resolved_lang_code]
 
     def to_porcelain(self) -> "PorcelainNewsItemV1":
         return {
