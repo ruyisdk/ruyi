@@ -2,6 +2,9 @@ from typing import Callable, TypedDict, TypeGuard, cast
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
+from ..utils.l10n import match_lang_code
+
+
 RepoMessagesV1Type = TypedDict(
     "RepoMessagesV1Type",
     {
@@ -50,11 +53,8 @@ class RepoMessageStore:
         return cls(obj)
 
     def get_message_template(self, msgid: str, lang_code: str) -> str | None:
-        if lang_code not in self._msgs_by_lang_code:
-            # TODO: fallback
-            return None
-
-        return self._msgs_by_lang_code[lang_code].get(msgid)
+        resolved_lang_code = match_lang_code(lang_code, self._msgs_by_lang_code.keys())
+        return self._msgs_by_lang_code[resolved_lang_code].get(msgid)
 
     def get_jinja(self, lang_code: str) -> Environment:
         if lang_code in self._cached_envs_by_lang_code:
