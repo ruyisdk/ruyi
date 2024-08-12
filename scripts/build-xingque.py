@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -114,6 +115,21 @@ def build_xingque(xingque_ver: str, workdir: str) -> str:
     log(f"unpacking {xingque_src_filename}")
     subprocess.run(("tar", "-xf", xingque_src_filename), cwd=workdir, check=True)
 
+    # auditwheel 6.1.0+ has manylinux policies for riscv64, but the default
+    # is too low for our environment
+    # bump it up if that's the case
+    # the output looks like "auditwheel 6.1.0 installed ..."
+    auditwheel_ver_str = subprocess.check_output(
+        ["auditwheel", "--version"],
+        encoding="utf-8",
+    ).split(" ")[1]
+    auditwheel_ver = [int(x) for x in auditwheel_ver_str.split(".", 2)[:2]]
+    if platform.machine() == "riscv64":
+        if auditwheel_ver[0] > 6 or (auditwheel_ver[0] == 6 and auditwheel_ver[1] >= 1):
+            manylinux_plat = "manylinux_2_35_riscv64"
+            log(f"using manylinux platform tag: {manylinux_plat}")
+            os.environ["AUDITWHEEL_PLAT"] = manylinux_plat
+
     # build wheel
     log("building xingque wheel", group=True)
     subprocess.run(
@@ -121,6 +137,7 @@ def build_xingque(xingque_ver: str, workdir: str) -> str:
         cwd=xingque_workdir,
         check=True,
     )
+
     maturin_out_path = os.path.join(xingque_workdir, "target", "wheels")
     tmp_wheel_path = os.path.join(
         maturin_out_path,
