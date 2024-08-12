@@ -1,4 +1,5 @@
 import pathlib
+import subprocess
 import tomllib
 from typing import Any, Callable
 
@@ -58,6 +59,13 @@ class RuyiHostAPI:
         default: bool = False,
     ) -> bool:
         return user_input.ask_for_yesno_confirmation(prompt, default)
+
+    def call_subprocess_argv(
+        self,
+        argv: list[str],
+    ) -> int:
+        # TODO: restrictions on this
+        return subprocess.call(argv)
 
 
 class RuyiPluginLogger:
