@@ -1,5 +1,6 @@
 import pathlib
 import subprocess
+import time
 import tomllib
 from typing import Any, Callable
 
@@ -66,6 +67,9 @@ class RuyiHostAPI:
     ) -> int:
         # TODO: restrictions on this
         return subprocess.call(argv)
+
+    def sleep(self, seconds: float, /) -> None:
+        return time.sleep(seconds)
 
 
 class RuyiPluginLogger:
