@@ -1,9 +1,9 @@
 import argparse
 import itertools
 import os.path
-import subprocess
-import time
-from typing import Callable, TypedDict
+from typing import TypedDict, TypeGuard, cast
+
+import xingque
 
 from .. import log
 from ..cli import user_input
@@ -12,9 +12,9 @@ from ..ruyipkg.atom import Atom
 from ..ruyipkg.host import get_native_host
 from ..ruyipkg.pkg_cli import do_install_atoms
 from ..ruyipkg.pkg_manifest import (
+    KNOWN_PARTITION_KINDS,
     PartitionKind,
     PartitionMapDecl,
-    ProvisionStrategyKind,
 )
 from ..ruyipkg.provisioner import (
     DeviceDecl,
@@ -156,10 +156,11 @@ We are about to download and install the following packages for your device:
         log.I("your device was not touched")
         return 2
 
+    strat_provider = ProvisionStrategyProvider(mr)
     strategies = [
-        (pkg, get_pkg_provision_strategy(config, mr, pkg)) for pkg in pkg_atoms
+        (pkg, get_pkg_provision_strategy(strat_provider, mr, pkg)) for pkg in pkg_atoms
     ]
-    strategies.sort(key=lambda x: x[1]["priority"], reverse=True)
+    strategies.sort(key=lambda x: x[1].priority, reverse=True)
 
     # compose a partition map for each image pkg installed
     pkg_part_maps = {pkg: make_pkg_part_map(config, mr, pkg) for pkg in pkg_atoms}
@@ -174,7 +175,7 @@ We are about to download and install the following packages for your device:
     # prompt user to give paths to target block device(s)
     requested_host_blkdevs = set(
         itertools.chain(
-            *(strat[1]["need_host_blkdevs_fn"](all_parts) for strat in strategies)
+            *(strat[1].need_host_blkdevs(all_parts) for strat in strategies)
         )
     )
     host_blkdev_map: PartitionMapDecl = {}
@@ -208,7 +209,7 @@ We are about to:
         f" * {step_str}"
         for step_str in itertools.chain(
             *(
-                strat[1]["pretend_fn"](pkg_part_maps[strat[0]], host_blkdev_map)
+                strat[1].pretend(pkg_part_maps[strat[0]], host_blkdev_map)
                 for strat in strategies
             )
         )
@@ -223,9 +224,7 @@ We are about to:
         return 1
 
     # ensure commands
-    all_needed_cmds = set(
-        itertools.chain(*(strat["need_cmd"] for _, strat in strategies))
-    )
+    all_needed_cmds = set(itertools.chain(*(strat.need_cmd for _, strat in strategies)))
     if all_needed_cmds:
         prereqs.ensure_cmds(*all_needed_cmds)
 
@@ -251,7 +250,7 @@ Please confirm it yourself before the flashing begins.
     # flash
     for pkg, strat in strategies:
         log.D(f"flashing {pkg} with strategy {strat}")
-        ret = strat["flash_fn"](pkg_part_maps[pkg], host_blkdev_map)
+        ret = strat.flash(pkg_part_maps[pkg], host_blkdev_map)
         if ret != 0:
             log.F("flashing failed, check your device right now")
             return ret
@@ -283,197 +282,110 @@ def get_part_desc(part: PartitionKind) -> str:
             return f"target's '{part}' partition"
 
 
-class PackageProvisionStrategy(TypedDict):
+class PackageProvisionStrategyDecl(TypedDict):
     priority: int  # higher number means earlier
-    need_host_blkdevs_fn: Callable[[list[PartitionKind]], list[PartitionKind]]
+    need_host_blkdevs_fn: (
+        xingque.Value
+    )  # Callable[[list[PartitionKind]], list[PartitionKind]]
     need_cmd: list[str]
-    pretend_fn: Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
-    flash_fn: Callable[[PartitionMapDecl, PartitionMapDecl], int]
+    pretend_fn: (
+        xingque.Value
+    )  # Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
+    flash_fn: xingque.Value  # Callable[[PartitionMapDecl, PartitionMapDecl], int]
 
 
-def call_subprocess_with_ondemand_elevation(argv: list[str]) -> int:
-    """Executes subprocess.call, asking for sudo if the subprocess fails for
-    whatever reason.
-    """
-
-    log.D(f"about to spawn subprocess: argv={argv}")
-    ret = subprocess.call(argv)
-    if ret == 0:
-        return ret
-
-    log.W(
-        f"The command failed with return code [yellow]{ret}[/], that may or may not be caused by lack of privileges."
-    )
-    if not user_input.ask_for_yesno_confirmation(
-        "Do you want to retry the command with [yellow]sudo[/]?"
-    ):
-        return ret
-
-    log.D(f"about to spawn subprocess with sudo: argv=['sudo'] + {argv}")
-    return subprocess.call(["sudo"] + argv)
+def validate_list_str(x: object) -> TypeGuard[list[str]]:
+    if not isinstance(x, list):
+        return False
+    x = cast(list[object], x)
+    return all(isinstance(y, str) for y in x)
 
 
-def _do_dd(infile: str, outfile: str, blocksize: int = 4096) -> int:
-    argv = [
-        "dd",
-        f"if={infile}",
-        f"of={outfile}",
-        f"bs={blocksize}",
-    ]
-
-    log.I(
-        f"dd-ing [yellow]{infile}[/yellow] to [green]{outfile}[/green] with block size {blocksize}..."
-    )
-    retcode = call_subprocess_with_ondemand_elevation(argv)
-    if retcode == 0:
-        log.I(f"successfully flashed [green]{outfile}[/green]")
-    else:
-        log.F(f"failed to flash the [green]{outfile}[/green] disk/partition")
-        log.W("the device could be in an inconsistent state now, check now")
-
-    return retcode
+def validate_list_partition_kinds(x: object) -> TypeGuard[list[PartitionKind]]:
+    if not isinstance(x, list):
+        return False
+    x = cast(list[object], x)
+    for item in x:
+        if not isinstance(item, str) or item not in KNOWN_PARTITION_KINDS:
+            return False
+    return True
 
 
-def pretend_dd(
-    img_paths: PartitionMapDecl, blkdev_paths: PartitionMapDecl
-) -> list[str]:
-    result: list[str] = []
-    for part, img_path in img_paths.items():
-        blkdev_path = blkdev_paths[part]
-        result.append(
-            f"write [yellow]{img_path}[/yellow] contents to [green]{blkdev_path}[/green] with dd"
+class PackageProvisionStrategy:
+    def __init__(self, decl: PackageProvisionStrategyDecl) -> None:
+        self._d = decl
+
+    @property
+    def priority(self) -> int:
+        return self._d["priority"]
+
+    @property
+    def need_cmd(self) -> list[str]:
+        return self._d["need_cmd"]
+
+    def need_host_blkdevs(self, x: list[PartitionKind]) -> list[PartitionKind]:
+        ev = xingque.Evaluator()
+        result = ev.eval_function(self._d["need_host_blkdevs_fn"], x)
+        if not validate_list_partition_kinds(result):
+            raise TypeError("need_host_blkdevs_fn must return list[PartitionKind]")
+        return result
+
+    def pretend(
+        self,
+        img_paths: PartitionMapDecl,
+        blkdev_paths: PartitionMapDecl,
+    ) -> list[str]:
+        ev = xingque.Evaluator()
+        result = ev.eval_function(self._d["pretend_fn"], img_paths, blkdev_paths)
+        if not validate_list_str(result):
+            raise TypeError("pretend_fn must return list[str]")
+        return result
+
+    def flash(
+        self,
+        img_paths: PartitionMapDecl,
+        blkdev_paths: PartitionMapDecl,
+    ) -> int:
+        ev = xingque.Evaluator()
+        result = ev.eval_function(self._d["flash_fn"], img_paths, blkdev_paths)
+        if not isinstance(result, int):
+            raise TypeError("flash_fn must return int")
+        return result
+
+
+class ProvisionStrategyProvider:
+    def __init__(self, mr: MetadataRepo) -> None:
+        self._mr = mr
+        self._strats: dict[str, PackageProvisionStrategy] = {}
+
+        # import the "standard library" of strategies
+        self._import_strategy_plugin("std")
+
+    def _import_strategy_plugin(self, plugin_pkg_name: str) -> None:
+        plugin_id = f"ruyi-device-provision-strategy-{plugin_pkg_name}"
+        provided_strats = self._mr.get_from_plugin(
+            plugin_id,
+            "PROVIDED_DEVICE_PROVISION_STRATEGIES_V1",
         )
-    return result
+        if not isinstance(provided_strats, dict):
+            raise RuntimeError(
+                f"malformed device provisioner strategy plugin '{plugin_id}'"
+            )
+        for name, decl in provided_strats.items():
+            self._strats[name] = PackageProvisionStrategy(decl)
 
-
-def flash_dd(img_paths: PartitionMapDecl, blkdev_paths: PartitionMapDecl) -> int:
-    for part, img_path in img_paths.items():
-        blkdev_path = blkdev_paths[part]
-        ret = _do_dd(img_path, blkdev_path)
-        if ret != 0:
-            return ret
-
-    return 0
-
-
-def _do_fastboot(*args: str) -> int:
-    argv = ["fastboot"]
-    argv.extend(args)
-    return call_subprocess_with_ondemand_elevation(argv)
-
-
-def _do_fastboot_flash(part: str, img_path: str) -> int:
-    log.I(
-        f"flashing [yellow]{img_path}[/yellow] into device partition [green]{part}[/green]"
-    )
-    ret = _do_fastboot("flash", part, img_path)
-    if ret != 0:
-        log.F(f"failed to flash [green]{part}[/green] image into device storage")
-        log.W("the device could be in an inconsistent state now, check now")
-    else:
-        log.I(f"[green]{part}[/green] image successfully flashed")
-
-    return ret
-
-
-def pretend_lpi4a_uboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> list[str]:
-    p = img_paths["uboot"]
-    return [
-        f"flash [yellow]{p}[/yellow] into device RAM",
-        "reboot the device",
-        f"flash [yellow]{p}[/yellow] into device partition [green]uboot[/green]",
-    ]
-
-
-def flash_lpi4a_uboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> int:
-    # Perform the equivalent of the following commands from the Sipeed Wiki:
-    #
-    # sudo ./fastboot flash ram ./images/u-boot-with-spl-lpi4a-16g.bin
-    # sudo ./fastboot reboot
-    # sleep 1
-    # sudo ./fastboot flash uboot ./images/u-boot-with-spl-lpi4a-16g.bin
-    #
-    # See: https://wiki.sipeed.com/hardware/en/lichee/th1520/lpi4a/4_burn_image.html
-    uboot_img_path = img_paths["uboot"]
-
-    log.I("flashing uboot image into device RAM")
-    ret = _do_fastboot("flash", "ram", uboot_img_path)
-    if ret != 0:
-        log.F("failed to flash uboot image into device RAM")
-        log.W("the device state should be intact, but please re-check")
-        return ret
-
-    log.I("rebooting device into new uboot")
-    ret = _do_fastboot("reboot")
-    if ret != 0:
-        log.F("failed to reboot the device")
-        log.W("the device state should be intact, but please re-check")
-        return ret
-
-    wait_secs = 1.0
-    log.I(f"waiting {wait_secs}s for the device to come back online")
-    time.sleep(wait_secs)
-
-    return _do_fastboot_flash("uboot", uboot_img_path)
-
-
-def pretend_fastboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> list[str]:
-    return [
-        f"flash [yellow]{f}[/yellow] into device partition [green]{p}[/green]"
-        for p, f in img_paths.items()
-    ]
-
-
-def flash_fastboot(img_paths: PartitionMapDecl, _: PartitionMapDecl) -> int:
-    for partition, img_path in img_paths.items():
-        ret = _do_fastboot_flash(partition, img_path)
-        if ret != 0:
-            return ret
-
-    return 0
-
-
-def need_host_blkdevs_all(x: list[PartitionKind]) -> list[PartitionKind]:
-    return x
-
-
-def need_host_blkdevs_none(_: list[PartitionKind]) -> list[PartitionKind]:
-    return []
-
-
-STRATEGY_WHOLE_DISK_DD: PackageProvisionStrategy = {
-    "priority": 0,
-    "need_host_blkdevs_fn": need_host_blkdevs_all,
-    "need_cmd": ["sudo", "dd"],
-    "pretend_fn": pretend_dd,
-    "flash_fn": flash_dd,
-}
-
-STRATEGY_BOOT_ROOT_FASTBOOT: PackageProvisionStrategy = {
-    "priority": 0,
-    "need_host_blkdevs_fn": need_host_blkdevs_none,
-    "need_cmd": ["sudo", "fastboot"],
-    "pretend_fn": pretend_fastboot,
-    "flash_fn": flash_fastboot,
-}
-
-STRATEGY_UBOOT_FASTBOOT_LPI4A: PackageProvisionStrategy = {
-    "priority": 10,
-    "need_host_blkdevs_fn": need_host_blkdevs_none,
-    "need_cmd": ["sudo", "fastboot"],
-    "pretend_fn": pretend_lpi4a_uboot,
-    "flash_fn": flash_lpi4a_uboot,
-}
-
-PROVISION_STRATEGIES: dict[ProvisionStrategyKind, PackageProvisionStrategy] = {
-    "dd-v1": STRATEGY_WHOLE_DISK_DD,
-    "fastboot-v1": STRATEGY_BOOT_ROOT_FASTBOOT,
-    "fastboot-v1(lpi4a-uboot)": STRATEGY_UBOOT_FASTBOOT_LPI4A,
-}
+    def __getitem__(self, name: str) -> PackageProvisionStrategy:
+        try:
+            return self._strats[name]
+        except KeyError:
+            # for now it's "ruyi-device-provision-strategy-STRATEGY-NAME"
+            # we may have to revise before Ruyi v1.0 though
+            self._import_strategy_plugin(name)
+            return self._strats[name]
 
 
 def get_pkg_provision_strategy(
-    config: GlobalConfig,
+    strat_provider: ProvisionStrategyProvider,
     mr: MetadataRepo,
     atom: str,
 ) -> PackageProvisionStrategy:
@@ -483,7 +395,7 @@ def get_pkg_provision_strategy(
 
     pmd = pm.provisionable_metadata
     assert pmd is not None
-    return PROVISION_STRATEGIES[pmd.strategy]
+    return strat_provider[pmd.strategy]
 
 
 def make_pkg_part_map(

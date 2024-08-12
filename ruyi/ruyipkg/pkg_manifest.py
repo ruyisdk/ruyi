@@ -85,16 +85,16 @@ PartitionKind = (
     | Literal["uboot"]
 )
 
-PartitionMapDecl = dict[PartitionKind, str]
+# error: "<typing special form>" has no attribute "__args__"
+# KNOWN_PARTITION_KINDS = frozenset(kind.__args__[0] for kind in PartitionKind.__args__)
+KNOWN_PARTITION_KINDS = frozenset(("boot", "disk", "live", "root", "uboot"))
 
-ProvisionStrategyKind = (
-    Literal["dd-v1"] | Literal["fastboot-v1"] | Literal["fastboot-v1(lpi4a-uboot)"]
-)
+PartitionMapDecl = dict[PartitionKind, str]
 
 
 class ProvisionableDeclType(TypedDict):
     partition_map: PartitionMapDecl
-    strategy: ProvisionStrategyKind
+    strategy: str
 
 
 PackageKind = (
@@ -342,7 +342,7 @@ class ProvisionableDecl:
         return self._data["partition_map"]
 
     @property
-    def strategy(self) -> ProvisionStrategyKind:
+    def strategy(self) -> str:
         return self._data["strategy"]
 
 
