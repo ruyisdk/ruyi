@@ -3,6 +3,7 @@ import tomllib
 from typing import Any, Callable
 
 from ruyi import log
+from ruyi.cli import user_input
 from ruyi.cli.version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
@@ -41,6 +42,22 @@ class RuyiHostAPI:
     @property
     def log(self) -> "RuyiPluginLogger":
         return self._logger
+
+    def cli_ask_for_choice(self, prompt: str, choice_texts: list[str]) -> int:
+        return user_input.ask_for_choice(prompt, choice_texts)
+
+    def cli_ask_for_file(self, prompt: str) -> str:
+        return user_input.ask_for_file(prompt)
+
+    def cli_ask_for_kv_choice(self, prompt: str, choices_kv: dict[str, str]) -> str:
+        return user_input.ask_for_kv_choice(prompt, choices_kv)
+
+    def cli_ask_for_yesno_confirmation(
+        self,
+        prompt: str,
+        default: bool = False,
+    ) -> bool:
+        return user_input.ask_for_yesno_confirmation(prompt, default)
 
 
 class RuyiPluginLogger:
