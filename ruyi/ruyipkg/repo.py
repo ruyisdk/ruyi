@@ -450,8 +450,11 @@ class MetadataRepo:
 
         cache = NewsItemStore(rs_store)
         for f in glob.iglob("*.md", root_dir=news_dir):
-            with open(os.path.join(news_dir, f), "r") as fp:
-                contents = fp.read()
+            with open(os.path.join(news_dir, f), "r", encoding="utf-8") as fp:
+                try:
+                    contents = fp.read()
+                except UnicodeDecodeError:
+                    log.F(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
             cache.add(f, contents)  # may fail but failures are harmless
 
         cache.finalize()
