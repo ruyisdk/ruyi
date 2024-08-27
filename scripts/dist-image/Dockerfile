@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM --platform=linux/amd64 ubuntu:20.04 as build-amd64
-FROM --platform=linux/arm64 ubuntu:20.04 as build-arm64
-FROM --platform=linux/riscv64 riscv64/ubuntu:22.04 as build-riscv64
+FROM --platform=linux/amd64 ubuntu:20.04 AS build-amd64
+FROM --platform=linux/arm64 ubuntu:20.04 AS build-arm64
+FROM --platform=linux/riscv64 riscv64/ubuntu:22.04 AS build-riscv64
 
 FROM build-$TARGETARCH
 

@@ -64,7 +64,7 @@ jobs:
       run_id: ${{ github.run_id }}
       release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
     container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20240623
+      image: ghcr.io/ruyisdk/ruyi-python-dist:20240827
       options: --user root  # https://github.com/actions/checkout/issues/1014
       credentials:
         username: ${{ github.actor }}

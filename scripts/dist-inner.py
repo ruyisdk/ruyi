@@ -130,8 +130,8 @@ def delete_cached_files_older_than_days(root: str, days: int, epoch: int) -> Non
     root_path = pathlib.Path(root)
     dirs_to_remove: list[tuple[pathlib.Path, int | None]] = []
     for f in root_path.iterdir():
-        if f.name.startswith("pygit2"):
-            INFO.print(f"ignoring pygit2 cache [cyan]{f}")
+        if f.name.startswith("pygit2") or f.name.startswith("xingque"):
+            INFO.print(f"ignoring library artifact cache [cyan]{f}")
             continue
 
         ts: int | None
