@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -173,10 +174,11 @@ def get_pygit2_wheel_build_env(pygit2_dir: str) -> dict[str, str]:
         # this is unnecessary
         del r["LIBGIT2"]
 
-    # auditwheel 6.1.0+ has manylinux policies for riscv64, but the default
-    # is too low for our environment
-    # bump it up
-    r["AUDITWHEEL_PLAT"] = "manylinux_2_35_riscv64"
+    if platform.machine() == "riscv64":
+        # auditwheel 6.1.0+ has manylinux policies for riscv64, but the default
+        # is too low for our environment
+        # bump it up
+        r["AUDITWHEEL_PLAT"] = "manylinux_2_35_riscv64"
 
     return r
 
