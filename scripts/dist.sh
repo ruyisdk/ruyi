@@ -130,21 +130,49 @@ main() {
         do_inner "$@"
     fi
 
-    local arch="$1"
-    if [[ -z $arch ]]; then
-        arch="$(convert_uname_arch_to_ruyi "$(uname -m)")"
-        echo "usage: $0 [arch]" >&2
-        echo "info: defaulting to host arch $arch" >&2
+    local build_arch="$(convert_uname_arch_to_ruyi "$(uname -m)")"
+    local build_arch_is_officially_supported=false
+    if is_docker_dist_build_supported "$build_arch"; then
+        build_arch_is_officially_supported=true
     fi
 
-    if is_docker_dist_build_supported "$arch"; then
-        do_docker_build "$arch"
+    local host_arch="$1"
+    if [[ -z $host_arch ]]; then
+        host_arch="$build_arch"
+        echo "usage: $0 [arch]" >&2
+        echo "info: defaulting to build machine arch $build_arch" >&2
+    fi
+
+    if is_docker_dist_build_supported "$host_arch"; then
+        do_docker_build "$host_arch"
     else
-        echo "warning: Docker-based dist builds for architecture $arch is not supported" >&2
+        echo "warning: Docker-based dist builds for architecture $host_arch is not supported" >&2
         if [[ -n "$RUYI_DIST_FORCE_IMAGE_TAG" ]]; then
             # but this is explicitly requested so...
-            do_docker_build "$arch"
+            do_docker_build "$host_arch"
         else
+            # Because of the way Nuitka works, cross builds cannot be supported.
+            #
+            # But without knowledge of the Debian name for the user's arch, we
+            # cannot know whether the user is actually doing native builds on
+            # their arch, with $build_arch expected to differ from `uname -m`
+            # output.
+            #
+            # On the other hand, if the build arch is supported, when
+            # $host_arch differs from $build_arch we can indeed be sure that
+            # the build will fail.
+            if [[ $build_arch != $host_arch ]]; then
+                if "$build_arch_is_officially_supported"; then
+                    echo "error: cross building is not possible with Nuitka" >&2
+                    echo "info: to our knowledge, $host_arch is not the same as $build_arch" >&2
+                    echo "info: please retry with $host_arch hardware / emulation / sysroot instead" >&2
+                    exit 1
+                fi
+
+                echo "warning: the requested arch $host_arch differs from the build machine arch $build_arch, but the build is not Docker-based" >&2
+                echo "warning: cross builds are not supported and will fail" >&2
+            fi
+
             echo "warning: your build may not be reproducible" >&2
             do_inner "$@"
         fi
