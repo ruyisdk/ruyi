@@ -55,7 +55,7 @@ apt-get clean
 #
 # See: https://github.com/Nuitka/Nuitka/commit/54f2a2222abedf92d45b8f397233cfb3bef340c5
 
-PYTHON_V=3.12.4
+PYTHON_V=3.12.5
 pushd /tmp
 wget https://www.python.org/ftp/python/${PYTHON_V}/Python-${PYTHON_V}.tar.xz
 mkdir py-src py-build
