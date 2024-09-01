@@ -26,9 +26,9 @@ def log_time_formatter(x: datetime.datetime) -> Text:
     return Text(f"debug: [{x.isoformat()}]")
 
 
-STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False)
-DEBUG_CONSOLE = Console(file=sys.stderr, log_time_format=log_time_formatter)
-LOG_CONSOLE = Console(file=sys.stderr, highlight=False)
+STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False, soft_wrap=True)
+DEBUG_CONSOLE = Console(file=sys.stderr, log_time_format=log_time_formatter, soft_wrap=True)
+LOG_CONSOLE = Console(file=sys.stderr, highlight=False, soft_wrap=True)
 PORCELAIN_SINK = PorcelainOutput(sys.stderr.buffer)
 
 Renderable = str | ConsoleRenderable
