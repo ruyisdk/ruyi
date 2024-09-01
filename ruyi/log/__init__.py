@@ -7,8 +7,8 @@ import sys
 from rich.console import Console, ConsoleRenderable
 from rich.text import Text
 
-from . import is_debug, is_porcelain
-from .utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
+from .. import is_debug, is_porcelain
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
 
 class PorcelainLog(PorcelainEntity):
