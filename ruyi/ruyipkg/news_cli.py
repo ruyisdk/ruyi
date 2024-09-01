@@ -4,7 +4,7 @@ from rich import box
 from rich.table import Table
 
 from ..config import GlobalConfig
-from ..utils.markdown import MarkdownWithSlimHeadings
+from ..utils.markdown import RuyiStyledMarkdown
 from ..utils.porcelain import PorcelainOutput
 from .. import is_porcelain, log
 from .news import NewsItem, NewsItemContent, NewsItemStore
@@ -115,6 +115,6 @@ def filter_news_items_by_specs(
 
 
 def print_news(nic: NewsItemContent) -> None:
-    md = MarkdownWithSlimHeadings(nic.content)
+    md = RuyiStyledMarkdown(nic.content)
     log.stdout(md)
     log.stdout("")
