@@ -1,5 +1,6 @@
 from rich.console import Console, ConsoleOptions, RenderResult
-from rich.markdown import Heading, Markdown, MarkdownContext
+from rich.markdown import CodeBlock, Heading, Markdown, MarkdownContext
+from rich.syntax import Syntax
 from rich.text import Text
 
 
@@ -18,6 +19,25 @@ class SlimHeading(Heading):
         yield self.text
 
 
-class MarkdownWithSlimHeadings(Markdown):
+# inspired by https://github.com/Textualize/rich/issues/3154
+class NonWrappingCodeBlock(CodeBlock):
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
+        code = str(self.text).rstrip()
+        syntax = Syntax(
+            code,
+            self.lexer_name,
+            theme=self.theme,
+            word_wrap=False,
+            padding=0,
+        )
+        return syntax.highlight(code).__rich_console__(console, options)
+
+
+class RuyiStyledMarkdown(Markdown):
     elements = Markdown.elements
+    elements["fence"] = NonWrappingCodeBlock
     elements["heading_open"] = SlimHeading
