@@ -92,5 +92,7 @@ if typing.TYPE_CHECKING:
         no_docstrings: bool
         no_annotations: bool
         module: bool
+        main: str
+        onefile_argv0: str | None
 
     __compiled__: NuitkaVersion
