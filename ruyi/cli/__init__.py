@@ -3,11 +3,18 @@ import os
 import sys
 from typing import Callable, List
 
+# Should be all-lower for is_called_as_ruyi to work
 RUYI_ENTRYPOINT_NAME = "ruyi"
 
+ALLOWED_RUYI_ENTRYPOINT_NAMES = (
+    RUYI_ENTRYPOINT_NAME,
+    f"{RUYI_ENTRYPOINT_NAME}.exe",
+    f"{RUYI_ENTRYPOINT_NAME}.bin",  # Nuitka one-file program cache
+    "__main__.py",
+)
 
 def is_called_as_ruyi(argv0: str) -> bool:
-    return os.path.basename(argv0) in {RUYI_ENTRYPOINT_NAME, "__main__.py"}
+    return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 
 
 CLIEntrypoint = Callable[[argparse.Namespace], int]

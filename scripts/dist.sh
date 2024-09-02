@@ -81,6 +81,17 @@ do_inner() {
     poetry install --with=dist --without=dev
     endgroup
 
+    if [[ -d ${REPO_ROOT}/scripts/patches/nuitka ]]; then
+        green "patching Nuitka" group
+        pushd /home/b/venv/lib/python*/site-packages > /dev/null
+        for patch_file in "$REPO_ROOT"/scripts/patches/nuitka/*.patch; do
+            echo "    * $(basename "$patch_file")"
+            patch -Np1 < "$patch_file"
+        done
+        popd > /dev/null
+        endgroup
+    fi
+
     exec ./scripts/dist-inner.py
 }
 
