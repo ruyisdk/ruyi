@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 def get_nuitka_self_exe() -> str:
@@ -15,3 +16,18 @@ def get_nuitka_self_exe() -> str:
         import ruyi
 
         return os.path.join(ruyi.__compiled__.containing_dir, "ruyi")
+
+
+def get_argv0() -> str:
+    import ruyi
+
+    try:
+        if ruyi.__compiled__.onefile_argv0 is not None:
+            return ruyi.__compiled__.onefile_argv0
+    except AttributeError:
+        # Either we're not packaged with Nuitka, or the Nuitka used is
+        # without our onefile_argv0 patch, in which case we cannot do any
+        # better than simply returning sys.argv[0].
+        pass
+
+    return sys.argv[0]
