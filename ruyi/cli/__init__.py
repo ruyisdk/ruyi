@@ -13,6 +13,7 @@ ALLOWED_RUYI_ENTRYPOINT_NAMES = (
     "__main__.py",
 )
 
+
 def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 

@@ -26,6 +26,9 @@ class NonWrappingCodeBlock(CodeBlock):
         console: Console,
         options: ConsoleOptions,
     ) -> RenderResult:
+        # re-enable non-wrapping options locally for code blocks
+        render_options = options.update(no_wrap=True, overflow="ignore")
+
         code = str(self.text).rstrip()
         syntax = Syntax(
             code,
@@ -34,10 +37,20 @@ class NonWrappingCodeBlock(CodeBlock):
             word_wrap=False,
             padding=0,
         )
-        return syntax.highlight(code).__rich_console__(console, options)
+        return syntax.highlight(code).__rich_console__(console, render_options)
 
 
 class RuyiStyledMarkdown(Markdown):
     elements = Markdown.elements
     elements["fence"] = NonWrappingCodeBlock
     elements["heading_open"] = SlimHeading
+
+    def __rich_console__(
+        self,
+        console: Console,
+        options: ConsoleOptions,
+    ) -> RenderResult:
+        # we have to undo the ruyi-global console's non-wrapping setting
+        # for proper CLI rendering of long lines
+        render_options = options.update(no_wrap=False, overflow="fold")
+        return super().__rich_console__(console, render_options)
