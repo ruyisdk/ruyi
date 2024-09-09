@@ -1,3 +1,0 @@
-from typing import AnyStr
-
-def u(text: AnyStr, encoding: str = "utf-8") -> str: ...
