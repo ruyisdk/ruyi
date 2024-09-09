@@ -2,9 +2,8 @@ import functools
 import re
 from typing import Any, TypedDict
 
-import frontmatter
-
 from ..config.news import NewsReadStatusStore
+from ..utils import frontmatter
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from ..utils.l10n import match_lang_code
 
