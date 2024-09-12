@@ -1,13 +1,20 @@
+from contextlib import AbstractContextManager
 import pathlib
 import subprocess
 import time
 import tomllib
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar, cast
+
+import xingque
 
 from ruyi import log
 from ruyi.cli import user_input
 from ruyi.version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
+
+
+T = TypeVar("T")
+U = TypeVar("U")
 
 
 class RuyiHostAPI:
@@ -20,6 +27,7 @@ class RuyiHostAPI:
         self._plugin_root = plugin_root
         self._this_file = this_file
         self._this_plugin_dir = this_plugin_dir
+        self._ev = xingque.Evaluator()
 
         self._logger = RuyiPluginLogger()
 
@@ -70,6 +78,16 @@ class RuyiHostAPI:
 
     def sleep(self, seconds: float, /) -> None:
         return time.sleep(seconds)
+
+    def with_(
+        self,
+        cm: AbstractContextManager[T],
+        fn: xingque.Value | Callable[[T], U],
+    ) -> U:
+        with cm as obj:
+            if isinstance(fn, xingque.Value):
+                return cast(U, self._ev.eval_function(fn, obj))
+            return fn(obj)
 
 
 class RuyiPluginLogger:
