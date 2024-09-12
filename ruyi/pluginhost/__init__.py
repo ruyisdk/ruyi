@@ -57,9 +57,9 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def make_loader(
         self,
-        plugin_root: pathlib.Path,
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
+        is_cmd: bool,
     ) -> "BasePluginLoader[ModuleTy]":
         raise NotImplementedError
 
@@ -67,13 +67,17 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def make_evaluator(self) -> EvalTy:
         raise NotImplementedError
 
-    def load_plugin(self, plugin_id: str) -> None:
+    @property
+    def plugin_root(self) -> pathlib.Path:
+        return self._plugin_root
+
+    def load_plugin(self, plugin_id: str, is_cmd: bool) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
 
         loader = self.make_loader(
-            self._plugin_root,
             plugin_dir / paths.PLUGIN_ENTRYPOINT_FILENAME,
             self._module_cache,
+            is_cmd,
         )
         loaded_plugin = loader.load_this_plugin()
         self._loaded_plugins[plugin_id] = loaded_plugin
@@ -81,9 +85,14 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def is_plugin_loaded(self, plugin_id: str) -> bool:
         return plugin_id in self._loaded_plugins
 
-    def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
+    def get_from_plugin(
+        self,
+        plugin_id: str,
+        key: str,
+        is_cmd_plugin: bool = False,
+    ) -> object | None:
         if not self.is_plugin_loaded(plugin_id):
-            self.load_plugin(plugin_id)
+            self.load_plugin(plugin_id, is_cmd_plugin)
 
         if plugin_id not in self._value_cache:
             self._value_cache[plugin_id] = {}
@@ -111,19 +120,26 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
 
     def __init__(
         self,
-        root: pathlib.Path,
+        phctx: PluginHostContext[ModuleTy, SupportsEvalFunction],
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
+        is_cmd: bool,
     ) -> None:
-        self.root = root
+        self._phctx = phctx
         self.originating_file = originating_file
         self.module_cache = module_cache
+        self.is_cmd = is_cmd
+
+    @property
+    def root(self) -> pathlib.Path:
+        return self._phctx.plugin_root
 
     def make_sub_loader(self, originating_file: pathlib.Path) -> Self:
         return self.__class__(
-            self.root,
+            self._phctx,
             originating_file,
             self.module_cache,
+            self.is_cmd,
         )
 
     def load_this_plugin(self) -> ModuleTy:
@@ -142,6 +158,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
                 self.root,
                 False,
                 self.originating_file,
+                self.is_cmd,
             )
         resolved_path_str = str(resolved_path)
         if resolved_path_str in self.module_cache:
@@ -151,9 +168,10 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         plugin_dir = self.root / plugin_id
 
         host_bridge = api.make_ruyi_plugin_api_for_module(
-            self.root,
+            self._phctx,
             resolved_path,
             plugin_dir,
+            self.is_cmd,
         )
 
         mod = self.do_load_module(

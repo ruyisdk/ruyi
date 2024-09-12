@@ -9,7 +9,6 @@ from urllib import parse
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
-import xingque
 import yaml
 
 from .. import log
@@ -507,14 +506,16 @@ class MetadataRepo:
         plugin_entrypoint = self._plugin_host_ctx.get_from_plugin(
             plugin_id,
             "plugin_cmd_main_v1",
+            is_cmd_plugin=True,  # allow access to host FS for command plugins
         )
         if plugin_entrypoint is None:
             raise RuntimeError(f"cmd entrypoint not found in plugin '{plugin_id}'")
 
-        ev = xingque.Evaluator()
-        ret = ev.eval_function(plugin_entrypoint, args)
+        ret = self.eval_plugin_fn(plugin_entrypoint, args)
         if not isinstance(ret, int):
-            raise TypeError(
-                f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int"
+            log.W(
+                f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int."
             )
+            log.I("forcing return code to 1; the plugin should be fixed")
+            ret = 1
         return ret

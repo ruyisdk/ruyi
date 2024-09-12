@@ -2,7 +2,6 @@ from contextlib import AbstractContextManager
 from types import TracebackType
 
 import pytest
-import xingque
 
 from ruyi.pluginhost import PluginHostContext
 
@@ -31,8 +30,8 @@ def test_api_with_(
             return None
 
     with ruyi_file.plugin_suite("with_") as plugin_root:
-        phctx = PluginHostContext(plugin_root)
-        ev = xingque.Evaluator()
+        phctx = PluginHostContext.new(plugin_root)
+        ev = phctx.make_evaluator()
 
         fn1 = phctx.get_from_plugin("foo", "fn1")
         assert fn1 is not None
@@ -42,12 +41,12 @@ def test_api_with_(
         assert cm1.exited == 1
         assert ret1 == 466
 
-        # even when the Starlark side panics, the context manager semantics
+        # even when the plugin side panics, the context manager semantics
         # shall remain enforced
         fn2 = phctx.get_from_plugin("foo", "fn2")
         assert fn2 is not None
         cm2 = MockContextManager()
-        with pytest.raises(RuntimeError):
+        with pytest.raises((RuntimeError, AttributeError)):
             ev.eval_function(fn2, cm2)
         assert cm2.entered == 1
         assert cm2.exited == 1

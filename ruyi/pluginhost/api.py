@@ -3,15 +3,15 @@ import pathlib
 import subprocess
 import time
 import tomllib
-from typing import Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
-import xingque
-
-from ruyi import log
-from ruyi.cli import user_input
-from ruyi.version import RUYI_SEMVER
+from .. import log
+from ..cli import user_input
+from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
+if TYPE_CHECKING:
+    from . import PluginHostContext, SupportsEvalFunction, SupportsGetOption
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -20,14 +20,16 @@ U = TypeVar("U")
 class RuyiHostAPI:
     def __init__(
         self,
-        plugin_root: pathlib.Path,
+        phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
         this_file: pathlib.Path,
         this_plugin_dir: pathlib.Path,
+        allow_host_fs_access: bool,
     ) -> None:
-        self._plugin_root = plugin_root
+        self._phctx = phctx
         self._this_file = this_file
         self._this_plugin_dir = this_plugin_dir
-        self._ev = xingque.Evaluator()
+        self._ev = phctx.make_evaluator()
+        self._allow_host_fs_access = allow_host_fs_access
 
         self._logger = RuyiPluginLogger()
 
@@ -42,9 +44,10 @@ class RuyiHostAPI:
     def load_toml(self, path: str) -> object:
         resolved_path = resolve_ruyi_load_path(
             path,
-            self._plugin_root,
+            self._phctx.plugin_root,
             True,
             self._this_file,
+            self._allow_host_fs_access,
         )
         with open(resolved_path, "rb") as f:
             return tomllib.load(f)
@@ -82,12 +85,10 @@ class RuyiHostAPI:
     def with_(
         self,
         cm: AbstractContextManager[T],
-        fn: xingque.Value | Callable[[T], U],
+        fn: object | Callable[[T], U],
     ) -> U:
         with cm as obj:
-            if isinstance(fn, xingque.Value):
-                return cast(U, self._ev.eval_function(fn, obj))
-            return fn(obj)
+            return cast(U, self._ev.eval_function(fn, obj))
 
 
 class RuyiPluginLogger:
@@ -141,9 +142,10 @@ class RuyiPluginLogger:
 
 
 def _ruyi_plugin_rev(
-    plugin_root: pathlib.Path,
+    phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
     this_file: pathlib.Path,
     this_plugin_dir: pathlib.Path,
+    allow_host_fs_access: bool,
     rev: object,
 ) -> RuyiHostAPI:
     if not isinstance(rev, int):
@@ -152,12 +154,27 @@ def _ruyi_plugin_rev(
         raise ValueError(
             f"Ruyi plugin API revision {rev} is not supported by this Ruyi"
         )
-    return RuyiHostAPI(plugin_root, this_file, this_plugin_dir)
+    return RuyiHostAPI(
+        phctx,
+        this_file,
+        this_plugin_dir,
+        allow_host_fs_access,
+    )
 
 
 def make_ruyi_plugin_api_for_module(
-    plugin_root: pathlib.Path,
+    phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
     this_file: pathlib.Path,
     this_plugin_dir: pathlib.Path,
+    is_cmd: bool,
 ) -> Callable[[object], RuyiHostAPI]:
-    return lambda rev: _ruyi_plugin_rev(plugin_root, this_file, this_plugin_dir, rev)
+    # Only allow access to host FS when we're being loaded as a command plugin
+    allow_host_fs_access = is_cmd
+
+    return lambda rev: _ruyi_plugin_rev(
+        phctx,
+        this_file,
+        this_plugin_dir,
+        allow_host_fs_access,
+        rev,
+    )
