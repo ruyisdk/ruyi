@@ -10,23 +10,11 @@ from tomlkit import TOMLDocument, document, table
 from tomlkit.items import AoT, Table
 
 from .. import log
-from ..cli.cmd import RootCommand
+from ..cli.cmd import AdminCommand
 from ..config import GlobalConfig
 from . import checksum
 from .canonical_dump import dump_canonical_package_manifest_toml
 from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
-
-
-# Repo admin commands
-class AdminCommand(
-    RootCommand,
-    cmd="admin",
-    has_subcommands=True,
-    # https://github.com/python/cpython/issues/67037
-    # help=argparse.SUPPRESS,
-    help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
-):
-    pass
 
 
 class AdminManifestCommand(

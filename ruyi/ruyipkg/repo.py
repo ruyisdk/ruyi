@@ -9,6 +9,7 @@ from urllib import parse
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
+import xingque
 import yaml
 
 from .. import log
@@ -499,3 +500,21 @@ class MetadataRepo:
             self.ensure_provisioner_config_cache()
         assert self._provisioner_config_cache is not None
         return self._provisioner_config_cache[0]
+
+    def run_plugin_cmd(self, cmd_name: str, args: list[str]) -> int:
+        plugin_id = f"ruyi-cmd-{cmd_name.lower()}"
+
+        plugin_entrypoint = self._plugin_host_ctx.get_from_plugin(
+            plugin_id,
+            "plugin_cmd_main_v1",
+        )
+        if plugin_entrypoint is None:
+            raise RuntimeError(f"cmd entrypoint not found in plugin '{plugin_id}'")
+
+        ev = xingque.Evaluator()
+        ret = ev.eval_function(plugin_entrypoint, args)
+        if not isinstance(ret, int):
+            raise TypeError(
+                f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int"
+            )
+        return ret
