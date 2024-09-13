@@ -22,14 +22,14 @@ def cli_admin_manifest(args: argparse.Namespace) -> int:
         log.F(f"invalid restrict kinds given: {restrict}")
         return 1
 
-    manifest_result = [gen_manifest(f, restrict) for f in files]
+    entries = [gen_distfile_entry(f, restrict) for f in files]
     if format == "json":
-        sys.stdout.write(json.dumps(manifest_result, indent=2))
+        sys.stdout.write(json.dumps(entries, indent=2))
         sys.stdout.write("\n")
         return 0
 
     if format == "toml":
-        doc = emit_toml_manifest(manifest_result)
+        doc = emit_toml_distfiles_section(entries)
         log.D(f"{doc}")
         sys.stdout.write(doc.as_string())
         return 0
@@ -47,11 +47,11 @@ def validate_restrict_kinds(input: list[str]) -> TypeGuard[list[RestrictKind]]:
     return True
 
 
-def gen_manifest(
+def gen_distfile_entry(
     path: os.PathLike[Any],
     restrict: list[RestrictKind],
 ) -> DistfileDeclType:
-    log.D(f"generating manifest for {path}")
+    log.D(f"generating distfile entry for {path}")
     with open(path, "rb") as fp:
         filesize = os.stat(fp.fileno()).st_size
         c = checksum.Checksummer(fp, {})
@@ -69,7 +69,7 @@ def gen_manifest(
     return obj
 
 
-def emit_toml_manifest(x: list[DistfileDeclType]) -> TOMLDocument:
+def emit_toml_distfiles_section(x: list[DistfileDeclType]) -> TOMLDocument:
     doc = document()
 
     arr: list[Table] = []
