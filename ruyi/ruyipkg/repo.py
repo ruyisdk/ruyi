@@ -18,10 +18,10 @@ from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
+    BoundPackageManifest,
+    DistfileDecl,
     InputPackageManifestType,
     is_prerelease,
-    DistfileDecl,
-    PackageManifest,
 )
 from .profile import PluginProfileProvider, ProfileProxy
 from .provisioner import ProvisionerConfig
@@ -185,9 +185,9 @@ class MetadataRepo:
 
         self._cfg: RepoConfig | None = None
         self._messages: RepoMessageStore | None = None
-        self._pkgs: dict[str, dict[str, PackageManifest]] = {}
-        self._categories: dict[str, dict[str, dict[str, PackageManifest]]] = {}
-        self._slug_cache: dict[str, PackageManifest] = {}
+        self._pkgs: dict[str, dict[str, BoundPackageManifest]] = {}
+        self._categories: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
+        self._slug_cache: dict[str, BoundPackageManifest] = {}
         self._supported_arches: set[str] | None = None
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
@@ -273,7 +273,7 @@ class MetadataRepo:
         self._messages = RepoMessageStore.from_object(obj)
         return self._messages
 
-    def iter_pkg_manifests(self) -> Iterable[PackageManifest]:
+    def iter_pkg_manifests(self) -> Iterable[BoundPackageManifest]:
         self.ensure_git_repo()
 
         manifests_dir = os.path.join(self.root, "manifests")
@@ -285,7 +285,7 @@ class MetadataRepo:
     def _iter_pkg_manifests_from_category(
         self,
         category_dir: str,
-    ) -> Iterable[PackageManifest]:
+    ) -> Iterable[BoundPackageManifest]:
         self.ensure_git_repo()
 
         category = os.path.basename(category_dir)
@@ -297,7 +297,7 @@ class MetadataRepo:
             pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
             seen_pkgs.add((pkg_name, pkg_ver))
             with open(os.path.join(category_dir, f), "rb") as fp:
-                yield PackageManifest(
+                yield BoundPackageManifest(
                     category,
                     pkg_name,
                     pkg_ver,
@@ -311,7 +311,7 @@ class MetadataRepo:
                 # we've already processed the toml format data for this version
                 continue
             with open(os.path.join(category_dir, f), "rb") as fp:
-                yield PackageManifest(category, pkg_name, pkg_ver, json.load(fp))
+                yield BoundPackageManifest(category, pkg_name, pkg_ver, json.load(fp))
 
     def get_supported_arches(self) -> list[str]:
         if self._supported_arches is not None:
@@ -356,9 +356,9 @@ class MetadataRepo:
 
         self.ensure_git_repo()
 
-        cache_by_name: dict[str, dict[str, PackageManifest]] = {}
-        cache_by_category: dict[str, dict[str, dict[str, PackageManifest]]] = {}
-        slug_cache: dict[str, PackageManifest] = {}
+        cache_by_name: dict[str, dict[str, BoundPackageManifest]] = {}
+        cache_by_category: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
+        slug_cache: dict[str, BoundPackageManifest] = {}
         for pm in self.iter_pkg_manifests():
             if pm.name not in cache_by_name:
                 cache_by_name[pm.name] = {}
@@ -377,7 +377,7 @@ class MetadataRepo:
         self._categories = cache_by_category
         self._slug_cache = slug_cache
 
-    def iter_pkgs(self) -> Iterable[Tuple[str, str, dict[str, PackageManifest]]]:
+    def iter_pkgs(self) -> Iterable[Tuple[str, str, dict[str, BoundPackageManifest]]]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
@@ -385,7 +385,7 @@ class MetadataRepo:
             for pkg_name, pkg_vers in cat_pkgs.items():
                 yield (cat, pkg_name, pkg_vers)
 
-    def get_pkg_by_slug(self, slug: str) -> PackageManifest | None:
+    def get_pkg_by_slug(self, slug: str) -> BoundPackageManifest | None:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
@@ -395,7 +395,7 @@ class MetadataRepo:
         self,
         name: str,
         category: str | None = None,
-    ) -> Iterable[PackageManifest]:
+    ) -> Iterable[BoundPackageManifest]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
@@ -408,7 +408,7 @@ class MetadataRepo:
         name: str,
         category: str | None = None,
         include_prerelease_vers: bool = False,
-    ) -> PackageManifest:
+    ) -> BoundPackageManifest:
         if not self._pkgs:
             self.ensure_pkg_cache()
 

@@ -14,7 +14,7 @@ from ..config import GlobalConfig
 from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
-from .pkg_manifest import PackageManifest, PackageManifestType
+from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .unpack import ensure_unpack_cmd_for_method
 
 
@@ -61,7 +61,7 @@ class PkgRemark(StrEnum):
 
 
 class AugmentedPkgManifest:
-    def __init__(self, pm: PackageManifest, remarks: list[PkgRemark]) -> None:
+    def __init__(self, pm: BoundPackageManifest, remarks: list[PkgRemark]) -> None:
         self.pm = pm
         self.remarks = remarks
 
@@ -167,7 +167,7 @@ def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     return 0
 
 
-def print_pkg_detail(pm: PackageManifest) -> None:
+def print_pkg_detail(pm: BoundPackageManifest) -> None:
     log.stdout(
         f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
@@ -339,7 +339,7 @@ def do_install_atoms(
 def do_install_binary_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
-    pm: PackageManifest,
+    pm: BoundPackageManifest,
     canonicalized_host: str,
     fetch_only: bool,
     reinstall: bool,
@@ -383,7 +383,7 @@ def do_install_binary_pkg(
 def do_install_binary_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
-    pm: PackageManifest,
+    pm: BoundPackageManifest,
     canonicalized_host: str,
     fetch_only: bool,
     install_root: str,
@@ -426,7 +426,7 @@ def do_install_binary_pkg_to(
 def do_install_blob_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
-    pm: PackageManifest,
+    pm: BoundPackageManifest,
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
@@ -468,7 +468,7 @@ def do_install_blob_pkg(
 def do_install_blob_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
-    pm: PackageManifest,
+    pm: BoundPackageManifest,
     fetch_only: bool,
     install_root: str,
 ) -> int:
