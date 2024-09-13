@@ -1,9 +1,11 @@
 from copy import deepcopy
 from functools import cached_property
+import json
 import os
 import pathlib
 import re
-from typing import Any, Iterable, Literal, NotRequired, Self, TypedDict, cast
+import tomllib
+from typing import Any, BinaryIO, Iterable, Literal, NotRequired, Self, TypedDict, cast
 
 from semver.version import Version
 
@@ -390,6 +392,31 @@ class PackageManifest:
         self._data = _translate_to_manifest_v1(data)
         if "kind" not in self._data:
             self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
+
+    @classmethod
+    def load_json(cls, stream: BinaryIO) -> Self:
+        content = json.load(stream)
+        return cls(content)
+
+    @classmethod
+    def load_toml(cls, stream: BinaryIO) -> Self:
+        content = cast(InputPackageManifestType, tomllib.load(stream))
+        return cls(content)
+
+    @classmethod
+    def load_from_path(cls, p: pathlib.Path) -> Self:
+        suffix = p.suffix.lower()
+        match suffix:
+            case ".json":
+                with open(p, "rb") as fp:
+                    return cls.load_json(fp)
+            case ".toml":
+                with open(p, "rb") as fp:
+                    return cls.load_toml(fp)
+            case _:
+                raise RuntimeError(
+                    f"unrecognized package manifest file extension: '{p.suffix}'"
+                )
 
     def to_raw(self) -> PackageManifestType:
         return deepcopy(self._data)
