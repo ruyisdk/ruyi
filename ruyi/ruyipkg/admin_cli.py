@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import pathlib
 import sys
 from typing import Any, TypeGuard, cast
 
@@ -9,7 +10,8 @@ from tomlkit.items import AoT, Table
 
 from .. import log
 from . import checksum
-from .pkg_manifest import DistfileDeclType, RestrictKind
+from .canonical_dump import dump_canonical_package_manifest_toml
+from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
 
 
 def cli_admin_manifest(args: argparse.Namespace) -> int:
@@ -35,6 +37,24 @@ def cli_admin_manifest(args: argparse.Namespace) -> int:
         return 0
 
     raise RuntimeError("unrecognized output format; should never happen")
+
+
+def cli_admin_format_manifest(args: argparse.Namespace) -> int:
+    files = args.file
+
+    for f in files:
+        p = pathlib.Path(f)
+        pm = PackageManifest.load_from_path(p)
+        d = dump_canonical_package_manifest_toml(pm.to_raw())
+
+        dest_path = p.with_suffix(".toml")
+        with open(dest_path, "w") as fp:
+            # XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
+            # post-process the output to have all leading 4-space indentation
+            # before a string literal replaced by 2-space ones.
+            fp.write(d.as_string().replace('\n    "', '\n  "'))
+
+    return 0
 
 
 def validate_restrict_kinds(input: list[str]) -> TypeGuard[list[RestrictKind]]:
