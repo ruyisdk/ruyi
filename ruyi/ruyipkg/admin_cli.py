@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import sys
 from typing import Any, TypeGuard, cast
 
@@ -39,6 +40,16 @@ def cli_admin_manifest(args: argparse.Namespace) -> int:
     raise RuntimeError("unrecognized output format; should never happen")
 
 
+RE_INDENT_FIX = re.compile(r"(?m)^    ([\"'{\[])")
+
+
+# XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
+# post-process the output to have all leading 4-space indentation before
+# strings, lists or tables replaced by 2-space ones.
+def _fix_indent(s: str) -> str:
+    return RE_INDENT_FIX.sub(r"  \1", s)
+
+
 def cli_admin_format_manifest(args: argparse.Namespace) -> int:
     files = args.file
 
@@ -49,10 +60,7 @@ def cli_admin_format_manifest(args: argparse.Namespace) -> int:
 
         dest_path = p.with_suffix(".toml")
         with open(dest_path, "w") as fp:
-            # XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
-            # post-process the output to have all leading 4-space indentation
-            # before a string literal replaced by 2-space ones.
-            fp.write(d.as_string().replace('\n    "', '\n  "'))
+            fp.write(_fix_indent(d.as_string()))
 
     return 0
 

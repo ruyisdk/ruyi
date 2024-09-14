@@ -1,6 +1,6 @@
 from tomlkit import TOMLDocument
 from tomlkit import document, nl, string, table
-from tomlkit.items import AoT, InlineTable, Table
+from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
 
 from .pkg_manifest import (
     BinaryDeclType,
@@ -14,6 +14,8 @@ from .pkg_manifest import (
     PackageMetadataDeclType,
     ProvisionableDeclType,
     SourceDeclType,
+    ToolchainComponentDeclType,
+    ToolchainDeclType,
     VendorDeclType,
 )
 from ..utils.toml import inline_table_with_spaces, sorted_table, str_array
@@ -31,8 +33,9 @@ def dump_canonical_package_manifest_toml(
     maybe_dump_binary_decls_into(y, x.get("binary"))
     maybe_dump_blob_decl_into(y, x.get("blob"))
     maybe_dump_emulator_decl_into(y, x.get("emulator"))
-    maybe_dump_source_decl_into(y, x.get("source"))
     maybe_dump_provisionable_decl_into(y, x.get("provisionable"))
+    maybe_dump_source_decl_into(y, x.get("source"))
+    maybe_dump_toolchain_decl_into(y, x.get("toolchain"))
 
     return y
 
@@ -187,3 +190,41 @@ def maybe_dump_source_decl_into(doc: TOMLDocument, x: SourceDeclType | None) -> 
         return
     doc.add(nl())
     doc.add("source", dump_source_decl(x))
+
+
+def dump_toolchain_component_decl(x: ToolchainComponentDeclType) -> InlineTable:
+    y = inline_table_with_spaces()
+    with y:
+        y.add("name", string(x["name"]))
+        y.add("version", string(x["version"]))
+    return y
+
+
+def dump_toolchain_component_decls(x: list[ToolchainComponentDeclType]) -> Array:
+    sorted_x = x[:]
+    sorted_x.sort(key=lambda i: i["name"])
+    return Array(
+        [dump_toolchain_component_decl(i) for i in sorted_x],
+        Trivia(),
+        multiline=True,
+    )
+
+
+def dump_toolchain_decl(x: ToolchainDeclType) -> Table:
+    y = table()
+    y.add("target", string(x["target"]))
+    y.add("flavors", str_array(x["flavors"]))
+    y.add("components", dump_toolchain_component_decls(x["components"]))
+    if "included_sysroot" in x:
+        y.add("included_sysroot", x["included_sysroot"])
+    return y
+
+
+def maybe_dump_toolchain_decl_into(
+    doc: TOMLDocument,
+    x: ToolchainDeclType | None,
+) -> None:
+    if x is None:
+        return
+    doc.add(nl())
+    doc.add("toolchain", dump_toolchain_decl(x))
