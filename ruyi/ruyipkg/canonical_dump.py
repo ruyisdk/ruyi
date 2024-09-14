@@ -3,6 +3,8 @@ from tomlkit import document, nl, string, table
 from tomlkit.items import AoT, InlineTable, Table
 
 from .pkg_manifest import (
+    BinaryDeclType,
+    BinaryFileDeclType,
     BlobDeclType,
     DistfileDeclType,
     FetchRestrictionDeclType,
@@ -23,6 +25,7 @@ def dump_canonical_package_manifest_toml(
 
     dump_metadata_decl_into(y, x["metadata"])
     dump_distfile_decls_into(y, x["distfiles"])
+    maybe_dump_binary_decls_into(y, x.get("binary"))
     maybe_dump_blob_decl_into(y, x.get("blob"))
     maybe_dump_provisionable_decl_into(y, x.get("provisionable"))
 
@@ -120,3 +123,22 @@ def maybe_dump_provisionable_decl_into(
         return
     doc.add(nl())
     doc.add("provisionable", dump_provisionable_decl(x))
+
+
+def dump_binary_decl(x: BinaryFileDeclType) -> Table:
+    y = table()
+    y.add("host", string(x["host"]))
+    multiline_distfiles = len(x["distfiles"]) > 1
+    y.add("distfiles", str_array(x["distfiles"], multiline=multiline_distfiles))
+    return y
+
+
+def dump_binary_decls(x: list[BinaryFileDeclType]) -> AoT:
+    return AoT([dump_binary_decl(i) for i in x])
+
+
+def maybe_dump_binary_decls_into(doc: TOMLDocument, x: BinaryDeclType | None) -> None:
+    if x is None:
+        return
+    doc.add(nl())
+    doc.add("binary", dump_binary_decls(x))
