@@ -2,7 +2,7 @@ import abc
 import re
 from typing import Literal, Tuple
 
-from .pkg_manifest import PackageManifest, is_prerelease
+from .pkg_manifest import BoundPackageManifest, is_prerelease
 from .repo import MetadataRepo
 
 
@@ -47,7 +47,7 @@ class Atom(abc.ABC):
         self,
         repo: MetadataRepo,
         include_prerelease_vers: bool,
-    ) -> PackageManifest | None:
+    ) -> BoundPackageManifest | None:
         raise NotImplementedError
 
 
@@ -68,7 +68,7 @@ class NameAtom(Atom):
         self,
         repo: MetadataRepo,
         include_prerelease_vers: bool,
-    ) -> PackageManifest | None:
+    ) -> BoundPackageManifest | None:
         # return the latest version of the package named self.name in the given repo
         try:
             return repo.get_pkg_latest_ver(
@@ -87,7 +87,7 @@ class ExprAtom(Atom):
 
         self.category, self.name = split_category(name)
 
-    def _is_pm_matching_my_exprs(self, pm: PackageManifest) -> bool:
+    def _is_pm_matching_my_exprs(self, pm: BoundPackageManifest) -> bool:
         for e in self.exprs:
             if not pm.semver.match(e):
                 return False
@@ -97,7 +97,7 @@ class ExprAtom(Atom):
         self,
         repo: MetadataRepo,
         include_prerelease_vers: bool,
-    ) -> PackageManifest | None:
+    ) -> BoundPackageManifest | None:
         matching_pms = {
             pm.ver: pm
             for pm in repo.iter_pkg_vers(self.name, self.category)
@@ -124,7 +124,7 @@ class SlugAtom(Atom):
         self,
         repo: MetadataRepo,
         include_prerelease_vers: bool,
-    ) -> PackageManifest | None:
+    ) -> BoundPackageManifest | None:
         pm = repo.get_pkg_by_slug(self.slug)
         if pm and is_prerelease(pm.semver):
             return pm if include_prerelease_vers else None

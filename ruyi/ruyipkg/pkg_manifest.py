@@ -1,8 +1,11 @@
 from copy import deepcopy
 from functools import cached_property
+import json
 import os
+import pathlib
 import re
-from typing import Any, Iterable, Literal, NotRequired, TypedDict, cast
+import tomllib
+from typing import Any, BinaryIO, Iterable, Literal, NotRequired, Self, TypedDict, cast
 
 from semver.version import Version
 
@@ -384,37 +387,43 @@ def _translate_to_manifest_v1(obj: InputPackageManifestType) -> PackageManifestT
 class PackageManifest:
     def __init__(
         self,
-        category: str,
-        name: str,
-        ver: str,
         data: InputPackageManifestType,
     ) -> None:
         self._data = _translate_to_manifest_v1(data)
         if "kind" not in self._data:
             self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
-        self.category = category
-        self.name = name
-        self.ver = ver
-        self._semver = Version.parse(ver)
+
+    @classmethod
+    def load_json(cls, stream: BinaryIO) -> Self:
+        content = json.load(stream)
+        return cls(content)
+
+    @classmethod
+    def load_toml(cls, stream: BinaryIO) -> Self:
+        content = cast(InputPackageManifestType, tomllib.load(stream))
+        return cls(content)
+
+    @classmethod
+    def load_from_path(cls, p: pathlib.Path) -> Self:
+        suffix = p.suffix.lower()
+        match suffix:
+            case ".json":
+                with open(p, "rb") as fp:
+                    return cls.load_json(fp)
+            case ".toml":
+                with open(p, "rb") as fp:
+                    return cls.load_toml(fp)
+            case _:
+                raise RuntimeError(
+                    f"unrecognized package manifest file extension: '{p.suffix}'"
+                )
 
     def to_raw(self) -> PackageManifestType:
         return deepcopy(self._data)
 
     @property
-    def semver(self) -> Version:
-        return self._semver
-
-    @property
-    def is_prerelease(self) -> bool:
-        return is_prerelease(self._semver)
-
-    @property
     def slug(self) -> str | None:
         return self._data["metadata"].get("slug")
-
-    @property
-    def name_for_installation(self) -> str:
-        return f"{self.name}-{self.ver}"
 
     @property
     def kind(self) -> list[PackageKind]:
@@ -487,6 +496,34 @@ class PackageManifest:
         if "provisionable" not in self._data:
             return None
         return ProvisionableDecl(self._data["provisionable"])
+
+
+class BoundPackageManifest(PackageManifest):
+    def __init__(
+        self,
+        category: str,
+        name: str,
+        ver: str,
+        data: InputPackageManifestType,
+    ) -> None:
+        super().__init__(data)
+
+        self.category = category
+        self.name = name
+        self.ver = ver
+        self._semver = Version.parse(ver)
+
+    @property
+    def semver(self) -> Version:
+        return self._semver
+
+    @property
+    def is_prerelease(self) -> bool:
+        return is_prerelease(self._semver)
+
+    @property
+    def name_for_installation(self) -> str:
+        return f"{self.name}-{self.ver}"
 
 
 PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|pre|rc)")

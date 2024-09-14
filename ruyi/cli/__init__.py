@@ -24,7 +24,7 @@ CLIEntrypoint = Callable[[argparse.Namespace], int]
 def init_argparse() -> argparse.ArgumentParser:
     from ..device.provision_cli import cli_device_provision
     from ..mux.venv import cli_venv
-    from ..ruyipkg.admin_cli import cli_admin_manifest
+    from ..ruyipkg.admin_cli import cli_admin_format_manifest, cli_admin_manifest
     from ..ruyipkg.host import get_native_host
     from ..ruyipkg.news_cli import cli_news_list, cli_news_read
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
@@ -233,6 +233,18 @@ def init_argparse() -> argparse.ArgumentParser:
     adminsp = admin.add_subparsers(
         title="subcommands",
     )
+
+    admin_format_manifest = adminsp.add_parser(
+        "format-manifest",
+        help="Format the given package manifests into canonical TOML representation",
+    )
+    admin_format_manifest.add_argument(
+        "file",
+        type=str,
+        nargs="+",
+        help="Path to the distfile(s) to generate manifest for",
+    )
+    admin_format_manifest.set_defaults(func=cli_admin_format_manifest)
 
     admin_manifest = adminsp.add_parser(
         "manifest",
