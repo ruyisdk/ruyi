@@ -11,6 +11,7 @@ from .pkg_manifest import (
     PackageManifestType,
     PackageMetadataDeclType,
     ProvisionableDeclType,
+    SourceDeclType,
     VendorDeclType,
 )
 from ..utils.toml import inline_table_with_spaces, sorted_table, str_array
@@ -27,6 +28,7 @@ def dump_canonical_package_manifest_toml(
     dump_distfile_decls_into(y, x["distfiles"])
     maybe_dump_binary_decls_into(y, x.get("binary"))
     maybe_dump_blob_decl_into(y, x.get("blob"))
+    maybe_dump_source_decl_into(y, x.get("source"))
     maybe_dump_provisionable_decl_into(y, x.get("provisionable"))
 
     return y
@@ -142,3 +144,17 @@ def maybe_dump_binary_decls_into(doc: TOMLDocument, x: BinaryDeclType | None) ->
         return
     doc.add(nl())
     doc.add("binary", dump_binary_decls(x))
+
+
+def dump_source_decl(x: SourceDeclType) -> Table:
+    y = table()
+    multiline_distfiles = len(x["distfiles"]) > 1
+    y.add("distfiles", str_array(x["distfiles"], multiline=multiline_distfiles))
+    return y
+
+
+def maybe_dump_source_decl_into(doc: TOMLDocument, x: SourceDeclType | None) -> None:
+    if x is None:
+        return
+    doc.add(nl())
+    doc.add("source", dump_source_decl(x))
