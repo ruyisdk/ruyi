@@ -7,6 +7,8 @@ from .pkg_manifest import (
     BinaryFileDeclType,
     BlobDeclType,
     DistfileDeclType,
+    EmulatorDeclType,
+    EmulatorProgramDeclType,
     FetchRestrictionDeclType,
     PackageManifestType,
     PackageMetadataDeclType,
@@ -28,6 +30,7 @@ def dump_canonical_package_manifest_toml(
     dump_distfile_decls_into(y, x["distfiles"])
     maybe_dump_binary_decls_into(y, x.get("binary"))
     maybe_dump_blob_decl_into(y, x.get("blob"))
+    maybe_dump_emulator_decl_into(y, x.get("emulator"))
     maybe_dump_source_decl_into(y, x.get("source"))
     maybe_dump_provisionable_decl_into(y, x.get("provisionable"))
 
@@ -144,6 +147,32 @@ def maybe_dump_binary_decls_into(doc: TOMLDocument, x: BinaryDeclType | None) ->
         return
     doc.add(nl())
     doc.add("binary", dump_binary_decls(x))
+
+
+def dump_emulator_program_decl(x: EmulatorProgramDeclType) -> Table:
+    y = table()
+    y.add("path", string(x["path"]))
+    y.add("flavor", string(x["flavor"]))
+    y.add("supported_arches", str_array(x["supported_arches"]))
+    if "binfmt_misc" in x:
+        y.add("binfmt_misc", string(x["binfmt_misc"]))
+    return y
+
+
+def dump_emulator_decl(x: EmulatorDeclType) -> Table:
+    y = table()
+    y.add("flavors", str_array(x.get("flavors", [])))
+    y.add("programs", AoT([dump_emulator_program_decl(i) for i in x["programs"]]))
+    return y
+
+
+def maybe_dump_emulator_decl_into(
+    doc: TOMLDocument, x: EmulatorDeclType | None
+) -> None:
+    if x is None:
+        return
+    doc.add(nl())
+    doc.add("emulator", dump_emulator_decl(x))
 
 
 def dump_source_decl(x: SourceDeclType) -> Table:
