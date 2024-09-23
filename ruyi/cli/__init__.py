@@ -26,7 +26,7 @@ CLIEntrypoint = Callable[[argparse.Namespace], int]
 
 def init_argparse() -> argparse.ArgumentParser:
     from ..device.provision_cli import cli_device_provision
-    from ..mux.venv import cli_venv
+    from ..mux.venv.venv_cli import cli_venv
     from ..ruyipkg.admin_cli import cli_admin_format_manifest, cli_admin_manifest
     from ..ruyipkg.host import get_native_host
     from ..ruyipkg.news_cli import cli_news_list, cli_news_read
@@ -203,7 +203,8 @@ def init_argparse() -> argparse.ArgumentParser:
         "--toolchain",
         "-t",
         type=str,
-        help="Specifier (atom) of the toolchain package to use",
+        action="append",
+        help="Specifier(s) (atoms) of the toolchain package(s) to use",
     )
     venv.add_argument(
         "--emulator",

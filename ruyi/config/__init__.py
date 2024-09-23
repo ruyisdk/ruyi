@@ -218,7 +218,7 @@ class VenvConfigRootType(TypedDict):
     config: VenvConfigType
 
 
-class VenvCacheType(TypedDict):
+class VenvCacheV0Type(TypedDict):
     target_tuple: str
     toolchain_bindir: str
     gcc_install_dir: NotRequired[str]
@@ -227,20 +227,61 @@ class VenvCacheType(TypedDict):
     profile_emu_env: NotRequired[dict[str, str]]
 
 
+class VenvCacheV1TargetType(TypedDict):
+    toolchain_bindir: str
+    gcc_install_dir: NotRequired[str]
+
+
+class VenvCacheV1Type(TypedDict):
+    profile_common_flags: str
+    profile_emu_env: NotRequired[dict[str, str]]
+    qemu_bin: NotRequired[str]
+    targets: dict[str, VenvCacheV1TargetType]
+
+
 class VenvCacheRootType(TypedDict):
-    cached: VenvCacheType
+    cached: NotRequired[VenvCacheV0Type]
+    cached_v1: NotRequired[VenvCacheV1Type]
+
+
+def parse_venv_cache(cache: VenvCacheRootType) -> VenvCacheV1Type:
+    if "cached_v1" in cache:
+        return cache["cached_v1"]
+    if "cached" in cache:
+        return upgrade_venv_cache_v0(cache["cached"])
+    raise RuntimeError("unsupported venv cache version")
+
+
+def upgrade_venv_cache_v0(x: VenvCacheV0Type) -> VenvCacheV1Type:
+    # v0 only supports one single target so upgrading is trivial
+    v1_target: VenvCacheV1TargetType = {
+        "toolchain_bindir": x["toolchain_bindir"],
+    }
+    if "gcc_install_dir" in x:
+        v1_target["gcc_install_dir"] = x["gcc_install_dir"]
+
+    y: VenvCacheV1Type = {
+        "profile_common_flags": x["profile_common_flags"],
+        "targets": {x["target_tuple"]: v1_target},
+    }
+    if "profile_emu_env" in x:
+        y["profile_emu_env"] = x["profile_emu_env"]
+    if "qemu_bin" in x:
+        y["qemu_bin"] = x["qemu_bin"]
+
+    return y
 
 
 class RuyiVenvConfig:
     def __init__(self, cfg: VenvConfigRootType, cache: VenvCacheRootType) -> None:
         self.profile = cfg["config"]["profile"]
         self.sysroot = cfg["config"].get("sysroot")
-        self.target_tuple = cache["cached"]["target_tuple"]
-        self.toolchain_bindir = cache["cached"]["toolchain_bindir"]
-        self.gcc_install_dir = cache["cached"].get("gcc_install_dir")
-        self.profile_common_flags = cache["cached"]["profile_common_flags"]
-        self.qemu_bin = cache["cached"].get("qemu_bin")
-        self.profile_emu_env = cache["cached"].get("profile_emu_env")
+
+        parsed_cache = parse_venv_cache(cache)
+        self.targets = parsed_cache["targets"]
+        self.profile_common_flags = parsed_cache["profile_common_flags"]
+        self.qemu_bin = parsed_cache.get("qemu_bin")
+        self.profile_emu_env = parsed_cache.get("profile_emu_env")
 
     @classmethod
     def explicit_ruyi_venv_root(cls) -> str | None:
@@ -280,8 +321,16 @@ class RuyiVenvConfig:
         with open(venv_config_path, "rb") as fp:
             cfg: Any = tomllib.load(fp)  # in order to cast to our stricter type
 
-        venv_cache_path = venv_root / "ruyi-cache.toml"
-        with open(venv_cache_path, "rb") as fp:
-            cache: Any = tomllib.load(fp)  # in order to cast to our stricter type
+        cache: Any  # in order to cast to our stricter type
+        venv_cache_v1_path = venv_root / "ruyi-cache.v1.toml"
+        try:
+            with open(venv_cache_v1_path, "rb") as fp:
+                cache = tomllib.load(fp)
+        except FileNotFoundError:
+            venv_cache_v0_path = venv_root / "ruyi-cache.toml"
+            with open(venv_cache_v0_path, "rb") as fp:
+                cache = tomllib.load(fp)
 
+        # NOTE: for now it's not prohibited to have v1 cache data in the v0
+        # cache path, but this situation is harmless
         return cls(cfg, cache)
