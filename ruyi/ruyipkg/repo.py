@@ -471,7 +471,7 @@ class MetadataRepo:
         parsed_config: ProvisionerConfig | None = None
         for filename in ("config.yml", "config.yaml"):
             try:
-                with open(os.path.join(cfg_dir, filename), "r") as fp:
+                with open(os.path.join(cfg_dir, filename), "r", encoding="utf-8") as fp:
                     parsed_config = yaml.safe_load(fp)
                     break
             except FileNotFoundError:

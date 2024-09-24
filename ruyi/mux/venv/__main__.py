@@ -20,7 +20,7 @@ def main() -> None:
     os.chdir(self_path)
 
     payloads = {f[:-6]: make_payload_from_file(f) for f in glob.iglob("*.jinja")}
-    with open("data.py", "w") as fp:
+    with open("data.py", "w", encoding="utf-8") as fp:
 
         def p(*args: Any) -> None:
             return print(*args, file=fp)

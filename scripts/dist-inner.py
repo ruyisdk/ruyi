@@ -263,7 +263,7 @@ def set_gha_output(k: str, v: str) -> None:
         return
 
     INFO.print(f"GHA: setting output [cyan]{k}[/] to [cyan]{v}[/]")
-    with open(outfile, "a") as fp:
+    with open(outfile, "a", encoding="utf-8") as fp:
         fp.write(f"{k}={v}\n")
 
 

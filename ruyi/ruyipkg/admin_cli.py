@@ -59,7 +59,7 @@ def cli_admin_format_manifest(args: argparse.Namespace) -> int:
         d = dump_canonical_package_manifest_toml(pm.to_raw())
 
         dest_path = p.with_suffix(".toml")
-        with open(dest_path, "w") as fp:
+        with open(dest_path, "w", encoding="utf-8") as fp:
             fp.write(_fix_indent(d.as_string()))
 
     return 0
