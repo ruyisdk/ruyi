@@ -41,6 +41,8 @@ do_inner() {
         mkdir -p "$RUYI_DIST_BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
     fi
 
+    : "${VIRTUAL_ENV:?you must build in a Python virtual environment}"
+
     : "${MAKEFLAGS:=-j$(nproc)}"
     export MAKEFLAGS
 
@@ -78,7 +80,7 @@ do_inner() {
 
     if [[ -d ${REPO_ROOT}/scripts/patches/nuitka ]]; then
         green "patching Nuitka" group
-        pushd /home/b/venv/lib/python*/site-packages > /dev/null
+        pushd "$VIRTUAL_ENV"/lib/python*/site-packages > /dev/null
         for patch_file in "$REPO_ROOT"/scripts/patches/nuitka/*.patch; do
             echo "    * $(basename "$patch_file")"
             patch -Np1 < "$patch_file"
