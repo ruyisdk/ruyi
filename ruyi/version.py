@@ -1,10 +1,7 @@
-import argparse
 import importlib.metadata
 
 import packaging.version
 import semver
-
-from .. import log
 
 # NOTE: one cannot print logs in the version helpers, because the version info
 # is initialized so early (before argparse can look at argv because --version
@@ -55,12 +52,3 @@ project's sources from the project's official website:
 * certifi: https://github.com/certifi/python-certifi
 \
 """
-
-
-def cli_version(_: argparse.Namespace) -> int:
-    from ..ruyipkg.host import get_native_host
-
-    print(f"Ruyi {RUYI_SEMVER}\n\nRunning on {get_native_host()}.\n")
-    log.stdout(COPYRIGHT_NOTICE)
-
-    return 0

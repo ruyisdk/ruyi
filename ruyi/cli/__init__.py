@@ -30,8 +30,9 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update_cli import cli_update
+    from ..version import RUYI_SEMVER
     from .self_cli import cli_self_uninstall
-    from .version import RUYI_SEMVER, cli_version
+    from .version_cli import cli_version
 
     native_host_str = get_native_host()
 
