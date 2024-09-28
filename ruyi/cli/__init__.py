@@ -1,7 +1,10 @@
 import argparse
+import atexit
 import os
 import sys
 from typing import Callable, List
+
+from ..config import GlobalConfig
 
 # Should be all-lower for is_called_as_ruyi to work
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -312,6 +315,11 @@ def init_argparse() -> argparse.ArgumentParser:
 
 
 def main(argv: List[str]) -> int:
+    gc = GlobalConfig.load_from_config()
+    if gc.telemetry is not None:
+        gc.telemetry.init_installation(False)
+        atexit.register(gc.telemetry.flush)
+
     if not is_called_as_ruyi(argv[0]):
         from ..mux.runtime import mux_main
 
