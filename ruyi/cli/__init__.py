@@ -1,7 +1,10 @@
 import argparse
+import atexit
 import os
 import sys
 from typing import Callable, List
+
+from ..config import GlobalConfig
 
 # Should be all-lower for is_called_as_ruyi to work
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -30,8 +33,9 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update_cli import cli_update
+    from ..version import RUYI_SEMVER
     from .self_cli import cli_self_uninstall
-    from .version import RUYI_SEMVER, cli_version
+    from .version_cli import cli_version
 
     native_host_str = get_native_host()
 
@@ -74,7 +78,10 @@ def init_argparse() -> argparse.ArgumentParser:
         "provision",
         help="Interactively initialize a device for development",
     )
-    device_provision.set_defaults(func=cli_device_provision)
+    device_provision.set_defaults(
+        func=cli_device_provision,
+        tele_key="device provision",
+    )
 
     extract = sp.add_parser(
         "extract",
@@ -92,10 +99,12 @@ def init_argparse() -> argparse.ArgumentParser:
         default=native_host_str,
         help="Override the host architecture (normally not needed)",
     )
-    extract.set_defaults(func=cli_extract)
+    extract.set_defaults(func=cli_extract, tele_key="extract")
 
     install = sp.add_parser(
-        "install", aliases=["i"], help="Install package from configured repository"
+        "install",
+        aliases=["i"],
+        help="Install package from configured repository",
     )
     install.add_argument(
         "atom",
@@ -120,22 +129,22 @@ def init_argparse() -> argparse.ArgumentParser:
         action="store_true",
         help="Force re-installation of already installed packages",
     )
-    install.set_defaults(func=cli_install)
+    install.set_defaults(func=cli_install, tele_key="install")
 
     list = sp.add_parser(
         "list", help="List available packages in configured repository"
     )
-    list.set_defaults(func=cli_list)
     list.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Also show details for every package",
     )
+    list.set_defaults(func=cli_list, tele_key="list")
 
     listsp = list.add_subparsers(required=False)
     list_profiles = listsp.add_parser("profiles", help="List all available profiles")
-    list_profiles.set_defaults(func=cli_list_profiles)
+    list_profiles.set_defaults(func=cli_list_profiles, tele_key="list profiles")
 
     news = sp.add_parser(
         "news",
@@ -153,7 +162,7 @@ def init_argparse() -> argparse.ArgumentParser:
         action="store_true",
         help="List unread news items only",
     )
-    news_list.set_defaults(func=cli_news_list)
+    news_list.set_defaults(func=cli_news_list, tele_key="news list")
 
     news_read = newssp.add_parser(
         "read",
@@ -172,10 +181,10 @@ def init_argparse() -> argparse.ArgumentParser:
         nargs="*",
         help="Ordinal or ID of the news item(s) to read",
     )
-    news_read.set_defaults(func=cli_news_read)
+    news_read.set_defaults(func=cli_news_read, tele_key="news read")
 
     up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
-    up.set_defaults(func=cli_update)
+    up.set_defaults(func=cli_update, tele_key="update")
 
     venv = sp.add_parser(
         "venv",
@@ -220,7 +229,7 @@ def init_argparse() -> argparse.ArgumentParser:
         type=str,
         help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
     )
-    venv.set_defaults(func=cli_venv)
+    venv.set_defaults(func=cli_venv, tele_key="venv")
 
     # Repo admin commands
     admin = sp.add_parser(
@@ -244,7 +253,10 @@ def init_argparse() -> argparse.ArgumentParser:
         nargs="+",
         help="Path to the distfile(s) to generate manifest for",
     )
-    admin_format_manifest.set_defaults(func=cli_admin_format_manifest)
+    admin_format_manifest.set_defaults(
+        func=cli_admin_format_manifest,
+        tele_key="admin format-manifest",
+    )
 
     admin_manifest = adminsp.add_parser(
         "manifest",
@@ -270,7 +282,7 @@ def init_argparse() -> argparse.ArgumentParser:
         nargs="+",
         help="Path to the distfile(s) to generate manifest for",
     )
-    admin_manifest.set_defaults(func=cli_admin_manifest)
+    admin_manifest.set_defaults(func=cli_admin_manifest, tele_key="admin manifest")
 
     # Self-management commands
     self = sp.add_parser(
@@ -297,7 +309,7 @@ def init_argparse() -> argparse.ArgumentParser:
         dest="consent",
         help="Give consent for uninstallation on CLI; do not ask for confirmation",
     )
-    self_uninstall.set_defaults(func=cli_self_uninstall)
+    self_uninstall.set_defaults(func=cli_self_uninstall, tele_key="self uninstall")
 
     # Version info
     # Keep this at the bottom
@@ -305,14 +317,24 @@ def init_argparse() -> argparse.ArgumentParser:
         "version",
         help="Print version information",
     )
-    version.set_defaults(func=cli_version)
+    version.set_defaults(func=cli_version, tele_key="version")
 
     return root
 
 
 def main(argv: List[str]) -> int:
+    gc = GlobalConfig.load_from_config()
+    if gc.telemetry is not None:
+        gc.telemetry.init_installation(False)
+        atexit.register(gc.telemetry.flush)
+
     if not is_called_as_ruyi(argv[0]):
         from ..mux.runtime import mux_main
+
+        # record an invocation and the command name being proxied to
+        if gc.telemetry is not None:
+            target = os.path.basename(argv[0])
+            gc.telemetry.record("cli:mux-invocation-v1", target=target)
 
         return mux_main(argv)
 
@@ -334,6 +356,15 @@ def main(argv: List[str]) -> int:
     log.D(f"args={args}")
 
     func: CLIEntrypoint = args.func
+
+    # record every invocation's subcommand for better insight into usage
+    # frequencies
+    try:
+        telemetry_key = args.tele_key
+    except AttributeError:
+        log.F("internal error: CLI entrypoint was added without a telemetry key")
+    if gc.telemetry is not None:
+        gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
 
     try:
         return func(args)

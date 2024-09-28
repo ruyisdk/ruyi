@@ -135,9 +135,13 @@ def ensure_venv_in_path(vcfg: RuyiVenvConfig) -> None:
 
     orig_path = os.environ.get("PATH", "")
     for p in orig_path.split(os.pathsep):
-        if os.path.samefile(p, venv_bindir):
-            # TODO: what if our bindir actually comes after the system ones?
-            return
+        try:
+            if os.path.samefile(p, venv_bindir):
+                # TODO: what if our bindir actually comes after the system ones?
+                return
+        except FileNotFoundError:
+            # maybe the PATH entry is stale
+            continue
 
     # we're not in PATH, so prepend the bindir to PATH
     os.environ["PATH"] = f"{venv_bindir}:{orig_path}" if orig_path else str(venv_bindir)

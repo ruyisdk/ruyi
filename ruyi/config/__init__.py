@@ -5,7 +5,8 @@ import pathlib
 import tomllib
 from typing import Any, Iterable, NotRequired, Self, TypedDict
 
-from .. import log, argv0
+from .. import argv0, is_env_var_truthy, log
+from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 
@@ -13,6 +14,7 @@ DEFAULT_APP_NAME = "ruyi"
 DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH = "main"
 
+ENV_TELEMETRY_OPTOUT_KEY = "RUYI_TELEMETRY_OPTOUT"
 ENV_VENV_ROOT_KEY = "RUYI_VENV"
 
 
@@ -38,9 +40,14 @@ class GlobalConfigRepoType(TypedDict):
     branch: NotRequired[str]
 
 
+class GlobalConfigTelemetryType(TypedDict):
+    mode: NotRequired[str]
+
+
 class GlobalConfigRootType(TypedDict):
     packages: NotRequired[GlobalConfigPackagesType]
     repo: NotRequired[GlobalConfigRepoType]
+    telemetry: NotRequired[GlobalConfigTelemetryType]
 
 
 class GlobalConfig:
@@ -52,19 +59,22 @@ class GlobalConfig:
         self.include_prereleases = False
 
         self._news_read_status_store: NewsReadStatusStore | None = None
+        self._telemetry_store: TelemetryStore | None = None
 
         self._lang_code = _get_lang_code()
 
         self._dirs = XDGBaseDir(DEFAULT_APP_NAME)
 
+        self._telemetry_mode: str | None = None
+
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
-        if section := config_data.get("repo"):
-            self.override_repo_dir = section.get("local", None)
-            self.override_repo_url = section.get("remote", None)
-            self.override_repo_branch = section.get("branch", None)
+        if repo_cfg := config_data.get("repo"):
+            self.override_repo_dir = repo_cfg.get("local", None)
+            self.override_repo_url = repo_cfg.get("remote", None)
+            self.override_repo_branch = repo_cfg.get("branch", None)
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -72,6 +82,9 @@ class GlobalConfig:
                         f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
                     )
                     self.override_repo_dir = None
+
+        if tele_cfg := config_data.get("telemetry"):
+            self._telemetry_mode = tele_cfg.get("mode", None)
 
     @property
     def lang_code(self) -> str:
@@ -97,6 +110,22 @@ class GlobalConfig:
         filename = os.path.join(self.ensure_state_dir(), "news.read.txt")
         self._news_read_status_store = NewsReadStatusStore(filename)
         return self._news_read_status_store
+
+    @property
+    def telemetry(self) -> TelemetryStore | None:
+        if self.telemetry_mode == "off":
+            return None
+        if self._telemetry_store is not None:
+            return self._telemetry_store
+
+        local_mode = self.telemetry_mode == "local"
+        dirname = os.path.join(self.ensure_state_dir(), "telemetry")
+        self._telemetry_store = TelemetryStore(dirname, local_mode)
+        return self._telemetry_store
+
+    @property
+    def telemetry_mode(self) -> str:
+        return self._telemetry_mode or "local"
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")
@@ -172,6 +201,10 @@ class GlobalConfig:
 
             log.D(f"applying config: {data}")
             obj.apply_config(data)
+
+        # let environment variable take precedence
+        if is_env_var_truthy(ENV_TELEMETRY_OPTOUT_KEY):
+            obj._telemetry_mode = "off"
 
         return obj
 

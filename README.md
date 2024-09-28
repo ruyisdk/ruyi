@@ -55,13 +55,61 @@ remote = "https://github.com/ruyisdk/packages-index.git"
 # Name of the branch to use.
 # If unset or empty, this default value is used.
 branch = "main"
+
+[telemetry]
+# Whether to collect telemetry information for improving RuyiSDK's developer
+# experience, and whether to send the data periodically to RuyiSDK team.
+# Valid values are `local`, `off` and `on` -- see the documentation for
+# details.
+#
+# If unset or empty, this default value is used: data will be collected but
+# nothing will get uploaded without explicit action by the user.
+mode = "local"
 ```
 
 ### Environment variables
 
 Currently the following environment variables are supported by `ruyi`:
 
-* `RUYI_VENV` -- explicitly specifies the Ruyi virtual environment to use.
+* `RUYI_TELEMETRY_OPTOUT` -- boolean, whether to opt-out of telemetry.
+* `RUYI_VENV` -- string, explicitly specifies the Ruyi virtual environment to use.
+
+For boolean variables, the values `1`, `true`, `x`, `y` or `yes` (all case-insensitive)
+are all treated as "true".
+
+### Telemetry
+
+The Ruyi package manager collects usage data in order to help us improve your
+experience. It is collected by the RuyiSDK team and shared with the community.
+You can opt-out of telemetry by setting the `RUYI_TELEMETRY_OPTOUT`
+environment variable to any of `1`, `true`, `x`, `y` or `yes` using your
+favorite shell.
+
+> **NOTE**: Currently only the `local` and `off` modes are implemented. The
+> server-side components of RuyiSDK are still under development, and has not
+> been deployed yet. Consequently, no data will be uploaded for now.
+>
+> You will be notified at your next `ruyi update` when we are ready to
+> do so, and you will have enough time to revise your configuration so as to
+> prevent unintentional data uploads.
+
+There are 3 telemetry modes available:
+
+* `local`: data will be collected but not uploaded without user action.
+* `off`: data will not be collected nor uploaded.
+* `on`: data will be collected and periodically uploaded.
+
+By default the `local` mode is active, which means every `ruyi` invocation
+will record some non-sensitive information locally alongside various other
+states of `ruyi`, but nothing will be uploaded.
+
+You can change the telemetry mode by editing `ruyi`'s config file, or simply
+by setting the `RUYI_TELEMETRY_OPTOUT` environment variable to any of the
+values accepted as truthy.
+
+<!-- We collect the following information with `ruyi`: -->
+
+<!-- TODO: table of metrics -->
 
 ## License
 

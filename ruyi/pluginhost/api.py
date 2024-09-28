@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from ruyi import log
 from ruyi.cli import user_input
-from ruyi.cli.version import RUYI_SEMVER
+from ruyi.version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 
