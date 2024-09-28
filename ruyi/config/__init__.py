@@ -6,6 +6,7 @@ import tomllib
 from typing import Any, Iterable, NotRequired, Self, TypedDict
 
 from .. import argv0, is_env_var_truthy, log
+from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 
@@ -58,6 +59,7 @@ class GlobalConfig:
         self.include_prereleases = False
 
         self._news_read_status_store: NewsReadStatusStore | None = None
+        self._telemetry_store: TelemetryStore | None = None
 
         self._lang_code = _get_lang_code()
 
@@ -108,6 +110,18 @@ class GlobalConfig:
         filename = os.path.join(self.ensure_state_dir(), "news.read.txt")
         self._news_read_status_store = NewsReadStatusStore(filename)
         return self._news_read_status_store
+
+    @property
+    def telemetry(self) -> TelemetryStore | None:
+        if self.telemetry_mode == "off":
+            return None
+        if self._telemetry_store is not None:
+            return self._telemetry_store
+
+        local_mode = self.telemetry_mode == "local"
+        dirname = os.path.join(self.ensure_state_dir(), "telemetry")
+        self._telemetry_store = TelemetryStore(dirname, local_mode)
+        return self._telemetry_store
 
     @property
     def telemetry_mode(self) -> str:
