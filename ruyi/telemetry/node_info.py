@@ -4,7 +4,7 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Mapping, Self, TypedDict
+from typing import Mapping, NotRequired, Self, TypedDict
 import uuid
 
 
@@ -20,6 +20,19 @@ class NodeInfo(TypedDict):
     os_release_id: str
     os_release_version_id: str
     shell: str
+
+    riscv_machine: "NotRequired[RISCVMachineInfo]"
+
+
+class RISCVMachineInfo(TypedDict):
+    model_name: str
+    cpu_count: int
+    isa: str
+    uarch: str
+    mmu: str
+    mvendorid: str
+    marchid: str
+    mimpid: str
 
 
 def probe_for_ci(os_environ: Mapping[str, str]) -> str:
@@ -105,6 +118,73 @@ def _try_get_musl_ver(ldso_path: str) -> str | None:
     return None
 
 
+def probe_for_riscv_machine_info(model_name: str | None = None,
+                                 cpuinfo_data: str | None = None,
+                                 ) -> RISCVMachineInfo | None:
+    if model_name is None:
+        try:
+            with open("/sys/firmware/devicetree/base/model", "r", encoding="utf-8") as fp:
+                model_name = fp.read().strip(" \n\t\x00")
+        except:
+            pass
+
+        if not model_name:
+            model_name = "unknown"
+
+    if cpuinfo_data is None:
+        try:
+            with open("/proc/cpuinfo", "r", encoding="utf-8") as fp:
+                cpuinfo_data = fp.read()
+        except:
+            pass
+
+    cpu_count = 0
+    isa, mmu, uarch = "unknown", "unknown", "unknown"
+    mvendorid, marchid, mimpid = "unknown", "unknown", "unknown"
+    if cpuinfo_data is not None:
+        for l in cpuinfo_data.split("\n"):
+            if not l:
+                continue
+
+            try:
+                k, v = l.split(": ", 1)
+            except ValueError:
+                # malformed line: non-empty but no ": "
+                continue
+
+            k = k.strip(" \t")
+            v = v.strip()
+
+            match k:
+                case "processor":
+                    cpu_count += 1
+                case "isa":
+                    isa = v
+                case "mmu":
+                    mmu = v
+                case "uarch":
+                    uarch = v
+                case "mvendorid":
+                    mvendorid = v
+                case "marchid":
+                    marchid = v
+                case "mimpid":
+                    mimpid = v
+                case _:
+                    continue
+
+    return {
+        "model_name": model_name,
+        "cpu_count": cpu_count,
+        "isa": isa,
+        "mmu": mmu,
+        "uarch": uarch,
+        "mvendorid": mvendorid,
+        "marchid": marchid,
+        "mimpid": mimpid,
+    }
+
+
 def probe_for_shell(os_environ: Mapping[str, str]) -> str:
     if x := os_environ.get("SHELL"):
         return os.path.basename(x)
@@ -112,13 +192,14 @@ def probe_for_shell(os_environ: Mapping[str, str]) -> str:
 
 
 def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
+    arch = platform.machine()
     libc = probe_for_libc()
     os_release = platform.freedesktop_os_release()
 
-    return {
+    data: NodeInfo = {
         "v": 1,
         "report_uuid": report_uuid.hex if report_uuid is not None else uuid.uuid4().hex,
-        "arch": platform.machine(),
+        "arch": arch,
         "ci": probe_for_ci(os.environ),
         "libc_name": libc[0],
         "libc_ver": libc[1],
@@ -127,3 +208,9 @@ def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
         "os_release_version_id": os_release.get("VERSION_ID", "unknown"),
         "shell": probe_for_shell(os.environ),
     }
+
+    if arch.startswith("riscv"):
+        if riscv_machine := probe_for_riscv_machine_info():
+            data["riscv_machine"] = riscv_machine
+
+    return data
