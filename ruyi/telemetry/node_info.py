@@ -29,10 +29,8 @@ class RISCVMachineInfo(TypedDict):
     cpu_count: int
     isa: str
     uarch: str
+    uarch_csr: str
     mmu: str
-    mvendorid: str
-    marchid: str
-    mimpid: str
 
 
 def probe_for_ci(os_environ: Mapping[str, str]) -> str:
@@ -108,7 +106,7 @@ def probe_for_libc() -> tuple[str, str]:
     return ("unknown", "unknown")
 
 
-_MUSL_VERSION_RE = re.compile(br"(?m)^Version ([0-9.]+)$")
+_MUSL_VERSION_RE = re.compile(rb"(?m)^Version ([0-9.]+)$")
 
 
 def _try_get_musl_ver(ldso_path: str) -> str | None:
@@ -118,12 +116,26 @@ def _try_get_musl_ver(ldso_path: str) -> str | None:
     return None
 
 
-def probe_for_riscv_machine_info(model_name: str | None = None,
-                                 cpuinfo_data: str | None = None,
-                                 ) -> RISCVMachineInfo | None:
+def _try_parse_hex(v: str) -> int | None:
+    if not v.startswith("0x"):
+        return None
+    try:
+        return int(v[2:], 16)
+    except ValueError:
+        return None
+
+
+def probe_for_riscv_machine_info(
+    model_name: str | None = None,
+    cpuinfo_data: str | None = None,
+) -> RISCVMachineInfo | None:
     if model_name is None:
         try:
-            with open("/sys/firmware/devicetree/base/model", "r", encoding="utf-8") as fp:
+            with open(
+                "/sys/firmware/devicetree/base/model",
+                "r",
+                encoding="utf-8",
+            ) as fp:
                 model_name = fp.read().strip(" \n\t\x00")
         except:
             pass
@@ -140,7 +152,9 @@ def probe_for_riscv_machine_info(model_name: str | None = None,
 
     cpu_count = 0
     isa, mmu, uarch = "unknown", "unknown", "unknown"
-    mvendorid, marchid, mimpid = "unknown", "unknown", "unknown"
+    mvendorid: int | None = None
+    marchid: int | None = None
+    mimpid: int | None = None
     if cpuinfo_data is not None:
         for l in cpuinfo_data.split("\n"):
             if not l:
@@ -165,13 +179,18 @@ def probe_for_riscv_machine_info(model_name: str | None = None,
                 case "uarch":
                     uarch = v
                 case "mvendorid":
-                    mvendorid = v
+                    mvendorid = _try_parse_hex(v)
                 case "marchid":
-                    marchid = v
+                    marchid = _try_parse_hex(v)
                 case "mimpid":
-                    mimpid = v
+                    mimpid = _try_parse_hex(v)
                 case _:
                     continue
+
+    if mvendorid is not None and marchid is not None and mimpid is not None:
+        uarch_csr = f"{mvendorid:x}:{marchid:x}:{mimpid:x}"
+    else:
+        uarch_csr = "unknown"
 
     return {
         "model_name": model_name,
@@ -179,9 +198,7 @@ def probe_for_riscv_machine_info(model_name: str | None = None,
         "isa": isa,
         "mmu": mmu,
         "uarch": uarch,
-        "mvendorid": mvendorid,
-        "marchid": marchid,
-        "mimpid": mimpid,
+        "uarch_csr": uarch_csr,
     }
 
 
