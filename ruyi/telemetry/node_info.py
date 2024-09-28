@@ -196,6 +196,12 @@ def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
     libc = probe_for_libc()
     os_release = platform.freedesktop_os_release()
 
+    os_version = os_release.get("VERSION_CODENAME")  # works on e.g. Debian
+    if not os_version:
+        os_version = os_release.get("VERSION_ID")  # works on e.g. openEuler, Gentoo
+    if not os_version:
+        os_version = "unknown"
+
     data: NodeInfo = {
         "v": 1,
         "report_uuid": report_uuid.hex if report_uuid is not None else uuid.uuid4().hex,
@@ -205,7 +211,7 @@ def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
         "libc_ver": libc[1],
         "os": sys.platform,
         "os_release_id": os_release.get("ID", "unknown"),
-        "os_release_version_id": os_release.get("VERSION_ID", "unknown"),
+        "os_release_version_id": os_version,
         "shell": probe_for_shell(os.environ),
     }
 
