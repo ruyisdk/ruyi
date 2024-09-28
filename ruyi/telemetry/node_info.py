@@ -4,7 +4,7 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Mapping, NotRequired, Self, TypedDict
+from typing import Mapping, NotRequired, TypedDict
 import uuid
 
 
@@ -137,7 +137,7 @@ def probe_for_riscv_machine_info(
                 encoding="utf-8",
             ) as fp:
                 model_name = fp.read().strip(" \n\t\x00")
-        except:
+        except Exception:
             pass
 
         if not model_name:
@@ -147,7 +147,7 @@ def probe_for_riscv_machine_info(
         try:
             with open("/proc/cpuinfo", "r", encoding="utf-8") as fp:
                 cpuinfo_data = fp.read()
-        except:
+        except Exception:
             pass
 
     cpu_count = 0
@@ -156,12 +156,12 @@ def probe_for_riscv_machine_info(
     marchid: int | None = None
     mimpid: int | None = None
     if cpuinfo_data is not None:
-        for l in cpuinfo_data.split("\n"):
-            if not l:
+        for line in cpuinfo_data.split("\n"):
+            if not line:
                 continue
 
             try:
-                k, v = l.split(": ", 1)
+                k, v = line.split(": ", 1)
             except ValueError:
                 # malformed line: non-empty but no ": "
                 continue
