@@ -46,24 +46,44 @@ def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> in
     else:
         log.I("uninstallation consent given over CLI, proceeding")
 
-    if purge:
-        log.I("removing installed packages")
-        shutil.rmtree(cfg.data_root, True)
-
-        log.I("removing state data")
-        shutil.rmtree(cfg.state_root, True)
-
-        log.I("removing cached data")
-        shutil.rmtree(cfg.cache_root, True)
-
-    log.I("removing the ruyi binary")
-    try:
-        os.unlink(ruyi.self_exe())
-    except FileNotFoundError:
-        # we might have already removed ourselves during the purge; nothing to
-        # do now.
-        pass
+    _do_reset(
+        cfg,
+        installed_pkgs=purge,
+        all_state=purge,
+        all_cache=purge,
+        self_binary=True,
+    )
 
     log.I("[yellow]ruyi[/yellow] is uninstalled")
 
     return 0
+
+
+def _do_reset(
+    cfg: config.GlobalConfig,
+    *,
+    installed_pkgs: bool = False,
+    all_state: bool = False,
+    all_cache: bool = False,
+    self_binary: bool = False,
+) -> None:
+    if installed_pkgs:
+        log.I("removing installed packages")
+        shutil.rmtree(cfg.data_root, True)
+
+    if all_state:
+        log.I("removing state data")
+        shutil.rmtree(cfg.state_root, True)
+
+    if all_cache:
+        log.I("removing cached data")
+        shutil.rmtree(cfg.cache_root, True)
+
+    if self_binary:
+        log.I("removing the ruyi binary")
+        try:
+            os.unlink(ruyi.self_exe())
+        except FileNotFoundError:
+            # we might have already removed ourselves during the purge; nothing to
+            # do now.
+            pass
