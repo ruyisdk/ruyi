@@ -2,7 +2,7 @@ import argparse
 import atexit
 import os
 import sys
-from typing import Callable, List
+from typing import Callable, IO, List, Protocol
 
 from ..config import GlobalConfig
 
@@ -24,6 +24,18 @@ def is_called_as_ruyi(argv0: str) -> bool:
 CLIEntrypoint = Callable[[GlobalConfig, argparse.Namespace], int]
 
 
+class _PrintHelp(Protocol):
+    def print_help(self, file: IO[str] | None = None) -> None: ...
+
+
+def _wrap_help(x: _PrintHelp) -> CLIEntrypoint:
+    def _wrapped_(gc: GlobalConfig, args: argparse.Namespace) -> int:
+        x.print_help()
+        return 0
+
+    return _wrapped_
+
+
 def init_argparse() -> argparse.ArgumentParser:
     from ..device.provision_cli import cli_device_provision
     from ..mux.venv.venv_cli import cli_venv
@@ -43,7 +55,7 @@ def init_argparse() -> argparse.ArgumentParser:
         prog=RUYI_ENTRYPOINT_NAME,
         description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
     )
-    root.set_defaults(func=lambda _: root.print_help())
+    root.set_defaults(func=_wrap_help(root), tele_key="<bare>")
 
     root.add_argument(
         "-V",
@@ -69,7 +81,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "device",
         help="Manage devices",
     )
-    device.set_defaults(func=lambda _: device.print_help())
+    device.set_defaults(func=_wrap_help(device), tele_key="device")
     devicesp = device.add_subparsers(
         title="subcommands",
     )
@@ -150,7 +162,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "news",
         help="List and read news items from configured repository",
     )
-    news.set_defaults(func=lambda _: news.print_help())
+    news.set_defaults(func=_wrap_help(news), tele_key="news")
     newssp = news.add_subparsers(title="subcommands")
 
     news_list = newssp.add_parser(
@@ -239,7 +251,7 @@ def init_argparse() -> argparse.ArgumentParser:
         # help=argparse.SUPPRESS,
         help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
     )
-    admin.set_defaults(func=lambda _: admin.print_help())
+    admin.set_defaults(func=_wrap_help(admin), tele_key="admin")
     adminsp = admin.add_subparsers(
         title="subcommands",
     )
@@ -290,7 +302,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "self",
         help="Manage this Ruyi installation",
     )
-    self.set_defaults(func=lambda _: self.print_help())
+    self.set_defaults(func=_wrap_help(self), tele_key="self")
     selfsp = self.add_subparsers(
         title="subcommands",
     )
