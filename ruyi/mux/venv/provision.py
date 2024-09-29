@@ -51,7 +51,9 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
 
 
 def render_and_write(
-    dest: PathLike[Any], template_name: str, data: dict[str, Any]
+    dest: PathLike[Any],
+    template_name: str,
+    data: dict[str, Any],
 ) -> None:
     log.D(f"rendering template '{template_name}' with data {data}")
     content = render_template_str(template_name, data).encode("utf-8")
@@ -66,7 +68,6 @@ class VenvMaker:
         profile: ProfileProxy,
         targets: list[ConfiguredTargetTuple],
         dest: PathLike[Any],
-        sysroot_srcdir: PathLike[Any] | None,
         emulator_progs: list[EmulatorProgDecl] | None,
         emulator_root: PathLike[Any] | None,
         override_name: str | None = None,
@@ -74,17 +75,37 @@ class VenvMaker:
         self.profile = profile
         self.targets = targets
         self.venv_root = pathlib.Path(dest)
-        self.sysroot_srcdir = sysroot_srcdir
         self.emulator_progs = emulator_progs
         self.emulator_root = emulator_root
         self.override_name = override_name
 
         self.bindir = self.venv_root / "bin"
-        self.sysroot_destdir = (
-            self.venv_root / "sysroot"
-            if self.sysroot_srcdir is not None
-            else None
-        )
+
+    def sysroot_srcdir(self, target_tuple: str | None) -> pathlib.Path | None:
+        if target_tuple is None:
+            # check the primary target
+            if s := self.targets[0]["toolchain_sysroot"]:
+                return pathlib.Path(s)
+            return None
+
+        # check if we have this target
+        for t in self.targets:
+            if t["target"] != target_tuple:
+                continue
+            if s := t["toolchain_sysroot"]:
+                return pathlib.Path(s)
+
+        return None
+
+    def has_sysroot_for(self, target_tuple: str | None) -> bool:
+        return self.sysroot_srcdir(target_tuple) is not None
+
+    def sysroot_destdir(self, target_tuple: str | None) -> pathlib.Path | None:
+        if not self.has_sysroot_for(target_tuple):
+            return None
+
+        dirname = f"sysroot.{target_tuple}" if target_tuple is not None else "sysroot"
+        return self.venv_root / dirname
 
     def provision(self) -> None:
         venv_root = self.venv_root
@@ -93,19 +114,9 @@ class VenvMaker:
         venv_root.mkdir()
         bindir.mkdir()
 
-        if self.sysroot_srcdir is not None:
-            log.D("copying sysroot")
-            assert self.sysroot_destdir is not None
-            shutil.copytree(
-                self.sysroot_srcdir,
-                self.sysroot_destdir,
-                symlinks=True,
-                ignore_dangling_symlinks=True,
-            )
-
         env_data = {
             "profile": self.profile.id,
-            "sysroot": self.sysroot_destdir,
+            "sysroot": self.sysroot_destdir(None),
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 
@@ -128,7 +139,7 @@ class VenvMaker:
                     p,
                     self.emulator_root,
                     self.profile,
-                    self.sysroot_destdir,
+                    self.sysroot_destdir(None),
                 )
                 for p in self.emulator_progs
             ]
@@ -166,6 +177,7 @@ class VenvMaker:
         targets_cache_data: dict[str, object] = {
             tgt["target"]: {
                 "toolchain_bindir": str(pathlib.Path(tgt["toolchain_root"]) / "bin"),
+                "toolchain_sysroot": self.sysroot_destdir(tgt["target"]),
                 "gcc_install_dir": tgt["gcc_install_dir"],
             } for tgt in self.targets
         }
@@ -185,6 +197,26 @@ class VenvMaker:
         venv_root = self.venv_root
         bindir = self.bindir
         target_tuple = tgt["target"]
+
+        # getting the destdir this way ensures it's suffixed with the target
+        # tuple
+        if sysroot_destdir := self.sysroot_destdir(target_tuple):
+            sysroot_srcdir = tgt["toolchain_sysroot"]
+            assert sysroot_srcdir is not None
+
+            log.D(f"copying sysroot for {target_tuple}")
+            shutil.copytree(
+                sysroot_srcdir,
+                sysroot_destdir,
+                symlinks=True,
+                ignore_dangling_symlinks=True,
+            )
+
+            if is_primary:
+                log.D("symlinking primary sysroot into place")
+                primary_sysroot_destdir = self.sysroot_destdir(None)
+                assert primary_sysroot_destdir is not None
+                os.symlink(sysroot_destdir.name, primary_sysroot_destdir)
 
         log.D(f"symlinking {target_tuple} binaries into venv")
         toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
@@ -235,7 +267,7 @@ class VenvMaker:
             "cc": cc_path,
             "cxx": cxx_path,
             "processor": self.profile.arch,
-            "sysroot": self.sysroot_destdir,
+            "sysroot": self.sysroot_destdir(target_tuple),
             "venv_root": venv_root,
             "cmake_toolchain_file": str(cmake_toolchain_file_path),
             "meson_additional_binaries": meson_additional_binaries,

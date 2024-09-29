@@ -30,6 +30,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     # match the basename with one of the configured target tuples
     target_tuple: str | None = None
     toolchain_bindir: str | None = None
+    toolchain_sysroot: str | None = None
     gcc_install_dir: str | None = None
     for tgt_tuple, tgt_data in vcfg.targets.items():
         if not basename.startswith(f"{tgt_tuple}-"):
@@ -38,6 +39,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
         target_tuple = tgt_tuple
         toolchain_bindir = tgt_data["toolchain_bindir"]
+        toolchain_sysroot = tgt_data.get("toolchain_sysroot")
         gcc_install_dir = tgt_data.get("gcc_install_dir")
         break
 
@@ -72,9 +74,9 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
         log.D(f"parsed profile flags: {argv_to_insert}")
 
-        if vcfg.sysroot is not None:
-            log.D(f"adding sysroot: {vcfg.sysroot}")
-            argv_to_insert.extend(("--sysroot", vcfg.sysroot))
+        if toolchain_sysroot is not None:
+            log.D(f"adding sysroot: {toolchain_sysroot}")
+            argv_to_insert.extend(("--sysroot", toolchain_sysroot))
 
     new_argv = [binpath]
     if argv_to_insert:

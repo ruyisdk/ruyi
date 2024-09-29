@@ -229,6 +229,7 @@ class VenvCacheV0Type(TypedDict):
 
 class VenvCacheV1TargetType(TypedDict):
     toolchain_bindir: str
+    toolchain_sysroot: NotRequired[str]
     gcc_install_dir: NotRequired[str]
 
 
@@ -244,21 +245,29 @@ class VenvCacheRootType(TypedDict):
     cached_v1: NotRequired[VenvCacheV1Type]
 
 
-def parse_venv_cache(cache: VenvCacheRootType) -> VenvCacheV1Type:
+def parse_venv_cache(
+    cache: VenvCacheRootType,
+    global_sysroot: str | None,
+) -> VenvCacheV1Type:
     if "cached_v1" in cache:
         return cache["cached_v1"]
     if "cached" in cache:
-        return upgrade_venv_cache_v0(cache["cached"])
+        return upgrade_venv_cache_v0(cache["cached"], global_sysroot)
     raise RuntimeError("unsupported venv cache version")
 
 
-def upgrade_venv_cache_v0(x: VenvCacheV0Type) -> VenvCacheV1Type:
+def upgrade_venv_cache_v0(
+    x: VenvCacheV0Type,
+    global_sysroot: str | None,
+) -> VenvCacheV1Type:
     # v0 only supports one single target so upgrading is trivial
     v1_target: VenvCacheV1TargetType = {
         "toolchain_bindir": x["toolchain_bindir"],
     }
     if "gcc_install_dir" in x:
         v1_target["gcc_install_dir"] = x["gcc_install_dir"]
+    if global_sysroot is not None:
+        v1_target["toolchain_sysroot"] = global_sysroot
 
     y: VenvCacheV1Type = {
         "profile_common_flags": x["profile_common_flags"],
@@ -277,7 +286,7 @@ class RuyiVenvConfig:
         self.profile = cfg["config"]["profile"]
         self.sysroot = cfg["config"].get("sysroot")
 
-        parsed_cache = parse_venv_cache(cache)
+        parsed_cache = parse_venv_cache(cache, self.sysroot)
         self.targets = parsed_cache["targets"]
         self.profile_common_flags = parsed_cache["profile_common_flags"]
         self.qemu_bin = parsed_cache.get("qemu_bin")

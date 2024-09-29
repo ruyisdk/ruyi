@@ -41,7 +41,6 @@ def cli_venv(args: argparse.Namespace) -> int:
     target_arch = ''
     seen_target_tuples: set[str] = set()
     targets: list[ConfiguredTargetTuple] = []
-    sysroot_dir: PathLike[Any] | None = None
     warn_differing_target_arch = False
     warn_multiple_sysroots = False
 
@@ -82,7 +81,7 @@ def cli_venv(args: argparse.Namespace) -> int:
             log.F("cannot find the installed directory for the toolchain")
             return 1
 
-        tc_sysroot_dir: PathLike[Any]
+        tc_sysroot_dir: PathLike[Any] | None = None
         gcc_install_dir: PathLike[Any] | None = None
         if with_sysroot:
             if tc_sysroot_relpath := tc_pm.toolchain_metadata.included_sysroot:
@@ -144,18 +143,11 @@ def cli_venv(args: argparse.Namespace) -> int:
                     )
                     return 1
 
-            if sysroot_dir is None:
-                sysroot_dir = tc_sysroot_dir
-            else:
-                # check if multiple toolchain packages offer competing sysroots
-                if tc_sysroot_dir != sysroot_dir:
-                    # first one wins
-                    warn_multiple_sysroots = True
-
         # record the target tuple info to configure in the venv
         configured_target: ConfiguredTargetTuple = {
             "target": target_tuple,
             "toolchain_root": toolchain_root,
+            "toolchain_sysroot": tc_sysroot_dir,
             # assume clang is preferred if package contains clang
             # this is mostly true given most packages don't contain both
             "cc_flavor": "clang" if tc_pm.toolchain_metadata.has_clang else "gcc",
@@ -177,10 +169,6 @@ def cli_venv(args: argparse.Namespace) -> int:
     if warn_differing_target_arch:
         log.W("multiple toolchains specified with differing target architecture")
         log.I(f"using the target architecture of the first toolchain: [yellow]{target_arch}[/]")
-
-    if warn_multiple_sysroots:
-        log.W("selected packages for the virtual environment provide multiple competing sysroots")
-        log.I("using the sysroot from the first sysroot-providing package: [yellow]{sysroot_dir}[/]")
 
     # Now handle the emulator.
     emu_progs = None
@@ -239,7 +227,6 @@ def cli_venv(args: argparse.Namespace) -> int:
         profile,
         targets,
         dest.resolve(),
-        sysroot_dir,
         emu_progs,
         emu_root,
         override_name,
@@ -250,7 +237,7 @@ def cli_venv(args: argparse.Namespace) -> int:
         render_template_str(
             "prompt.venv-created.txt",
             {
-                "sysroot": maker.sysroot_destdir,
+                "sysroot": maker.sysroot_destdir(None),
             },
         )
     )

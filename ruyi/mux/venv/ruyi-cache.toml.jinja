@@ -9,5 +9,6 @@ profile_common_flags = "{{ profile_common_flags }}"
 {% endfor %}{% endif %}
 {% for k, v in targets.items() %}[cached_v1.targets.{{ k }}]
 toolchain_bindir = "{{ v['toolchain_bindir'] }}"
+{% if v["toolchain_sysroot"] %}toolchain_sysroot = "{{ v['toolchain_sysroot'] }}"{% endif %}
 {% if v["gcc_install_dir"] %}gcc_install_dir = "{{ v['gcc_install_dir'] }}"{% endif %}
 {% endfor %}
