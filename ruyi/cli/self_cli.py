@@ -20,12 +20,11 @@ them yourselves afterwards.
 """
 
 
-def cli_self_uninstall(args: argparse.Namespace) -> int:
+def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
     purge: bool = args.purge
     consent: bool = args.consent
     log.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
 
-    cfg = config.GlobalConfig.load_from_config()
     if cfg.is_installation_externally_managed:
         log.F(
             "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"

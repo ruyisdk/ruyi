@@ -21,7 +21,7 @@ def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 
 
-CLIEntrypoint = Callable[[argparse.Namespace], int]
+CLIEntrypoint = Callable[[GlobalConfig, argparse.Namespace], int]
 
 
 def init_argparse() -> argparse.ArgumentParser:
@@ -368,6 +368,6 @@ def main(argv: List[str]) -> int:
         gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
 
     try:
-        return func(args)
+        return func(gc, args)
     except Exception:
         raise

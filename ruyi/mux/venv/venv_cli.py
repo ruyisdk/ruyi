@@ -12,7 +12,7 @@ from . import ConfiguredTargetTuple
 from .provision import render_template_str, VenvMaker
 
 
-def cli_venv(args: argparse.Namespace) -> int:
+def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     profile_name: str = args.profile
     dest = pathlib.Path(args.dest)
     with_sysroot: bool = args.with_sysroot
@@ -30,7 +30,6 @@ def cli_venv(args: argparse.Namespace) -> int:
         )
         return 1
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
 
     profile = mr.get_profile(profile_name)

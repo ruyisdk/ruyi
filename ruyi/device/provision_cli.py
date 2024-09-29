@@ -26,17 +26,16 @@ from ..ruyipkg.repo import MetadataRepo
 from ..utils import prereqs
 
 
-def cli_device_provision(args: argparse.Namespace) -> int:
+def cli_device_provision(gc: GlobalConfig, args: argparse.Namespace) -> int:
     try:
-        return do_provision_interactive()
+        return do_provision_interactive(gc)
     except KeyboardInterrupt:
         log.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
         return 1
 
 
-def do_provision_interactive() -> int:
+def do_provision_interactive(config: GlobalConfig) -> int:
     # ensure ruyi repo is present, for good out-of-the-box experience
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
     mr.ensure_git_repo()
 

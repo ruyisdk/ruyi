@@ -34,10 +34,9 @@ def print_news_item_titles(
     log.stdout(tbl)
 
 
-def cli_news_list(args: argparse.Namespace) -> int:
+def cli_news_list(config: GlobalConfig, args: argparse.Namespace) -> int:
     only_unread = args.new
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
     store = mr.news_store()
     newsitems = store.list(only_unread)
@@ -58,11 +57,10 @@ def cli_news_list(args: argparse.Namespace) -> int:
     return 0
 
 
-def cli_news_read(args: argparse.Namespace) -> int:
+def cli_news_read(config: GlobalConfig, args: argparse.Namespace) -> int:
     quiet = args.quiet
     items_strs = args.item
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
     store = mr.news_store()
 
