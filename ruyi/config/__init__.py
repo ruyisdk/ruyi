@@ -2,6 +2,7 @@ import locale
 import os.path
 from os import PathLike
 import pathlib
+import sys
 import tomllib
 from typing import Any, Iterable, NotRequired, Self, TypedDict
 
@@ -9,6 +10,16 @@ from .. import argv0, is_env_var_truthy, log
 from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
+
+PRESET_GLOBAL_CONFIG_LOCATIONS: list[str] = []
+
+if sys.platform == "linux":
+    PRESET_GLOBAL_CONFIG_LOCATIONS = [
+        # TODO: enable distro packagers to customize the $PREFIX to suit their
+        # particular FS layout if necessary.
+        "/usr/share/ruyi/config.toml",
+        "/usr/local/share/ruyi/config.toml",
+    ]
 
 DEFAULT_APP_NAME = "ruyi"
 DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
@@ -40,11 +51,21 @@ class GlobalConfigRepoType(TypedDict):
     branch: NotRequired[str]
 
 
+class GlobalConfigInstallationType(TypedDict):
+    # Undocumented: whether this Ruyi installation is externally managed.
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to signify this status to an official Ruyi build (where IS_PACKAGED is
+    # True), to prevent e.g. accidental self-uninstallation.
+    externally_managed: NotRequired[bool]
+
+
 class GlobalConfigTelemetryType(TypedDict):
     mode: NotRequired[str]
 
 
 class GlobalConfigRootType(TypedDict):
+    installation: NotRequired[GlobalConfigInstallationType]
     packages: NotRequired[GlobalConfigPackagesType]
     repo: NotRequired[GlobalConfigRepoType]
     telemetry: NotRequired[GlobalConfigTelemetryType]
@@ -57,6 +78,7 @@ class GlobalConfig:
         self.override_repo_url: str | None = None
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
+        self.is_installation_externally_managed = False
 
         self._news_read_status_store: NewsReadStatusStore | None = None
         self._telemetry_store: TelemetryStore | None = None
@@ -68,6 +90,12 @@ class GlobalConfig:
         self._telemetry_mode: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
+        if ins_cfg := config_data.get("installation"):
+            self.is_installation_externally_managed = ins_cfg.get(
+                "externally_managed",
+                False,
+            )
+
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
@@ -178,6 +206,16 @@ class GlobalConfig:
         p.mkdir(parents=True, exist_ok=True)
         return p
 
+    def iter_preset_configs(self) -> Iterable[os.PathLike[Any]]:
+        """
+        Yields possible Ruyi config files in all preset config path locations,
+        sorted by precedence from lowest to highest (so that each file may be
+        simply applied consecutively).
+        """
+
+        for path in PRESET_GLOBAL_CONFIG_LOCATIONS:
+            yield pathlib.Path(path)
+
     def iter_xdg_configs(self) -> Iterable[os.PathLike[Any]]:
         """
         Yields possible Ruyi config files in all XDG config paths, sorted by precedence
@@ -187,20 +225,27 @@ class GlobalConfig:
         for config_dir in reversed(list(self._dirs.app_config_dirs)):
             yield config_dir / "config.toml"
 
+    def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
+        try:
+            with open(path, "rb") as fp:
+                data: Any = tomllib.load(fp)
+        except FileNotFoundError:
+            return
+
+        log.D(f"applying config: {data}")
+        self.apply_config(data)
+
     @classmethod
     def load_from_config(cls) -> Self:
         obj = cls()
 
-        for config_path in obj.iter_xdg_configs():
-            log.D(f"trying config file: {config_path}")
-            try:
-                with open(config_path, "rb") as fp:
-                    data: Any = tomllib.load(fp)
-            except FileNotFoundError:
-                continue
+        for config_path in obj.iter_preset_configs():
+            log.D(f"trying config file from preset location: {config_path}")
+            obj.try_apply_config_file(config_path)
 
-            log.D(f"applying config: {data}")
-            obj.apply_config(data)
+        for config_path in obj.iter_xdg_configs():
+            log.D(f"trying config file from XDG path: {config_path}")
+            obj.try_apply_config_file(config_path)
 
         # let environment variable take precedence
         if is_env_var_truthy(ENV_TELEMETRY_OPTOUT_KEY):

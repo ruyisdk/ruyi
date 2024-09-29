@@ -5,8 +5,7 @@ from ..config import GlobalConfig
 from .repo import MetadataRepo
 
 
-def cli_list_profiles(args: argparse.Namespace) -> int:
-    config = GlobalConfig.load_from_config()
+def cli_list_profiles(config: GlobalConfig, args: argparse.Namespace) -> int:
     mr = MetadataRepo(config)
 
     for arch in mr.get_supported_arches():

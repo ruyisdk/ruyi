@@ -6,8 +6,7 @@ from . import news_cli
 from .repo import MetadataRepo
 
 
-def cli_update(args: argparse.Namespace) -> int:
-    config = GlobalConfig.load_from_config()
+def cli_update(config: GlobalConfig, args: argparse.Namespace) -> int:
     mr = MetadataRepo(config)
     mr.sync()
 

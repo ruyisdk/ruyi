@@ -18,10 +18,9 @@ from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .unpack import ensure_unpack_cmd_for_method
 
 
-def cli_list(args: argparse.Namespace) -> int:
+def cli_list(config: GlobalConfig, args: argparse.Namespace) -> int:
     verbose = args.verbose
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
 
     augmented_pkgs = list(AugmentedPkg.yield_from_repo(mr))
@@ -210,12 +209,11 @@ def is_root_likely_populated(root: str) -> bool:
         return False
 
 
-def cli_extract(args: argparse.Namespace) -> int:
+def cli_extract(config: GlobalConfig, args: argparse.Namespace) -> int:
     host = args.host
     atom_strs: set[str] = set(args.atom)
     log.D(f"about to extract for host {host}: {atom_strs}")
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
 
     for a_str in atom_strs:
@@ -273,13 +271,12 @@ def cli_extract(args: argparse.Namespace) -> int:
     return 0
 
 
-def cli_install(args: argparse.Namespace) -> int:
+def cli_install(config: GlobalConfig, args: argparse.Namespace) -> int:
     host = args.host
     atom_strs: set[str] = set(args.atom)
     fetch_only = args.fetch_only
     reinstall = args.reinstall
 
-    config = GlobalConfig.load_from_config()
     mr = MetadataRepo(config)
 
     return do_install_atoms(
