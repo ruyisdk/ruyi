@@ -140,6 +140,10 @@ class GlobalConfig:
         return self._news_read_status_store
 
     @property
+    def telemetry_root(self) -> os.PathLike[Any]:
+        return pathlib.Path(self.ensure_state_dir()) / "telemetry"
+
+    @property
     def telemetry(self) -> TelemetryStore | None:
         if self.telemetry_mode == "off":
             return None
@@ -147,8 +151,7 @@ class GlobalConfig:
             return self._telemetry_store
 
         local_mode = self.telemetry_mode == "local"
-        dirname = os.path.join(self.ensure_state_dir(), "telemetry")
-        self._telemetry_store = TelemetryStore(dirname, local_mode)
+        self._telemetry_store = TelemetryStore(self.telemetry_root, local_mode)
         return self._telemetry_store
 
     @property
