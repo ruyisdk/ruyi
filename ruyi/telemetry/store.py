@@ -1,7 +1,8 @@
 import json
+import os
 import pathlib
 import time
-from typing import TypedDict
+from typing import Any, TypedDict
 import uuid
 
 from .. import log
@@ -15,7 +16,7 @@ class TelemetryEvent(TypedDict):
 
 
 class TelemetryStore:
-    def __init__(self, store_root: str, local: bool) -> None:
+    def __init__(self, store_root: os.PathLike[Any], local: bool) -> None:
         self.store_root = pathlib.Path(store_root)
         self.local = local
         self._events: list[TelemetryEvent] = []

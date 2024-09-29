@@ -34,7 +34,7 @@ def init_argparse() -> argparse.ArgumentParser:
     from ..ruyipkg.profile_cli import cli_list_profiles
     from ..ruyipkg.update_cli import cli_update
     from ..version import RUYI_SEMVER
-    from .self_cli import cli_self_uninstall
+    from .self_cli import cli_self_clean, cli_self_uninstall
     from .version_cli import cli_version
 
     native_host_str = get_native_host()
@@ -294,6 +294,43 @@ def init_argparse() -> argparse.ArgumentParser:
     selfsp = self.add_subparsers(
         title="subcommands",
     )
+
+    self_clean = selfsp.add_parser(
+        "clean",
+        help="Remove various Ruyi-managed data to reclaim storage",
+    )
+    self_clean.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Do not print out the actions being performed",
+    )
+    self_clean.add_argument(
+        "--distfiles",
+        action="store_true",
+        help="Remove all downloaded distfiles if any",
+    )
+    self_clean.add_argument(
+        "--installed-pkgs",
+        action="store_true",
+        help="Remove all installed packages if any",
+    )
+    self_clean.add_argument(
+        "--progcache",
+        action="store_true",
+        help="Clear the Ruyi program cache",
+    )
+    self_clean.add_argument(
+        "--repo",
+        action="store_true",
+        help="Remove the Ruyi repo if located in Ruyi-managed cache directory",
+    )
+    self_clean.add_argument(
+        "--telemetry",
+        action="store_true",
+        help="Remove all telemetry data recorded if any",
+    )
+    self_clean.set_defaults(func=cli_self_clean, tele_key="self clean")
 
     self_uninstall = selfsp.add_parser(
         "uninstall",
