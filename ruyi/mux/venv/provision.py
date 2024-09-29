@@ -14,6 +14,7 @@ from jinja2 import BaseLoader, Environment, TemplateNotFound
 from ... import log, self_exe
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
+from . import ConfiguredTargetTuple
 from .data import TEMPLATES
 from .emulator_cfg import ResolvedEmulatorProg
 
@@ -50,7 +51,9 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
 
 
 def render_and_write(
-    dest: PathLike[Any], template_name: str, data: dict[str, Any]
+    dest: PathLike[Any],
+    template_name: str,
+    data: dict[str, Any],
 ) -> None:
     log.D(f"rendering template '{template_name}' with data {data}")
     content = render_template_str(template_name, data).encode("utf-8")
@@ -63,129 +66,70 @@ class VenvMaker:
     def __init__(
         self,
         profile: ProfileProxy,
-        toolchain_install_root: PathLike[Any],
-        target_tuple: str,
-        toolchain_flavor: str,
-        binutils_flavor: str,
+        targets: list[ConfiguredTargetTuple],
         dest: PathLike[Any],
-        sysroot_srcdir: PathLike[Any] | None,
-        gcc_install_dir: PathLike[Any] | None,
         emulator_progs: list[EmulatorProgDecl] | None,
         emulator_root: PathLike[Any] | None,
         override_name: str | None = None,
     ) -> None:
         self.profile = profile
-        self.toolchain_install_root = toolchain_install_root
-        self.target_tuple = target_tuple
-        self.binutils_flavor = binutils_flavor
-        self.toolchain_flavor = toolchain_flavor
-        self.dest = dest
-        self.sysroot_srcdir = sysroot_srcdir
-        self.gcc_install_dir = gcc_install_dir
+        self.targets = targets
+        self.venv_root = pathlib.Path(dest)
         self.emulator_progs = emulator_progs
         self.emulator_root = emulator_root
         self.override_name = override_name
 
-        self.sysroot_destdir = (
-            pathlib.Path(self.dest) / "sysroot"
-            if self.sysroot_srcdir is not None
-            else None
-        )
+        self.bindir = self.venv_root / "bin"
+
+    def sysroot_srcdir(self, target_tuple: str | None) -> pathlib.Path | None:
+        if target_tuple is None:
+            # check the primary target
+            if s := self.targets[0]["toolchain_sysroot"]:
+                return pathlib.Path(s)
+            return None
+
+        # check if we have this target
+        for t in self.targets:
+            if t["target"] != target_tuple:
+                continue
+            if s := t["toolchain_sysroot"]:
+                return pathlib.Path(s)
+
+        return None
+
+    def has_sysroot_for(self, target_tuple: str | None) -> bool:
+        return self.sysroot_srcdir(target_tuple) is not None
+
+    def sysroot_destdir(self, target_tuple: str | None) -> pathlib.Path | None:
+        if not self.has_sysroot_for(target_tuple):
+            return None
+
+        dirname = f"sysroot.{target_tuple}" if target_tuple is not None else "sysroot"
+        return self.venv_root / dirname
 
     def provision(self) -> None:
-        venv_root = pathlib.Path(self.dest)
-        venv_root.mkdir()
+        venv_root = self.venv_root
+        bindir = self.bindir
 
-        if self.sysroot_srcdir is not None:
-            assert self.sysroot_destdir is not None
-            shutil.copytree(
-                self.sysroot_srcdir,
-                self.sysroot_destdir,
-                symlinks=True,
-                ignore_dangling_symlinks=True,
-            )
+        venv_root.mkdir()
+        bindir.mkdir()
 
         env_data = {
             "profile": self.profile.id,
-            "sysroot": self.sysroot_destdir,
+            "sysroot": self.sysroot_destdir(None),
         }
         render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
 
-        bindir = venv_root / "bin"
-        bindir.mkdir()
-
-        log.D("symlinking binaries into venv")
-        toolchain_bindir = pathlib.Path(self.toolchain_install_root) / "bin"
-        symlink_binaries(toolchain_bindir, bindir)
-
-        make_llvm_tool_aliases(
-            bindir,
-            self.target_tuple,
-            self.binutils_flavor == "llvm",
-            self.toolchain_flavor == "clang",
-        )
+        for i, tgt in enumerate(self.targets):
+            is_primary = i == 0
+            self.provision_target(tgt, is_primary)
 
         template_data = {
-            "RUYI_VENV": str(self.dest),
+            "RUYI_VENV": str(venv_root),
             "RUYI_VENV_NAME": self.override_name,
         }
 
         render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
-
-        # CMake toolchain file & Meson cross file
-        if self.toolchain_flavor == "clang":
-            cc_path = bindir / "clang"
-            cxx_path = bindir / "clang++"
-        elif self.toolchain_flavor == "gcc":
-            cc_path = bindir / f"{self.target_tuple}-gcc"
-            cxx_path = bindir / f"{self.target_tuple}-g++"
-        else:
-            raise NotImplementedError
-
-        if self.binutils_flavor == "binutils":
-            meson_additional_binaries = {
-                "ar": bindir / f"{self.target_tuple}-ar",
-                "nm": bindir / f"{self.target_tuple}-nm",
-                "objcopy": bindir / f"{self.target_tuple}-objcopy",
-                "objdump": bindir / f"{self.target_tuple}-objdump",
-                "ranlib": bindir / f"{self.target_tuple}-ranlib",
-                "readelf": bindir / f"{self.target_tuple}-readelf",
-                "strip": bindir / f"{self.target_tuple}-strip",
-            }
-        elif self.binutils_flavor == "llvm":
-            meson_additional_binaries = {
-                "ar": bindir / "llvm-ar",
-                "nm": bindir / "llvm-nm",
-                "objcopy": bindir / "llvm-objcopy",
-                "objdump": bindir / "llvm-objdump",
-                "ranlib": bindir / "llvm-ranlib",
-                "readelf": bindir / "llvm-readelf",
-                "strip": bindir / "llvm-strip",
-            }
-        else:
-            raise NotImplementedError
-
-        cmake_toolchain_file_path = venv_root / "toolchain.cmake"
-        toolchain_file_data = {
-            "cc": cc_path,
-            "cxx": cxx_path,
-            "processor": self.profile.arch,
-            "sysroot": self.sysroot_destdir,
-            "venv_root": venv_root,
-            "cmake_toolchain_file": str(cmake_toolchain_file_path),
-            "meson_additional_binaries": meson_additional_binaries,
-        }
-        render_and_write(
-            cmake_toolchain_file_path,
-            "toolchain.cmake",
-            toolchain_file_data,
-        )
-
-        render_and_write(
-            venv_root / "meson-cross.ini",
-            "meson-cross.ini",
-            toolchain_file_data,
-        )
 
         qemu_bin: PathLike[Any] | None = None
         profile_emu_env: dict[str, str] | None = None
@@ -195,7 +139,7 @@ class VenvMaker:
                     p,
                     self.emulator_root,
                     self.profile,
-                    self.sysroot_destdir,
+                    self.sysroot_destdir(None),
                 )
                 for p in self.emulator_progs
             ]
@@ -219,19 +163,134 @@ class VenvMaker:
                 os.symlink(self_exe(), bindir / "ruyi-qemu")
 
         # provide initial cached configuration to venv
-        initial_cache_data = {
-            "target_tuple": self.target_tuple,
-            "toolchain_bindir": str(toolchain_bindir),
-            "gcc_install_dir": self.gcc_install_dir,
+        render_and_write(
+            venv_root / "ruyi-cache.v1.toml",
+            "ruyi-cache.toml",
+            self.make_venv_cache_data(qemu_bin, profile_emu_env),
+        )
+
+    def make_venv_cache_data(
+        self,
+        qemu_bin: PathLike[Any] | None,
+        profile_emu_env: dict[str, str] | None,
+    ) -> dict[str, object]:
+        targets_cache_data: dict[str, object] = {
+            tgt["target"]: {
+                "toolchain_bindir": str(pathlib.Path(tgt["toolchain_root"]) / "bin"),
+                "toolchain_sysroot": self.sysroot_destdir(tgt["target"]),
+                "gcc_install_dir": tgt["gcc_install_dir"],
+            } for tgt in self.targets
+        }
+
+        return {
             "profile_common_flags": self.profile.get_common_flags(),
-            "qemu_bin": qemu_bin,
             "profile_emu_env": profile_emu_env,
+            "qemu_bin": qemu_bin,
+            "targets": targets_cache_data,
+        }
+
+    def provision_target(
+        self,
+        tgt: ConfiguredTargetTuple,
+        is_primary: bool,
+    ) -> None:
+        venv_root = self.venv_root
+        bindir = self.bindir
+        target_tuple = tgt["target"]
+
+        # getting the destdir this way ensures it's suffixed with the target
+        # tuple
+        if sysroot_destdir := self.sysroot_destdir(target_tuple):
+            sysroot_srcdir = tgt["toolchain_sysroot"]
+            assert sysroot_srcdir is not None
+
+            log.D(f"copying sysroot for {target_tuple}")
+            shutil.copytree(
+                sysroot_srcdir,
+                sysroot_destdir,
+                symlinks=True,
+                ignore_dangling_symlinks=True,
+            )
+
+            if is_primary:
+                log.D("symlinking primary sysroot into place")
+                primary_sysroot_destdir = self.sysroot_destdir(None)
+                assert primary_sysroot_destdir is not None
+                os.symlink(sysroot_destdir.name, primary_sysroot_destdir)
+
+        log.D(f"symlinking {target_tuple} binaries into venv")
+        toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
+        symlink_binaries(toolchain_bindir, bindir)
+
+        make_llvm_tool_aliases(
+            bindir,
+            target_tuple,
+            tgt["binutils_flavor"] == "llvm",
+            tgt["cc_flavor"] == "clang",
+        )
+
+        # CMake toolchain file & Meson cross file
+        if tgt["cc_flavor"] == "clang":
+            cc_path = bindir / "clang"
+            cxx_path = bindir / "clang++"
+        elif tgt["cc_flavor"] == "gcc":
+            cc_path = bindir / f"{target_tuple}-gcc"
+            cxx_path = bindir / f"{target_tuple}-g++"
+        else:
+            raise NotImplementedError
+
+        if tgt["binutils_flavor"] == "binutils":
+            meson_additional_binaries = {
+                "ar": bindir / f"{target_tuple}-ar",
+                "nm": bindir / f"{target_tuple}-nm",
+                "objcopy": bindir / f"{target_tuple}-objcopy",
+                "objdump": bindir / f"{target_tuple}-objdump",
+                "ranlib": bindir / f"{target_tuple}-ranlib",
+                "readelf": bindir / f"{target_tuple}-readelf",
+                "strip": bindir / f"{target_tuple}-strip",
+            }
+        elif tgt["binutils_flavor"] == "llvm":
+            meson_additional_binaries = {
+                "ar": bindir / "llvm-ar",
+                "nm": bindir / "llvm-nm",
+                "objcopy": bindir / "llvm-objcopy",
+                "objdump": bindir / "llvm-objdump",
+                "ranlib": bindir / "llvm-ranlib",
+                "readelf": bindir / "llvm-readelf",
+                "strip": bindir / "llvm-strip",
+            }
+        else:
+            raise NotImplementedError
+
+        cmake_toolchain_file_path = venv_root / f"toolchain.{target_tuple}.cmake"
+        toolchain_file_data = {
+            "cc": cc_path,
+            "cxx": cxx_path,
+            "processor": self.profile.arch,
+            "sysroot": self.sysroot_destdir(target_tuple),
+            "venv_root": venv_root,
+            "cmake_toolchain_file": str(cmake_toolchain_file_path),
+            "meson_additional_binaries": meson_additional_binaries,
         }
         render_and_write(
-            venv_root / "ruyi-cache.toml",
-            "ruyi-cache.toml",
-            initial_cache_data,
+            cmake_toolchain_file_path,
+            "toolchain.cmake",
+            toolchain_file_data,
         )
+
+        meson_cross_file_path = venv_root / f"meson-cross.{target_tuple}.ini"
+        render_and_write(
+            meson_cross_file_path,
+            "meson-cross.ini",
+            toolchain_file_data,
+        )
+
+        if is_primary:
+            log.D(f"making cmake & meson file symlinks to primary target {target_tuple}")
+            primary_cmake_toolchain_file_path = venv_root / "toolchain.cmake"
+            primary_meson_cross_file_path = venv_root / "meson-cross.ini"
+            os.symlink(cmake_toolchain_file_path.name, primary_cmake_toolchain_file_path)
+            os.symlink(meson_cross_file_path.name, primary_meson_cross_file_path)
 
 
 def symlink_binaries(src_bindir: PathLike[Any], dest_bindir: PathLike[Any]) -> None:

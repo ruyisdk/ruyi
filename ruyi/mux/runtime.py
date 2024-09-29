@@ -27,7 +27,34 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     if basename == "ruyi-qemu":
         return mux_qemu_main(argv, vcfg)
 
-    binpath = os.path.join(vcfg.toolchain_bindir, basename)
+    # match the basename with one of the configured target tuples
+    target_tuple: str | None = None
+    toolchain_bindir: str | None = None
+    toolchain_sysroot: str | None = None
+    gcc_install_dir: str | None = None
+    for tgt_tuple, tgt_data in vcfg.targets.items():
+        if not basename.startswith(f"{tgt_tuple}-"):
+            continue
+
+        log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
+        target_tuple = tgt_tuple
+        toolchain_bindir = tgt_data["toolchain_bindir"]
+        toolchain_sysroot = tgt_data.get("toolchain_sysroot")
+        gcc_install_dir = tgt_data.get("gcc_install_dir")
+        break
+
+    if target_tuple is None:
+        log.F(f"no configured target found for command [yellow]{basename}[/]")
+        return 1
+
+    if toolchain_bindir is None:
+        # should not happen
+        log.F(
+            f"internal error: no bindir configured for target [yellow]{target_tuple}[/]"
+        )
+        return 1
+
+    binpath = os.path.join(toolchain_bindir, basename)
 
     log.D(f"binary to exec: {binpath}")
 
@@ -38,18 +65,18 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         argv_to_insert = []
 
         if is_proxying_to_clang(basename):
-            log.D(f"adding target for clang: {vcfg.target_tuple}")
-            argv_to_insert.append(f"--target={vcfg.target_tuple}")
-            if vcfg.gcc_install_dir is not None:
-                log.D(f"informing clang of GCC install dir: {vcfg.gcc_install_dir}")
-                argv_to_insert.append(f"--gcc-install-dir={vcfg.gcc_install_dir}")
+            log.D(f"adding target for clang: {target_tuple}")
+            argv_to_insert.append(f"--target={target_tuple}")
+            if gcc_install_dir is not None:
+                log.D(f"informing clang of GCC install dir: {gcc_install_dir}")
+                argv_to_insert.append(f"--gcc-install-dir={gcc_install_dir}")
 
         argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
         log.D(f"parsed profile flags: {argv_to_insert}")
 
-        if vcfg.sysroot is not None:
-            log.D(f"adding sysroot: {vcfg.sysroot}")
-            argv_to_insert.extend(("--sysroot", vcfg.sysroot))
+        if toolchain_sysroot is not None:
+            log.D(f"adding sysroot: {toolchain_sysroot}")
+            argv_to_insert.extend(("--sysroot", toolchain_sysroot))
 
     new_argv = [binpath]
     if argv_to_insert:
