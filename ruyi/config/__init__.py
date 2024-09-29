@@ -40,11 +40,21 @@ class GlobalConfigRepoType(TypedDict):
     branch: NotRequired[str]
 
 
+class GlobalConfigInstallationType(TypedDict):
+    # Undocumented: whether this Ruyi installation is externally managed.
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to signify this status to an official Ruyi build (where IS_PACKAGED is
+    # True), to prevent e.g. accidental self-uninstallation.
+    externally_managed: NotRequired[bool]
+
+
 class GlobalConfigTelemetryType(TypedDict):
     mode: NotRequired[str]
 
 
 class GlobalConfigRootType(TypedDict):
+    installation: NotRequired[GlobalConfigInstallationType]
     packages: NotRequired[GlobalConfigPackagesType]
     repo: NotRequired[GlobalConfigRepoType]
     telemetry: NotRequired[GlobalConfigTelemetryType]
@@ -57,6 +67,7 @@ class GlobalConfig:
         self.override_repo_url: str | None = None
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
+        self.is_installation_externally_managed = False
 
         self._news_read_status_store: NewsReadStatusStore | None = None
         self._telemetry_store: TelemetryStore | None = None
@@ -68,6 +79,12 @@ class GlobalConfig:
         self._telemetry_mode: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
+        if ins_cfg := config_data.get("installation"):
+            self.is_installation_externally_managed = ins_cfg.get(
+                "externally_managed",
+                False,
+            )
+
         if pkgs_cfg := config_data.get("packages"):
             self.include_prereleases = pkgs_cfg.get("prereleases", False)
 
