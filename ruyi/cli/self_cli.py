@@ -75,6 +75,10 @@ def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> in
     else:
         log.I("uninstallation consent given over CLI, proceeding")
 
+    if tm := cfg.telemetry:
+        # do not record any telemetry data if we're purging all data with us
+        tm.discard_events(purge)
+
     _do_reset(
         cfg,
         quiet=False,

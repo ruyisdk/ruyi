@@ -20,6 +20,7 @@ class TelemetryStore:
         self.store_root = pathlib.Path(store_root)
         self.local = local
         self._events: list[TelemetryEvent] = []
+        self._discard_events = False
 
     @property
     def raw_events_dir(self) -> pathlib.Path:
@@ -45,7 +46,16 @@ class TelemetryStore:
     def record(self, kind: str, **params: object) -> None:
         self._events.append({"fmt": 1, "kind": kind, "params": params})
 
+    def discard_events(self, v: bool = True) -> None:
+        self._discard_events = v
+
     def flush(self) -> None:
+        # We may be self-uninstalling and purging all state data, and in this
+        # case we don't want to record anything (thus re-creating directories).
+        if self._discard_events:
+            log.D("discarding collected telemetry data")
+            return
+
         log.D("flushing telemetry to persistent store")
 
         raw_events_dir = self.raw_events_dir
