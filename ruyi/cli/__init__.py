@@ -413,6 +413,8 @@ def main(argv: List[str]) -> int:
         telemetry_key = args.tele_key
     except AttributeError:
         log.F("internal error: CLI entrypoint was added without a telemetry key")
+        return 1
+
     if gc.telemetry is not None:
         gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
 
