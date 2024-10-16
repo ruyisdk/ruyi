@@ -9,13 +9,14 @@ from typing import Any, TypeGuard, cast
 from tomlkit import TOMLDocument, document, table
 from tomlkit.items import AoT, Table
 
+from ..config import GlobalConfig
 from .. import log
 from . import checksum
 from .canonical_dump import dump_canonical_package_manifest_toml
 from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
 
 
-def cli_admin_manifest(args: argparse.Namespace) -> int:
+def cli_admin_manifest(cfg: GlobalConfig, args: argparse.Namespace) -> int:
     files = args.file
     format = args.format
     restrict_str = cast(str, args.restrict)
@@ -50,7 +51,7 @@ def _fix_indent(s: str) -> str:
     return RE_INDENT_FIX.sub(r"  \1", s)
 
 
-def cli_admin_format_manifest(args: argparse.Namespace) -> int:
+def cli_admin_format_manifest(cfg: GlobalConfig, args: argparse.Namespace) -> int:
     files = args.file
 
     for f in files:
