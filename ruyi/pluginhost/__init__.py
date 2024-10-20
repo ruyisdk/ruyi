@@ -39,8 +39,6 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         match plugin_backend:
             case "unsandboxed":
                 return UnsandboxedPluginHostContext(plugin_root)
-            case "xingque":
-                return XingquePluginHostContext(plugin_root)
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
 
@@ -176,11 +174,8 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-# import the built-in supported PluginHostContext implementations
+# import the built-in supported PluginHostContext implementation(s)
 # this must come after the baseclass declarations
-
-# pylint: disable-next=wrong-import-position
-from .sandboxed_xingque import XingquePluginHostContext  # noqa: E402
 
 # pylint: disable-next=wrong-import-position
 from .unsandboxed import UnsandboxedPluginHostContext  # noqa: E402

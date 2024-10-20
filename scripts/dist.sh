@@ -66,15 +66,10 @@ do_inner() {
 
     [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd "$REPO_ROOT"
 
-    # build pygit2 and/or xingque if no prebuilt artifact is available on PyPI
+    # build dep(s) with extension(s) if no prebuilt artifact is available on PyPI
     case "$arch" in
     amd64|arm64|ppc64el) ;;  # current as of 1.15.1
     *) ./scripts/build-pygit2.py ;;
-    esac
-
-    case "$arch" in
-    amd64|arm64|armhf|i386|ppc64el|s390x) ;;  # current as of 0.2.0
-    *) ./scripts/build-xingque.py ;;
     esac
 
     green "installing deps" group
