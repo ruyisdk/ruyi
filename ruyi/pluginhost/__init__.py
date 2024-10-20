@@ -34,7 +34,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
-            plugin_backend = "xingque"
+            plugin_backend = "unsandboxed"
 
         match plugin_backend:
             case "unsandboxed":
