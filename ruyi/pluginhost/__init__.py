@@ -1,3 +1,4 @@
+import abc
 import pathlib
 from typing import Self
 
@@ -7,7 +8,25 @@ from . import api
 from . import paths
 
 
-class PluginHostContext:
+class PluginHostContext(metaclass=abc.ABCMeta):
+    @staticmethod
+    def new(plugin_root: pathlib.Path) -> "PluginHostContext":
+        return XingquePluginHostContext(plugin_root)
+
+    @abc.abstractmethod
+    def load_plugin(self, plugin_id: str) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def is_plugin_loaded(self, plugin_id: str) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
+        raise NotImplementedError
+
+
+class XingquePluginHostContext(PluginHostContext):
     def __init__(self, plugin_root: pathlib.Path) -> None:
         self._plugin_root = plugin_root
         # resolved path: frozen module

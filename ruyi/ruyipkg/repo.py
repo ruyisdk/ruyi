@@ -192,7 +192,7 @@ class MetadataRepo:
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
-        self._plugin_host_ctx = PluginHostContext(self.plugin_root)
+        self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
 
     @property
     def plugin_root(self) -> pathlib.Path:
