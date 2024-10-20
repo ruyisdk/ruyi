@@ -193,6 +193,7 @@ class MetadataRepo:
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
         self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
+        self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property
     def plugin_root(self) -> pathlib.Path:
@@ -208,6 +209,20 @@ class MetadataRepo:
 
     def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
         return self._plugin_host_ctx.get_from_plugin(plugin_id, key)
+
+    def eval_plugin_fn(
+        self,
+        function: object,
+        *args: object,
+        **kwargs: object,
+    ) -> object:
+        """Evaluates a function from a plugin.
+
+        NOTE: There is security implication for the unsandboxed plugin backend,
+        which provides **NO GUARDS** against arbitrary inputs for the ``function``
+        argument because there is **no sandbox**."""
+
+        return self._plugin_fn_evaluator.eval_function(function, *args, **kwargs)
 
     def ensure_git_repo(self) -> Repository:
         if self.repo is not None:

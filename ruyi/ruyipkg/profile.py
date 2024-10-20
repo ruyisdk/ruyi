@@ -1,7 +1,7 @@
 from os import PathLike
 from typing import Any, Iterable, TypeGuard, cast
 
-from ..pluginhost import PluginHostContext
+from ..pluginhost import PluginHostContext, SupportsEvalFunction
 from .pkg_manifest import EmulatorFlavor
 
 
@@ -31,7 +31,11 @@ def validate_dict_str_str(x: object) -> TypeGuard[dict[str, str]]:
 
 
 class PluginProfileProvider:
-    def __init__(self, phctx: PluginHostContext[Any, Any], plugin_id: str) -> None:
+    def __init__(
+        self,
+        phctx: PluginHostContext[Any, SupportsEvalFunction],
+        plugin_id: str,
+    ) -> None:
         self._phctx = phctx
         self._plugin_id = plugin_id
         self._ev = phctx.make_evaluator()
