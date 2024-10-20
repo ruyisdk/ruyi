@@ -20,7 +20,6 @@ Docker 的构建方式。但考虑到调试、复杂的发行版打包场景、�
 `ruyi` 涉及的少数原生扩展库能够在该系统上被构建、工作，那么 `ruyi` 就可以工作。目前这些库有：
 
 * [`pygit2`](https://pypi.org/project/pygit2/)：涉及 `openssl`、`libssh2`、`libgit2`、`cffi`
-* [`xingque`](https://pypi.org/project/xingque/)：主要涉及 `pyo3`、`maturin`、`nix`
 
 请注意：因为 RuyiSDK 官方软件源中的软件包目前主要以二进制方式分发，且
 RuyiSDK 团队只会为官方支持的架构、操作系统提供二进制包，所以尽管您可以为非官方支持的架构或操作系统构建出

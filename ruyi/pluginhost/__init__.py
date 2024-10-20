@@ -1,26 +1,76 @@
+import abc
+import os
 import pathlib
-from typing import Self
-
-import xingque
+from typing import Callable, Generic, MutableMapping, Protocol, Self, TypeVar
 
 from . import api
 from . import paths
 
 
-class PluginHostContext:
-    def __init__(self, plugin_root: pathlib.Path) -> None:
+ENV_PLUGIN_BACKEND_KEY = "RUYI_PLUGIN_BACKEND"
+
+
+class SupportsGetOption(Protocol):
+    def get_option(self, key: str) -> object: ...
+
+
+class SupportsEvalFunction(Protocol):
+    def eval_function(
+        self,
+        function: object,
+        *args: object,
+        **kwargs: object,
+    ) -> object: ...
+
+
+ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
+EvalTy = TypeVar("EvalTy", bound=SupportsEvalFunction, covariant=True)
+
+
+class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
+    @staticmethod
+    def new(
+        plugin_root: pathlib.Path,
+    ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
+        plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
+        if not plugin_backend:
+            plugin_backend = "unsandboxed"
+
+        match plugin_backend:
+            case "unsandboxed":
+                return UnsandboxedPluginHostContext(plugin_root)
+            case _:
+                raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
+
+    def __init__(
+        self,
+        plugin_root: pathlib.Path,
+    ) -> None:
         self._plugin_root = plugin_root
-        # resolved path: frozen module
-        self._module_cache: dict[str, xingque.FrozenModule] = {}
-        # plugin id: frozen plugin module
-        self._loaded_plugins: dict[str, xingque.FrozenModule] = {}
+        # resolved path: finalized module
+        self._module_cache: MutableMapping[str, ModuleTy] = {}
+        # plugin id: finalized plugin module
+        self._loaded_plugins: dict[str, SupportsGetOption] = {}
         # plugin id: {key: value}
         self._value_cache: dict[str, dict[str, object]] = {}
+
+    @abc.abstractmethod
+    def make_loader(
+        self,
+        plugin_root: pathlib.Path,
+        originating_file: pathlib.Path,
+        module_cache: MutableMapping[str, ModuleTy],
+    ) -> "BasePluginLoader[ModuleTy]":
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def make_evaluator(self) -> EvalTy:
+        raise NotImplementedError
 
     def load_plugin(self, plugin_id: str) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
 
-        loader = Loader(
+        loader = self.make_loader(
             self._plugin_root,
             plugin_dir / paths.PLUGIN_ENTRYPOINT_FILENAME,
             self._module_cache,
@@ -46,24 +96,24 @@ class PluginHostContext:
             return v
 
 
-class Loader:
-    """Starlark FileLoader loading from Ruyi repo.
+class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
+    """Base class for plugin loaders loading from Ruyi repo.
 
     Load paths take one of the following shapes:
 
     * relative path: loads the path relative from the originating file's location,
       but crossing plugin boundary is not allowed
-    * absolute path: similar to above, but relative to the plugin's Starlark root
+    * absolute path: similar to above, but relative to the plugin's FS root
     * `ruyi-plugin://${plugin-id}`: loads from the plugin `plugin-id` residing
       in the same repo as the originating plugin, the "entrypoint" being hard-coded
-      as `mod.star`
+      to whatever the concrete implementation dictates
     """
 
     def __init__(
         self,
         root: pathlib.Path,
         originating_file: pathlib.Path,
-        module_cache: dict[str, xingque.FrozenModule],
+        module_cache: MutableMapping[str, ModuleTy],
     ) -> None:
         self.root = root
         self.originating_file = originating_file
@@ -76,13 +126,13 @@ class Loader:
             self.module_cache,
         )
 
-    def load_this_plugin(self) -> xingque.FrozenModule:
+    def load_this_plugin(self) -> ModuleTy:
         return self._load(str(self.originating_file), True)
 
-    def load(self, path: str) -> xingque.FrozenModule:
+    def load(self, path: str) -> ModuleTy:
         return self._load(path, False)
 
-    def _load(self, path: str, is_root: bool) -> xingque.FrozenModule:
+    def _load(self, path: str, is_root: bool) -> ModuleTy:
         resolved_path: pathlib.Path
         if is_root:
             resolved_path = pathlib.Path(path)
@@ -100,18 +150,32 @@ class Loader:
         plugin_id = resolved_path.relative_to(self.root).parts[0]
         plugin_dir = self.root / plugin_id
 
-        gb = xingque.GlobalsBuilder.standard()
-        gb.set(
-            "ruyi_plugin_rev",
-            api.make_ruyi_plugin_api_for_module(self.root, resolved_path, plugin_dir),
+        host_bridge = api.make_ruyi_plugin_api_for_module(
+            self.root,
+            resolved_path,
+            plugin_dir,
         )
-        globals = gb.build()
 
-        ast = xingque.AstModule.parse(resolved_path_str, resolved_path.read_text())
-        m = xingque.Module()
-        ev = xingque.Evaluator(m)
-        ev.set_loader(self.make_sub_loader(resolved_path))
-        ev.eval_module(ast, globals)
-        fm = m.freeze()
-        self.module_cache[resolved_path_str] = fm
-        return fm
+        mod = self.do_load_module(
+            resolved_path,
+            resolved_path.read_text("utf-8"),
+            host_bridge,
+        )
+        self.module_cache[resolved_path_str] = mod
+        return mod
+
+    @abc.abstractmethod
+    def do_load_module(
+        self,
+        resolved_path: pathlib.Path,
+        program: str,
+        ruyi_host_bridge: Callable[[object], api.RuyiHostAPI],
+    ) -> ModuleTy:
+        raise NotImplementedError
+
+
+# import the built-in supported PluginHostContext implementation(s)
+# this must come after the baseclass declarations
+
+# pylint: disable-next=wrong-import-position
+from .unsandboxed import UnsandboxedPluginHostContext  # noqa: E402

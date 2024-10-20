@@ -3,8 +3,6 @@ import itertools
 import os.path
 from typing import TypedDict, TypeGuard, cast
 
-import xingque
-
 from .. import log
 from ..cli import user_input
 from ..config import GlobalConfig
@@ -283,14 +281,10 @@ def get_part_desc(part: PartitionKind) -> str:
 
 class PackageProvisionStrategyDecl(TypedDict):
     priority: int  # higher number means earlier
-    need_host_blkdevs_fn: (
-        xingque.Value
-    )  # Callable[[list[PartitionKind]], list[PartitionKind]]
+    need_host_blkdevs_fn: object  # Callable[[list[PartitionKind]], list[PartitionKind]]
     need_cmd: list[str]
-    pretend_fn: (
-        xingque.Value
-    )  # Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
-    flash_fn: xingque.Value  # Callable[[PartitionMapDecl, PartitionMapDecl], int]
+    pretend_fn: object  # Callable[[PartitionMapDecl, PartitionMapDecl], list[str]]
+    flash_fn: object  # Callable[[PartitionMapDecl, PartitionMapDecl], int]
 
 
 def validate_list_str(x: object) -> TypeGuard[list[str]]:
@@ -311,8 +305,13 @@ def validate_list_partition_kinds(x: object) -> TypeGuard[list[PartitionKind]]:
 
 
 class PackageProvisionStrategy:
-    def __init__(self, decl: PackageProvisionStrategyDecl) -> None:
+    def __init__(
+        self,
+        decl: PackageProvisionStrategyDecl,
+        mr: MetadataRepo,
+    ) -> None:
         self._d = decl
+        self._mr = mr
 
     @property
     def priority(self) -> int:
@@ -323,8 +322,7 @@ class PackageProvisionStrategy:
         return self._d["need_cmd"]
 
     def need_host_blkdevs(self, x: list[PartitionKind]) -> list[PartitionKind]:
-        ev = xingque.Evaluator()
-        result = ev.eval_function(self._d["need_host_blkdevs_fn"], x)
+        result = self._mr.eval_plugin_fn(self._d["need_host_blkdevs_fn"], x)
         if not validate_list_partition_kinds(result):
             raise TypeError("need_host_blkdevs_fn must return list[PartitionKind]")
         return result
@@ -334,8 +332,7 @@ class PackageProvisionStrategy:
         img_paths: PartitionMapDecl,
         blkdev_paths: PartitionMapDecl,
     ) -> list[str]:
-        ev = xingque.Evaluator()
-        result = ev.eval_function(self._d["pretend_fn"], img_paths, blkdev_paths)
+        result = self._mr.eval_plugin_fn(self._d["pretend_fn"], img_paths, blkdev_paths)
         if not validate_list_str(result):
             raise TypeError("pretend_fn must return list[str]")
         return result
@@ -345,8 +342,7 @@ class PackageProvisionStrategy:
         img_paths: PartitionMapDecl,
         blkdev_paths: PartitionMapDecl,
     ) -> int:
-        ev = xingque.Evaluator()
-        result = ev.eval_function(self._d["flash_fn"], img_paths, blkdev_paths)
+        result = self._mr.eval_plugin_fn(self._d["flash_fn"], img_paths, blkdev_paths)
         if not isinstance(result, int):
             raise TypeError("flash_fn must return int")
         return result
@@ -371,7 +367,7 @@ class ProvisionStrategyProvider:
                 f"malformed device provisioner strategy plugin '{plugin_id}'"
             )
         for name, decl in provided_strats.items():
-            self._strats[name] = PackageProvisionStrategy(decl)
+            self._strats[name] = PackageProvisionStrategy(decl, self._mr)
 
     def __getitem__(self, name: str) -> PackageProvisionStrategy:
         try:
