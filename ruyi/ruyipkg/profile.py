@@ -34,7 +34,7 @@ def validate_dict_str_str(x: object) -> TypeGuard[dict[str, str]]:
 
 
 class PluginProfileProvider:
-    def __init__(self, phctx: PluginHostContext, plugin_id: str) -> None:
+    def __init__(self, phctx: PluginHostContext[Any], plugin_id: str) -> None:
         self._phctx = phctx
         self._plugin_id = plugin_id
         self._ev = xingque.Evaluator()

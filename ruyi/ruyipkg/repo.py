@@ -4,7 +4,7 @@ import json
 import os.path
 import pathlib
 import tomllib
-from typing import Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
+from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
 from urllib import parse
 
 from pygit2 import clone_repository
@@ -146,7 +146,7 @@ class RepoConfig:
 
 
 class ArchProfileStore:
-    def __init__(self, phctx: PluginHostContext, arch: str) -> None:
+    def __init__(self, phctx: PluginHostContext[Any], arch: str) -> None:
         self._arch = arch
         plugin_id = f"ruyi-profile-{arch}"
         self._provider = PluginProfileProvider(phctx, plugin_id)
