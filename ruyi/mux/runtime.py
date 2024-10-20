@@ -27,6 +27,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     if basename == "ruyi-qemu":
         return mux_qemu_main(argv, vcfg)
 
+    is_unprefixed_clang = is_proxying_to_unprefixed_clang(basename)
     # match the basename with one of the configured target tuples
     target_tuple: str | None = None
     toolchain_bindir: str | None = None
@@ -34,7 +35,10 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     gcc_install_dir: str | None = None
     for tgt_tuple, tgt_data in vcfg.targets.items():
         if not basename.startswith(f"{tgt_tuple}-"):
-            continue
+            # Unprefixed Clang should be treated as having the "default"
+            # target tuple.
+            if not is_unprefixed_clang:
+                continue
 
         log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
         target_tuple = tgt_tuple
@@ -131,6 +135,10 @@ def is_proxying_to_cc(argv0: str) -> bool:
 
 def is_proxying_to_clang(basename: str) -> bool:
     return "clang" in basename
+
+
+def is_proxying_to_unprefixed_clang(basename: str) -> bool:
+    return basename in ("clang", "clang++")
 
 
 def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
