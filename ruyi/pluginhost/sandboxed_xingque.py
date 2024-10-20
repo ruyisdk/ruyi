@@ -7,7 +7,9 @@ from . import BasePluginLoader, PluginHostContext
 from . import api
 
 
-class XingquePluginHostContext(PluginHostContext[xingque.FrozenModule]):
+class XingquePluginHostContext(
+    PluginHostContext[xingque.FrozenModule, xingque.Evaluator]
+):
     def make_loader(
         self,
         plugin_root: pathlib.Path,
@@ -15,6 +17,9 @@ class XingquePluginHostContext(PluginHostContext[xingque.FrozenModule]):
         module_cache: MutableMapping[str, xingque.FrozenModule],
     ) -> BasePluginLoader[xingque.FrozenModule]:
         return Loader(plugin_root, originating_file, module_cache)
+
+    def make_evaluator(self) -> xingque.Evaluator:
+        return xingque.Evaluator()
 
 
 class Loader(BasePluginLoader[xingque.FrozenModule]):

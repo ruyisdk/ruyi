@@ -1,10 +1,7 @@
 from os import PathLike
 from typing import Any, Iterable, TypeGuard, cast
 
-import xingque
-
 from ..pluginhost import PluginHostContext
-
 from .pkg_manifest import EmulatorFlavor
 
 
@@ -34,10 +31,10 @@ def validate_dict_str_str(x: object) -> TypeGuard[dict[str, str]]:
 
 
 class PluginProfileProvider:
-    def __init__(self, phctx: PluginHostContext[Any], plugin_id: str) -> None:
+    def __init__(self, phctx: PluginHostContext[Any, Any], plugin_id: str) -> None:
         self._phctx = phctx
         self._plugin_id = plugin_id
-        self._ev = xingque.Evaluator()
+        self._ev = phctx.make_evaluator()
 
     def _must_get(self, name: str) -> object:
         if v := self._phctx.get_from_plugin(self._plugin_id, name):

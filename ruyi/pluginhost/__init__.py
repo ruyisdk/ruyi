@@ -14,12 +14,24 @@ class SupportsGetOption(Protocol):
     def get_option(self, key: str) -> object: ...
 
 
+class SupportsEvalFunction(Protocol):
+    def eval_function(
+        self,
+        function: object,
+        *args: object,
+        **kwargs: object,
+    ) -> object: ...
+
+
 ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
+EvalTy = TypeVar("EvalTy", bound=SupportsEvalFunction, covariant=True)
 
 
-class PluginHostContext(Generic[ModuleTy], metaclass=abc.ABCMeta):
+class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @staticmethod
-    def new(plugin_root: pathlib.Path) -> "PluginHostContext[SupportsGetOption]":
+    def new(
+        plugin_root: pathlib.Path,
+    ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
             plugin_backend = "xingque"
@@ -49,6 +61,10 @@ class PluginHostContext(Generic[ModuleTy], metaclass=abc.ABCMeta):
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
     ) -> "BasePluginLoader[ModuleTy]":
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def make_evaluator(self) -> EvalTy:
         raise NotImplementedError
 
     def load_plugin(self, plugin_id: str) -> None:

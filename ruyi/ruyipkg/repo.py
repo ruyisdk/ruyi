@@ -146,7 +146,7 @@ class RepoConfig:
 
 
 class ArchProfileStore:
-    def __init__(self, phctx: PluginHostContext[Any], arch: str) -> None:
+    def __init__(self, phctx: PluginHostContext[Any, Any], arch: str) -> None:
         self._arch = arch
         plugin_id = f"ruyi-profile-{arch}"
         self._provider = PluginProfileProvider(phctx, plugin_id)
