@@ -1,9 +1,13 @@
 import abc
+import os
 import pathlib
 from typing import Callable, Generic, MutableMapping, Protocol, Self, TypeVar
 
 from . import api
 from . import paths
+
+
+ENV_PLUGIN_BACKEND_KEY = "RUYI_PLUGIN_BACKEND"
 
 
 class SupportsGetOption(Protocol):
@@ -16,7 +20,15 @@ ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
 class PluginHostContext(Generic[ModuleTy], metaclass=abc.ABCMeta):
     @staticmethod
     def new(plugin_root: pathlib.Path) -> "PluginHostContext[SupportsGetOption]":
-        return XingquePluginHostContext(plugin_root)
+        plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
+        if not plugin_backend:
+            plugin_backend = "xingque"
+
+        match plugin_backend:
+            case "xingque":
+                return XingquePluginHostContext(plugin_root)
+            case _:
+                raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
 
     def __init__(
         self,
