@@ -27,38 +27,44 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     if basename == "ruyi-qemu":
         return mux_qemu_main(argv, vcfg)
 
-    is_unprefixed_clang = is_proxying_to_unprefixed_clang(basename)
     # match the basename with one of the configured target tuples
     target_tuple: str | None = None
-    toolchain_bindir: str | None = None
+    binpath: str | None = None
     toolchain_sysroot: str | None = None
     gcc_install_dir: str | None = None
-    for tgt_tuple, tgt_data in vcfg.targets.items():
-        if not basename.startswith(f"{tgt_tuple}-"):
-            # Unprefixed Clang should be treated as having the "default"
-            # target tuple.
-            if not is_unprefixed_clang:
-                continue
 
-        log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
-        target_tuple = tgt_tuple
-        toolchain_bindir = tgt_data["toolchain_bindir"]
+    # prefer v1 cached info which is lossless
+    if md := vcfg.resolve_cmd_metadata_with_cache(basename):
+        target_tuple = md["target_tuple"]
+        binpath = md["dest"]
+        tgt_data = vcfg.targets[target_tuple]
         toolchain_sysroot = tgt_data.get("toolchain_sysroot")
         gcc_install_dir = tgt_data.get("gcc_install_dir")
-        break
+    else:
+        toolchain_bindir: str | None = None
+        for tgt_tuple, tgt_data in vcfg.targets.items():
+            if not basename.startswith(f"{tgt_tuple}-"):
+                continue
+
+            log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
+            target_tuple = tgt_tuple
+            toolchain_bindir = tgt_data["toolchain_bindir"]
+            toolchain_sysroot = tgt_data.get("toolchain_sysroot")
+            gcc_install_dir = tgt_data.get("gcc_install_dir")
+            break
+
+        if toolchain_bindir is None:
+            # should not happen
+            log.F(
+                f"internal error: no bindir configured for target [yellow]{target_tuple}[/]"
+            )
+            return 1
+
+        binpath = os.path.join(toolchain_bindir, basename)
 
     if target_tuple is None:
         log.F(f"no configured target found for command [yellow]{basename}[/]")
         return 1
-
-    if toolchain_bindir is None:
-        # should not happen
-        log.F(
-            f"internal error: no bindir configured for target [yellow]{target_tuple}[/]"
-        )
-        return 1
-
-    binpath = os.path.join(toolchain_bindir, basename)
 
     log.D(f"binary to exec: {binpath}")
 
@@ -119,14 +125,11 @@ def resolve_argv0_symlink(argv0: str, vcfg: RuyiVenvConfig) -> str | None:
 
     # argv[0] is bare command name, in which case we expect venv root to
     # be available, so we can just check f'{venv_root}/bin/{argv[0]}'.
-    if venv_root := vcfg.venv_root():
-        try:
-            return os.readlink(venv_root / "bin" / argv0)
-        except OSError:
-            return None
-
-    # no venv and argv[0] isn't absolute -- no way to figure out
-    return None
+    # we're guaranteed a venv_root because of the vcfg init logic.
+    try:
+        return os.readlink(vcfg.venv_root / "bin" / argv0)
+    except OSError:
+        return None
 
 
 def is_proxying_to_cc(argv0: str) -> bool:
@@ -135,10 +138,6 @@ def is_proxying_to_cc(argv0: str) -> bool:
 
 def is_proxying_to_clang(basename: str) -> bool:
     return "clang" in basename
-
-
-def is_proxying_to_unprefixed_clang(basename: str) -> bool:
-    return basename in ("clang", "clang++")
 
 
 def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
@@ -163,8 +162,7 @@ def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
 
 
 def ensure_venv_in_path(vcfg: RuyiVenvConfig) -> None:
-    venv_root = vcfg.venv_root()
-    assert venv_root is not None
+    venv_root = vcfg.venv_root
     venv_bindir = venv_root / "bin"
     venv_bindir = venv_bindir.resolve()
 
