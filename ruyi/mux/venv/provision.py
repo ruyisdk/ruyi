@@ -6,7 +6,7 @@ import pathlib
 import re
 import shlex
 import shutil
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Iterator, Tuple, TypedDict
 import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
@@ -179,14 +179,18 @@ class VenvMaker:
                 "toolchain_bindir": str(pathlib.Path(tgt["toolchain_root"]) / "bin"),
                 "toolchain_sysroot": self.sysroot_destdir(tgt["target"]),
                 "gcc_install_dir": tgt["gcc_install_dir"],
-            } for tgt in self.targets
+            }
+            for tgt in self.targets
         }
+
+        cmd_metadata_map = make_cmd_metadata_map(self.targets)
 
         return {
             "profile_common_flags": self.profile.get_common_flags(),
             "profile_emu_env": profile_emu_env,
             "qemu_bin": qemu_bin,
             "targets": targets_cache_data,
+            "cmd_metadata_map": cmd_metadata_map,
         }
 
     def provision_target(
@@ -286,26 +290,62 @@ class VenvMaker:
         )
 
         if is_primary:
-            log.D(f"making cmake & meson file symlinks to primary target {target_tuple}")
+            log.D(
+                f"making cmake & meson file symlinks to primary target {target_tuple}"
+            )
             primary_cmake_toolchain_file_path = venv_root / "toolchain.cmake"
             primary_meson_cross_file_path = venv_root / "meson-cross.ini"
-            os.symlink(cmake_toolchain_file_path.name, primary_cmake_toolchain_file_path)
+            os.symlink(
+                cmake_toolchain_file_path.name,
+                primary_cmake_toolchain_file_path,
+            )
             os.symlink(meson_cross_file_path.name, primary_meson_cross_file_path)
 
 
-def symlink_binaries(src_bindir: PathLike[Any], dest_bindir: PathLike[Any]) -> None:
-    src_binpath = pathlib.Path(src_bindir)
-    dest_binpath = pathlib.Path(dest_bindir)
-    self_exe_path = self_exe()
-
-    for filename in glob.iglob("*", root_dir=src_bindir):
-        if not is_executable(src_binpath / filename):
+def iter_binaries_to_symlink(bindir: pathlib.Path) -> Iterator[pathlib.Path]:
+    for filename in glob.iglob("*", root_dir=bindir):
+        src_cmd_path = bindir / filename
+        if not is_executable(src_cmd_path):
             log.D(f"skipping non-executable {filename} in src bindir")
             continue
 
         if should_ignore_symlinking(filename):
             log.D(f"skipping command {filename} explicitly")
             continue
+
+        yield bindir / filename
+
+
+class CmdMetadataEntry(TypedDict):
+    dest: str
+    target_tuple: str
+
+
+def make_cmd_metadata_map(
+    targets: list[ConfiguredTargetTuple],
+) -> dict[str, CmdMetadataEntry]:
+    result: dict[str, CmdMetadataEntry] = {}
+    for tgt in targets:
+        # TODO: dedup this and provision_target
+        toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
+        for cmd in iter_binaries_to_symlink(toolchain_bindir):
+            result[cmd.name] = {
+                "dest": str(cmd),
+                "target_tuple": tgt["target"],
+            }
+    return result
+
+
+def symlink_binaries(
+    src_bindir: PathLike[Any],
+    dest_bindir: PathLike[Any],
+) -> None:
+    src_binpath = pathlib.Path(src_bindir)
+    dest_binpath = pathlib.Path(dest_bindir)
+    self_exe_path = self_exe()
+
+    for src_cmd_path in iter_binaries_to_symlink(src_binpath):
+        filename = src_cmd_path.name
 
         # symlink self to dest with the name of this command
         dest_path = dest_binpath / filename

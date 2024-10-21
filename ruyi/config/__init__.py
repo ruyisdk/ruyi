@@ -281,11 +281,17 @@ class VenvCacheV1TargetType(TypedDict):
     gcc_install_dir: NotRequired[str]
 
 
+class VenvCacheV1CmdMetadataEntryType(TypedDict):
+    dest: str
+    target_tuple: str
+
+
 class VenvCacheV1Type(TypedDict):
     profile_common_flags: str
     profile_emu_env: NotRequired[dict[str, str]]
     qemu_bin: NotRequired[str]
     targets: dict[str, VenvCacheV1TargetType]
+    cmd_metadata_map: NotRequired[dict[str, VenvCacheV1CmdMetadataEntryType]]
 
 
 class VenvCacheRootType(TypedDict):
@@ -330,7 +336,13 @@ def upgrade_venv_cache_v0(
 
 
 class RuyiVenvConfig:
-    def __init__(self, cfg: VenvConfigRootType, cache: VenvCacheRootType) -> None:
+    def __init__(
+        self,
+        venv_root: pathlib.Path,
+        cfg: VenvConfigRootType,
+        cache: VenvCacheRootType,
+    ) -> None:
+        self.venv_root = venv_root
         self.profile = cfg["config"]["profile"]
         self.sysroot = cfg["config"].get("sysroot")
 
@@ -339,13 +351,18 @@ class RuyiVenvConfig:
         self.profile_common_flags = parsed_cache["profile_common_flags"]
         self.qemu_bin = parsed_cache.get("qemu_bin")
         self.profile_emu_env = parsed_cache.get("profile_emu_env")
+        self.cmd_metadata_map = parsed_cache.get("cmd_metadata_map")
+
+        # this must be in sync with provision.py
+        self._ruyi_priv_dir = self.venv_root / "ruyi-private"
+        self._cached_cmd_targets_dir = self._ruyi_priv_dir / "cached-cmd-targets"
 
     @classmethod
     def explicit_ruyi_venv_root(cls) -> str | None:
         return os.environ.get(ENV_VENV_ROOT_KEY)
 
     @classmethod
-    def venv_root(cls) -> pathlib.Path | None:
+    def probe_venv_root(cls) -> pathlib.Path | None:
         if explicit_root := cls.explicit_ruyi_venv_root():
             return pathlib.Path(explicit_root)
 
@@ -365,7 +382,7 @@ class RuyiVenvConfig:
 
     @classmethod
     def load_from_venv(cls) -> Self | None:
-        venv_root = cls.venv_root()
+        venv_root = cls.probe_venv_root()
         if venv_root is None:
             return None
 
@@ -390,4 +407,15 @@ class RuyiVenvConfig:
 
         # NOTE: for now it's not prohibited to have v1 cache data in the v0
         # cache path, but this situation is harmless
-        return cls(cfg, cache)
+        return cls(venv_root, cfg, cache)
+
+    def resolve_cmd_metadata_with_cache(
+        self,
+        basename: str,
+    ) -> VenvCacheV1CmdMetadataEntryType | None:
+        if self.cmd_metadata_map is None:
+            # we are operating in a venv created with an older ruyi, thus no
+            # cmd_metadata_map in cache
+            return None
+
+        return self.cmd_metadata_map.get(basename)
