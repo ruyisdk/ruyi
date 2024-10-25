@@ -318,6 +318,11 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Do not print out the actions being performed",
     )
     self_clean.add_argument(
+        "--all",
+        action="store_true",
+        help="Remove all covered data",
+    )
+    self_clean.add_argument(
         "--distfiles",
         action="store_true",
         help="Remove all downloaded distfiles if any",
@@ -326,6 +331,11 @@ def init_argparse() -> argparse.ArgumentParser:
         "--installed-pkgs",
         action="store_true",
         help="Remove all installed packages if any",
+    )
+    self_clean.add_argument(
+        "--news-read-status",
+        action="store_true",
+        help="Mark all news items as unread",
     )
     self_clean.add_argument(
         "--progcache",

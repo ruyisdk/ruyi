@@ -23,13 +23,23 @@ them yourselves afterwards.
 
 def cli_self_clean(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
     quiet: bool = args.quiet
+    all: bool = args.all
     distfiles: bool = args.distfiles
     installed_pkgs: bool = args.installed_pkgs
+    news_read_status: bool = args.news_read_status
     progcache: bool = args.progcache
     repo: bool = args.repo
     telemetry: bool = args.telemetry
 
-    if not any([distfiles, installed_pkgs, progcache, repo, telemetry]):
+    if all:
+        distfiles = True
+        installed_pkgs = True
+        news_read_status = True
+        progcache = True
+        repo = True
+        telemetry = True
+
+    if not any([distfiles, installed_pkgs, news_read_status, progcache, repo, telemetry]):
         log.F("no data specified for cleaning")
         log.I(
             "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
@@ -41,6 +51,7 @@ def cli_self_clean(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
         quiet=quiet,
         distfiles=distfiles,
         installed_pkgs=installed_pkgs,
+        news_read_status=news_read_status,
         progcache=progcache,
         repo=repo,
         telemetry=telemetry,
@@ -75,10 +86,6 @@ def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> in
     else:
         log.I("uninstallation consent given over CLI, proceeding")
 
-    if tm := cfg.telemetry:
-        # do not record any telemetry data if we're purging all data with us
-        tm.discard_events(purge)
-
     _do_reset(
         cfg,
         quiet=False,
@@ -99,6 +106,7 @@ def _do_reset(
     *,
     installed_pkgs: bool = False,
     all_state: bool = False,
+    news_read_status: bool = False,  # ignored if all_state=True
     telemetry: bool = False,  # ignored if all_state=True
     all_cache: bool = False,
     distfiles: bool = False,  # ignored if all_cache=True
@@ -119,7 +127,15 @@ def _do_reset(
         status("removing state data")
         shutil.rmtree(cfg.state_root, True)
     else:
+        if news_read_status:
+            status("removing read status of news items")
+            cfg.news_read_status.remove()
+
         if telemetry:
+            if tm := cfg.telemetry:
+                # do not record any telemetry data if we're purging it
+                tm.discard_events(True)
+
             status("removing all telemetry data")
             shutil.rmtree(cfg.telemetry_root, True)
 
