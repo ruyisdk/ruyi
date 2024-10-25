@@ -75,10 +75,6 @@ def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> in
     else:
         log.I("uninstallation consent given over CLI, proceeding")
 
-    if tm := cfg.telemetry:
-        # do not record any telemetry data if we're purging all data with us
-        tm.discard_events(purge)
-
     _do_reset(
         cfg,
         quiet=False,
@@ -120,6 +116,10 @@ def _do_reset(
         shutil.rmtree(cfg.state_root, True)
     else:
         if telemetry:
+            if tm := cfg.telemetry:
+                # do not record any telemetry data if we're purging it
+                tm.discard_events(True)
+
             status("removing all telemetry data")
             shutil.rmtree(cfg.telemetry_root, True)
 
