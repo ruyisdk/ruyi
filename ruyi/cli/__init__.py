@@ -318,6 +318,11 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Do not print out the actions being performed",
     )
     self_clean.add_argument(
+        "--all",
+        action="store_true",
+        help="Remove all covered data",
+    )
+    self_clean.add_argument(
         "--distfiles",
         action="store_true",
         help="Remove all downloaded distfiles if any",

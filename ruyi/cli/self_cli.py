@@ -23,11 +23,19 @@ them yourselves afterwards.
 
 def cli_self_clean(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
     quiet: bool = args.quiet
+    all: bool = args.all
     distfiles: bool = args.distfiles
     installed_pkgs: bool = args.installed_pkgs
     progcache: bool = args.progcache
     repo: bool = args.repo
     telemetry: bool = args.telemetry
+
+    if all:
+        distfiles = True
+        installed_pkgs = True
+        progcache = True
+        repo = True
+        telemetry = True
 
     if not any([distfiles, installed_pkgs, progcache, repo, telemetry]):
         log.F("no data specified for cleaning")
