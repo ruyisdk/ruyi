@@ -333,6 +333,11 @@ def init_argparse() -> argparse.ArgumentParser:
         help="Remove all installed packages if any",
     )
     self_clean.add_argument(
+        "--news-read-status",
+        action="store_true",
+        help="Mark all news items as unread",
+    )
+    self_clean.add_argument(
         "--progcache",
         action="store_true",
         help="Clear the Ruyi program cache",

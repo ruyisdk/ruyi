@@ -1,3 +1,6 @@
+import os
+
+
 class NewsReadStatusStore:
     def __init__(self, path: str) -> None:
         self._path = path
@@ -27,3 +30,6 @@ class NewsReadStatusStore:
         content = "".join(f"{id}\n" for id in self._status)
         with open(self._path, "w", encoding="utf-8") as fp:
             fp.write(content)
+
+    def remove(self) -> None:
+        os.unlink(self._path)
