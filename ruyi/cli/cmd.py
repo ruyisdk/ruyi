@@ -50,7 +50,8 @@ class BaseCommand:
         if cmd is None:
             cls._tele_key = None
         else:
-            parent_raw_tele_key = cls.mro()[1]._tele_key
+            parent_cls = cls.mro()[1]
+            parent_raw_tele_key = getattr(parent_cls, "_tele_key", None)
             if parent_raw_tele_key is None:
                 cls._tele_key = cmd
             else:
