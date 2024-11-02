@@ -29,7 +29,7 @@ class AdminChecksumCommand(
             "-f",
             type=str,
             choices=["json", "toml"],
-            default="json",
+            default="toml",
             help="Format of checksum section to generate in",
         )
         p.add_argument(
