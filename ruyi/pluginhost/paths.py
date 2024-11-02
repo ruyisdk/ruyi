@@ -22,6 +22,7 @@ def resolve_ruyi_load_path(
     plugin_root: pathlib.Path,
     is_for_data: bool,
     originating_file: pathlib.Path,
+    allow_host_fs_access: bool,
 ) -> pathlib.Path:
     parsed = urlparse(path)
     if parsed.params or parsed.query or parsed.fragment:
@@ -79,6 +80,22 @@ def resolve_ruyi_load_path(
                 True,
                 plugin_id=parsed.netloc,
             )
+
+        case "host":
+            if not allow_host_fs_access:
+                raise RuntimeError("the host protocol is not allowed in this context")
+
+            if not parsed.path:
+                raise RuntimeError(
+                    "empty path segment is not allowed for host:// load paths"
+                )
+
+            if parsed.netloc:
+                raise RuntimeError(
+                    "non-empty location is not allowed for host:// load paths"
+                )
+
+            return pathlib.Path(parsed.path)
 
         case _:
             raise RuntimeError(

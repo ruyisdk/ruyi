@@ -499,3 +499,23 @@ class MetadataRepo:
             self.ensure_provisioner_config_cache()
         assert self._provisioner_config_cache is not None
         return self._provisioner_config_cache[0]
+
+    def run_plugin_cmd(self, cmd_name: str, args: list[str]) -> int:
+        plugin_id = f"ruyi-cmd-{cmd_name.lower()}"
+
+        plugin_entrypoint = self._plugin_host_ctx.get_from_plugin(
+            plugin_id,
+            "plugin_cmd_main_v1",
+            is_cmd_plugin=True,  # allow access to host FS for command plugins
+        )
+        if plugin_entrypoint is None:
+            raise RuntimeError(f"cmd entrypoint not found in plugin '{plugin_id}'")
+
+        ret = self.eval_plugin_fn(plugin_entrypoint, args)
+        if not isinstance(ret, int):
+            log.W(
+                f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int."
+            )
+            log.I("forcing return code to 1; the plugin should be fixed")
+            ret = 1
+        return ret

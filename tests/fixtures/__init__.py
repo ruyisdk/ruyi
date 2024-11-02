@@ -12,6 +12,10 @@ class RuyiFileFixtureFactory:
     def path(self, *frags: str) -> AbstractContextManager[pathlib.Path]:
         return resources.as_file(resources.files(self.module).joinpath(*frags))
 
+    def plugin_suite(self, suite_name: str) -> AbstractContextManager[pathlib.Path]:
+        path = resources.files(self.module).joinpath("plugins_suites", suite_name)
+        return resources.as_file(path)
+
 
 @pytest.fixture
 def ruyi_file() -> RuyiFileFixtureFactory:

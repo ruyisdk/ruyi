@@ -72,11 +72,11 @@ class UnsandboxedPluginHostContext(
 ):
     def make_loader(
         self,
-        plugin_root: pathlib.Path,
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, UnsandboxedModuleDict],
+        is_cmd: bool,
     ) -> BasePluginLoader[UnsandboxedModuleDict]:
-        return UnsandboxedRuyiPluginLoader(plugin_root, originating_file, module_cache)
+        return UnsandboxedRuyiPluginLoader(self, originating_file, module_cache, is_cmd)
 
     def make_evaluator(self) -> UnsandboxedTrivialEvaluator:
         return UnsandboxedTrivialEvaluator()

@@ -163,3 +163,15 @@ class RootCommand(
             action="store_true",
             help="Give the output in a machine-friendly format if applicable",
         )
+
+
+# Repo admin commands
+class AdminCommand(
+    RootCommand,
+    cmd="admin",
+    has_subcommands=True,
+    # https://github.com/python/cpython/issues/67037
+    # help=argparse.SUPPRESS,
+    help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
+):
+    pass
