@@ -5,6 +5,7 @@ import sys
 from typing import Callable, IO, List, Protocol
 
 from ..config import GlobalConfig
+from ..version import RUYI_SEMVER
 
 # Should be all-lower for is_called_as_ruyi to work
 RUYI_ENTRYPOINT_NAME = "ruyi"
@@ -36,350 +37,573 @@ def _wrap_help(x: _PrintHelp) -> CLIEntrypoint:
     return _wrapped_
 
 
-def init_argparse() -> argparse.ArgumentParser:
-    from ..device.provision_cli import cli_device_provision
-    from ..mux.venv.venv_cli import cli_venv
-    from ..ruyipkg.admin_cli import cli_admin_format_manifest, cli_admin_manifest
-    from ..ruyipkg.host import get_native_host
-    from ..ruyipkg.news_cli import cli_news_list, cli_news_read
-    from ..ruyipkg.pkg_cli import cli_extract, cli_install, cli_list
-    from ..ruyipkg.profile_cli import cli_list_profiles
-    from ..ruyipkg.update_cli import cli_update
-    from ..version import RUYI_SEMVER
-    from .self_cli import cli_self_clean, cli_self_uninstall
-    from .version_cli import cli_version
+class BaseCommand:
+    parsers: "list[type[BaseCommand]]" = []
 
-    native_host_str = get_native_host()
+    cmd: str | None
+    _tele_key: str | None
+    has_subcommands: bool
+    is_subcommand_required: bool
+    has_main: bool
+    aliases: list[str]
+    description: str | None
+    prog: str | None
+    help: str | None
 
-    root = argparse.ArgumentParser(
-        prog=RUYI_ENTRYPOINT_NAME,
-        description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
-    )
-    root.set_defaults(func=_wrap_help(root), tele_key="<bare>")
+    def __init_subclass__(
+        cls,
+        cmd: str | None,
+        has_subcommands: bool = False,
+        is_subcommand_required: bool = False,
+        has_main: bool | None = None,
+        aliases: list[str] | None = None,
+        description: str | None = None,
+        prog: str | None = None,
+        help: str | None = None,
+        **kwargs: object,
+    ) -> None:
+        cls.cmd = cmd
 
-    root.add_argument(
-        "-V",
-        "--version",
-        action="store_const",
-        dest="func",
-        const=cli_version,
-        help="Print version information",
-    )
+        if cmd is None:
+            cls._tele_key = None
+        else:
+            parent_raw_tele_key = cls.mro()[1]._tele_key
+            if parent_raw_tele_key is None:
+                cls._tele_key = cmd
+            else:
+                cls._tele_key = f"{parent_raw_tele_key} {cmd}"
 
-    root.add_argument(
-        "--porcelain",
-        action="store_true",
-        help="Give the output in a machine-friendly format if applicable",
-    )
+        cls.has_subcommands = has_subcommands
+        cls.is_subcommand_required = is_subcommand_required
+        cls.has_main = has_main if has_main is not None else not has_subcommands
 
-    sp = root.add_subparsers(
-        title="subcommands",
-    )
+        # argparse params
+        cls.aliases = aliases or []
+        cls.description = description
+        cls.prog = prog
+        cls.help = help
 
-    # Device management commands
-    device = sp.add_parser(
-        "device",
-        help="Manage devices",
-    )
-    device.set_defaults(func=_wrap_help(device), tele_key="device")
-    devicesp = device.add_subparsers(
-        title="subcommands",
-    )
+        cls.parsers.append(cls)
 
-    device_provision = devicesp.add_parser(
-        "provision",
-        help="Interactively initialize a device for development",
-    )
-    device_provision.set_defaults(
-        func=cli_device_provision,
-        tele_key="device provision",
-    )
+        super().__init_subclass__(**kwargs)
 
-    extract = sp.add_parser(
-        "extract",
-        help="Fetch package(s) then extract to current directory",
-    )
-    extract.add_argument(
-        "atom",
-        type=str,
-        nargs="+",
-        help="Specifier (atom) of the package(s) to extract",
-    )
-    extract.add_argument(
-        "--host",
-        type=str,
-        default=native_host_str,
-        help="Override the host architecture (normally not needed)",
-    )
-    extract.set_defaults(func=cli_extract, tele_key="extract")
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        """Configure arguments for this parser."""
+        pass
 
-    install = sp.add_parser(
-        "install",
-        aliases=["i"],
-        help="Install package from configured repository",
-    )
-    install.add_argument(
-        "atom",
-        type=str,
-        nargs="+",
-        help="Specifier (atom) of the package to install",
-    )
-    install.add_argument(
-        "-f",
-        "--fetch-only",
-        action="store_true",
-        help="Fetch distribution files only without installing",
-    )
-    install.add_argument(
-        "--host",
-        type=str,
-        default=native_host_str,
-        help="Override the host architecture (normally not needed)",
-    )
-    install.add_argument(
-        "--reinstall",
-        action="store_true",
-        help="Force re-installation of already installed packages",
-    )
-    install.set_defaults(func=cli_install, tele_key="install")
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        """Entrypoint of this command."""
+        raise NotImplementedError
 
-    list = sp.add_parser(
-        "list", help="List available packages in configured repository"
-    )
-    list.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Also show details for every package",
-    )
-    list.set_defaults(func=cli_list, tele_key="list")
+    @classmethod
+    def is_root(cls) -> bool:
+        return cls.cmd is None
 
-    listsp = list.add_subparsers(required=False)
-    list_profiles = listsp.add_parser("profiles", help="List all available profiles")
-    list_profiles.set_defaults(func=cli_list_profiles, tele_key="list profiles")
+    @classmethod
+    def _build_tele_key(cls) -> str:
+        return "<bare>" if cls._tele_key is None else cls._tele_key
 
-    news = sp.add_parser(
-        "news",
-        help="List and read news items from configured repository",
-    )
-    news.set_defaults(func=_wrap_help(news), tele_key="news")
-    newssp = news.add_subparsers(title="subcommands")
+    @classmethod
+    def build_argparse(cls) -> argparse.ArgumentParser:
+        p = argparse.ArgumentParser(prog=cls.prog, description=cls.description)
+        cls.configure_args(p)
+        cls._populate_defaults(p)
+        cls._maybe_build_subcommands(p)
+        return p
 
-    news_list = newssp.add_parser(
-        "list",
-        help="List news items",
-    )
-    news_list.add_argument(
-        "--new",
-        action="store_true",
-        help="List unread news items only",
-    )
-    news_list.set_defaults(func=cli_news_list, tele_key="news list")
+    @classmethod
+    def _maybe_build_subcommands(
+        cls,
+        p: argparse.ArgumentParser,
+    ) -> None:
+        if not cls.has_subcommands:
+            return
 
-    news_read = newssp.add_parser(
-        "read",
-        help="Read news items",
-        description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
-    )
-    news_read.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Do not output anything and only mark as read",
-    )
-    news_read.add_argument(
-        "item",
-        type=str,
-        nargs="*",
-        help="Ordinal or ID of the news item(s) to read",
-    )
-    news_read.set_defaults(func=cli_news_read, tele_key="news read")
+        sp = p.add_subparsers(
+            title="subcommands",
+            required=cls.is_subcommand_required,
+        )
+        for subcmd_cls in cls.parsers:
+            if subcmd_cls.mro()[1] is not cls:
+                # do not recurse onto self or non-direct subclasses
+                continue
+            subcmd_cls._configure_subcommand(sp)
 
-    up = sp.add_parser("update", help="Update RuyiSDK repo and packages")
-    up.set_defaults(func=cli_update, tele_key="update")
+    @classmethod
+    def _configure_subcommand(
+        cls,
+        sp: "argparse._SubParsersAction[argparse.ArgumentParser]",
+    ) -> argparse.ArgumentParser:
+        assert cls.cmd is not None
+        p = sp.add_parser(
+            cls.cmd,
+            aliases=cls.aliases,
+            help=cls.help,
+        )
+        cls.configure_args(p)
+        cls._populate_defaults(p)
+        cls._maybe_build_subcommands(p)
+        return p
 
-    venv = sp.add_parser(
-        "venv",
-        help="Generate a virtual environment adapted to the chosen toolchain and profile",
-    )
-    venv.add_argument("profile", type=str, help="Profile to use for the environment")
-    venv.add_argument("dest", type=str, help="Path to the new virtual environment")
-    venv.add_argument(
-        "--name",
-        "-n",
-        type=str,
-        default=None,
-        help="Override the venv's name",
-    )
-    venv.add_argument(
-        "--toolchain",
-        "-t",
-        type=str,
-        action="append",
-        help="Specifier(s) (atoms) of the toolchain package(s) to use",
-    )
-    venv.add_argument(
-        "--emulator",
-        "-e",
-        type=str,
-        help="Specifier (atom) of the emulator package to use",
-    )
-    venv.add_argument(
-        "--with-sysroot",
-        action="store_true",
-        dest="with_sysroot",
-        default=True,
-        help="Provision a fresh sysroot inside the new virtual environment (default)",
-    )
-    venv.add_argument(
-        "--without-sysroot",
-        action="store_false",
-        dest="with_sysroot",
-        help="Do not include a sysroot inside the new virtual environment",
-    )
-    venv.add_argument(
-        "--sysroot-from",
-        type=str,
-        help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
-    )
-    venv.set_defaults(func=cli_venv, tele_key="venv")
+    @classmethod
+    def _populate_defaults(cls, p: argparse.ArgumentParser) -> None:
+        if cls.has_main:
+            p.set_defaults(func=cls.main, tele_key=cls._build_tele_key())
+        else:
+            p.set_defaults(func=_wrap_help(p), tele_key=cls._build_tele_key())
 
-    # Repo admin commands
-    admin = sp.add_parser(
-        "admin",
-        # https://github.com/python/cpython/issues/67037
-        # help=argparse.SUPPRESS,
-        help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
-    )
-    admin.set_defaults(func=_wrap_help(admin), tele_key="admin")
-    adminsp = admin.add_subparsers(
-        title="subcommands",
-    )
 
-    admin_format_manifest = adminsp.add_parser(
-        "format-manifest",
-        help="Format the given package manifests into canonical TOML representation",
-    )
-    admin_format_manifest.add_argument(
-        "file",
-        type=str,
-        nargs="+",
-        help="Path to the distfile(s) to generate manifest for",
-    )
-    admin_format_manifest.set_defaults(
-        func=cli_admin_format_manifest,
-        tele_key="admin format-manifest",
-    )
+class RootCommand(
+    BaseCommand,
+    cmd=None,
+    has_subcommands=True,
+    prog=RUYI_ENTRYPOINT_NAME,
+    description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        from .version_cli import cli_version
 
-    admin_manifest = adminsp.add_parser(
-        "manifest",
-        help="Generate manifest for the distfiles given",
-    )
-    admin_manifest.add_argument(
-        "--format",
-        "-f",
-        type=str,
-        choices=["json", "toml"],
-        default="json",
-        help="Format of manifest to generate",
-    )
-    admin_manifest.add_argument(
-        "--restrict",
-        type=str,
-        default="",
-        help="the 'restrict' field to use for all mentioned distfiles, separated with comma",
-    )
-    admin_manifest.add_argument(
-        "file",
-        type=str,
-        nargs="+",
-        help="Path to the distfile(s) to generate manifest for",
-    )
-    admin_manifest.set_defaults(func=cli_admin_manifest, tele_key="admin manifest")
+        p.add_argument(
+            "-V",
+            "--version",
+            action="store_const",
+            dest="func",
+            const=cli_version,
+            help="Print version information",
+        )
+        p.add_argument(
+            "--porcelain",
+            action="store_true",
+            help="Give the output in a machine-friendly format if applicable",
+        )
 
-    # Self-management commands
-    self = sp.add_parser(
-        "self",
-        help="Manage this Ruyi installation",
-    )
-    self.set_defaults(func=_wrap_help(self), tele_key="self")
-    selfsp = self.add_subparsers(
-        title="subcommands",
-    )
 
-    self_clean = selfsp.add_parser(
-        "clean",
-        help="Remove various Ruyi-managed data to reclaim storage",
-    )
-    self_clean.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Do not print out the actions being performed",
-    )
-    self_clean.add_argument(
-        "--all",
-        action="store_true",
-        help="Remove all covered data",
-    )
-    self_clean.add_argument(
-        "--distfiles",
-        action="store_true",
-        help="Remove all downloaded distfiles if any",
-    )
-    self_clean.add_argument(
-        "--installed-pkgs",
-        action="store_true",
-        help="Remove all installed packages if any",
-    )
-    self_clean.add_argument(
-        "--news-read-status",
-        action="store_true",
-        help="Mark all news items as unread",
-    )
-    self_clean.add_argument(
-        "--progcache",
-        action="store_true",
-        help="Clear the Ruyi program cache",
-    )
-    self_clean.add_argument(
-        "--repo",
-        action="store_true",
-        help="Remove the Ruyi repo if located in Ruyi-managed cache directory",
-    )
-    self_clean.add_argument(
-        "--telemetry",
-        action="store_true",
-        help="Remove all telemetry data recorded if any",
-    )
-    self_clean.set_defaults(func=cli_self_clean, tele_key="self clean")
+class DeviceCommand(
+    RootCommand,
+    cmd="device",
+    has_subcommands=True,
+    help="Manage devices",
+):
+    pass
 
-    self_uninstall = selfsp.add_parser(
-        "uninstall",
-        help="Uninstall Ruyi",
-    )
-    self_uninstall.add_argument(
-        "--purge",
-        action="store_true",
-        help="Remove all installed packages and Ruyi-managed remote repo data",
-    )
-    self_uninstall.add_argument(
-        "-y",
-        action="store_true",
-        dest="consent",
-        help="Give consent for uninstallation on CLI; do not ask for confirmation",
-    )
-    self_uninstall.set_defaults(func=cli_self_uninstall, tele_key="self uninstall")
 
-    # Version info
-    # Keep this at the bottom
-    version = sp.add_parser(
-        "version",
-        help="Print version information",
-    )
-    version.set_defaults(func=cli_version, tele_key="version")
+class DeviceProvisionCommand(
+    DeviceCommand,
+    cmd="provision",
+    help="Interactively initialize a device for development",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..device.provision_cli import cli_device_provision
 
-    return root
+        return cli_device_provision(cfg, args)
+
+
+class ExtractCommand(
+    RootCommand,
+    cmd="extract",
+    help="Fetch package(s) then extract to current directory",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        from ..ruyipkg.host import get_native_host
+
+        p.add_argument(
+            "atom",
+            type=str,
+            nargs="+",
+            help="Specifier (atom) of the package(s) to extract",
+        )
+        p.add_argument(
+            "--host",
+            type=str,
+            default=get_native_host(),
+            help="Override the host architecture (normally not needed)",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.pkg_cli import cli_extract
+
+        return cli_extract(cfg, args)
+
+
+class InstallCommand(
+    RootCommand,
+    cmd="install",
+    aliases=["i"],
+    help="Install package from configured repository",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        from ..ruyipkg.host import get_native_host
+
+        p.add_argument(
+            "atom",
+            type=str,
+            nargs="+",
+            help="Specifier (atom) of the package to install",
+        )
+        p.add_argument(
+            "-f",
+            "--fetch-only",
+            action="store_true",
+            help="Fetch distribution files only without installing",
+        )
+        p.add_argument(
+            "--host",
+            type=str,
+            default=get_native_host(),
+            help="Override the host architecture (normally not needed)",
+        )
+        p.add_argument(
+            "--reinstall",
+            action="store_true",
+            help="Force re-installation of already installed packages",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.pkg_cli import cli_install
+
+        return cli_install(cfg, args)
+
+
+class ListCommand(
+    RootCommand,
+    cmd="list",
+    has_subcommands=True,
+    is_subcommand_required=False,
+    has_main=True,
+    help="List available packages in configured repository",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--verbose",
+            "-v",
+            action="store_true",
+            help="Also show details for every package",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.pkg_cli import cli_list
+
+        return cli_list(cfg, args)
+
+
+class ListProfilesCommand(
+    ListCommand,
+    cmd="profiles",
+    help="List all available profiles",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.profile_cli import cli_list_profiles
+
+        return cli_list_profiles(cfg, args)
+
+
+class NewsCommand(
+    RootCommand,
+    cmd="news",
+    has_subcommands=True,
+    help="List and read news items from configured repository",
+):
+    pass
+
+
+class NewsListCommand(
+    NewsCommand,
+    cmd="list",
+    help="List news items",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--new",
+            action="store_true",
+            help="List unread news items only",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.news_cli import cli_news_list
+
+        return cli_news_list(cfg, args)
+
+
+class NewsReadCommand(
+    NewsCommand,
+    cmd="read",
+    help="Read news items",
+    description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--quiet",
+            "-q",
+            action="store_true",
+            help="Do not output anything and only mark as read",
+        )
+        p.add_argument(
+            "item",
+            type=str,
+            nargs="*",
+            help="Ordinal or ID of the news item(s) to read",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.news_cli import cli_news_read
+
+        return cli_news_read(cfg, args)
+
+
+class UpdateCommand(
+    RootCommand,
+    cmd="update",
+    help="Update RuyiSDK repo and packages",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.update_cli import cli_update
+
+        return cli_update(cfg, args)
+
+
+class VenvCommand(
+    RootCommand,
+    cmd="venv",
+    help="Generate a virtual environment adapted to the chosen toolchain and profile",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument("profile", type=str, help="Profile to use for the environment")
+        p.add_argument("dest", type=str, help="Path to the new virtual environment")
+        p.add_argument(
+            "--name",
+            "-n",
+            type=str,
+            default=None,
+            help="Override the venv's name",
+        )
+        p.add_argument(
+            "--toolchain",
+            "-t",
+            type=str,
+            action="append",
+            help="Specifier(s) (atoms) of the toolchain package(s) to use",
+        )
+        p.add_argument(
+            "--emulator",
+            "-e",
+            type=str,
+            help="Specifier (atom) of the emulator package to use",
+        )
+        p.add_argument(
+            "--with-sysroot",
+            action="store_true",
+            dest="with_sysroot",
+            default=True,
+            help="Provision a fresh sysroot inside the new virtual environment (default)",
+        )
+        p.add_argument(
+            "--without-sysroot",
+            action="store_false",
+            dest="with_sysroot",
+            help="Do not include a sysroot inside the new virtual environment",
+        )
+        p.add_argument(
+            "--sysroot-from",
+            type=str,
+            help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..mux.venv.venv_cli import cli_venv
+
+        return cli_venv(cfg, args)
+
+
+# Repo admin commands
+class AdminCommand(
+    RootCommand,
+    cmd="admin",
+    has_subcommands=True,
+    # https://github.com/python/cpython/issues/67037
+    # help=argparse.SUPPRESS,
+    help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
+):
+    pass
+
+
+class AdminFormatManifestCommand(
+    AdminCommand,
+    cmd="format-manifest",
+    help="Format the given package manifests into canonical TOML representation",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "file",
+            type=str,
+            nargs="+",
+            help="Path to the distfile(s) to generate manifest for",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.admin_cli import cli_admin_format_manifest
+
+        return cli_admin_format_manifest(cfg, args)
+
+
+class AdminManifestCommand(
+    AdminCommand,
+    cmd="manifest",
+    help="Generate manifest for the distfiles given",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--format",
+            "-f",
+            type=str,
+            choices=["json", "toml"],
+            default="json",
+            help="Format of manifest to generate",
+        )
+        p.add_argument(
+            "--restrict",
+            type=str,
+            default="",
+            help="the 'restrict' field to use for all mentioned distfiles, separated with comma",
+        )
+        p.add_argument(
+            "file",
+            type=str,
+            nargs="+",
+            help="Path to the distfile(s) to generate manifest for",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from ..ruyipkg.admin_cli import cli_admin_manifest
+
+        return cli_admin_manifest(cfg, args)
+
+
+# Self-management commands
+class SelfCommand(
+    RootCommand,
+    cmd="self",
+    has_subcommands=True,
+    help="Manage this Ruyi installation",
+):
+    pass
+
+
+class SelfCleanCommand(
+    SelfCommand,
+    cmd="clean",
+    help="Remove various Ruyi-managed data to reclaim storage",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--quiet",
+            "-q",
+            action="store_true",
+            help="Do not print out the actions being performed",
+        )
+        p.add_argument(
+            "--all",
+            action="store_true",
+            help="Remove all covered data",
+        )
+        p.add_argument(
+            "--distfiles",
+            action="store_true",
+            help="Remove all downloaded distfiles if any",
+        )
+        p.add_argument(
+            "--installed-pkgs",
+            action="store_true",
+            help="Remove all installed packages if any",
+        )
+        p.add_argument(
+            "--news-read-status",
+            action="store_true",
+            help="Mark all news items as unread",
+        )
+        p.add_argument(
+            "--progcache",
+            action="store_true",
+            help="Clear the Ruyi program cache",
+        )
+        p.add_argument(
+            "--repo",
+            action="store_true",
+            help="Remove the Ruyi repo if located in Ruyi-managed cache directory",
+        )
+        p.add_argument(
+            "--telemetry",
+            action="store_true",
+            help="Remove all telemetry data recorded if any",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from .self_cli import cli_self_clean
+
+        return cli_self_clean(cfg, args)
+
+
+class SelfUninstallCommand(
+    SelfCommand,
+    cmd="uninstall",
+    help="Uninstall Ruyi",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--purge",
+            action="store_true",
+            help="Remove all installed packages and Ruyi-managed remote repo data",
+        )
+        p.add_argument(
+            "-y",
+            action="store_true",
+            dest="consent",
+            help="Give consent for uninstallation on CLI; do not ask for confirmation",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from .self_cli import cli_self_uninstall
+
+        return cli_self_uninstall(cfg, args)
+
+
+# Version info
+# Keep this at the bottom
+class VersionCommand(
+    RootCommand,
+    cmd="version",
+    help="Print version information",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        from .version_cli import cli_version
+
+        return cli_version(cfg, args)
 
 
 def main(argv: List[str]) -> int:
@@ -401,7 +625,7 @@ def main(argv: List[str]) -> int:
     import ruyi
     from .. import log
 
-    p = init_argparse()
+    p = RootCommand.build_argparse()
     args = p.parse_args(argv[1:])
     ruyi.set_porcelain(args.porcelain)
 
