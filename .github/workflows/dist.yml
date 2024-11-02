@@ -6,6 +6,8 @@ on:
       - pyproject.toml
       - poetry.lock
       - '**.py'
+      - '.github/**'
+      - 'resources/**'
       - 'scripts/**'
     tags:
       - '*'
@@ -14,6 +16,8 @@ on:
       - pyproject.toml
       - poetry.lock
       - '**.py'
+      - '.github/**'
+      - 'resources/**'
       - 'scripts/**'
   merge_group:
     types: [checks_requested]
