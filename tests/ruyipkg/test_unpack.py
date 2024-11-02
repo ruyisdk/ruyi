@@ -1,4 +1,5 @@
 import pathlib
+import sys
 
 from ruyi.ruyipkg import unpack
 from ruyi.ruyipkg.unpack_method import UnpackMethod, determine_unpack_method
@@ -14,6 +15,14 @@ def test_unpack_deb(
         assert determine_unpack_method(str(p)) == UnpackMethod.DEB
         unpack.do_unpack(str(p), str(tmp_path), 0, UnpackMethod.DEB, None)
         check = tmp_path / "usr" / "share" / "doc" / "cpp-for-host"
-        assert check.exists(follow_symlinks=False)
+        if sys.version_info >= (3, 12):
+            assert check.exists(follow_symlinks=False)
+        else:
+            # Python 3.11 lacks pathlib.Path.exists(follow_symlinks)
+            #
+            # we know that this path is going to be a symlink so simply
+            # ensuring it's existent is enough; asserting that it is dangling
+            # risks breaking CI on systems where the target actually exists
+            assert check.lstat() is not None
         assert check.is_symlink()
         assert str(check.readlink()) == "cpp-riscv64-linux-gnu"
