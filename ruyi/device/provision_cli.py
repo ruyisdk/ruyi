@@ -5,6 +5,7 @@ from typing import TypedDict, TypeGuard, cast
 
 from .. import log
 from ..cli import user_input
+from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom
 from ..ruyipkg.host import get_native_host
@@ -24,12 +25,27 @@ from ..ruyipkg.repo import MetadataRepo
 from ..utils import prereqs
 
 
-def cli_device_provision(gc: GlobalConfig, args: argparse.Namespace) -> int:
-    try:
-        return do_provision_interactive(gc)
-    except KeyboardInterrupt:
-        log.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
-        return 1
+class DeviceCommand(
+    RootCommand,
+    cmd="device",
+    has_subcommands=True,
+    help="Manage devices",
+):
+    pass
+
+
+class DeviceProvisionCommand(
+    DeviceCommand,
+    cmd="provision",
+    help="Interactively initialize a device for development",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        try:
+            return do_provision_interactive(cfg)
+        except KeyboardInterrupt:
+            log.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
+            return 1
 
 
 def do_provision_interactive(config: GlobalConfig) -> int:

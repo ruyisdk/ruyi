@@ -9,36 +9,78 @@ from typing import Any, TypeGuard, cast
 from tomlkit import TOMLDocument, document, table
 from tomlkit.items import AoT, Table
 
-from ..config import GlobalConfig
 from .. import log
+from ..cli.cmd import RootCommand
+from ..config import GlobalConfig
 from . import checksum
 from .canonical_dump import dump_canonical_package_manifest_toml
 from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
 
 
-def cli_admin_manifest(cfg: GlobalConfig, args: argparse.Namespace) -> int:
-    files = args.file
-    format = args.format
-    restrict_str = cast(str, args.restrict)
-    restrict = restrict_str.split(",") if restrict_str else []
+# Repo admin commands
+class AdminCommand(
+    RootCommand,
+    cmd="admin",
+    has_subcommands=True,
+    # https://github.com/python/cpython/issues/67037
+    # help=argparse.SUPPRESS,
+    help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
+):
+    pass
 
-    if not validate_restrict_kinds(restrict):
-        log.F(f"invalid restrict kinds given: {restrict}")
-        return 1
 
-    entries = [gen_distfile_entry(f, restrict) for f in files]
-    if format == "json":
-        sys.stdout.write(json.dumps(entries, indent=2))
-        sys.stdout.write("\n")
-        return 0
+class AdminManifestCommand(
+    AdminCommand,
+    cmd="manifest",
+    help="Generate manifest for the distfiles given",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--format",
+            "-f",
+            type=str,
+            choices=["json", "toml"],
+            default="json",
+            help="Format of manifest to generate",
+        )
+        p.add_argument(
+            "--restrict",
+            type=str,
+            default="",
+            help="the 'restrict' field to use for all mentioned distfiles, separated with comma",
+        )
+        p.add_argument(
+            "file",
+            type=str,
+            nargs="+",
+            help="Path to the distfile(s) to generate manifest for",
+        )
 
-    if format == "toml":
-        doc = emit_toml_distfiles_section(entries)
-        log.D(f"{doc}")
-        sys.stdout.write(doc.as_string())
-        return 0
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        files = args.file
+        format = args.format
+        restrict_str = cast(str, args.restrict)
+        restrict = restrict_str.split(",") if restrict_str else []
 
-    raise RuntimeError("unrecognized output format; should never happen")
+        if not validate_restrict_kinds(restrict):
+            log.F(f"invalid restrict kinds given: {restrict}")
+            return 1
+
+        entries = [gen_distfile_entry(f, restrict) for f in files]
+        if format == "json":
+            sys.stdout.write(json.dumps(entries, indent=2))
+            sys.stdout.write("\n")
+            return 0
+
+        if format == "toml":
+            doc = emit_toml_distfiles_section(entries)
+            log.D(f"{doc}")
+            sys.stdout.write(doc.as_string())
+            return 0
+
+        raise RuntimeError("unrecognized output format; should never happen")
 
 
 RE_INDENT_FIX = re.compile(r"(?m)^    ([\"'{\[])")
@@ -51,19 +93,34 @@ def _fix_indent(s: str) -> str:
     return RE_INDENT_FIX.sub(r"  \1", s)
 
 
-def cli_admin_format_manifest(cfg: GlobalConfig, args: argparse.Namespace) -> int:
-    files = args.file
+class AdminFormatManifestCommand(
+    AdminCommand,
+    cmd="format-manifest",
+    help="Format the given package manifests into canonical TOML representation",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "file",
+            type=str,
+            nargs="+",
+            help="Path to the distfile(s) to generate manifest for",
+        )
 
-    for f in files:
-        p = pathlib.Path(f)
-        pm = PackageManifest.load_from_path(p)
-        d = dump_canonical_package_manifest_toml(pm.to_raw())
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        files = args.file
 
-        dest_path = p.with_suffix(".toml")
-        with open(dest_path, "w", encoding="utf-8") as fp:
-            fp.write(_fix_indent(d.as_string()))
+        for f in files:
+            p = pathlib.Path(f)
+            pm = PackageManifest.load_from_path(p)
+            d = dump_canonical_package_manifest_toml(pm.to_raw())
 
-    return 0
+            dest_path = p.with_suffix(".toml")
+            with open(dest_path, "w", encoding="utf-8") as fp:
+                fp.write(_fix_indent(d.as_string()))
+
+        return 0
 
 
 def validate_restrict_kinds(input: list[str]) -> TypeGuard[list[RestrictKind]]:

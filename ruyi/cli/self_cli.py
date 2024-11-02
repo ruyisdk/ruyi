@@ -7,6 +7,7 @@ import ruyi
 from .. import config
 from .. import log
 from . import user_input
+from .cmd import RootCommand
 
 UNINSTALL_NOTICE = """
 [bold]Thanks for hacking with [yellow]Ruyi[/yellow]![/bold]
@@ -21,83 +22,172 @@ them yourselves afterwards.
 """
 
 
-def cli_self_clean(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
-    quiet: bool = args.quiet
-    all: bool = args.all
-    distfiles: bool = args.distfiles
-    installed_pkgs: bool = args.installed_pkgs
-    news_read_status: bool = args.news_read_status
-    progcache: bool = args.progcache
-    repo: bool = args.repo
-    telemetry: bool = args.telemetry
+# Self-management commands
+class SelfCommand(
+    RootCommand,
+    cmd="self",
+    has_subcommands=True,
+    help="Manage this Ruyi installation",
+):
+    pass
 
-    if all:
-        distfiles = True
-        installed_pkgs = True
-        news_read_status = True
-        progcache = True
-        repo = True
-        telemetry = True
 
-    if not any([distfiles, installed_pkgs, news_read_status, progcache, repo, telemetry]):
-        log.F("no data specified for cleaning")
-        log.I(
-            "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
+class SelfCleanCommand(
+    SelfCommand,
+    cmd="clean",
+    help="Remove various Ruyi-managed data to reclaim storage",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--quiet",
+            "-q",
+            action="store_true",
+            help="Do not print out the actions being performed",
         )
-        return 1
-
-    _do_reset(
-        cfg,
-        quiet=quiet,
-        distfiles=distfiles,
-        installed_pkgs=installed_pkgs,
-        news_read_status=news_read_status,
-        progcache=progcache,
-        repo=repo,
-        telemetry=telemetry,
-    )
-
-    return 0
-
-
-def cli_self_uninstall(cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
-    purge: bool = args.purge
-    consent: bool = args.consent
-    log.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
-
-    if cfg.is_installation_externally_managed:
-        log.F(
-            "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
+        p.add_argument(
+            "--all",
+            action="store_true",
+            help="Remove all covered data",
         )
-        log.I("please uninstall via the external manager instead")
-        return 1
-
-    if not ruyi.IS_PACKAGED:
-        log.F(
-            "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
+        p.add_argument(
+            "--distfiles",
+            action="store_true",
+            help="Remove all downloaded distfiles if any",
         )
-        return 1
+        p.add_argument(
+            "--installed-pkgs",
+            action="store_true",
+            help="Remove all installed packages if any",
+        )
+        p.add_argument(
+            "--news-read-status",
+            action="store_true",
+            help="Mark all news items as unread",
+        )
+        p.add_argument(
+            "--progcache",
+            action="store_true",
+            help="Clear the Ruyi program cache",
+        )
+        p.add_argument(
+            "--repo",
+            action="store_true",
+            help="Remove the Ruyi repo if located in Ruyi-managed cache directory",
+        )
+        p.add_argument(
+            "--telemetry",
+            action="store_true",
+            help="Remove all telemetry data recorded if any",
+        )
 
-    if not consent:
-        log.stdout(UNINSTALL_NOTICE)
-        if not user_input.ask_for_yesno_confirmation("Continue?"):
-            log.I("aborting uninstallation")
-            return 0
-    else:
-        log.I("uninstallation consent given over CLI, proceeding")
+    @classmethod
+    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        quiet: bool = args.quiet
+        all: bool = args.all
+        distfiles: bool = args.distfiles
+        installed_pkgs: bool = args.installed_pkgs
+        news_read_status: bool = args.news_read_status
+        progcache: bool = args.progcache
+        repo: bool = args.repo
+        telemetry: bool = args.telemetry
 
-    _do_reset(
-        cfg,
-        quiet=False,
-        installed_pkgs=purge,
-        all_state=purge,
-        all_cache=purge,
-        self_binary=True,
-    )
+        if all:
+            distfiles = True
+            installed_pkgs = True
+            news_read_status = True
+            progcache = True
+            repo = True
+            telemetry = True
 
-    log.I("[yellow]ruyi[/yellow] is uninstalled")
+        if not any(
+            [
+                distfiles,
+                installed_pkgs,
+                news_read_status,
+                progcache,
+                repo,
+                telemetry,
+            ]
+        ):
+            log.F("no data specified for cleaning")
+            log.I(
+                "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
+            )
+            return 1
 
-    return 0
+        _do_reset(
+            cfg,
+            quiet=quiet,
+            distfiles=distfiles,
+            installed_pkgs=installed_pkgs,
+            news_read_status=news_read_status,
+            progcache=progcache,
+            repo=repo,
+            telemetry=telemetry,
+        )
+
+        return 0
+
+
+class SelfUninstallCommand(
+    SelfCommand,
+    cmd="uninstall",
+    help="Uninstall Ruyi",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--purge",
+            action="store_true",
+            help="Remove all installed packages and Ruyi-managed remote repo data",
+        )
+        p.add_argument(
+            "-y",
+            action="store_true",
+            dest="consent",
+            help="Give consent for uninstallation on CLI; do not ask for confirmation",
+        )
+
+    @classmethod
+    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        purge: bool = args.purge
+        consent: bool = args.consent
+        log.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
+
+        if cfg.is_installation_externally_managed:
+            log.F(
+                "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
+            )
+            log.I("please uninstall via the external manager instead")
+            return 1
+
+        if not ruyi.IS_PACKAGED:
+            log.F(
+                "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
+            )
+            return 1
+
+        if not consent:
+            log.stdout(UNINSTALL_NOTICE)
+            if not user_input.ask_for_yesno_confirmation("Continue?"):
+                log.I("aborting uninstallation")
+                return 0
+        else:
+            log.I("uninstallation consent given over CLI, proceeding")
+
+        _do_reset(
+            cfg,
+            quiet=False,
+            installed_pkgs=purge,
+            all_state=purge,
+            all_cache=purge,
+            self_binary=True,
+        )
+
+        log.I("[yellow]ruyi[/yellow] is uninstalled")
+
+        return 0
 
 
 def _do_reset(

@@ -4,12 +4,66 @@ import pathlib
 from typing import Any
 
 from ... import log
+from ...cli.cmd import RootCommand
 from ...config import GlobalConfig
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.host import get_native_host
 from ...ruyipkg.repo import MetadataRepo
 from . import ConfiguredTargetTuple
 from .provision import render_template_str, VenvMaker
+
+
+class VenvCommand(
+    RootCommand,
+    cmd="venv",
+    help="Generate a virtual environment adapted to the chosen toolchain and profile",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument("profile", type=str, help="Profile to use for the environment")
+        p.add_argument("dest", type=str, help="Path to the new virtual environment")
+        p.add_argument(
+            "--name",
+            "-n",
+            type=str,
+            default=None,
+            help="Override the venv's name",
+        )
+        p.add_argument(
+            "--toolchain",
+            "-t",
+            type=str,
+            action="append",
+            help="Specifier(s) (atoms) of the toolchain package(s) to use",
+        )
+        p.add_argument(
+            "--emulator",
+            "-e",
+            type=str,
+            help="Specifier (atom) of the emulator package to use",
+        )
+        p.add_argument(
+            "--with-sysroot",
+            action="store_true",
+            dest="with_sysroot",
+            default=True,
+            help="Provision a fresh sysroot inside the new virtual environment (default)",
+        )
+        p.add_argument(
+            "--without-sysroot",
+            action="store_false",
+            dest="with_sysroot",
+            help="Do not include a sysroot inside the new virtual environment",
+        )
+        p.add_argument(
+            "--sysroot-from",
+            type=str,
+            help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        return cli_venv(cfg, args)
 
 
 def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
