@@ -1,0 +1,9 @@
+from ..device import provision_cli as provision_cli
+from ..mux.venv import venv_cli as venv_cli
+from ..ruyipkg import admin_cli as admin_cli
+from ..ruyipkg import news_cli as news_cli
+from ..ruyipkg import pkg_cli as pkg_cli
+from ..ruyipkg import profile_cli as profile_cli
+from ..ruyipkg import update_cli as update_cli
+from . import self_cli as self_cli
+from . import version_cli as version_cli

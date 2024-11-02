@@ -7,10 +7,11 @@ import shutil
 import tempfile
 from typing import Iterable, Self, TypedDict
 
-from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
-from .host import canonicalize_host_str
+from .host import canonicalize_host_str, get_native_host
 from .. import is_porcelain, log
+from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .atom import Atom
 from .distfile import Distfile
 from .repo import MetadataRepo
@@ -18,26 +19,44 @@ from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .unpack import ensure_unpack_cmd_for_method
 
 
-def cli_list(config: GlobalConfig, args: argparse.Namespace) -> int:
-    verbose = args.verbose
+class ListCommand(
+    RootCommand,
+    cmd="list",
+    has_subcommands=True,
+    is_subcommand_required=False,
+    has_main=True,
+    help="List available packages in configured repository",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--verbose",
+            "-v",
+            action="store_true",
+            help="Also show details for every package",
+        )
 
-    mr = MetadataRepo(config)
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        verbose = args.verbose
 
-    augmented_pkgs = list(AugmentedPkg.yield_from_repo(mr))
+        mr = MetadataRepo(cfg)
 
-    if is_porcelain():
-        return do_list_porcelain(augmented_pkgs)
+        augmented_pkgs = list(AugmentedPkg.yield_from_repo(mr))
 
-    if not verbose:
-        return do_list_non_verbose(augmented_pkgs)
+        if is_porcelain():
+            return do_list_porcelain(augmented_pkgs)
 
-    for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
-        if i > 0:
-            log.stdout("\n")
+        if not verbose:
+            return do_list_non_verbose(augmented_pkgs)
 
-        print_pkg_detail(ver.pm)
+        for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
+            if i > 0:
+                log.stdout("\n")
 
-    return 0
+            print_pkg_detail(ver.pm)
+
+        return 0
 
 
 class PkgRemark(StrEnum):
@@ -209,84 +228,138 @@ def is_root_likely_populated(root: str) -> bool:
         return False
 
 
-def cli_extract(config: GlobalConfig, args: argparse.Namespace) -> int:
-    host = args.host
-    atom_strs: set[str] = set(args.atom)
-    log.D(f"about to extract for host {host}: {atom_strs}")
-
-    mr = MetadataRepo(config)
-
-    for a_str in atom_strs:
-        a = Atom.parse(a_str)
-        pm = a.match_in_repo(mr, config.include_prereleases)
-        if pm is None:
-            log.F(f"atom {a_str} matches no package in the repository")
-            return 1
-        pkg_name = pm.name_for_installation
-
-        bm = pm.binary_metadata
-        sm = pm.source_metadata
-        if bm is None and sm is None:
-            log.F(f"don't know how to extract package [green]{pkg_name}[/green]")
-            return 2
-
-        if bm is not None and sm is not None:
-            log.F(
-                f"cannot handle package [green]{pkg_name}[/green]: package is both binary and source"
-            )
-            return 2
-
-        distfiles_for_host: list[str] | None = None
-        if bm is not None:
-            distfiles_for_host = bm.get_distfile_names_for_host(host)
-        elif sm is not None:
-            distfiles_for_host = sm.get_distfile_names_for_host(host)
-
-        if not distfiles_for_host:
-            log.F(
-                f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
-            )
-            return 2
-
-        dfs = pm.distfiles()
-
-        for df_name in distfiles_for_host:
-            df_decl = dfs[df_name]
-            urls = mr.get_distfile_urls(df_decl)
-            dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-            ensure_unpack_cmd_for_method(df_decl.unpack_method)
-            df = Distfile(urls, dest, df_decl, mr)
-            df.ensure()
-
-            log.I(
-                f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
-            )
-            # unpack into CWD
-            df.unpack(None)
-
-        log.I(
-            f"package [green]{pkg_name}[/green] extracted to current working directory"
+class ExtractCommand(
+    RootCommand,
+    cmd="extract",
+    help="Fetch package(s) then extract to current directory",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "atom",
+            type=str,
+            nargs="+",
+            help="Specifier (atom) of the package(s) to extract",
+        )
+        p.add_argument(
+            "--host",
+            type=str,
+            default=get_native_host(),
+            help="Override the host architecture (normally not needed)",
         )
 
-    return 0
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        host = args.host
+        atom_strs: set[str] = set(args.atom)
+        log.D(f"about to extract for host {host}: {atom_strs}")
+
+        mr = MetadataRepo(cfg)
+
+        for a_str in atom_strs:
+            a = Atom.parse(a_str)
+            pm = a.match_in_repo(mr, cfg.include_prereleases)
+            if pm is None:
+                log.F(f"atom {a_str} matches no package in the repository")
+                return 1
+            pkg_name = pm.name_for_installation
+
+            bm = pm.binary_metadata
+            sm = pm.source_metadata
+            if bm is None and sm is None:
+                log.F(f"don't know how to extract package [green]{pkg_name}[/green]")
+                return 2
+
+            if bm is not None and sm is not None:
+                log.F(
+                    f"cannot handle package [green]{pkg_name}[/green]: package is both binary and source"
+                )
+                return 2
+
+            distfiles_for_host: list[str] | None = None
+            if bm is not None:
+                distfiles_for_host = bm.get_distfile_names_for_host(host)
+            elif sm is not None:
+                distfiles_for_host = sm.get_distfile_names_for_host(host)
+
+            if not distfiles_for_host:
+                log.F(
+                    f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
+                )
+                return 2
+
+            dfs = pm.distfiles()
+
+            for df_name in distfiles_for_host:
+                df_decl = dfs[df_name]
+                urls = mr.get_distfile_urls(df_decl)
+                dest = os.path.join(cfg.ensure_distfiles_dir(), df_name)
+                ensure_unpack_cmd_for_method(df_decl.unpack_method)
+                df = Distfile(urls, dest, df_decl, mr)
+                df.ensure()
+
+                log.I(
+                    f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
+                )
+                # unpack into CWD
+                df.unpack(None)
+
+            log.I(
+                f"package [green]{pkg_name}[/green] extracted to current working directory"
+            )
+
+        return 0
 
 
-def cli_install(config: GlobalConfig, args: argparse.Namespace) -> int:
-    host = args.host
-    atom_strs: set[str] = set(args.atom)
-    fetch_only = args.fetch_only
-    reinstall = args.reinstall
+class InstallCommand(
+    RootCommand,
+    cmd="install",
+    aliases=["i"],
+    help="Install package from configured repository",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "atom",
+            type=str,
+            nargs="+",
+            help="Specifier (atom) of the package to install",
+        )
+        p.add_argument(
+            "-f",
+            "--fetch-only",
+            action="store_true",
+            help="Fetch distribution files only without installing",
+        )
+        p.add_argument(
+            "--host",
+            type=str,
+            default=get_native_host(),
+            help="Override the host architecture (normally not needed)",
+        )
+        p.add_argument(
+            "--reinstall",
+            action="store_true",
+            help="Force re-installation of already installed packages",
+        )
 
-    mr = MetadataRepo(config)
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        host = args.host
+        atom_strs: set[str] = set(args.atom)
+        fetch_only = args.fetch_only
+        reinstall = args.reinstall
 
-    return do_install_atoms(
-        config,
-        mr,
-        atom_strs,
-        canonicalized_host=canonicalize_host_str(host),
-        fetch_only=fetch_only,
-        reinstall=reinstall,
-    )
+        mr = MetadataRepo(cfg)
+
+        return do_install_atoms(
+            cfg,
+            mr,
+            atom_strs,
+            canonicalized_host=canonicalize_host_str(host),
+            fetch_only=fetch_only,
+            reinstall=reinstall,
+        )
 
 
 def do_install_atoms(

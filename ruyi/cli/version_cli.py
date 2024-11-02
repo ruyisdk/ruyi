@@ -1,16 +1,27 @@
 import argparse
 
-from ..config import GlobalConfig
 from .. import log
+from ..config import GlobalConfig
 from ..version import COPYRIGHT_NOTICE, RUYI_SEMVER
+from .cmd import RootCommand
 
 
-def cli_version(gc: GlobalConfig, args: argparse.Namespace) -> int:
+class VersionCommand(
+    RootCommand,
+    cmd="version",
+    help="Print version information",
+):
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        return cli_version(cfg, args)
+
+
+def cli_version(cfg: GlobalConfig, args: argparse.Namespace) -> int:
     from ..ruyipkg.host import get_native_host
 
     print(f"Ruyi {RUYI_SEMVER}\n\nRunning on {get_native_host()}.")
 
-    if gc.is_installation_externally_managed:
+    if cfg.is_installation_externally_managed:
         print("This Ruyi installation is externally managed.")
 
     print()
