@@ -17,10 +17,10 @@ from .canonical_dump import dump_canonical_package_manifest_toml
 from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
 
 
-class AdminManifestCommand(
+class AdminChecksumCommand(
     AdminCommand,
-    cmd="manifest",
-    help="Generate manifest for the distfiles given",
+    cmd="checksum",
+    help="Generate a checksum section for a manifest file for the distfiles given",
 ):
     @classmethod
     def configure_args(cls, p: argparse.ArgumentParser) -> None:
@@ -30,7 +30,7 @@ class AdminManifestCommand(
             type=str,
             choices=["json", "toml"],
             default="json",
-            help="Format of manifest to generate",
+            help="Format of checksum section to generate in",
         )
         p.add_argument(
             "--restrict",
@@ -42,7 +42,7 @@ class AdminManifestCommand(
             "file",
             type=str,
             nargs="+",
-            help="Path to the distfile(s) to generate manifest for",
+            help="Path to the distfile(s) to checksum",
         )
 
     @classmethod
