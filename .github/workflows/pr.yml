@@ -4,23 +4,44 @@ on:
   push:
     paths:
       - pyproject.toml
+      - poetry.lock
       - '**.py'
+      - '.github/**'
+      - 'resources/**'
+      - 'scripts/**'
+      - 'tests/**'
   pull_request:
     paths:
       - pyproject.toml
+      - poetry.lock
       - '**.py'
+      - '.github/**'
+      - 'resources/**'
+      - 'scripts/**'
+      - 'tests/**'
 
 jobs:
   lint:
-    name: 'ruff & mypy & pytest'
+    name: 'ruff & mypy & pytest (Python ${{ matrix.python }})'
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: true
+      matrix:
+        python:
+          - '3.11'
+          - '3.12'
+        experimental: [false]
+        include:
+          - python: '3.13'
+            experimental: true
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v5
         with:
-          python-version-file: 'pyproject.toml'
+          python-version: ${{ matrix.python }}
           cache: poetry
       - name: Install deps
         run: poetry install --with=dev
