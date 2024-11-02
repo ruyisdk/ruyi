@@ -100,7 +100,16 @@ class SelfCleanCommand(
             repo = True
             telemetry = True
 
-        if not any([distfiles, installed_pkgs, news_read_status, progcache, repo, telemetry]):
+        if not any(
+            [
+                distfiles,
+                installed_pkgs,
+                news_read_status,
+                progcache,
+                repo,
+                telemetry,
+            ]
+        ):
             log.F("no data specified for cleaning")
             log.I(
                 "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
