@@ -12,15 +12,20 @@ on:
 
 jobs:
   lint:
-    name: 'ruff & mypy & pytest'
+    name: 'ruff & mypy & pytest (Python ${{ matrix.python }})'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+          - '3.11'
+          - '3.12'
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v5
         with:
-          python-version-file: 'pyproject.toml'
+          python-version: ${{ matrix.python }}
           cache: poetry
       - name: Install deps
         run: poetry install --with=dev
