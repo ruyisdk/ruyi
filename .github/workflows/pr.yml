@@ -14,11 +14,17 @@ jobs:
   lint:
     name: 'ruff & mypy & pytest (Python ${{ matrix.python }})'
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: true
       matrix:
         python:
           - '3.11'
           - '3.12'
+        experimental: [false]
+        include:
+          - python: '3.13'
+            experimental: true
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
