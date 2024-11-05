@@ -213,6 +213,11 @@ def _do_reset(
         status("removing installed packages")
         shutil.rmtree(cfg.data_root, True)
 
+    # do not record any telemetry data if we're purging it
+    if all_state or telemetry:
+        if tm := cfg.telemetry:
+            tm.discard_events(True)
+
     if all_state:
         status("removing state data")
         shutil.rmtree(cfg.state_root, True)
@@ -222,10 +227,6 @@ def _do_reset(
             cfg.news_read_status.remove()
 
         if telemetry:
-            if tm := cfg.telemetry:
-                # do not record any telemetry data if we're purging it
-                tm.discard_events(True)
-
             status("removing all telemetry data")
             shutil.rmtree(cfg.telemetry_root, True)
 
