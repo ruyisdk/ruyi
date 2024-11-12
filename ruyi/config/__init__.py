@@ -4,9 +4,9 @@ from os import PathLike
 import pathlib
 import sys
 import tomllib
-from typing import Any, Iterable, NotRequired, TypedDict
+from typing import Any, Iterable, TypedDict
 
-from typing_extensions import Self
+from typing_extensions import NotRequired, Self
 
 from .. import argv0, is_env_var_truthy, log
 from ..telemetry import TelemetryStore

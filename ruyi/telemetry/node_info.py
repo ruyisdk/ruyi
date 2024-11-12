@@ -4,8 +4,10 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Mapping, NotRequired, TypedDict
+from typing import Mapping, TypedDict
 import uuid
+
+from typing_extensions import NotRequired
 
 
 class NodeInfo(TypedDict):
