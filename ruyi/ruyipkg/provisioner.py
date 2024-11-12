@@ -1,4 +1,6 @@
-from typing import Literal, NotRequired, TypeAlias, TypedDict
+from typing import Literal, TypeAlias, TypedDict
+
+from typing_extensions import NotRequired
 
 
 class ImageComboDecl(TypedDict):

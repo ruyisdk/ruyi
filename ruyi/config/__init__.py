@@ -3,8 +3,14 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-import tomllib
-from typing import Any, Iterable, NotRequired, Self, TypedDict
+from typing import Any, Iterable, TypedDict
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+from typing_extensions import NotRequired, Self
 
 from .. import argv0, is_env_var_truthy, log
 from ..telemetry import TelemetryStore

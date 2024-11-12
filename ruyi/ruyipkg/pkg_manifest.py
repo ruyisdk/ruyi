@@ -4,10 +4,16 @@ import json
 import os
 import pathlib
 import re
-import tomllib
-from typing import Any, BinaryIO, Iterable, Literal, NotRequired, Self, TypedDict, cast
+import sys
+from typing import Any, BinaryIO, Iterable, Literal, TypedDict, cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from semver.version import Version
+from typing_extensions import NotRequired, Self
 
 from .host import canonicalize_host_str, get_native_host
 from .unpack_method import UnpackMethod, determine_unpack_method

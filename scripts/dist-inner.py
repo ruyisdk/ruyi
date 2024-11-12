@@ -7,8 +7,12 @@ import shutil
 import subprocess
 import sys
 import time
-import tomllib
-from typing import cast
+from typing import Iterable, cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from pygit2.repository import Repository
 from rich.console import Console
@@ -17,7 +21,7 @@ import semver
 # it seems force_terminal is needed for colors to show up on GHA
 INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=False)
 
-LGPL_MODULES = ()
+LGPL_MODULES: Iterable[str] = ()
 
 
 def main() -> None:

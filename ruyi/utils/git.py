@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager
-from typing import Any, Self
+from typing import Any
 
 from pygit2 import Oid
 from pygit2.callbacks import RemoteCallbacks
@@ -8,6 +8,7 @@ from pygit2.remotes import TransferProgress
 from pygit2.repository import Repository
 from rich.progress import Progress, TaskID
 from rich.text import Text
+from typing_extensions import Self
 
 from .. import log
 

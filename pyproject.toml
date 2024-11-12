@@ -16,6 +16,7 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Software Development :: Build Tools",
@@ -24,8 +25,6 @@ classifiers = [
   "Typing :: Typed",
 ]
 include = ["ruyi/py.typed"]
-
-#requires-python = ">=3.11"
 
 
 [build-system]
@@ -58,7 +57,7 @@ safe_licenses = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.10"
 
 arpy = "^2.3.0"
 certifi = "^2024.2"
@@ -70,6 +69,7 @@ requests = "^2"
 rich = "^13.5"
 semver = "^3"
 tomlkit = "^0.12.4"
+tomli = { version = "^2.1.0", python = "<3.11" }
 
 types-cffi = "^1.16.0.20240106"
 types-pygit2 = "^1.14.0.20240317"

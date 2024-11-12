@@ -1,11 +1,14 @@
 import argparse
-from enum import StrEnum
+import enum
 from itertools import chain
 import os.path
 import pathlib
 import shutil
+import sys
 import tempfile
-from typing import Iterable, Self, TypedDict
+from typing import Iterable, TypedDict
+
+from typing_extensions import Self
 
 from .host import canonicalize_host_str, get_native_host
 from .. import is_porcelain, log
@@ -59,23 +62,45 @@ class ListCommand(
         return 0
 
 
-class PkgRemark(StrEnum):
-    Latest = "latest"
-    LatestPreRelease = "latest-prerelease"
-    NoBinaryForCurrentHost = "no-binary-for-current-host"
-    PreRelease = "prerelease"
+if sys.version_info >= (3, 11):
 
-    def as_rich_markup(self) -> str:
-        match self:
-            case self.Latest:
-                return "latest"
-            case self.LatestPreRelease:
-                return "latest-prerelease"
-            case self.NoBinaryForCurrentHost:
-                return "[red]no binary for current host[/red]"
-            case self.PreRelease:
-                return "prerelease"
-        return ""
+    class PkgRemark(enum.StrEnum):
+        Latest = "latest"
+        LatestPreRelease = "latest-prerelease"
+        NoBinaryForCurrentHost = "no-binary-for-current-host"
+        PreRelease = "prerelease"
+
+        def as_rich_markup(self) -> str:
+            match self:
+                case self.Latest:
+                    return "latest"
+                case self.LatestPreRelease:
+                    return "latest-prerelease"
+                case self.NoBinaryForCurrentHost:
+                    return "[red]no binary for current host[/red]"
+                case self.PreRelease:
+                    return "prerelease"
+            return ""
+
+else:
+
+    class PkgRemark(str, enum.Enum):
+        Latest = "latest"
+        LatestPreRelease = "latest-prerelease"
+        NoBinaryForCurrentHost = "no-binary-for-current-host"
+        PreRelease = "prerelease"
+
+        def as_rich_markup(self) -> str:
+            match self:
+                case self.Latest:
+                    return "latest"
+                case self.LatestPreRelease:
+                    return "latest-prerelease"
+                case self.NoBinaryForCurrentHost:
+                    return "[red]no binary for current host[/red]"
+                case self.PreRelease:
+                    return "prerelease"
+            return ""
 
 
 class AugmentedPkgManifest:

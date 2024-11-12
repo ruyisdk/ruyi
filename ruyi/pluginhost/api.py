@@ -1,9 +1,14 @@
 from contextlib import AbstractContextManager
 import pathlib
 import subprocess
+import sys
 import time
-import tomllib
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from .. import log
 from ..cli import user_input

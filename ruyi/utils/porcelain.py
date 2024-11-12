@@ -1,15 +1,25 @@
 from contextlib import AbstractContextManager
-from enum import StrEnum
+import enum
 import json
 import sys
 from types import TracebackType
-from typing import BinaryIO, Self, TypedDict
+from typing import BinaryIO, TypedDict
 
+from typing_extensions import Self
 
-class PorcelainEntityType(StrEnum):
-    LogV1 = "log-v1"
-    NewsItemV1 = "newsitem-v1"
-    PkgListOutputV1 = "pkglistoutput-v1"
+if sys.version_info >= (3, 11):
+
+    class PorcelainEntityType(enum.StrEnum):
+        LogV1 = "log-v1"
+        NewsItemV1 = "newsitem-v1"
+        PkgListOutputV1 = "pkglistoutput-v1"
+
+else:
+
+    class PorcelainEntityType(str, enum.Enum):
+        LogV1 = "log-v1"
+        NewsItemV1 = "newsitem-v1"
+        PkgListOutputV1 = "pkglistoutput-v1"
 
 
 class PorcelainEntity(TypedDict):

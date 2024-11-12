@@ -3,12 +3,18 @@ import itertools
 import json
 import os.path
 import pathlib
-import tomllib
-from typing import Any, Iterable, NotRequired, Tuple, TypedDict, TypeGuard, cast
+import sys
+from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, cast
 from urllib import parse
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
+from typing_extensions import NotRequired
 import yaml
 
 from .. import log

@@ -1,7 +1,9 @@
 import abc
 import os
 import pathlib
-from typing import Callable, Generic, MutableMapping, Protocol, Self, TypeVar
+from typing import Callable, Generic, MutableMapping, Protocol, TypeVar
+
+from typing_extensions import Self
 
 from . import api
 from . import paths
