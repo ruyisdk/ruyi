@@ -20,7 +20,13 @@ class RuyiFileFixtureFactory:
     def plugin_suite(self, suite_name: str) -> AbstractContextManager[pathlib.Path]:
         if sys.version_info < (3, 12):
             assert self.module is not None
-        path = resources.files(self.module).joinpath("plugins_suites", suite_name)
+        path = resources.files(self.module)
+        if sys.version_info >= (3, 11):
+            path = path.joinpath("plugins_suites", suite_name)
+        else:
+            path = path.joinpath("plugins_suites")
+            path = path.joinpath(suite_name)
+
         return resources.as_file(path)
 
 
