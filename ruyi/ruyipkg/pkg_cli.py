@@ -5,7 +5,9 @@ import os.path
 import pathlib
 import shutil
 import tempfile
-from typing import Iterable, Self, TypedDict
+from typing import Iterable, TypedDict
+
+from typing_extensions import Self
 
 from .host import canonicalize_host_str, get_native_host
 from .. import is_porcelain, log

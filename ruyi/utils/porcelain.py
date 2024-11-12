@@ -3,7 +3,9 @@ from enum import StrEnum
 import json
 import sys
 from types import TracebackType
-from typing import BinaryIO, Self, TypedDict
+from typing import BinaryIO, TypedDict
+
+from typing_extensions import Self
 
 
 class PorcelainEntityType(StrEnum):

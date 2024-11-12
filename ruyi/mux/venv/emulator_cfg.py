@@ -1,5 +1,7 @@
 import os
-from typing import Any, Self
+from typing import Any
+
+from typing_extensions import Self
 
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
