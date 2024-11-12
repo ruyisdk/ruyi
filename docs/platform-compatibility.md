@@ -2,10 +2,9 @@
 
 ## 官方支持的发行版列表
 
-目前 RuyiSDK 仅为 Linux 系统提供官方支持。其余操作系统（如 macOS 或
-Windows）的用户如要使用 RuyiSDK，将需要自行配置 Linux 环境。
+出于项目管理因素，如 RuyiSDK 项目 scope 与团队支持成本等等，以及一些其他因素，RuyiSDK
+团队目前只能对一部分处理器架构的一部分 Linux 发行版版本提供官方支持。
 
-出于项目管理因素，如 RuyiSDK 项目 scope 与团队支持成本等等，RuyiSDK
 团队对以下的架构提供 RuyiSDK 官方软件源服务，并对以下的 Linux
 发行版（具体版本 & 架构移植）提供官方支持。
 
@@ -28,8 +27,11 @@ Windows）的用户如要使用 RuyiSDK，将需要自行配置 Linux 环境。
 [fedora-riscv]: https://fedoraproject.org/wiki/Architectures/RISC-V
 [^fedora-riscv-source]: 见于 [Docker Hub 容器映像](https://hub.docker.com/r/fedorariscv/base)
 
-对于属于官方支持架构的非官方支持 Linux 发行版，`ruyi` 及 RuyiSDK
+对于官方支持架构上的非官方支持 Linux 发行版，`ruyi` 及 RuyiSDK
 官方软件源提供的软件包仍有可能在其上正常运行，但我们对此不作自动化的保证。
+
+对于官方支持架构上的其余操作系统（如 macOS 或 Windows），如用户要在其上使用
+RuyiSDK，将需要自行配置 Linux 环境。
 
 对于非官方支持的架构，RuyiSDK 团队可能无法为其提供 `ruyi` 或 RuyiSDK
 官方软件源的二进制包。确有需要的用户可以自行组织起来，提供本架构的平行宇宙
