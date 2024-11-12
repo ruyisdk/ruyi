@@ -4,8 +4,13 @@ import json
 import os
 import pathlib
 import re
-import tomllib
+import sys
 from typing import Any, BinaryIO, Iterable, Literal, TypedDict, cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from semver.version import Version
 from typing_extensions import NotRequired, Self

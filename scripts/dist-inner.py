@@ -7,8 +7,12 @@ import shutil
 import subprocess
 import sys
 import time
-import tomllib
 from typing import Iterable, cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from pygit2.repository import Repository
 from rich.console import Console

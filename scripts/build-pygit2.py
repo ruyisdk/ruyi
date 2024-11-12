@@ -5,8 +5,12 @@ import platform
 import shutil
 import subprocess
 import sys
-import tomllib
 from typing import cast
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 PYGIT2_SETUPTOOLS_PATCH = """
 --- a/build.sh
