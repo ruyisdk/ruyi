@@ -12,7 +12,7 @@
 * [`ruyi` 的构建方式](./building.md)
 * [CI: 自动化版本发布](./ci-release-automation.md)
 * [Repo CI: Self-hosted runner 管理](./ci-self-hosted-runner.md)
-* [`ruyi` 的平台兼容性](./platform-compatibility.md)
+* [`ruyi` 的依赖兼容基线](./dep-baseline.md)
 
 ## 软件源
 
