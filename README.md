@@ -118,7 +118,7 @@ All rights reserved.
 
 `ruyi` is licensed under the [Apache 2.0 license](./LICENSE-Apache.txt).
 
-This version of `ruyi` makes use of code licensed under the
+The one-file binary distribution of `ruyi` contains code licensed under the
 [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/).
 You can get the respective project's sources from the project's official
 website:

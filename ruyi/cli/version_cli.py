@@ -1,8 +1,9 @@
 import argparse
 
+import ruyi
 from .. import log
 from ..config import GlobalConfig
-from ..version import COPYRIGHT_NOTICE, RUYI_SEMVER
+from ..version import COPYRIGHT_NOTICE, MPL_REDIST_NOTICE, RUYI_SEMVER
 from .cmd import RootCommand
 
 
@@ -27,5 +28,11 @@ def cli_version(cfg: GlobalConfig, args: argparse.Namespace) -> int:
     print()
 
     log.stdout(COPYRIGHT_NOTICE)
+
+    # Output the MPL notice only when we actually bundle and depend on the
+    # MPL component(s), which right now is only certifi. Keep the condition
+    # synced with __main__.py.
+    if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
+        log.stdout(MPL_REDIST_NOTICE)
 
     return 0
