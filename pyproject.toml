@@ -63,7 +63,6 @@ safe_licenses = [
 python = ">=3.10"
 
 arpy = "^2.3.0"
-certifi = "^2024.2"
 jinja2 = "^3"
 packaging = "^24.0"
 pygit2 = "^1.14.0"
@@ -86,6 +85,7 @@ pytest = "^8.2.2"
 ruff = "^0.3.4"
 
 [tool.poetry.group.dist.dependencies]
+certifi = "^2024.2"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
