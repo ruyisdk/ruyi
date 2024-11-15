@@ -26,6 +26,8 @@ classifiers = [
 ]
 include = ["ruyi/py.typed"]
 
+[tool.poetry.scripts]
+ruyi = "ruyi.__main__:entrypoint"
 
 [build-system]
 requires = ["poetry-core"]
