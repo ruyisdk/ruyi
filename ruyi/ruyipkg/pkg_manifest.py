@@ -15,7 +15,11 @@ else:
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
-from semver.version import Version
+try:
+    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+except ModuleNotFoundError:
+    # semver 2.x
+    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
 from .host import canonicalize_host_str, get_native_host
 from .unpack_method import UnpackMethod, determine_unpack_method

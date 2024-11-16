@@ -10,7 +10,12 @@ from typing import NamedTuple, TypedDict, cast
 import requests
 from rich.console import Console
 from rich import progress
-import semver
+
+try:
+    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+except ModuleNotFoundError:
+    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
+
 
 GITHUB_BASE_URL = "https://api.github.com"
 GITHUB_OWNER_REPO = "ruyisdk/ruyi"
@@ -127,7 +132,7 @@ def main(argv: list[str]) -> int:
         rel = Release(kind, name)
 
         # skip previous releases that were manually managed
-        if semver.compare(name, "0.6.0") <= 0:
+        if Version.parse(name) <= Version.parse("0.6.0"):
             debug(f"{name}: ignoring pre-automation releases")
             continue
 

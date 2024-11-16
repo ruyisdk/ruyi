@@ -16,7 +16,11 @@ else:
 
 from pygit2.repository import Repository
 from rich.console import Console
-import semver
+
+try:
+    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+except ModuleNotFoundError:
+    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
 # it seems force_terminal is needed for colors to show up on GHA
 INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=False)
@@ -233,7 +237,7 @@ def to_version_for_nuitka(version: str) -> str:
     part to fit in an u16.
     """
 
-    sv = semver.Version.parse(version)
+    sv = Version.parse(version)
     if not sv.prerelease:
         return f"{version}.0"
 
@@ -250,7 +254,7 @@ def set_release_mirror_url_for_gha(version: str) -> None:
     release_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/releases/"
     testing_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/"
 
-    sv = semver.Version.parse(version)
+    sv = Version.parse(version)
     url_base = testing_url_base if sv.prerelease else release_url_base
     url = f"{url_base}{version}/"
     set_gha_output("release_mirror_url", url)
