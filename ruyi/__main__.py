@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-if __name__ == "__main__":
+
+def entrypoint() -> None:
     import sys
     import ruyi
     from ruyi import log
@@ -52,3 +53,7 @@ if __name__ == "__main__":
     ruyi.record_self_exe(sys.argv[0], __file__, self_exe)
 
     sys.exit(main(sys.argv))
+
+
+if __name__ == "__main__":
+    entrypoint()

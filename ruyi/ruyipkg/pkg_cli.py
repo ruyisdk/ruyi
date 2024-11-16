@@ -6,9 +6,10 @@ import pathlib
 import shutil
 import sys
 import tempfile
-from typing import Iterable, TypedDict
+from typing import Iterable, TypedDict, TYPE_CHECKING
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from .host import canonicalize_host_str, get_native_host
 from .. import is_porcelain, log
@@ -135,7 +136,7 @@ class AugmentedPkg:
         return self.versions[0].pm.name if self.versions else None
 
     @classmethod
-    def yield_from_repo(cls, mr: MetadataRepo) -> Iterable[Self]:
+    def yield_from_repo(cls, mr: MetadataRepo) -> "Iterable[Self]":
         for _, _, pkg_vers in mr.iter_pkgs():
             pkg = cls()
 

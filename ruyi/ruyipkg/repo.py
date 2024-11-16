@@ -4,7 +4,7 @@ import json
 import os.path
 import pathlib
 import sys
-from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, cast
+from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, TYPE_CHECKING, cast
 from urllib import parse
 
 if sys.version_info >= (3, 11):
@@ -12,9 +12,11 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
 from pygit2 import clone_repository
 from pygit2.repository import Repository
-from typing_extensions import NotRequired
 import yaml
 
 from .. import log
@@ -41,7 +43,7 @@ def urljoin_for_sure(base: str, url: str) -> str:
 
 class RepoConfigV0Type(TypedDict):
     dist: str
-    doc_uri: NotRequired[str]
+    doc_uri: "NotRequired[str]"
 
 
 def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
@@ -57,7 +59,7 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
 
 
 class RepoConfigV1Repo(TypedDict):
-    doc_uri: NotRequired[str]
+    doc_uri: "NotRequired[str]"
 
 
 class RepoConfigV1Mirror(TypedDict):
@@ -69,7 +71,7 @@ RepoConfigV1Type = TypedDict(
     "RepoConfigV1Type",
     {
         "ruyi-repo": str,
-        "repo": NotRequired[RepoConfigV1Repo],
+        "repo": "NotRequired[RepoConfigV1Repo]",
         "mirrors": list[RepoConfigV1Mirror],
     },
 )

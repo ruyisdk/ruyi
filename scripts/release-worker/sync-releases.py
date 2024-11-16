@@ -10,7 +10,12 @@ from typing import NamedTuple, TypedDict, cast
 import requests
 from rich.console import Console
 from rich import progress
-import semver
+
+try:
+    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+except ModuleNotFoundError:
+    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
+
 
 GITHUB_BASE_URL = "https://api.github.com"
 GITHUB_OWNER_REPO = "ruyisdk/ruyi"
@@ -127,7 +132,7 @@ def main(argv: list[str]) -> int:
         rel = Release(kind, name)
 
         # skip previous releases that were manually managed
-        if semver.compare(name, "0.6.0") <= 0:
+        if Version.parse(name) <= Version.parse("0.6.0"):
             debug(f"{name}: ignoring pre-automation releases")
             continue
 
@@ -185,12 +190,22 @@ def download_gh_release_asset_to(
     r = github_get(asset["url"], MIME_OCTET_STREAM, stream=True)
     chunk_size = 16 * 1024
     LOG.log(f"downloading [cyan]{asset['url']}[/] to [cyan]{local}")
+
+    try:
+        trc = progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True)  # type: ignore[call-arg,unused-ignore]
+    except TypeError:
+        # rich < 12.0.0 does not support the styles we're asking here, so
+        # just downgrade UX in favor of basic usability in that case.
+        #
+        # see https://github.com/Textualize/rich/pull/1992
+        trc = progress.TimeRemainingColumn()
+
     columns = (
         progress.SpinnerColumn(),
         progress.BarColumn(),
         progress.DownloadColumn(),
         progress.TransferSpeedColumn(),
-        progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True),
+        trc,
     )
     with open(local, "wb") as f:
         with progress.Progress(*columns, console=LOG) as pg:

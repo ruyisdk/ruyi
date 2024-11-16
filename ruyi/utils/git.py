@@ -1,14 +1,33 @@
 from contextlib import AbstractContextManager
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pygit2 import Oid
 from pygit2.callbacks import RemoteCallbacks
-from pygit2.enums import MergeAnalysis
-from pygit2.remotes import TransferProgress
 from pygit2.repository import Repository
+
+try:
+    from pygit2.remotes import TransferProgress
+except ModuleNotFoundError:
+    # pygit2 < 1.14.0
+    # see https://github.com/libgit2/pygit2/commit/a8b2421bea550292
+    #
+    # import-untyped: the current pygit2 type stubs were written after the
+    # `remote` -> `remotes` rename, so no stubs for it
+    from pygit2.remote import TransferProgress  # type: ignore[import-not-found,import-untyped,no-redef,unused-ignore]
+
+# for compatibility with <1.14.0, cannot `from pygit2.enums import MergeAnalysis`
+# see https://github.com/libgit2/pygit2/pull/1251
+from pygit2 import (
+    GIT_MERGE_ANALYSIS_UNBORN,
+    GIT_MERGE_ANALYSIS_FASTFORWARD,
+    GIT_MERGE_ANALYSIS_UP_TO_DATE,
+)
+
 from rich.progress import Progress, TaskID
 from rich.text import Text
-from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from .. import log
 
@@ -24,12 +43,16 @@ class RemoteGitProgressIndicator(
         self._last_stats: TransferProgress | None = None
         self._task_name: str = ""
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "Self":
         self.p.__enter__()
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, tb: Any) -> None:
         return self.p.__exit__(exc_type, exc_value, tb)
+
+    # Compatibility with pygit2 < 1.8.0.
+    def progress(self, string: str) -> None:
+        return self.sideband_progress(string)
 
     def sideband_progress(self, string: str) -> None:
         self.p.console.print("\r", Text(string), sep="", end="")
@@ -92,12 +115,12 @@ def pull_ff_or_die(
 
     merge_analysis, _ = repo.merge_analysis(remote_head)
 
-    if merge_analysis & MergeAnalysis.UP_TO_DATE:
+    if merge_analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE:
         # nothing to do
         log.D("repo state already up-to-date")
         return
 
-    if merge_analysis & (MergeAnalysis.UNBORN | MergeAnalysis.FASTFORWARD):
+    if merge_analysis & (GIT_MERGE_ANALYSIS_UNBORN | GIT_MERGE_ANALYSIS_FASTFORWARD):
         # simple fast-forwarding is enough in both cases
         log.D(f"fast-forwarding repo to {remote_head}")
         tgt = repo.get(remote_head)

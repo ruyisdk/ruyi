@@ -5,15 +5,21 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, BinaryIO, Iterable, Literal, TypedDict, cast
+from typing import Any, BinaryIO, Iterable, Literal, TypedDict, TYPE_CHECKING, cast
 
 if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
 
-from semver.version import Version
-from typing_extensions import NotRequired, Self
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired, Self
+
+try:
+    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+except ModuleNotFoundError:
+    # semver 2.x
+    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
 from .host import canonicalize_host_str, get_native_host
 from .unpack_method import UnpackMethod, determine_unpack_method
@@ -29,18 +35,18 @@ RestrictKind = Literal["fetch"] | Literal["mirror"]
 
 class FetchRestrictionDeclType(TypedDict):
     msgid: str
-    params: NotRequired[dict[str, str]]
+    params: "NotRequired[dict[str, str]]"
 
 
 class DistfileDeclType(TypedDict):
     name: str
-    urls: NotRequired[list[str]]
-    restrict: NotRequired[list[RestrictKind]]
+    urls: "NotRequired[list[str]]"
+    restrict: "NotRequired[list[RestrictKind]]"
     size: int
     checksums: dict[str, str]
-    strip_components: NotRequired[int]
-    unpack: NotRequired[UnpackMethod]
-    fetch_restriction: NotRequired[FetchRestrictionDeclType]
+    strip_components: "NotRequired[int]"
+    unpack: "NotRequired[UnpackMethod]"
+    fetch_restriction: "NotRequired[FetchRestrictionDeclType]"
 
 
 class BinaryFileDeclType(TypedDict):
@@ -68,7 +74,7 @@ class ToolchainDeclType(TypedDict):
     target: str
     flavors: list[str]
     components: list[ToolchainComponentDeclType]
-    included_sysroot: NotRequired[str]
+    included_sysroot: "NotRequired[str]"
 
 
 EmulatorFlavor = Literal["qemu-linux-user"]
@@ -78,11 +84,11 @@ class EmulatorProgramDeclType(TypedDict):
     path: str
     flavor: EmulatorFlavor
     supported_arches: list[str]
-    binfmt_misc: NotRequired[str]
+    binfmt_misc: "NotRequired[str]"
 
 
 class EmulatorDeclType(TypedDict):
-    flavors: NotRequired[list[str]]
+    flavors: "NotRequired[list[str]]"
     programs: list[EmulatorProgramDeclType]
 
 
@@ -128,33 +134,33 @@ RuyiPkgFormat = Literal["v1"]
 
 
 class PackageMetadataDeclType(TypedDict):
-    slug: NotRequired[str]  # deprecated for v1+
+    slug: "NotRequired[str]"  # deprecated for v1+
     desc: str
-    doc_uri: NotRequired[str]
+    doc_uri: "NotRequired[str]"
     vendor: VendorDeclType
 
 
 class InputPackageManifestType(TypedDict):
-    format: NotRequired[RuyiPkgFormat]
+    format: "NotRequired[RuyiPkgFormat]"
 
     # v0 fields
-    slug: NotRequired[str]
-    kind: NotRequired[list[PackageKind]]  # mandatory in v0
-    desc: NotRequired[str]  # mandatory in v0
-    doc_uri: NotRequired[str]
-    vendor: NotRequired[VendorDeclType]  # mandatory in v0
+    slug: "NotRequired[str]"
+    kind: "NotRequired[list[PackageKind]]"  # mandatory in v0
+    desc: "NotRequired[str]"  # mandatory in v0
+    doc_uri: "NotRequired[str]"
+    vendor: "NotRequired[VendorDeclType]"  # mandatory in v0
 
     # v1+ fields
-    metadata: NotRequired[PackageMetadataDeclType]
+    metadata: "NotRequired[PackageMetadataDeclType]"
 
     # common fields
     distfiles: list[DistfileDeclType]
-    binary: NotRequired[BinaryDeclType]
-    blob: NotRequired[BlobDeclType]
-    source: NotRequired[SourceDeclType]
-    toolchain: NotRequired[ToolchainDeclType]
-    emulator: NotRequired[EmulatorDeclType]
-    provisionable: NotRequired[ProvisionableDeclType]
+    binary: "NotRequired[BinaryDeclType]"
+    blob: "NotRequired[BlobDeclType]"
+    source: "NotRequired[SourceDeclType]"
+    toolchain: "NotRequired[ToolchainDeclType]"
+    emulator: "NotRequired[EmulatorDeclType]"
+    provisionable: "NotRequired[ProvisionableDeclType]"
 
 
 class PackageManifestType(TypedDict):
@@ -162,12 +168,12 @@ class PackageManifestType(TypedDict):
     kind: list[PackageKind]
     metadata: PackageMetadataDeclType
     distfiles: list[DistfileDeclType]
-    binary: NotRequired[BinaryDeclType]
-    blob: NotRequired[BlobDeclType]
-    source: NotRequired[SourceDeclType]
-    toolchain: NotRequired[ToolchainDeclType]
-    emulator: NotRequired[EmulatorDeclType]
-    provisionable: NotRequired[ProvisionableDeclType]
+    binary: "NotRequired[BinaryDeclType]"
+    blob: "NotRequired[BlobDeclType]"
+    source: "NotRequired[SourceDeclType]"
+    toolchain: "NotRequired[ToolchainDeclType]"
+    emulator: "NotRequired[EmulatorDeclType]"
+    provisionable: "NotRequired[ProvisionableDeclType]"
 
 
 class DistfileDecl:
@@ -400,17 +406,17 @@ class PackageManifest:
             self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
 
     @classmethod
-    def load_json(cls, stream: BinaryIO) -> Self:
+    def load_json(cls, stream: BinaryIO) -> "Self":
         content = json.load(stream)
         return cls(content)
 
     @classmethod
-    def load_toml(cls, stream: BinaryIO) -> Self:
+    def load_toml(cls, stream: BinaryIO) -> "Self":
         content = cast(InputPackageManifestType, tomllib.load(stream))
         return cls(content)
 
     @classmethod
-    def load_from_path(cls, p: pathlib.Path) -> Self:
+    def load_from_path(cls, p: pathlib.Path) -> "Self":
         suffix = p.suffix.lower()
         match suffix:
             case ".json":

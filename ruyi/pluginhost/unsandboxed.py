@@ -5,9 +5,10 @@ import os
 import pathlib
 import sys
 from types import CodeType
-from typing import Callable, MutableMapping, NoReturn, cast
+from typing import Callable, MutableMapping, NoReturn, TYPE_CHECKING, cast
 
-from typing_extensions import Buffer
+if TYPE_CHECKING:
+    from typing_extensions import Buffer
 
 from .. import log
 from . import PluginHostContext, BasePluginLoader
@@ -147,16 +148,14 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
     # easier refactoring whenever necessary.
     @staticmethod
     def source_to_code(
-        data: Buffer | str | ast.Module,
-        path: Buffer | str | os.PathLike[str] = "<string>",
+        data: "Buffer | str | ast.Module",
+        path: "Buffer | str | os.PathLike[str]" = "<string>",
     ) -> CodeType:
         mod_ast: ast.Module
         if isinstance(data, ast.Module):
             mod_ast = data
-        elif isinstance(data, str) or isinstance(data, Buffer):
+        else:  # isinstance(data, str) or isinstance(data, Buffer)
             mod_ast = ast.parse(data, path, "exec")
-        else:
-            raise NotImplementedError
 
         # lint the module on a best-effort basis to help fight syntax feature
         # creep

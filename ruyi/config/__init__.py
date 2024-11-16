@@ -3,14 +3,15 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Iterable, TypedDict
+from typing import Any, Iterable, TypedDict, TYPE_CHECKING
 
 if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
 
-from typing_extensions import NotRequired, Self
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired, Self
 
 from .. import argv0, is_env_var_truthy, log
 from ..telemetry import TelemetryStore
@@ -48,13 +49,13 @@ def _get_lang_code() -> str:
 
 
 class GlobalConfigPackagesType(TypedDict):
-    prereleases: NotRequired[bool]
+    prereleases: "NotRequired[bool]"
 
 
 class GlobalConfigRepoType(TypedDict):
-    local: NotRequired[str]
-    remote: NotRequired[str]
-    branch: NotRequired[str]
+    local: "NotRequired[str]"
+    remote: "NotRequired[str]"
+    branch: "NotRequired[str]"
 
 
 class GlobalConfigInstallationType(TypedDict):
@@ -63,18 +64,18 @@ class GlobalConfigInstallationType(TypedDict):
     # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
     # to signify this status to an official Ruyi build (where IS_PACKAGED is
     # True), to prevent e.g. accidental self-uninstallation.
-    externally_managed: NotRequired[bool]
+    externally_managed: "NotRequired[bool]"
 
 
 class GlobalConfigTelemetryType(TypedDict):
-    mode: NotRequired[str]
+    mode: "NotRequired[str]"
 
 
 class GlobalConfigRootType(TypedDict):
-    installation: NotRequired[GlobalConfigInstallationType]
-    packages: NotRequired[GlobalConfigPackagesType]
-    repo: NotRequired[GlobalConfigRepoType]
-    telemetry: NotRequired[GlobalConfigTelemetryType]
+    installation: "NotRequired[GlobalConfigInstallationType]"
+    packages: "NotRequired[GlobalConfigPackagesType]"
+    repo: "NotRequired[GlobalConfigRepoType]"
+    telemetry: "NotRequired[GlobalConfigTelemetryType]"
 
 
 class GlobalConfig:
@@ -245,7 +246,7 @@ class GlobalConfig:
         self.apply_config(data)
 
     @classmethod
-    def load_from_config(cls) -> Self:
+    def load_from_config(cls) -> "Self":
         obj = cls()
 
         for config_path in obj.iter_preset_configs():
@@ -265,7 +266,7 @@ class GlobalConfig:
 
 class VenvConfigType(TypedDict):
     profile: str
-    sysroot: NotRequired[str]
+    sysroot: "NotRequired[str]"
 
 
 class VenvConfigRootType(TypedDict):
@@ -275,16 +276,16 @@ class VenvConfigRootType(TypedDict):
 class VenvCacheV0Type(TypedDict):
     target_tuple: str
     toolchain_bindir: str
-    gcc_install_dir: NotRequired[str]
+    gcc_install_dir: "NotRequired[str]"
     profile_common_flags: str
-    qemu_bin: NotRequired[str]
-    profile_emu_env: NotRequired[dict[str, str]]
+    qemu_bin: "NotRequired[str]"
+    profile_emu_env: "NotRequired[dict[str, str]]"
 
 
 class VenvCacheV1TargetType(TypedDict):
     toolchain_bindir: str
-    toolchain_sysroot: NotRequired[str]
-    gcc_install_dir: NotRequired[str]
+    toolchain_sysroot: "NotRequired[str]"
+    gcc_install_dir: "NotRequired[str]"
 
 
 class VenvCacheV1CmdMetadataEntryType(TypedDict):
@@ -294,15 +295,15 @@ class VenvCacheV1CmdMetadataEntryType(TypedDict):
 
 class VenvCacheV1Type(TypedDict):
     profile_common_flags: str
-    profile_emu_env: NotRequired[dict[str, str]]
-    qemu_bin: NotRequired[str]
+    profile_emu_env: "NotRequired[dict[str, str]]"
+    qemu_bin: "NotRequired[str]"
     targets: dict[str, VenvCacheV1TargetType]
-    cmd_metadata_map: NotRequired[dict[str, VenvCacheV1CmdMetadataEntryType]]
+    cmd_metadata_map: "NotRequired[dict[str, VenvCacheV1CmdMetadataEntryType]]"
 
 
 class VenvCacheRootType(TypedDict):
-    cached: NotRequired[VenvCacheV0Type]
-    cached_v1: NotRequired[VenvCacheV1Type]
+    cached: "NotRequired[VenvCacheV0Type]"
+    cached_v1: "NotRequired[VenvCacheV1Type]"
 
 
 def parse_venv_cache(
@@ -387,7 +388,7 @@ class RuyiVenvConfig:
         return None
 
     @classmethod
-    def load_from_venv(cls) -> Self | None:
+    def load_from_venv(cls) -> "Self | None":
         venv_root = cls.probe_venv_root()
         if venv_root is None:
             return None

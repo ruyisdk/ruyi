@@ -19,6 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Build Tools",
   "Topic :: Software Development :: Embedded Systems",
   "Topic :: System :: Software Distribution",
@@ -26,6 +27,8 @@ classifiers = [
 ]
 include = ["ruyi/py.typed"]
 
+[tool.poetry.scripts]
+ruyi = "ruyi.__main__:entrypoint"
 
 [build-system]
 requires = ["poetry-core"]
@@ -59,30 +62,30 @@ safe_licenses = [
 [tool.poetry.dependencies]
 python = ">=3.10"
 
-arpy = "^2.3.0"
-certifi = "^2024.2"
+arpy = "*"
 jinja2 = "^3"
-packaging = "^24.0"
-pygit2 = "^1.14.0"
-pyyaml = "^6.0.1"
+packaging = ">=21"
+pygit2 = ">=1.6"
+pyyaml = ">=5.4"
 requests = "^2"
-rich = "^13.5"
-semver = "^3"
-tomlkit = "^0.12.4"
-tomli = { version = "^2.1.0", python = "<3.11" }
-
-types-cffi = "^1.16.0.20240106"
-types-pygit2 = "^1.14.0.20240317"
-types-PyYAML = "^6.0.12.20240311"
-types-requests = "^2.31.0.20240311"
-typing-extensions = "^4.12.2"
+rich = ">=11.2.0"
+semver = ">=2.10"
+tomlkit = ">=0.9"
+tomli = { version = ">=1.2", python = "<3.11" }
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
 pytest = "^8.2.2"
 ruff = "^0.3.4"
+typing-extensions = "^4.12.2"
+
+types-cffi = "^1.16.0.20240106"
+types-pygit2 = "^1.14.0.20240317"
+types-PyYAML = "^6.0.12.20240311"
+types-requests = "^2.31.0.20240311"
 
 [tool.poetry.group.dist.dependencies]
+certifi = "^2024.2"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]

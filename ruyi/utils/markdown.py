@@ -6,7 +6,15 @@ from rich.text import Text
 
 class SlimHeading(Heading):
     def on_enter(self, context: MarkdownContext) -> None:
-        heading_level = int(self.tag[1:])  # e.g. self.tag == 'h1'
+        try:
+            # the heading level is indicated in the tag name in rich >= 13.2.0,
+            # e.g. self.tag == 'h1', but directly stored in earlier versions
+            # as self.level.
+            #
+            # see https://github.com/Textualize/rich/commit/a20c3d5468d02a55
+            heading_level = int(self.tag[1:])  # type: ignore[attr-defined,unused-ignore]
+        except AttributeError:
+            heading_level = self.level  # type: ignore[attr-defined,unused-ignore]
 
         context.enter_style(self.style_name)
         self.text = Text("#" * heading_level + " ", context.current_style)
@@ -35,7 +43,9 @@ class NonWrappingCodeBlock(CodeBlock):
             self.lexer_name,
             theme=self.theme,
             word_wrap=False,
-            padding=0,
+            # not supported in rich <= 12.4.0 (Textualize/rich#2247) but fortunately
+            # zero padding is the default anyway
+            # padding=0,
         )
         return syntax.highlight(code).__rich_console__(console, render_options)
 
@@ -44,6 +54,13 @@ class RuyiStyledMarkdown(Markdown):
     elements = Markdown.elements
     elements["fence"] = NonWrappingCodeBlock
     elements["heading_open"] = SlimHeading
+
+    # rich < 13.2.0
+    # see https://github.com/Textualize/rich/commit/745bd99e416c2806
+    # it doesn't hurt to just unconditionally add them like below
+    elements["code"] = NonWrappingCodeBlock
+    elements["code_block"] = NonWrappingCodeBlock
+    elements["heading"] = SlimHeading
 
     def __rich_console__(
         self,

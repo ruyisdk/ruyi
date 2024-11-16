@@ -65,7 +65,7 @@ jobs:
           python-version-file: 'pyproject.toml'
           cache: poetry
       - name: Install runtime deps
-        run: poetry install --only=main
+        run: poetry install --only=main,dev
       - name: Install pylic
         run: poetry run pip install pylic
       - name: List all licenses involved
