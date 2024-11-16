@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pygit2 import Oid
 from pygit2.callbacks import RemoteCallbacks
@@ -8,7 +8,9 @@ from pygit2.remotes import TransferProgress
 from pygit2.repository import Repository
 from rich.progress import Progress, TaskID
 from rich.text import Text
-from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from .. import log
 
@@ -24,7 +26,7 @@ class RemoteGitProgressIndicator(
         self._last_stats: TransferProgress | None = None
         self._task_name: str = ""
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "Self":
         self.p.__enter__()
         return self
 

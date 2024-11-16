@@ -1,13 +1,14 @@
-from typing import Literal, TypeAlias, TypedDict
+from typing import Literal, TypeAlias, TypedDict, TYPE_CHECKING
 
-from typing_extensions import NotRequired
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
 
 
 class ImageComboDecl(TypedDict):
     id: str
     display_name: str
     packages: list[str]
-    postinst_msgid: NotRequired[str]
+    postinst_msgid: "NotRequired[str]"
 
 
 class DeviceVariantDecl(TypedDict):
@@ -29,4 +30,4 @@ class ProvisionerConfig(TypedDict):
     ruyi_provisioner_config: ProvisionerConfigVersion
     devices: list[DeviceDecl]
     image_combos: list[ImageComboDecl]
-    postinst_messages: NotRequired[dict[str, str]]
+    postinst_messages: "NotRequired[dict[str, str]]"

@@ -1,9 +1,10 @@
 import abc
 import os
 import pathlib
-from typing import Callable, Generic, MutableMapping, Protocol, TypeVar
+from typing import Callable, Generic, MutableMapping, Protocol, TypeVar, TYPE_CHECKING
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from . import api
 from . import paths
@@ -136,7 +137,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
     def root(self) -> pathlib.Path:
         return self._phctx.plugin_root
 
-    def make_sub_loader(self, originating_file: pathlib.Path) -> Self:
+    def make_sub_loader(self, originating_file: pathlib.Path) -> "Self":
         return self.__class__(
             self._phctx,
             originating_file,

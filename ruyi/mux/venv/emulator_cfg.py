@@ -1,7 +1,8 @@
 import os
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
@@ -25,7 +26,7 @@ class ResolvedEmulatorProg:
         prog_install_root: os.PathLike[Any],
         profile: ProfileProxy,
         sysroot: os.PathLike[Any] | None,
-    ) -> Self:
+    ) -> "Self":
         return cls(
             get_display_name_for_emulator(prog, prog_install_root),
             prog.get_binfmt_misc_str(prog_install_root),

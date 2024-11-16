@@ -3,9 +3,10 @@ import enum
 import json
 import sys
 from types import TracebackType
-from typing import BinaryIO, TypedDict
+from typing import BinaryIO, TypedDict, TYPE_CHECKING
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 if sys.version_info >= (3, 11):
 
@@ -32,7 +33,7 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
             out = sys.stdout.buffer
         self.out = out
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "Self":
         return self
 
     def __exit__(
