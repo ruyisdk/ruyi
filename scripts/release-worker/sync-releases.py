@@ -185,12 +185,22 @@ def download_gh_release_asset_to(
     r = github_get(asset["url"], MIME_OCTET_STREAM, stream=True)
     chunk_size = 16 * 1024
     LOG.log(f"downloading [cyan]{asset['url']}[/] to [cyan]{local}")
+
+    try:
+        trc = progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True)  # type: ignore[call-arg,unused-ignore]
+    except TypeError:
+        # rich < 12.0.0 does not support the styles we're asking here, so
+        # just downgrade UX in favor of basic usability in that case.
+        #
+        # see https://github.com/Textualize/rich/pull/1992
+        trc = progress.TimeRemainingColumn()
+
     columns = (
         progress.SpinnerColumn(),
         progress.BarColumn(),
         progress.DownloadColumn(),
         progress.TransferSpeedColumn(),
-        progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True),
+        trc,
     )
     with open(local, "wb") as f:
         with progress.Progress(*columns, console=LOG) as pg:

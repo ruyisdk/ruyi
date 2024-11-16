@@ -2,6 +2,7 @@ import abc
 import mmap
 import os
 import subprocess
+from typing import Any
 
 import requests
 from rich import progress
@@ -205,20 +206,42 @@ class PythonRequestsFetcher(BaseFetcher):
         if total_len_str := r.headers.get("Content-Length"):
             total_len = int(total_len_str) + start_from
 
+        try:
+            trc = progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True)  # type: ignore[call-arg,unused-ignore]
+        except TypeError:
+            # rich < 12.0.0 does not support the styles we're asking here, so
+            # just downgrade UX in favor of basic usability in that case.
+            #
+            # see https://github.com/Textualize/rich/pull/1992
+            trc = progress.TimeRemainingColumn()
+
         columns = (
             progress.SpinnerColumn(),
             progress.BarColumn(),
             progress.DownloadColumn(),
             progress.TransferSpeedColumn(),
-            progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True),
+            trc,
         )
         dest_filename = os.path.basename(dest)
         with open(dest, open_mode) as f:
             with progress.Progress(*columns, console=log.LOG_CONSOLE) as pg:
-                task = pg.add_task(dest_filename, total=total_len, completed=start_from)
+                indeterminate = total_len is None
+                kwargs: dict[str, Any]
+                if indeterminate:
+                    # be compatible with rich <= 12.3.0 where add_task()'s `total`
+                    # parameter cannot be None
+                    # see https://github.com/Textualize/rich/commit/052b15785876ad85
+                    kwargs = {"start": False}
+                else:
+                    kwargs = {"total": total_len}
+
+                task = pg.add_task(dest_filename, completed=start_from, **kwargs)
                 for chunk in r.iter_content(self.chunk_size):
                     f.write(chunk)
-                    pg.advance(task, len(chunk))
+                    # according to the docs it's probably not okay to pulse the
+                    # progress bar if the total number of steps is not yet known
+                    if not indeterminate:
+                        pg.advance(task, len(chunk))
 
         return True
 
