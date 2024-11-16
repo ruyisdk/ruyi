@@ -1,6 +1,6 @@
-from tomlkit import TOMLDocument
 from tomlkit import document, nl, string, table
 from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
+from tomlkit.toml_document import TOMLDocument
 
 from .pkg_manifest import (
     BinaryDeclType,

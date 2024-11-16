@@ -6,8 +6,9 @@ import re
 import sys
 from typing import Any, TypeGuard, cast
 
-from tomlkit import TOMLDocument, document, table
+from tomlkit import document, table
 from tomlkit.items import AoT, Table
+from tomlkit.toml_document import TOMLDocument
 
 from .. import log
 from ..cli.cmd import AdminCommand
