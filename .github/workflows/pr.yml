@@ -72,3 +72,11 @@ jobs:
         run: poetry run pylic list
       - name: Check license compatibility with pylic
         run: poetry run pylic check
+
+  shellcheck:
+    name: Lint shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint with shellcheck
+        run: ./scripts/lint-shell-scripts.sh

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # we're to be placed here
 cd /tmp
 

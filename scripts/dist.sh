@@ -28,6 +28,7 @@ do_inner() {
 
     if [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]]; then
         cd /home/b
+        # shellcheck disable=SC1091
         . ./venv/bin/activate
     else
         # we're running in the host environment
@@ -138,13 +139,15 @@ main() {
         do_inner "$@"
     fi
 
-    local build_arch="$(convert_uname_arch_to_ruyi "$(uname -m)")"
+    local host_arch="$1"
+    local build_arch
     local build_arch_is_officially_supported=false
+
+    build_arch="$(convert_uname_arch_to_ruyi "$(uname -m)")"
     if is_docker_dist_build_supported "$build_arch"; then
         build_arch_is_officially_supported=true
     fi
 
-    local host_arch="$1"
     if [[ -z $host_arch ]]; then
         host_arch="$build_arch"
         echo "usage: $0 [arch]" >&2
@@ -169,7 +172,7 @@ main() {
             # On the other hand, if the build arch is supported, when
             # $host_arch differs from $build_arch we can indeed be sure that
             # the build will fail.
-            if [[ $build_arch != $host_arch ]]; then
+            if [[ $build_arch != "$host_arch" ]]; then
                 if "$build_arch_is_officially_supported"; then
                     echo "error: cross building is not possible with Nuitka" >&2
                     echo "info: to our knowledge, $host_arch is not the same as $build_arch" >&2
