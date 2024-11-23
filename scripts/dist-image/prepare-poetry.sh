@@ -2,7 +2,8 @@
 
 set -e
 
-export MAKEFLAGS="-j$(nproc)"
+MAKEFLAGS="-j$(nproc)"
+export MAKEFLAGS
 
 # poetry should be put into its own venv to avoid contaminating the dist build
 # venv; otherwise nuitka can and will see additional imports leading to bloat

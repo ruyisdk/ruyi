@@ -1,3 +1,4 @@
+#!/bin/bash
 # this file is meant to be sourced
 
 _COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20240827"
