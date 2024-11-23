@@ -2,6 +2,8 @@ import abc
 import re
 from typing import Literal, Tuple
 
+import semver
+
 from .pkg_manifest import BoundPackageManifest, is_prerelease
 from .repo import MetadataRepo
 
@@ -80,10 +82,21 @@ class NameAtom(Atom):
             return None
 
 
+def fix_version_matcher_for_semver2(match_expr: str) -> str:
+    # equivalent of https://github.com/python-semver/python-semver/pull/362
+    # for semver 2.x
+    if match_expr and match_expr[0] in "0123456789":
+        return f"=={match_expr}"
+    return match_expr
+
+
 class ExprAtom(Atom):
     def __init__(self, s: str, name: str, expr: str) -> None:
         super().__init__(s, "expr")
         self.exprs = expr.split(",")
+
+        if semver.__version__ < "3":
+            self.exprs = list(map(fix_version_matcher_for_semver2, self.exprs))
 
         self.category, self.name = split_category(name)
 
