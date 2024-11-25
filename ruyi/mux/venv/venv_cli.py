@@ -74,7 +74,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     tc_atoms_str: list[str] | None = args.toolchain
     emu_atom_str: str | None = args.emulator
     sysroot_atom_str: str | None = args.sysroot_from
-    host = get_native_host()
+    host = str(get_native_host())
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache

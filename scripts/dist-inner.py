@@ -28,12 +28,31 @@ INFO = Console(stderr=True, style="bold green", force_terminal=True, highlight=F
 LGPL_MODULES: Iterable[str] = ()
 
 
+def make_canonicalized_host_for_progcache() -> str:
+    # Similar to ruyipkg/host.py but in the format of f"{os}-{arch}"
+    # (separated with a hyphen instead of slash)
+    os = sys.platform
+    if os == "win32":
+        os = "windows"
+
+    arch = platform.machine().lower()
+    match arch:
+        case "amd64" | "em64t":
+            arch = "x86_64"
+        case "arm64":
+            arch = "aarch64"
+        case "x86":
+            arch = "i686"
+
+    return f"{os}-{arch}"
+
+
 def main() -> None:
     epoch = int(time.time())
 
-    arch = platform.machine()
+    target_host = make_canonicalized_host_for_progcache()
     vers = get_versions()
-    INFO.print(f"Target arch              : [cyan]{arch}")
+    INFO.print(f"Target host              : [cyan]{target_host}")
     INFO.print(f"Project Git commit       : [cyan]{vers['git_commit']}")
     INFO.print(f"Project SemVer           : [cyan]{vers['semver']}")
     INFO.print(f"Version for use by Nuitka: [cyan]{vers['nuitka_ver']}")
@@ -77,7 +96,7 @@ def main() -> None:
         f"--output-dir={build_root}",
         "--no-deployment-flag=self-execution",
         f"--product-version={vers['nuitka_ver']}",
-        f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}/{arch}",
+        f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}/{target_host}",
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",

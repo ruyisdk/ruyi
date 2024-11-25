@@ -233,7 +233,7 @@ class BinaryDecl:
 
     @property
     def is_available_for_current_host(self) -> bool:
-        return get_native_host() in self._data
+        return str(get_native_host()) in self._data
 
 
 class BlobDecl:

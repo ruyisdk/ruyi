@@ -11,7 +11,7 @@ from typing import Iterable, TypedDict, TYPE_CHECKING
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .host import canonicalize_host_str, get_native_host
+from .host import RuyiHost, canonicalize_host_str, get_native_host
 from .. import is_porcelain, log
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
@@ -393,7 +393,7 @@ def do_install_atoms(
     mr: MetadataRepo,
     atom_strs: set[str],
     *,
-    canonicalized_host: str,
+    canonicalized_host: str | RuyiHost,
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
@@ -436,7 +436,7 @@ def do_install_binary_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
-    canonicalized_host: str,
+    canonicalized_host: str | RuyiHost,
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
@@ -444,7 +444,7 @@ def do_install_binary_pkg(
     assert bm is not None
 
     pkg_name = pm.name_for_installation
-    install_root = config.global_binary_install_root(canonicalized_host, pkg_name)
+    install_root = config.global_binary_install_root(str(canonicalized_host), pkg_name)
     if is_root_likely_populated(install_root):
         if not reinstall:
             log.I(f"skipping already installed package [green]{pkg_name}[/green]")
@@ -480,7 +480,7 @@ def do_install_binary_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
-    canonicalized_host: str,
+    canonicalized_host: str | RuyiHost,
     fetch_only: bool,
     install_root: str,
 ) -> int:
@@ -490,7 +490,7 @@ def do_install_binary_pkg_to(
     dfs = pm.distfiles()
 
     pkg_name = pm.name_for_installation
-    distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
+    distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
     if not distfiles_for_host:
         log.F(
             f"package [green]{pkg_name}[/green] declares no binary for host {canonicalized_host}"
