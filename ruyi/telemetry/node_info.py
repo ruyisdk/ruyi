@@ -38,7 +38,6 @@ class RISCVMachineInfo(TypedDict):
     mmu: str
 
 
-
 def probe_for_libc() -> tuple[str, str]:
     r = platform.libc_ver()
     if r[0] and r[1]:
