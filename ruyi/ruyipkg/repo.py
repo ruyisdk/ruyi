@@ -243,12 +243,17 @@ class MetadataRepo:
         log.D(f"{self.root} does not exist, cloning from {self.remote}")
 
         with RemoteGitProgressIndicator() as pr:
-            self.repo = clone_repository(
+            repo = clone_repository(
                 self.remote,
                 self.root,
                 checkout_branch=self.branch,
                 callbacks=pr,
             )
+            # pygit2's type info is incomplete as of 1.16.0, and pyright
+            # will not look at the typeshed stub for the appropriate signature
+            # because pygit2 has the py.typed marker. Workaround the error for
+            # now by explicitly casting to the right runtime type.
+            self.repo = cast(Repository, repo)  # type: ignore[redundant-cast]
 
         return self.repo
 
