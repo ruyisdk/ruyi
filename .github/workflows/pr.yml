@@ -22,7 +22,7 @@ on:
 
 jobs:
   lint:
-    name: 'ruff & mypy & pytest (Python ${{ matrix.python }})'
+    name: 'lint & typecheck & test (Python ${{ matrix.python }})'
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -50,6 +50,8 @@ jobs:
         run: poetry run ruff check
       - name: Type-check with mypy
         run: poetry run mypy
+      - name: Type-check with pyright
+        run: poetry run -- pyright --pythonversion ${{ matrix.python }}
       - name: Test with pytest
         run: poetry run pytest
 

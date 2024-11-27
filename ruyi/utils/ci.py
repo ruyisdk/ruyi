@@ -2,7 +2,7 @@ from typing import Mapping
 
 
 def is_running_in_ci(os_environ: Mapping[str, str]) -> bool:
-    '''Simplified and quick CI check meant for basic judgement.'''
+    """Simplified and quick CI check meant for basic judgement."""
     if os_environ.get("CI", "") == "true":
         return True
     elif os_environ.get("TF_BUILD", "") == "True":

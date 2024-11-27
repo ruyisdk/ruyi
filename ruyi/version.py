@@ -1,12 +1,17 @@
 import importlib.metadata
+from typing import TYPE_CHECKING
 
 import packaging.version
 
-try:
-    from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
-except ModuleNotFoundError:
-    # semver 2.x
-    from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
+if TYPE_CHECKING:
+    # pyright only works with semver 3.x
+    from semver.version import Version
+else:
+    try:
+        from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+    except ModuleNotFoundError:
+        # semver 2.x
+        from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
 # NOTE: one cannot print logs in the version helpers, because the version info
 # is initialized so early (before argparse can look at argv because --version

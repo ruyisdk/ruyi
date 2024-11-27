@@ -177,20 +177,15 @@ We are about to download and install the following packages for your device:
 
     # compose a partition map for each image pkg installed
     pkg_part_maps = {pkg: make_pkg_part_map(config, mr, pkg) for pkg in pkg_atoms}
-    all_parts = list(
-        set(
-            itertools.chain(
-                *(pkg_part_map.keys() for pkg_part_map in pkg_part_maps.values())
-            )
-        )
-    )
+    all_parts: list[PartitionKind] = []
+    for pkg_part_map in pkg_part_maps.values():
+        all_parts.extend(pkg_part_map.keys())
 
     # prompt user to give paths to target block device(s)
-    requested_host_blkdevs = set(
-        itertools.chain(
-            *(strat[1].need_host_blkdevs(all_parts) for strat in strategies)
-        )
-    )
+    requested_host_blkdevs: list[PartitionKind] = []
+    for pkg, strat in strategies:
+        requested_host_blkdevs.extend(strat.need_host_blkdevs(all_parts))
+
     host_blkdev_map: PartitionMapDecl = {}
     if requested_host_blkdevs:
         log.stdout(

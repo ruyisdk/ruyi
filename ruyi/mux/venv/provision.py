@@ -28,7 +28,9 @@ class EmbeddedLoader(BaseLoader):
         self._payloads = payloads
 
     def get_source(
-        self, _: Environment, template: str
+        self,
+        environment: Environment,
+        template: str,
     ) -> Tuple[str, str | None, Callable[[], bool] | None]:
         payload = self._payloads.get(template)
         if payload is None:
