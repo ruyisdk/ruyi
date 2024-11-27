@@ -29,9 +29,7 @@ class PorcelainEntity(TypedDict):
 
 class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
     def __init__(self, out: BinaryIO | None = None) -> None:
-        if out is None:
-            out = sys.stdout.buffer
-        self.out = out
+        self.out = sys.stdout.buffer if out is None else out
 
     def __enter__(self) -> "Self":
         return self
