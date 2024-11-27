@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 
+import os
+import sys
+import ruyi
+from ruyi import log
+from ruyi.utils.ci import is_running_in_ci
+
+
+def is_allowed_to_run_as_root() -> bool:
+    if ruyi.is_env_var_truthy(ruyi.ENV_FORCE_ALLOW_ROOT):
+        return True
+    if is_running_in_ci(os.environ):
+        # CI environments are usually considered to be controlled, and safe
+        # for root usage.
+        return True
+    return False
+
 
 def entrypoint() -> None:
-    import sys
-    import ruyi
-    from ruyi import log
-
-    if ruyi.is_running_as_root() and not ruyi.is_env_var_truthy(
-        ruyi.ENV_FORCE_ALLOW_ROOT
-    ):
-        log.F("refusing to run as super user without explicit consent")
+    if ruyi.is_running_as_root() and not is_allowed_to_run_as_root():
+        log.F("refusing to run as super user outside CI without explicit consent")
 
         choices = ", ".join(f"'{x}'" for x in ruyi.TRUTHY_ENV_VAR_VALUES)
         log.I(

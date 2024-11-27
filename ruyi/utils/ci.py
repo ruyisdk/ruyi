@@ -1,6 +1,15 @@
 from typing import Mapping
 
 
+def is_running_in_ci(os_environ: Mapping[str, str]) -> bool:
+    '''Simplified and quick CI check meant for basic judgement.'''
+    if os_environ.get("CI", "") == "true":
+        return True
+    elif os_environ.get("TF_BUILD", "") == "True":
+        return True
+    return False
+
+
 def probe_for_ci(os_environ: Mapping[str, str]) -> str | None:
     # https://www.appveyor.com/docs/environment-variables/
     if os_environ.get("APPVEYOR", "").lower() == "true":
