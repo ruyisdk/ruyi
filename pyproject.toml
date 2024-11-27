@@ -61,6 +61,7 @@ safe_licenses = [
   "Apache Software License",
   "BSD License",
   "GPLv2 with linking exception",
+  "MIT",  # pyright spells "MIT License" differently
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
   "Python Software Foundation License",
@@ -83,6 +84,7 @@ tomli = { version = ">=1.2", python = "<3.11" }
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
+pyright = "^1.1.389"
 pytest = "^8.2.2"
 ruff = "^0.3.4"
 typing-extensions = "^4.12.2"
