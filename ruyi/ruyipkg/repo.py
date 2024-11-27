@@ -477,8 +477,9 @@ class MetadataRepo:
                 try:
                     contents = fp.read()
                 except UnicodeDecodeError:
-                    log.F(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
-            cache.add(f, contents)  # may fail but failures are harmless
+                    log.W(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
+                    continue
+                cache.add(f, contents)  # may fail but failures are harmless
 
         cache.finalize()
         self._news_cache = cache
