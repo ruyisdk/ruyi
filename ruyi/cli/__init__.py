@@ -67,6 +67,7 @@ def main(argv: list[str]) -> int:
         return 1
 
     if gc.telemetry is not None:
+        gc.telemetry.print_telemetry_notice()
         gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
 
     try:
