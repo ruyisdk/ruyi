@@ -168,18 +168,36 @@ jobs:
           path: /build/${{ matrix.build_output_name }}
           compression-level: 0  # the Nuitka onefile payload is already compressed
 
+  dist-src:
+    name: Source archive
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reproducibly pack the sources
+        id: pack_sources
+        run: ./scripts/make-reproducible-source-tarball.sh /tmp
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pack_sources.outputs.artifact_name }}
+          path: /tmp/${{ steps.pack_sources.outputs.artifact_name }}
+          compression-level: 0  # the archive is already compressed
+
   release:
     name: Make a GitHub Release
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs:
       - dist
+      - dist-src
+      - dist-windows
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version-file: 'pyproject.toml'
-      - name: Download artifacts for release
+      - name: Download dist build artifacts for release
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ needs.dist.outputs.run_id }}
