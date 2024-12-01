@@ -184,7 +184,8 @@ def ensure_release_assets(
         LOG.log(f"removing [cyan]{local_file}")
         local_file.unlink(missing_ok=True)
         download_gh_release_asset_to(asset, local_file)
-        local_file.chmod(0o755)
+        filemode = 0o755 if RE_TARBALL_NAME.search(local_file.name) is None else 0o644
+        local_file.chmod(filemode)
 
 
 def download_gh_release_asset_to(
