@@ -36,6 +36,7 @@ Environment variables:
 * {ENV_RSYNC_REMOTE_PASS}: Password for rsync authentication if necessary
 """
 
+RE_TARBALL_NAME = re.compile(r"\.tar(?:\.Z|\.gz|\.bz2|\.lz|\.lzma|\.xz|\.zst)?$")
 RE_RUYI_RELEASE_ASSET_NAME = re.compile(
     r"^ruyi-(?P<ver>[0-9a-z.-]+)\.(?P<platform>[0-9a-z-]+)(?P<exe_suffix>\.exe)?$"
 )
@@ -155,6 +156,9 @@ def main(argv: list[str]) -> int:
 
 
 def transform_asset_name(gh_artifact_name: str) -> str:
+    if RE_TARBALL_NAME.search(gh_artifact_name) is not None:
+        return gh_artifact_name
+
     m = RE_RUYI_RELEASE_ASSET_NAME.match(gh_artifact_name)
     if m is None:
         return gh_artifact_name
