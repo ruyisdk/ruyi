@@ -28,6 +28,8 @@ def main(argv: list[str]) -> int:
     # action:
     #
     # release-artifacts-dir
+    # ├── ruyi-XXXXXXXX.tar.gz
+    # │   └── ruyi-XXXXXXXX.tar.gz
     # ├── ruyi.amd64
     # │   └── ruyi
     # ├── ruyi.arm64
@@ -40,6 +42,7 @@ def main(argv: list[str]) -> int:
     # we want to organize it into the following layout:
     #
     # release-artifacts-dir
+    # ├── ruyi-XXXXXXXX.tar.gz
     # ├── ruyi-<semver>.amd64
     # ├── ruyi-<semver>.arm64
     # └── ruyi-<semver>.riscv64
@@ -54,6 +57,15 @@ def main(argv: list[str]) -> int:
     wanted_names = {f"ruyi.{arch}" for arch in included_arches}
     names = os.listdir(".")
     for name in names:
+        if name.endswith(".tar.gz"):
+            src_path = os.path.join(name, name)
+            tmp_path = f"{name}.new"
+            print(f"moving tarball {src_path} outside")
+            os.rename(src_path, tmp_path)
+            os.rmdir(name)
+            os.rename(tmp_path, name)
+            continue
+
         if not name.startswith("ruyi"):
             print(f"ignoring {name}")
             continue
