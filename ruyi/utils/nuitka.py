@@ -22,11 +22,11 @@ def get_argv0() -> str:
     import ruyi
 
     try:
-        if ruyi.__compiled__.onefile_argv0 is not None:
-            return ruyi.__compiled__.onefile_argv0
+        if ruyi.__compiled__.original_argv0 is not None:
+            return ruyi.__compiled__.original_argv0
     except AttributeError:
         # Either we're not packaged with Nuitka, or the Nuitka used is
-        # without our onefile_argv0 patch, in which case we cannot do any
+        # without our original_argv0 patch, in which case we cannot do any
         # better than simply returning sys.argv[0].
         pass
 
