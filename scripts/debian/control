@@ -1,0 +1,38 @@
+Source: python-ruyi
+Section: python
+Priority: optional
+Maintainer: weilinfox <caiweilin@iscas.ac.cn>
+Uploaders: weilinfox <caiweilin@iscas.ac.cn>
+Build-Depends: debhelper-compat (= 13),
+Build-Depends-Indep: dh-python,
+                     pybuild-plugin-pyproject,
+                     python3-all,
+                     python3-arpy <!nocheck>,
+                     python3-pytest <!nocheck>,
+                     python3-poetry-core,
+                     python3-rich <!nocheck>,
+                     python3-setuptools,
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/ruyisdk/ruyi
+Vcs-Git:
+Vcs-Browser:
+
+Package: python-ruyi-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+Recommends: python3-ruyi
+Description: documentation for ruyi
+ Ruyi is a package manager for RuyiSDK.
+
+Package: python3-ruyi
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+         ${python3:Depends},
+Suggests: python-ruyi-doc,
+Provides: ruyi
+Description: The package manager for RuyiSDK.
+
