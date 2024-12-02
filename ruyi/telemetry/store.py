@@ -1,4 +1,5 @@
 import calendar
+import datetime
 import json
 import os
 import pathlib
@@ -54,9 +55,18 @@ def next_utc_weekday(wday: int, now: float | None = None) -> int:
 
 
 class TelemetryStore:
-    def __init__(self, store_root: os.PathLike[Any], local_mode: bool) -> None:
+    def __init__(
+        self,
+        store_root: os.PathLike[Any],
+        local_mode: bool,
+        upload_consent_time: datetime.datetime | None,
+        api_url: str | None,
+    ) -> None:
         self.store_root = pathlib.Path(store_root)
         self.local_mode = local_mode
+        self.upload_consent_time = upload_consent_time
+        self.api_url = api_url
+
         self._events: list[TelemetryEvent] = []
         self._discard_events = False
 

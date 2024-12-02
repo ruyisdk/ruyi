@@ -1,3 +1,4 @@
+import datetime
 import locale
 import os.path
 from os import PathLike
@@ -69,6 +70,8 @@ class GlobalConfigInstallationType(TypedDict):
 
 class GlobalConfigTelemetryType(TypedDict):
     mode: "NotRequired[str]"
+    upload_consent: "NotRequired[datetime.datetime]"
+    api_url: "NotRequired[str]"
 
 
 class GlobalConfigRootType(TypedDict):
@@ -95,6 +98,8 @@ class GlobalConfig:
         self._dirs = XDGBaseDir(DEFAULT_APP_NAME)
 
         self._telemetry_mode: str | None = None
+        self._telemetry_upload_consent: datetime.datetime | None = None
+        self._telemetry_api_url: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get("installation"):
@@ -120,6 +125,8 @@ class GlobalConfig:
 
         if tele_cfg := config_data.get("telemetry"):
             self._telemetry_mode = tele_cfg.get("mode", None)
+            self._telemetry_upload_consent = tele_cfg.get("upload_consent", None)
+            self._telemetry_api_url = tele_cfg.get("api_url", None)
 
     @property
     def lang_code(self) -> str:
@@ -158,7 +165,12 @@ class GlobalConfig:
             return self._telemetry_store
 
         local_mode = self.telemetry_mode == "local"
-        self._telemetry_store = TelemetryStore(self.telemetry_root, local_mode)
+        self._telemetry_store = TelemetryStore(
+            self.telemetry_root,
+            local_mode,
+            self._telemetry_upload_consent,
+            self._telemetry_api_url,
+        )
         return self._telemetry_store
 
     @property
