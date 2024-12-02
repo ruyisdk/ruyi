@@ -143,11 +143,21 @@ class TelemetryStore:
 
         return report_uuid_prefix % 7  # 0 is Monday
 
+    def has_upload_consent(self, time_now: float | None = None) -> bool:
+        if self.upload_consent_time is None:
+            return False
+        if time_now is None:
+            time_now = time.time()
+        return self.upload_consent_time.timestamp() <= time_now
+
     def print_telemetry_notice(self) -> None:
         if self.local_mode:
             return
 
         now = time.time()
+        if self.has_upload_consent(now):
+            log.D("user has consented to telemetry upload")
+            return
 
         upload_wday = self.upload_weekday()
         if upload_wday is None:
