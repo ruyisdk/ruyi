@@ -185,8 +185,10 @@ class ArchProfileStore:
     def __getitem__(self, profile_id: str) -> ProfileProxy:
         try:
             return self._profiles_cache[profile_id]
-        except KeyError:
-            raise KeyError(f"profile '{profile_id}' is not supported by this arch")
+        except KeyError as e:
+            raise KeyError(
+                f"profile '{profile_id}' is not supported by this arch"
+            ) from e
 
     def get(self, profile_id: str) -> ProfileProxy | None:
         return self._profiles_cache.get(profile_id)

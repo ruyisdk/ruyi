@@ -68,7 +68,4 @@ def main(argv: list[str]) -> int:
         gc.telemetry.print_telemetry_notice()
         gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
 
-    try:
-        return func(gc, args)
-    except Exception:
-        raise
+    return func(gc, args)
