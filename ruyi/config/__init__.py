@@ -71,8 +71,8 @@ class GlobalConfigInstallationType(TypedDict):
 
 class GlobalConfigTelemetryType(TypedDict):
     mode: "NotRequired[str]"
-    upload_consent: "NotRequired[datetime.datetime]"
-    api_url: "NotRequired[str]"
+    upload_consent: "NotRequired[datetime.datetime | str]"
+    pm_telemetry_url: "NotRequired[str]"
 
 
 class GlobalConfigRootType(TypedDict):
@@ -101,7 +101,7 @@ class GlobalConfig:
 
         self._telemetry_mode: str | None = None
         self._telemetry_upload_consent: datetime.datetime | None = None
-        self._telemetry_api_url: str | None = None
+        self._telemetry_pm_telemetry_url: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get("installation"):
@@ -127,8 +127,12 @@ class GlobalConfig:
 
         if tele_cfg := config_data.get("telemetry"):
             self._telemetry_mode = tele_cfg.get("mode", None)
-            self._telemetry_upload_consent = tele_cfg.get("upload_consent", None)
-            self._telemetry_api_url = tele_cfg.get("api_url", None)
+            self._telemetry_pm_telemetry_url = tele_cfg.get("pm_telemetry_url", None)
+
+            self._telemetry_upload_consent = None
+            if consent := tele_cfg.get("upload_consent", None):
+                if isinstance(consent, datetime.datetime):
+                    self._telemetry_upload_consent = consent
 
     @property
     def lang_code(self) -> str:
@@ -166,18 +170,20 @@ class GlobalConfig:
         if self._telemetry_store is not None:
             return self._telemetry_store
 
-        local_mode = self.telemetry_mode == "local"
-        self._telemetry_store = TelemetryStore(
-            self.telemetry_root,
-            local_mode,
-            self._telemetry_upload_consent,
-            self._telemetry_api_url,
-        )
+        self._telemetry_store = TelemetryStore(self)
         return self._telemetry_store
 
     @property
     def telemetry_mode(self) -> str:
         return self._telemetry_mode or "local"
+
+    @property
+    def telemetry_upload_consent_time(self) -> datetime.datetime | None:
+        return self._telemetry_upload_consent
+
+    @property
+    def override_pm_telemetry_url(self) -> str | None:
+        return self._telemetry_pm_telemetry_url
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")

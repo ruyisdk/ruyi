@@ -65,6 +65,22 @@ branch = "main"
 # If unset or empty, this default value is used: data will be collected but
 # nothing will get uploaded without explicit action by the user.
 mode = "local"
+# The time the user's consent is given to telemetry data uploading. If the
+# system time is later than the time given here, telemetry consent banner will
+# not be displayed any more each time `ruyi` is executed. The exact consent
+# time is also useful should the telemetry policy get updated in the future.
+#
+# To hide the consent banner, set it to the current local time, for example:
+#
+#     upload_consent = 2024-12-02T15:61:00+08:00
+#
+# The timestamp is intentionally invalid for you to notice and modify to your
+# need.
+upload_consent = ""
+# Override the telemetry server URL of the RuyiSDK package manager scope.
+# If unset, the repo-configured default is used; if set to empty, telemetry
+# uploading is disabled.
+#pm_telemetry_url = ""
 ```
 
 ### Environment variables

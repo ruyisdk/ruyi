@@ -1,11 +1,10 @@
 import calendar
-import datetime
 import json
 import os
 import pathlib
 import re
 import time
-from typing import Any, Iterable, cast
+from typing import TYPE_CHECKING, Iterable, cast
 import uuid
 
 from .. import log
@@ -13,6 +12,11 @@ from ..version import RUYI_SEMVER
 from .aggregate import UploadPayload, aggregate_events
 from .event import TelemetryEvent, is_telemetry_event
 from .node_info import NodeInfo, gather_node_info
+
+if TYPE_CHECKING:
+    # for avoiding circular import
+    from ..config import GlobalConfig
+
 
 # e.g. "run.202410201845.d06ca5d668e64fec833ed3e6eb926a2c.ndjson"
 RE_RAW_EVENT_FILENAME = re.compile(
@@ -55,17 +59,25 @@ def next_utc_weekday(wday: int, now: float | None = None) -> int:
 
 
 class TelemetryStore:
-    def __init__(
-        self,
-        store_root: os.PathLike[Any],
-        local_mode: bool,
-        upload_consent_time: datetime.datetime | None,
-        api_url: str | None,
-    ) -> None:
-        self.store_root = pathlib.Path(store_root)
-        self.local_mode = local_mode
-        self.upload_consent_time = upload_consent_time
-        self.api_url = api_url
+    def __init__(self, gc: "GlobalConfig") -> None:
+        self.store_root = pathlib.Path(gc.telemetry_root)
+        self.local_mode = gc.telemetry_mode == "local"
+        self.upload_consent_time = gc.telemetry_upload_consent_time
+
+        self.pm_api_url: str
+        _pm_cfg_src = "fallback"
+        if gc.override_pm_telemetry_url is not None:
+            _pm_cfg_src = "local config"
+            self.pm_api_url = gc.override_pm_telemetry_url
+        else:
+            self.pm_api_url = ""
+            for api_decl in gc.repo.config.telemetry_apis.values():
+                if api_decl.get("scope", "") == "pm":
+                    _pm_cfg_src = "repo"
+                    self.pm_api_url = api_decl.get("url", "")
+        log.D(
+            f"configured PM telemetry endpoint via {_pm_cfg_src}: {self.pm_api_url or '(n/a)'}"
+        )
 
         self._events: list[TelemetryEvent] = []
         self._discard_events = False

@@ -13,6 +13,7 @@ import yaml
 
 from .. import log
 from ..pluginhost import PluginHostContext
+from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .msg import RepoMessageStore
 from .news import NewsItemStore
@@ -69,12 +70,19 @@ class RepoConfigV1Mirror(TypedDict):
     urls: list[str]
 
 
+class RepoConfigV1Telemetry(TypedDict):
+    id: str
+    scope: TelemetryScope
+    url: str
+
+
 RepoConfigV1Type = TypedDict(
     "RepoConfigV1Type",
     {
         "ruyi-repo": str,
         "repo": "NotRequired[RepoConfigV1Repo]",
         "mirrors": list[RepoConfigV1Mirror],
+        "telemetry": "NotRequired[list[RepoConfigV1Telemetry]]",
     },
 )
 
@@ -96,9 +104,16 @@ class RepoConfig:
         self,
         mirrors: list[RepoConfigV1Mirror],
         repo: RepoConfigV1Repo | None,
+        telemetry_apis: list[RepoConfigV1Telemetry] | None,
     ) -> None:
         self.mirrors = {x["id"]: x["urls"] for x in mirrors}
         self.repo = repo
+
+        self.telemetry_apis: dict[str, RepoConfigV1Telemetry]
+        if telemetry_apis is not None:
+            self.telemetry_apis = {x["id"]: x for x in telemetry_apis}
+        else:
+            self.telemetry_apis = {}
 
     @classmethod
     def from_object(cls, obj: object) -> "RepoConfig":
@@ -125,14 +140,14 @@ class RepoConfig:
         if "doc_uri" in obj:
             v1_repo = {"doc_uri": obj["doc_uri"]}
 
-        return cls(v1_mirrors, v1_repo)
+        return cls(v1_mirrors, v1_repo, None)
 
     @classmethod
     def from_v1(cls, obj: object) -> "RepoConfig":
         if not validate_repo_config_v1(obj):
             # TODO: more detail in the error message
             raise RuntimeError("malformed v1 repo config")
-        return cls(obj["mirrors"], obj.get("repo"))
+        return cls(obj["mirrors"], obj.get("repo"), obj.get("telemetry"))
 
     def get_dist_urls_for_file(self, url: str) -> list[str]:
         u = parse.urlparse(url)
