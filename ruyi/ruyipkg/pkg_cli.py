@@ -44,9 +44,7 @@ class ListCommand(
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         verbose = args.verbose
 
-        mr = MetadataRepo(cfg)
-
-        augmented_pkgs = list(AugmentedPkg.yield_from_repo(mr))
+        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo))
 
         if is_porcelain():
             return do_list_porcelain(augmented_pkgs)
@@ -280,7 +278,7 @@ class ExtractCommand(
         atom_strs: set[str] = set(args.atom)
         log.D(f"about to extract for host {host}: {atom_strs}")
 
-        mr = MetadataRepo(cfg)
+        mr = cfg.repo
 
         for a_str in atom_strs:
             a = Atom.parse(a_str)
@@ -376,7 +374,7 @@ class InstallCommand(
         fetch_only = args.fetch_only
         reinstall = args.reinstall
 
-        mr = MetadataRepo(cfg)
+        mr = cfg.repo
 
         return do_install_atoms(
             cfg,

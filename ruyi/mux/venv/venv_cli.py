@@ -8,7 +8,6 @@ from ...cli.cmd import RootCommand
 from ...config import GlobalConfig
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.host import get_native_host
-from ...ruyipkg.repo import MetadataRepo
 from . import ConfiguredTargetTuple
 from .provision import render_template_str, VenvMaker
 
@@ -84,14 +83,14 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         )
         return 1
 
-    mr = MetadataRepo(config)
+    mr = config.repo
 
     profile = mr.get_profile(profile_name)
     if profile is None:
         log.F(f"profile '{profile_name}' not found")
         return 1
 
-    target_arch = ''
+    target_arch = ""
     seen_target_tuples: set[str] = set()
     targets: list[ConfiguredTargetTuple] = []
     warn_differing_target_arch = False
@@ -101,7 +100,9 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         tc_atom = Atom.parse(tc_atom_str)
         tc_pm = tc_atom.match_in_repo(mr, config.include_prereleases)
         if tc_pm is None:
-            log.F(f"cannot match a toolchain package with [yellow]{tc_atom_str}[/yellow]")
+            log.F(
+                f"cannot match a toolchain package with [yellow]{tc_atom_str}[/yellow]"
+            )
             return 1
 
         if tc_pm.toolchain_metadata is None:
@@ -122,8 +123,12 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
         target_tuple = tc_pm.toolchain_metadata.target
         if target_tuple in seen_target_tuples:
-            log.F(f"the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains")
-            log.I("for now, only toolchains with differing target tuples can co-exist in one virtual environment")
+            log.F(
+                f"the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
+            )
+            log.I(
+                "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
+            )
             return 1
 
         toolchain_root = config.lookup_binary_install_dir(
@@ -205,7 +210,9 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             # this is mostly true given most packages don't contain both
             "cc_flavor": "clang" if tc_pm.toolchain_metadata.has_clang else "gcc",
             # same for binutils provider flavor
-            "binutils_flavor": "llvm" if tc_pm.toolchain_metadata.has_llvm else "binutils",
+            "binutils_flavor": (
+                "llvm" if tc_pm.toolchain_metadata.has_llvm else "binutils"
+            ),
             "gcc_install_dir": gcc_install_dir,
         }
         log.D(f"configuration for {target_tuple}: {configured_target}")
@@ -221,7 +228,9 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
     if warn_differing_target_arch:
         log.W("multiple toolchains specified with differing target architecture")
-        log.I(f"using the target architecture of the first toolchain: [yellow]{target_arch}[/]")
+        log.I(
+            f"using the target architecture of the first toolchain: [yellow]{target_arch}[/]"
+        )
 
     # Now handle the emulator.
     emu_progs = None
@@ -248,7 +257,8 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
         for prog in emu_progs:
             if not profile.check_emulator_flavor(
-                prog.flavor, emu_pm.emulator_metadata.flavors,
+                prog.flavor,
+                emu_pm.emulator_metadata.flavors,
             ):
                 log.F(
                     f"the package [yellow]{emu_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"

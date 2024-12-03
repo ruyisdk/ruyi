@@ -74,6 +74,16 @@ urls = [
   "https://mirrors.bar.org/dist/foo",
   "https://mirrors.baz.edu.cn/quux",
 ]
+
+[[telemetry]]
+id = "ruyisdk-pm"
+scope = "pm"
+url = "https://test.example.ruyisdk.org/v1/analytics/pm"
+
+[[telemetry]]
+id = "ruyisdk-repo"
+scope = "repo"
+url = "https://test.example.ruyisdk.org/v1/analytics/repo/ruyisdk"
 ```
 
 其中：
@@ -81,6 +91,9 @@ urls = [
 * `repo.doc_uri` 字段含义同旧版配置的 `doc_uri` 字段。
 * `mirror` 是镜像源定义，其中 ID 为 `ruyi-dist` 的镜像具备特殊含义：其
   `urls` 字段含义是旧版配置的 `dist` 字段含义的超集。
+* `telemetry` 是遥测服务端配置，其中 `scope` 的含义为：
+    * `pm` 表示此遥测服务端将被用于 RuyiSDK 包管理器相关的用户使用数据收集；
+    * `repo` 表示此遥测服务端将被用于当前软件源的用户使用数据收集。
 
 #### 镜像源定义
 

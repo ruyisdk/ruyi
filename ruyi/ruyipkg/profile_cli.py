@@ -3,7 +3,6 @@ import argparse
 from .. import log
 from ..config import GlobalConfig
 from .pkg_cli import ListCommand
-from .repo import MetadataRepo
 
 
 class ListProfilesCommand(
@@ -13,7 +12,7 @@ class ListProfilesCommand(
 ):
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        mr = MetadataRepo(cfg)
+        mr = cfg.repo
 
         for arch in mr.get_supported_arches():
             for p in mr.iter_profiles_for_arch(arch):

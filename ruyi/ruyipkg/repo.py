@@ -7,22 +7,15 @@ import sys
 from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, TYPE_CHECKING, cast
 from urllib import parse
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
-
 from pygit2 import clone_repository
 from pygit2.repository import Repository
 import yaml
 
 from .. import log
-from ..config import GlobalConfig
 from ..pluginhost import PluginHostContext
+from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
+from ..utils.url import urljoin_for_sure
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
@@ -34,11 +27,16 @@ from .pkg_manifest import (
 from .profile import PluginProfileProvider, ProfileProxy
 from .provisioner import ProvisionerConfig
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
-def urljoin_for_sure(base: str, url: str) -> str:
-    if base.endswith("/"):
-        return parse.urljoin(base, url)
-    return parse.urljoin(base + "/", url)
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
+    # for avoiding circular import
+    from ..config import GlobalConfig
 
 
 class RepoConfigV0Type(TypedDict):
@@ -67,12 +65,19 @@ class RepoConfigV1Mirror(TypedDict):
     urls: list[str]
 
 
+class RepoConfigV1Telemetry(TypedDict):
+    id: str
+    scope: TelemetryScope
+    url: str
+
+
 RepoConfigV1Type = TypedDict(
     "RepoConfigV1Type",
     {
         "ruyi-repo": str,
         "repo": "NotRequired[RepoConfigV1Repo]",
         "mirrors": list[RepoConfigV1Mirror],
+        "telemetry": "NotRequired[list[RepoConfigV1Telemetry]]",
     },
 )
 
@@ -94,9 +99,16 @@ class RepoConfig:
         self,
         mirrors: list[RepoConfigV1Mirror],
         repo: RepoConfigV1Repo | None,
+        telemetry_apis: list[RepoConfigV1Telemetry] | None,
     ) -> None:
         self.mirrors = {x["id"]: x["urls"] for x in mirrors}
         self.repo = repo
+
+        self.telemetry_apis: dict[str, RepoConfigV1Telemetry]
+        if telemetry_apis is not None:
+            self.telemetry_apis = {x["id"]: x for x in telemetry_apis}
+        else:
+            self.telemetry_apis = {}
 
     @classmethod
     def from_object(cls, obj: object) -> "RepoConfig":
@@ -123,14 +135,14 @@ class RepoConfig:
         if "doc_uri" in obj:
             v1_repo = {"doc_uri": obj["doc_uri"]}
 
-        return cls(v1_mirrors, v1_repo)
+        return cls(v1_mirrors, v1_repo, None)
 
     @classmethod
     def from_v1(cls, obj: object) -> "RepoConfig":
         if not validate_repo_config_v1(obj):
             # TODO: more detail in the error message
             raise RuntimeError("malformed v1 repo config")
-        return cls(obj["mirrors"], obj.get("repo"))
+        return cls(obj["mirrors"], obj.get("repo"), obj.get("telemetry"))
 
     def get_dist_urls_for_file(self, url: str) -> list[str]:
         u = parse.urlparse(url)
@@ -173,8 +185,10 @@ class ArchProfileStore:
     def __getitem__(self, profile_id: str) -> ProfileProxy:
         try:
             return self._profiles_cache[profile_id]
-        except KeyError:
-            raise KeyError(f"profile '{profile_id}' is not supported by this arch")
+        except KeyError as e:
+            raise KeyError(
+                f"profile '{profile_id}' is not supported by this arch"
+            ) from e
 
     def get(self, profile_id: str) -> ProfileProxy | None:
         return self._profiles_cache.get(profile_id)
@@ -184,7 +198,7 @@ class ArchProfileStore:
 
 
 class MetadataRepo:
-    def __init__(self, gc: GlobalConfig) -> None:
+    def __init__(self, gc: "GlobalConfig") -> None:
         self._gc = gc
         self.root = gc.get_repo_dir()
         self.remote = gc.get_repo_url()
@@ -262,7 +276,7 @@ class MetadataRepo:
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
     @property
-    def global_config(self) -> GlobalConfig:
+    def global_config(self) -> "GlobalConfig":
         return self._gc
 
     @property

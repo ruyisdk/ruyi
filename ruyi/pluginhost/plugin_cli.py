@@ -2,7 +2,6 @@ import argparse
 
 from ..cli.cmd import AdminCommand
 from ..config import GlobalConfig
-from ..ruyipkg.repo import MetadataRepo
 
 
 class AdminRunPluginCommand(
@@ -31,5 +30,4 @@ class AdminRunPluginCommand(
         cmd_name = args.cmd_name
         cmd_args = args.cmd_args
 
-        mr = MetadataRepo(cfg)
-        return mr.run_plugin_cmd(cmd_name, cmd_args)
+        return cfg.repo.run_plugin_cmd(cmd_name, cmd_args)
