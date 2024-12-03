@@ -45,7 +45,7 @@ def entrypoint() -> None:
 
         del ssl_patch
 
-    from ruyi.cli import main
+    from ruyi.cli.main import main
     from ruyi.utils.nuitka import get_nuitka_self_exe, get_argv0
 
     # note down our own executable path, for identity-checking in mux, if not
