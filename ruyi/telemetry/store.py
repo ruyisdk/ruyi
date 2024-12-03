@@ -7,8 +7,12 @@ import time
 from typing import TYPE_CHECKING, Iterable, cast
 import uuid
 
+import requests
+
+
 from .. import log
-from ..version import RUYI_SEMVER
+from ..version import RUYI_SEMVER, RUYI_USER_AGENT
+from ..utils.url import urljoin_for_sure
 from .aggregate import UploadPayload, aggregate_events
 from .event import TelemetryEvent, is_telemetry_event
 from .node_info import NodeInfo, gather_node_info
@@ -334,13 +338,49 @@ class TelemetryStore:
         self.purge_raw_events()
 
     def upload_staged_payloads(self) -> None:
+        if self.local_mode or not self.pm_api_url:
+            return
+
         try:
             staged_payloads = list(self.upload_stage_dir.glob("staged.*.json"))
         except FileNotFoundError:
             return
 
-        for f in staged_payloads:
-            self.upload_one_staged_payload(f)
+        try:
+            self.uploaded_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return
 
-    def upload_one_staged_payload(self, f: pathlib.Path) -> None:
-        raise NotImplementedError
+        for f in staged_payloads:
+            self.upload_one_staged_payload(f, self.pm_api_url)
+
+    def upload_one_staged_payload(
+        self,
+        f: pathlib.Path,
+        endpoint: str,
+    ) -> None:
+        api_path = urljoin_for_sure(endpoint, "upload-v1")
+        log.D(f"about to upload payload {f} to {api_path}")
+
+        resp = requests.post(
+            api_path,
+            data=f.read_bytes(),
+            headers={"User-Agent": RUYI_USER_AGENT},
+            allow_redirects=True,
+            timeout=5,
+        )
+
+        if not (200 <= resp.status_code < 300):
+            log.D(
+                f"telemetry upload failed: status code {resp.status_code}, content {resp.content.decode('utf-8', 'replace')}"
+            )
+            return
+
+        log.D(f"telemetry upload ok: status code {resp.status_code}")
+
+        # move to completed dir
+        # TODO: rotation
+        try:
+            f.rename(self.uploaded_dir / f.name)
+        except OSError as e:
+            log.D(f"failed to move uploaded payload away: {e}")

@@ -48,7 +48,7 @@ def init_pkg_semver() -> Version:
 
 
 RUYI_SEMVER = init_pkg_semver()
-
+RUYI_USER_AGENT = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE = """\
 Copyright (C) 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).

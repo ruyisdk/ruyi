@@ -15,6 +15,7 @@ from .. import log
 from ..pluginhost import PluginHostContext
 from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
+from ..utils.url import urljoin_for_sure
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
@@ -36,12 +37,6 @@ if TYPE_CHECKING:
 
     # for avoiding circular import
     from ..config import GlobalConfig
-
-
-def urljoin_for_sure(base: str, url: str) -> str:
-    if base.endswith("/"):
-        return parse.urljoin(base, url)
-    return parse.urljoin(base + "/", url)
 
 
 class RepoConfigV0Type(TypedDict):
