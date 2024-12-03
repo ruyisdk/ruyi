@@ -62,9 +62,10 @@ branch = "main"
 # Valid values are `local`, `off` and `on` -- see the documentation for
 # details.
 #
-# If unset or empty, this default value is used: data will be collected but
-# nothing will get uploaded without explicit action by the user.
-mode = "local"
+# If unset or empty, this default value is used: data will be collected and
+# uploaded every week, on a random weekday determined by the installation's
+# anonymous ID alone.
+mode = "on"
 # The time the user's consent is given to telemetry data uploading. If the
 # system time is later than the time given here, telemetry consent banner will
 # not be displayed any more each time `ruyi` is executed. The exact consent
@@ -99,15 +100,8 @@ The Ruyi package manager collects usage data in order to help us improve your
 experience. It is collected by the RuyiSDK team and shared with the community.
 You can opt-out of telemetry by setting the `RUYI_TELEMETRY_OPTOUT`
 environment variable to any of `1`, `true`, `x`, `y` or `yes` using your
-favorite shell.
-
-> **NOTE**: Currently only the `local` and `off` modes are implemented. The
-> server-side components of RuyiSDK are still under development, and has not
-> been deployed yet. Consequently, no data will be uploaded for now.
->
-> You will be notified at your next `ruyi update` when we are ready to
-> do so, and you will have enough time to revise your configuration so as to
-> prevent unintentional data uploads.
+favorite shell. Opting out of telemetry is equivalent to the `off` mode
+described below.
 
 There are 3 telemetry modes available:
 
@@ -115,17 +109,34 @@ There are 3 telemetry modes available:
 * `off`: data will not be collected nor uploaded.
 * `on`: data will be collected and periodically uploaded.
 
-By default the `local` mode is active, which means every `ruyi` invocation
+By default the `on` mode is active, which means every `ruyi` invocation
 will record some non-sensitive information locally alongside various other
-states of `ruyi`, but nothing will be uploaded.
+states of `ruyi`, and collected data will be periodically uploaded to servers
+managed by the RuyiSDK team in the People's Republic of China, in a weekly fashion.
+The upload will happen on a random weekday which is determined by the
+installation's anonymous ID alone.
 
 You can change the telemetry mode by editing `ruyi`'s config file, or simply
 by setting the `RUYI_TELEMETRY_OPTOUT` environment variable to any of the
 values accepted as truthy.
 
-<!-- We collect the following information with `ruyi`: -->
+We collect the following information with `ruyi`:
 
-<!-- TODO: table of metrics -->
+* the running machine's basic information:
+    * architecture and OS
+    * if architecture is RISC-V:
+        * ISA capabilities
+        * model name of the board
+        * number of logical CPUs
+    * OS release ID (roughly equals the distribution type)
+    * type and version of libc
+    * type of the shell (bash, fish, zsh, etc.)
+* the version of `ruyi` on data upload time
+* invocation patterns of various `ruyi` subcommands:
+    * without exposing any parameters
+    * invocation time is recorded with a granularity of 1 minute
+
+You can see our Privacy Policy on the RuyiSDK website.
 
 ## License
 

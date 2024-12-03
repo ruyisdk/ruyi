@@ -175,7 +175,7 @@ class GlobalConfig:
 
     @property
     def telemetry_mode(self) -> str:
-        return self._telemetry_mode or "local"
+        return self._telemetry_mode or "on"
 
     @property
     def telemetry_upload_consent_time(self) -> datetime.datetime | None:
