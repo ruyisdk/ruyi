@@ -4,7 +4,6 @@ from ..config import GlobalConfig
 from ..cli.cmd import RootCommand
 from .. import log
 from . import news_cli
-from .repo import MetadataRepo
 
 
 class UpdateCommand(
@@ -14,7 +13,7 @@ class UpdateCommand(
 ):
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        mr = MetadataRepo(cfg)
+        mr = cfg.repo
         mr.sync()
 
         # check if there are new newsitems

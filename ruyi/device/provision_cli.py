@@ -50,7 +50,7 @@ class DeviceProvisionCommand(
 
 def do_provision_interactive(config: GlobalConfig) -> int:
     # ensure ruyi repo is present, for good out-of-the-box experience
-    mr = MetadataRepo(config)
+    mr = config.repo
     mr.ensure_git_repo()
 
     dpcfg = mr.get_provisioner_config()

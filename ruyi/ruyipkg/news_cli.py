@@ -9,7 +9,6 @@ from ..config import GlobalConfig
 from ..utils.markdown import RuyiStyledMarkdown
 from ..utils.porcelain import PorcelainOutput
 from .news import NewsItem, NewsItemContent, NewsItemStore
-from .repo import MetadataRepo
 
 
 def print_news_item_titles(
@@ -61,8 +60,7 @@ class NewsListCommand(
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         only_unread = args.new
 
-        mr = MetadataRepo(cfg)
-        store = mr.news_store()
+        store = cfg.repo.news_store()
         newsitems = store.list(only_unread)
 
         if is_porcelain():
@@ -107,8 +105,7 @@ class NewsReadCommand(
         quiet = args.quiet
         items_strs = args.item
 
-        mr = MetadataRepo(cfg)
-        store = mr.news_store()
+        store = cfg.repo.news_store()
 
         # filter out requested news items
         items = filter_news_items_by_specs(store, items_strs)

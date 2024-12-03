@@ -7,20 +7,11 @@ import sys
 from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, TYPE_CHECKING, cast
 from urllib import parse
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
-
 from pygit2 import clone_repository
 from pygit2.repository import Repository
 import yaml
 
 from .. import log
-from ..config import GlobalConfig
 from ..pluginhost import PluginHostContext
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from .msg import RepoMessageStore
@@ -33,6 +24,17 @@ from .pkg_manifest import (
 )
 from .profile import PluginProfileProvider, ProfileProxy
 from .provisioner import ProvisionerConfig
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
+    # for avoiding circular import
+    from ..config import GlobalConfig
 
 
 def urljoin_for_sure(base: str, url: str) -> str:
@@ -184,7 +186,7 @@ class ArchProfileStore:
 
 
 class MetadataRepo:
-    def __init__(self, gc: GlobalConfig) -> None:
+    def __init__(self, gc: "GlobalConfig") -> None:
         self._gc = gc
         self.root = gc.get_repo_dir()
         self.remote = gc.get_repo_url()
@@ -262,7 +264,7 @@ class MetadataRepo:
         return pull_ff_or_die(repo, "origin", self.remote, self.branch)
 
     @property
-    def global_config(self) -> GlobalConfig:
+    def global_config(self) -> "GlobalConfig":
         return self._gc
 
     @property

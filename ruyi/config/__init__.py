@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
 from .. import argv0, is_env_var_truthy, log
+from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
@@ -90,6 +91,7 @@ class GlobalConfig:
         self.include_prereleases = False
         self.is_installation_externally_managed = False
 
+        self._metadata_repo: MetadataRepo | None = None
         self._news_read_status_store: NewsReadStatusStore | None = None
         self._telemetry_store: TelemetryStore | None = None
 
@@ -185,6 +187,13 @@ class GlobalConfig:
 
     def get_repo_branch(self) -> str:
         return self.override_repo_branch or DEFAULT_REPO_BRANCH
+
+    @property
+    def repo(self) -> MetadataRepo:
+        if self._metadata_repo is not None:
+            return self._metadata_repo
+        self._metadata_repo = MetadataRepo(self)
+        return self._metadata_repo
 
     def ensure_distfiles_dir(self) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"
