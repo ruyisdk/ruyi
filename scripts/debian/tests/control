@@ -1,0 +1,5 @@
+Tests: python3-ruyi
+Depends:
+ python3-all,
+ python3-ruyi,
+ python3-pytest,
