@@ -3,6 +3,7 @@ from typing import Final, Sequence
 
 from .errors import (
     InvalidConfigKeyError,
+    InvalidConfigSectionError,
     InvalidConfigValueError,
     InvalidConfigValueTypeError,
 )
@@ -31,6 +32,71 @@ KEY_TELEMETRY_PM_TELEMETRY_URL: Final = "pm_telemetry_url"
 KEY_TELEMETRY_UPLOAD_CONSENT: Final = "upload_consent"
 
 
+def validate_section(section: str) -> None:
+    if section not in (
+        SECTION_INSTALLATION,
+        SECTION_PACKAGES,
+        SECTION_REPO,
+        SECTION_TELEMETRY,
+    ):
+        raise InvalidConfigSectionError(section)
+
+
+def get_expected_type_for_config_key(key: str | Sequence[str]) -> type:
+    parsed_key = parse_config_key(key)
+    if len(parsed_key) != 2:
+        # for now there's no nested config option
+        raise InvalidConfigKeyError(key)
+
+    section, sel = parsed_key
+    if section == SECTION_INSTALLATION:
+        return _get_expected_type_for_section_installation(sel)
+    elif section == SECTION_PACKAGES:
+        return _get_expected_type_for_section_packages(sel)
+    elif section == SECTION_REPO:
+        return _get_expected_type_for_section_repo(sel)
+    elif section == SECTION_TELEMETRY:
+        return _get_expected_type_for_section_telemetry(sel)
+    else:
+        raise InvalidConfigKeyError(key)
+
+
+def _get_expected_type_for_section_installation(sel: str) -> type:
+    if sel == KEY_INSTALLATION_EXTERNALLY_MANAGED:
+        return bool
+    else:
+        raise InvalidConfigKeyError(sel)
+
+
+def _get_expected_type_for_section_packages(sel: str) -> type:
+    if sel == KEY_PACKAGES_PRERELEASES:
+        return bool
+    else:
+        raise InvalidConfigKeyError(sel)
+
+
+def _get_expected_type_for_section_repo(sel: str) -> type:
+    if sel == KEY_REPO_BRANCH:
+        return str
+    elif sel == KEY_REPO_LOCAL:
+        return str
+    elif sel == KEY_REPO_REMOTE:
+        return str
+    else:
+        raise InvalidConfigKeyError(sel)
+
+
+def _get_expected_type_for_section_telemetry(sel: str) -> type:
+    if sel == KEY_TELEMETRY_MODE:
+        return str
+    elif sel == KEY_TELEMETRY_PM_TELEMETRY_URL:
+        return str
+    elif sel == KEY_TELEMETRY_UPLOAD_CONSENT:
+        return datetime.datetime
+    else:
+        raise InvalidConfigKeyError(sel)
+
+
 def ensure_valid_config_kv(
     key: str | Sequence[str],
     check_val: bool = False,
@@ -41,17 +107,16 @@ def ensure_valid_config_kv(
         # for now there's no nested config option
         raise InvalidConfigKeyError(key)
 
+    expected_type = get_expected_type_for_config_key(parsed_key)
+    # validity of config key is already checked by get_expected_type_for_config_key
+    _ensure_value_type(key, check_val, val, expected_type)
+
+    if not check_val:
+        return
+
     section, sel = parsed_key
-    if section == SECTION_INSTALLATION:
-        return _ensure_valid_section_installation_kv(key, sel, check_val, val)
-    elif section == SECTION_PACKAGES:
-        return _ensure_valid_section_packages_kv(key, sel, check_val, val)
-    elif section == SECTION_REPO:
-        return _ensure_valid_section_repo_kv(key, sel, check_val, val)
-    elif section == SECTION_TELEMETRY:
-        return _ensure_valid_section_telemetry_kv(key, sel, check_val, val)
-    else:
-        raise InvalidConfigKeyError(key)
+    if section == SECTION_TELEMETRY:
+        return _extra_validate_section_telemetry_kv(key, sel, val)
 
 
 def _ensure_value_type(
@@ -64,63 +129,15 @@ def _ensure_value_type(
         raise InvalidConfigValueTypeError(key, val, expected)
 
 
-def _ensure_valid_section_installation_kv(
+def _extra_validate_section_telemetry_kv(
     key: str | Sequence[str],
     sel: str,
-    check_val: bool,
-    val: object | None,
-) -> None:
-    if sel == KEY_INSTALLATION_EXTERNALLY_MANAGED:
-        return _ensure_value_type(key, check_val, val, bool)
-    else:
-        raise InvalidConfigKeyError(key)
-
-
-def _ensure_valid_section_packages_kv(
-    key: str | Sequence[str],
-    sel: str,
-    check_val: bool,
-    val: object | None,
-) -> None:
-    if sel == KEY_PACKAGES_PRERELEASES:
-        return _ensure_value_type(key, check_val, val, bool)
-    else:
-        raise InvalidConfigKeyError(key)
-
-
-def _ensure_valid_section_repo_kv(
-    key: str | Sequence[str],
-    sel: str,
-    check_val: bool,
-    val: object | None,
-) -> None:
-    if sel == KEY_REPO_BRANCH:
-        return _ensure_value_type(key, check_val, val, str)
-    elif sel == KEY_REPO_LOCAL:
-        return _ensure_value_type(key, check_val, val, str)
-    elif sel == KEY_REPO_REMOTE:
-        return _ensure_value_type(key, check_val, val, str)
-    else:
-        raise InvalidConfigKeyError(key)
-
-
-def _ensure_valid_section_telemetry_kv(
-    key: str | Sequence[str],
-    sel: str,
-    check_val: bool,
     val: object | None,
 ) -> None:
     if sel == KEY_TELEMETRY_MODE:
-        _ensure_value_type(key, check_val, val, str)
-        if check_val:
-            if val not in ("local", "off", "on"):
-                raise InvalidConfigValueError(key, val)
-    elif sel == KEY_TELEMETRY_PM_TELEMETRY_URL:
-        _ensure_value_type(key, check_val, val, str)
-    elif sel == KEY_TELEMETRY_UPLOAD_CONSENT:
-        _ensure_value_type(key, check_val, val, datetime.datetime)
-    else:
-        raise InvalidConfigKeyError(key)
+        # value type is already ensured earlier
+        if val not in ("local", "off", "on"):
+            raise InvalidConfigValueError(key, val)
 
 
 def encode_value(v: object) -> str:
@@ -137,3 +154,28 @@ def encode_value(v: object) -> str:
         return v.isoformat()
     else:
         raise NotImplementedError(f"invalid type for config value: {type(v)}")
+
+
+def decode_value(
+    key: str | Sequence[str],
+    val: str,
+) -> object:
+    """Decodes the given string representation of a config value into a Python
+    value, directed by type information implied by the config key."""
+
+    expected_type = get_expected_type_for_config_key(key)
+    if expected_type is bool:
+        if val in ("true", "yes", "1"):
+            return True
+        elif val in ("false", "no", "0"):
+            return False
+        else:
+            raise InvalidConfigValueError(key, val)
+    elif expected_type is int:
+        return int(val, 10)
+    elif expected_type is str:
+        return val
+    elif expected_type is datetime.datetime:
+        return datetime.datetime.fromisoformat(val)
+    else:
+        raise NotImplementedError(f"invalid type for config value: {expected_type}")

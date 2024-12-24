@@ -10,7 +10,7 @@ import tomlkit
 from tomlkit.items import Table
 
 from .errors import MalformedConfigFileError
-from .schema import ensure_valid_config_kv, parse_config_key
+from .schema import ensure_valid_config_kv, parse_config_key, validate_section
 
 if TYPE_CHECKING:
     from . import GlobalConfig
@@ -87,5 +87,6 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
                 existing_section.pop(sel[0])
 
     def remove_section(self, section: str) -> None:
+        validate_section(section)
         if section in self._stage:
             self._stage.pop(section)

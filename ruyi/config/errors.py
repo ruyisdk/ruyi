@@ -2,6 +2,18 @@ from os import PathLike
 from typing import Any, Sequence
 
 
+class InvalidConfigSectionError(Exception):
+    def __init__(self, section: str) -> None:
+        super().__init__()
+        self._section = section
+
+    def __str__(self) -> str:
+        return f"invalid config section: {self._section}"
+
+    def __repr__(self) -> str:
+        return f"InvalidConfigSectionError({self._section!r})"
+
+
 class InvalidConfigKeyError(Exception):
     def __init__(self, key: str | Sequence[str]) -> None:
         super().__init__()
