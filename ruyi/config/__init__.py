@@ -4,7 +4,7 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Iterable, TypedDict, TYPE_CHECKING
+from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -84,6 +84,43 @@ class GlobalConfigRootType(TypedDict):
     telemetry: "NotRequired[GlobalConfigTelemetryType]"
 
 
+def parse_config_key(key: str) -> list[str]:
+    return key.split(".")
+
+
+SECTION_INSTALLATION: Final = "installation"
+KEY_INSTALLATION_EXTERNALLY_MANAGED: Final = "externally_managed"
+
+SECTION_PACKAGES: Final = "packages"
+KEY_PACKAGES_PRERELEASES: Final = "prereleases"
+
+SECTION_REPO: Final = "repo"
+KEY_REPO_BRANCH: Final = "branch"
+KEY_REPO_LOCAL: Final = "local"
+KEY_REPO_REMOTE: Final = "remote"
+
+SECTION_TELEMETRY: Final = "telemetry"
+KEY_TELEMETRY_MODE: Final = "mode"
+KEY_TELEMETRY_PM_TELEMETRY_URL: Final = "pm_telemetry_url"
+KEY_TELEMETRY_UPLOAD_CONSENT: Final = "upload_consent"
+
+
+def encode_value(v: object) -> str:
+    """Encodes the given config value into a string representation suitable for
+    display or storage into TOML config files."""
+
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    elif isinstance(v, int):
+        return str(v)
+    elif isinstance(v, str):
+        return v
+    elif isinstance(v, datetime.datetime):
+        return v.isoformat()
+    else:
+        raise NotImplementedError(f"invalid type for config value: {type(v)}")
+
+
 class GlobalConfig:
     def __init__(self) -> None:
         # all defaults
@@ -106,19 +143,19 @@ class GlobalConfig:
         self._telemetry_pm_telemetry_url: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
-        if ins_cfg := config_data.get("installation"):
+        if ins_cfg := config_data.get(SECTION_INSTALLATION):
             self.is_installation_externally_managed = ins_cfg.get(
-                "externally_managed",
+                KEY_INSTALLATION_EXTERNALLY_MANAGED,
                 False,
             )
 
-        if pkgs_cfg := config_data.get("packages"):
-            self.include_prereleases = pkgs_cfg.get("prereleases", False)
+        if pkgs_cfg := config_data.get(SECTION_PACKAGES):
+            self.include_prereleases = pkgs_cfg.get(KEY_PACKAGES_PRERELEASES, False)
 
-        if repo_cfg := config_data.get("repo"):
-            self.override_repo_dir = repo_cfg.get("local", None)
-            self.override_repo_url = repo_cfg.get("remote", None)
-            self.override_repo_branch = repo_cfg.get("branch", None)
+        if repo_cfg := config_data.get(SECTION_REPO):
+            self.override_repo_dir = repo_cfg.get(KEY_REPO_LOCAL, None)
+            self.override_repo_url = repo_cfg.get(KEY_REPO_REMOTE, None)
+            self.override_repo_branch = repo_cfg.get(KEY_REPO_BRANCH, None)
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -127,14 +164,78 @@ class GlobalConfig:
                     )
                     self.override_repo_dir = None
 
-        if tele_cfg := config_data.get("telemetry"):
-            self._telemetry_mode = tele_cfg.get("mode", None)
-            self._telemetry_pm_telemetry_url = tele_cfg.get("pm_telemetry_url", None)
+        if tele_cfg := config_data.get(SECTION_TELEMETRY):
+            self._telemetry_mode = tele_cfg.get(KEY_TELEMETRY_MODE, None)
+            self._telemetry_pm_telemetry_url = tele_cfg.get(
+                KEY_TELEMETRY_PM_TELEMETRY_URL, None
+            )
 
             self._telemetry_upload_consent = None
-            if consent := tele_cfg.get("upload_consent", None):
+            if consent := tele_cfg.get(KEY_TELEMETRY_UPLOAD_CONSENT, None):
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
+
+    def get_by_key(self, key: str | Sequence[str]) -> object | None:
+        if isinstance(key, str):
+            parsed_key = parse_config_key(key)
+        else:
+            parsed_key = list(key)
+
+        section, sel = parsed_key[0], parsed_key[1:]
+        if section == SECTION_INSTALLATION:
+            return self._get_section_installation(sel)
+        elif section == SECTION_PACKAGES:
+            return self._get_section_packages(sel)
+        elif section == SECTION_REPO:
+            return self._get_section_repo(sel)
+        elif section == SECTION_TELEMETRY:
+            return self._get_section_telemetry(sel)
+        else:
+            return None
+
+    def _get_section_installation(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == KEY_INSTALLATION_EXTERNALLY_MANAGED:
+            return self.is_installation_externally_managed
+        else:
+            return None
+
+    def _get_section_packages(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == KEY_PACKAGES_PRERELEASES:
+            return self.include_prereleases
+        else:
+            return None
+
+    def _get_section_repo(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == KEY_REPO_BRANCH:
+            return self.override_repo_branch
+        elif leaf == KEY_REPO_LOCAL:
+            return self.override_repo_dir
+        elif leaf == KEY_REPO_REMOTE:
+            return self.override_repo_url
+        else:
+            return None
+
+    def _get_section_telemetry(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == KEY_TELEMETRY_MODE:
+            return self.telemetry_mode
+        elif leaf == KEY_TELEMETRY_PM_TELEMETRY_URL:
+            return self.override_pm_telemetry_url
+        elif leaf == KEY_TELEMETRY_UPLOAD_CONSENT:
+            return self.telemetry_upload_consent_time
+        else:
+            return None
 
     @property
     def lang_code(self) -> str:
