@@ -14,6 +14,8 @@ else:
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
+import tomlkit
+
 from .. import argv0, is_env_var_truthy, log
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryStore
@@ -265,7 +267,7 @@ class GlobalConfig:
     def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
         try:
             with open(path, "rb") as fp:
-                data: Any = tomllib.load(fp)
+                data: Any = tomlkit.load(fp)
         except FileNotFoundError:
             return
 
