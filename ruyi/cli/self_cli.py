@@ -2,6 +2,7 @@ import argparse
 import os
 import pathlib
 import shutil
+from typing import Final
 
 import ruyi
 from .. import config
@@ -9,7 +10,7 @@ from .. import log
 from . import user_input
 from .cmd import RootCommand
 
-UNINSTALL_NOTICE = """
+UNINSTALL_NOTICE: Final = """
 [bold]Thanks for hacking with [yellow]Ruyi[/yellow]![/bold]
 
 This will uninstall [yellow]Ruyi[/yellow] from your system, and optionally remove

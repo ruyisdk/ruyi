@@ -1,7 +1,7 @@
 import os
 import typing
 
-TRUTHY_ENV_VAR_VALUES = {"1", "true", "x", "y", "yes"}
+TRUTHY_ENV_VAR_VALUES: typing.Final = {"1", "true", "x", "y", "yes"}
 
 
 def is_env_var_truthy(var: str) -> bool:
@@ -10,8 +10,8 @@ def is_env_var_truthy(var: str) -> bool:
     return False
 
 
-ENV_DEBUG = "RUYI_DEBUG"
-ENV_FORCE_ALLOW_ROOT = "RUYI_FORCE_ALLOW_ROOT"
+ENV_DEBUG: typing.Final = "RUYI_DEBUG"
+ENV_FORCE_ALLOW_ROOT: typing.Final = "RUYI_FORCE_ALLOW_ROOT"
 
 
 _is_debug = False

@@ -1,4 +1,5 @@
 import os
+from typing import Final
 
 from .. import log
 from .checksum import Checksummer
@@ -10,7 +11,7 @@ from .unpack_method import UnpackMethod
 
 
 # https://github.com/ruyisdk/ruyi/issues/46
-HELP_ERROR_FETCHING = """
+HELP_ERROR_FETCHING: Final = """
 Downloads can fail for a multitude of reasons, most of which should not and
 cannot be handled by [yellow]Ruyi[/yellow]. For your convenience though, please check if any
 of the following common failure modes apply to you, and take actions

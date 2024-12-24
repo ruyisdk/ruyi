@@ -28,7 +28,9 @@ def main() -> None:
         p("# NOTE: This file is auto-generated. DO NOT EDIT!")
         p("# Update by running the __main__.py alongside this file\n")
 
-        p("TEMPLATES = {")
+        p("from typing import Final\n\n")
+
+        p("TEMPLATES: Final = {")
         for filename, payload in payloads.items():
             p(f'    "{filename}": b"{payload}",  # fmt: skip')
         p("}")

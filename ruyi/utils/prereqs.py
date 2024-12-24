@@ -1,6 +1,6 @@
 import shutil
 import sys
-from typing import NoReturn
+from typing import Final, NoReturn
 
 from ruyi import log
 
@@ -9,7 +9,7 @@ def has_cmd_in_path(cmd: str) -> bool:
     return shutil.which(cmd) is not None
 
 
-_CMDS = (
+_CMDS: Final = (
     "bzip2",
     "gunzip",
     "lz4",
@@ -23,7 +23,7 @@ _CMDS = (
     "fastboot",
 )
 
-_CMD_PRESENCE_MAP: dict[str, bool] = {}
+_CMD_PRESENCE_MAP: Final[dict[str, bool]] = {}
 
 
 def init_cmd_presence_map() -> None:

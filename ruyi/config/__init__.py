@@ -4,7 +4,7 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Iterable, Sequence, TypedDict, TYPE_CHECKING
+from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -23,22 +23,23 @@ from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 from . import schema
 
-PRESET_GLOBAL_CONFIG_LOCATIONS: list[str] = []
 
 if sys.platform == "linux":
-    PRESET_GLOBAL_CONFIG_LOCATIONS = [
+    PRESET_GLOBAL_CONFIG_LOCATIONS: Final[list[str]] = [
         # TODO: enable distro packagers to customize the $PREFIX to suit their
         # particular FS layout if necessary.
         "/usr/share/ruyi/config.toml",
         "/usr/local/share/ruyi/config.toml",
     ]
+else:
+    PRESET_GLOBAL_CONFIG_LOCATIONS: Final[list[str]] = []
 
-DEFAULT_APP_NAME = "ruyi"
-DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
-DEFAULT_REPO_BRANCH = "main"
+DEFAULT_APP_NAME: Final = "ruyi"
+DEFAULT_REPO_URL: Final = "https://github.com/ruyisdk/packages-index.git"
+DEFAULT_REPO_BRANCH: Final = "main"
 
-ENV_TELEMETRY_OPTOUT_KEY = "RUYI_TELEMETRY_OPTOUT"
-ENV_VENV_ROOT_KEY = "RUYI_VENV"
+ENV_TELEMETRY_OPTOUT_KEY: Final = "RUYI_TELEMETRY_OPTOUT"
+ENV_VENV_ROOT_KEY: Final = "RUYI_VENV"
 
 
 def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:

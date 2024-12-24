@@ -1,7 +1,7 @@
 import hashlib
-from typing import BinaryIO, Iterable
+from typing import BinaryIO, Final, Iterable
 
-SUPPORTED_CHECKSUM_KINDS = {"sha256", "sha512"}
+SUPPORTED_CHECKSUM_KINDS: Final = {"sha256", "sha512"}
 
 
 def get_hash_instance(kind: str) -> "hashlib._Hash":

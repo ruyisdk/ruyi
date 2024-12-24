@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import Literal, Tuple
+from typing import Final, Literal, Tuple
 
 import semver
 
@@ -10,8 +10,8 @@ from .repo import MetadataRepo
 
 AtomKind = Literal["name"] | Literal["expr"] | Literal["slug"]
 
-RE_ATOM_EXPR = re.compile(r"^([^:(]+)\((.+)\)$")
-RE_ATOM_NAME = re.compile(r"^[^:()]+$")
+RE_ATOM_EXPR: Final = re.compile(r"^([^:(]+)\((.+)\)$")
+RE_ATOM_NAME: Final = re.compile(r"^[^:()]+$")
 
 
 class Atom(abc.ABC):

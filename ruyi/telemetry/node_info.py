@@ -4,7 +4,7 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Mapping, TypedDict, TYPE_CHECKING
+from typing import Final, Mapping, TypedDict, TYPE_CHECKING
 import uuid
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ def probe_for_libc() -> tuple[str, str]:
     return ("unknown", "unknown")
 
 
-_MUSL_VERSION_RE = re.compile(rb"(?m)^Version ([0-9.]+)$")
+_MUSL_VERSION_RE: Final = re.compile(rb"(?m)^Version ([0-9.]+)$")
 
 
 def _try_get_musl_ver(ldso_path: str) -> str | None:

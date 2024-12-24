@@ -5,7 +5,7 @@ import os
 import pathlib
 import sys
 from types import CodeType
-from typing import Callable, MutableMapping, NoReturn, TYPE_CHECKING, cast
+from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -32,7 +32,7 @@ class UnsandboxedTrivialEvaluator:
         raise RuntimeError(f"the Python value {function!r} is not callable")
 
 
-BUILTINS_TO_EXPOSE = {
+BUILTINS_TO_EXPOSE: Final = {
     k: getattr(builtins, k)
     for k in [
         "abs",

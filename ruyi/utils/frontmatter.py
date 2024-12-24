@@ -7,10 +7,11 @@
 # [python-frontmatter]: https://github.com/eyeseast/python-frontmatter
 
 import re
+from typing import Final
 import yaml
 
 
-FRONTMATTER_BOUNDARY_RE = re.compile(r"(?m)^-{3,}\s*$")
+FRONTMATTER_BOUNDARY_RE: Final = re.compile(r"(?m)^-{3,}\s*$")
 
 
 class Post:

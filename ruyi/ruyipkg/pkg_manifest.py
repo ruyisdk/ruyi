@@ -5,7 +5,16 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, BinaryIO, Iterable, Literal, TypedDict, TYPE_CHECKING, cast
+from typing import (
+    Any,
+    BinaryIO,
+    Final,
+    Iterable,
+    Literal,
+    TypedDict,
+    TYPE_CHECKING,
+    cast,
+)
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -105,7 +114,7 @@ PartitionKind = (
 
 # error: "<typing special form>" has no attribute "__args__"
 # KNOWN_PARTITION_KINDS = frozenset(kind.__args__[0] for kind in PartitionKind.__args__)
-KNOWN_PARTITION_KINDS = frozenset(("boot", "disk", "live", "root", "uboot"))
+KNOWN_PARTITION_KINDS: Final = frozenset(("boot", "disk", "live", "root", "uboot"))
 
 PartitionMapDecl = dict[PartitionKind, str]
 
@@ -124,7 +133,7 @@ PackageKind = (
     | Literal["provisionable"]
 )
 
-ALL_PACKAGE_KINDS: list[PackageKind] = [
+ALL_PACKAGE_KINDS: Final[list[PackageKind]] = [
     "binary",
     "blob",
     "source",
@@ -541,7 +550,7 @@ class BoundPackageManifest(PackageManifest):
         return f"{self.name}-{self.ver}"
 
 
-PRERELEASE_TAGS_RE = re.compile(r"^(?:alpha|beta|pre|rc)")
+PRERELEASE_TAGS_RE: Final = re.compile(r"^(?:alpha|beta|pre|rc)")
 
 
 def is_prerelease(sv: Version) -> bool:

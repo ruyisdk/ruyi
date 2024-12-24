@@ -1,7 +1,7 @@
 import os
 import re
 import shlex
-from typing import List, NoReturn
+from typing import Final, List, NoReturn
 
 from .. import log
 from ..config import RuyiVenvConfig
@@ -101,7 +101,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
 
 # TODO: dedup with venv provision logic (into a command name parser)
-CC_ARGV0_RE = re.compile(
+CC_ARGV0_RE: Final = re.compile(
     r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+|clang-cl|clang-cpp)(?:-[0-9.]+)?$"
 )
 
