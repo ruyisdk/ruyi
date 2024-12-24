@@ -1,7 +1,15 @@
 import abc
 import os
 import pathlib
-from typing import Callable, Generic, MutableMapping, Protocol, TypeVar, TYPE_CHECKING
+from typing import (
+    Callable,
+    Final,
+    Generic,
+    MutableMapping,
+    Protocol,
+    TypeVar,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -10,7 +18,7 @@ from . import api
 from . import paths
 
 
-ENV_PLUGIN_BACKEND_KEY = "RUYI_PLUGIN_BACKEND"
+ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
 
 
 class SupportsGetOption(Protocol):

@@ -4,7 +4,16 @@ import json
 import os.path
 import pathlib
 import sys
-from typing import Any, Iterable, Tuple, TypedDict, TypeGuard, TYPE_CHECKING, cast
+from typing import (
+    Any,
+    Final,
+    Iterable,
+    Tuple,
+    TypedDict,
+    TypeGuard,
+    TYPE_CHECKING,
+    cast,
+)
 from urllib import parse
 
 from pygit2 import clone_repository
@@ -91,7 +100,7 @@ def validate_repo_config_v1(x: object) -> TypeGuard[RepoConfigV1Type]:
     return True
 
 
-MIRROR_ID_RUYI_DIST = "ruyi-dist"
+MIRROR_ID_RUYI_DIST: Final = "ruyi-dist"
 
 
 class RepoConfig:

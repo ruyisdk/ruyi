@@ -1,11 +1,12 @@
 import atexit
 import os
 import sys
+from typing import Final
 
 from ..config import GlobalConfig
 from . import RUYI_ENTRYPOINT_NAME
 
-ALLOWED_RUYI_ENTRYPOINT_NAMES = (
+ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
     RUYI_ENTRYPOINT_NAME,
     f"{RUYI_ENTRYPOINT_NAME}.exe",
     f"{RUYI_ENTRYPOINT_NAME}.bin",  # Nuitka one-file program cache

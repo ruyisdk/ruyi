@@ -1,7 +1,10 @@
 # NOTE: This file is auto-generated. DO NOT EDIT!
 # Update by running the __main__.py alongside this file
 
-TEMPLATES = {
+from typing import Final
+
+
+TEMPLATES: Final = {
     "ruyi-activate.bash": b"eNp9lN1u2kAQhe/3KSYGqiSVRUnuqIhEGqRESgLCBClKI2uxx/JKZh2t126o6yfqI/QuT9bxH2CHhBvEzpn1d2YO7sDCFxF4IkBYx5GGFUIcoQu/hPbBiMJYOQgrIfsq3giTO1okXKMBp54K17DikX/KOrAJY3C4lKEGFUsQGlyh0NHBhjEmPHgCo5tejq1r25o+zH9MzMyAEZ19M+D5O2gfJQP6oOOHYDzSZQVL9XSdE0aOEi96CD+79XHefPHlrGx8pUeenzNPMFaAulijwvEJpIWoAwoj1BAGLqBMhArlGqWGhCvBVwFGleqIcM3f0E2X4/lXO4Nn6tOxkhFoFSOQHSoAMbnoBFzRsLgGHgRFO1WrfnJszx8eb+zp7ZU9Gy+uh3QZ+YU9w/knL42MblNrbMv4+hIqXai2Z7HMfTQ7imLuvzQhZMID4eYDoKcV7bQhx8ei7tPewFRwdtF3MenLmOg/xbcGH8Bbgya7NXiPbg0+Jq9qNXhZL8rLyf3y0Jk9m0/vZosa94mAiXVQRUqG0sWIFpWvH1vEHbAw8KAWHLWwTA9a4anZMkYhL0VCKQww4Y3gtDPXpGBsCz9K050T+AO0hixj1aB2tllztzTiMhTVj62wT//MYVXbDwr7LAAHl5/28mHuhnw/vpuA2ctYe+4NB6WstpH2TMAgwsN9RveYXhco+Rphz4JxYpSN0iWA3vth1Psu3yNlMnfFqxtrfHk7qURmO6ONpBFCSl8kYtvsvv2d0+5g/8ryquztHzTke2mmRPwHax2J0Q==",  # fmt: skip
     "ruyi-venv.toml": b"eNqLTs7PS8tMj+UqKMpPy8xJVbBVUKquVoDxamuVuKpVFTLTFIori4vy80sUdFVruWBsiFoYD6JWVyE1LwWoHqgMAMZMHuE=",  # fmt: skip
     "prompt.venv-created.txt": b"eNp1kTFvwkAMhff7FV7YStjbqWLqwMZSoUocdw6xSM6RfQmNEP+9vhToUm462Zbf9563DcJIkgffAib7ceowZSCFxGcIgj5jrJz75AE6P4EPmUarAWU4TKA8SKB0hGyLfN8L90KlfZsjTqBBqLeVqQy53VEQ09eB0m71+4VIgiGzTC/gU4SIDxFToDTyqSjsZZho+dfcV+6yWALVoJMKc4bF1bl3qAW1uddWvWBN38WPb5XBAEdSo8J4A/rPfuU+5gj86Kn1h9bs5Hm25rblc6HpfW5enQN7N0eXywPker17mxExRaMsdNsncc9sgTtUOFNuwGKP07LzEWG98SeEzNyGxhtyTS26EtMG1cINwqpzsYJ1g+H0zBPMZDWLDbDimzO5Utd7DmWHGkTKRWZQf7QjJ80yhHJGrdwPtz3J+A==",  # fmt: skip

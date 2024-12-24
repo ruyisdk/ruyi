@@ -4,7 +4,7 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Iterable, TypedDict, TYPE_CHECKING
+from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -14,28 +14,32 @@ else:
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
+import tomlkit
+
 from .. import argv0, is_env_var_truthy, log
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
+from . import schema
 
-PRESET_GLOBAL_CONFIG_LOCATIONS: list[str] = []
 
 if sys.platform == "linux":
-    PRESET_GLOBAL_CONFIG_LOCATIONS = [
+    PRESET_GLOBAL_CONFIG_LOCATIONS: Final[list[str]] = [
         # TODO: enable distro packagers to customize the $PREFIX to suit their
         # particular FS layout if necessary.
         "/usr/share/ruyi/config.toml",
         "/usr/local/share/ruyi/config.toml",
     ]
+else:
+    PRESET_GLOBAL_CONFIG_LOCATIONS: Final[list[str]] = []
 
-DEFAULT_APP_NAME = "ruyi"
-DEFAULT_REPO_URL = "https://github.com/ruyisdk/packages-index.git"
-DEFAULT_REPO_BRANCH = "main"
+DEFAULT_APP_NAME: Final = "ruyi"
+DEFAULT_REPO_URL: Final = "https://github.com/ruyisdk/packages-index.git"
+DEFAULT_REPO_BRANCH: Final = "main"
 
-ENV_TELEMETRY_OPTOUT_KEY = "RUYI_TELEMETRY_OPTOUT"
-ENV_VENV_ROOT_KEY = "RUYI_VENV"
+ENV_TELEMETRY_OPTOUT_KEY: Final = "RUYI_TELEMETRY_OPTOUT"
+ENV_VENV_ROOT_KEY: Final = "RUYI_VENV"
 
 
 def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:
@@ -104,19 +108,21 @@ class GlobalConfig:
         self._telemetry_pm_telemetry_url: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
-        if ins_cfg := config_data.get("installation"):
+        if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
             self.is_installation_externally_managed = ins_cfg.get(
-                "externally_managed",
+                schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
                 False,
             )
 
-        if pkgs_cfg := config_data.get("packages"):
-            self.include_prereleases = pkgs_cfg.get("prereleases", False)
+        if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
+            self.include_prereleases = pkgs_cfg.get(
+                schema.KEY_PACKAGES_PRERELEASES, False
+            )
 
-        if repo_cfg := config_data.get("repo"):
-            self.override_repo_dir = repo_cfg.get("local", None)
-            self.override_repo_url = repo_cfg.get("remote", None)
-            self.override_repo_branch = repo_cfg.get("branch", None)
+        if repo_cfg := config_data.get(schema.SECTION_REPO):
+            self.override_repo_dir = repo_cfg.get(schema.KEY_REPO_LOCAL, None)
+            self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
+            self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -125,14 +131,75 @@ class GlobalConfig:
                     )
                     self.override_repo_dir = None
 
-        if tele_cfg := config_data.get("telemetry"):
-            self._telemetry_mode = tele_cfg.get("mode", None)
-            self._telemetry_pm_telemetry_url = tele_cfg.get("pm_telemetry_url", None)
+        if tele_cfg := config_data.get(schema.SECTION_TELEMETRY):
+            self._telemetry_mode = tele_cfg.get(schema.KEY_TELEMETRY_MODE, None)
+            self._telemetry_pm_telemetry_url = tele_cfg.get(
+                schema.KEY_TELEMETRY_PM_TELEMETRY_URL,
+                None,
+            )
 
             self._telemetry_upload_consent = None
-            if consent := tele_cfg.get("upload_consent", None):
+            if consent := tele_cfg.get(schema.KEY_TELEMETRY_UPLOAD_CONSENT, None):
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
+
+    def get_by_key(self, key: str | Sequence[str]) -> object | None:
+        parsed_key = schema.parse_config_key(key)
+        section, sel = parsed_key[0], parsed_key[1:]
+        if section == schema.SECTION_INSTALLATION:
+            return self._get_section_installation(sel)
+        elif section == schema.SECTION_PACKAGES:
+            return self._get_section_packages(sel)
+        elif section == schema.SECTION_REPO:
+            return self._get_section_repo(sel)
+        elif section == schema.SECTION_TELEMETRY:
+            return self._get_section_telemetry(sel)
+        else:
+            return None
+
+    def _get_section_installation(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == schema.KEY_INSTALLATION_EXTERNALLY_MANAGED:
+            return self.is_installation_externally_managed
+        else:
+            return None
+
+    def _get_section_packages(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == schema.KEY_PACKAGES_PRERELEASES:
+            return self.include_prereleases
+        else:
+            return None
+
+    def _get_section_repo(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == schema.KEY_REPO_BRANCH:
+            return self.override_repo_branch
+        elif leaf == schema.KEY_REPO_LOCAL:
+            return self.override_repo_dir
+        elif leaf == schema.KEY_REPO_REMOTE:
+            return self.override_repo_url
+        else:
+            return None
+
+    def _get_section_telemetry(self, selector: list[str]) -> object | None:
+        if len(selector) != 1:
+            return None
+        leaf = selector[0]
+        if leaf == schema.KEY_TELEMETRY_MODE:
+            return self.telemetry_mode
+        elif leaf == schema.KEY_TELEMETRY_PM_TELEMETRY_URL:
+            return self.override_pm_telemetry_url
+        elif leaf == schema.KEY_TELEMETRY_UPLOAD_CONSENT:
+            return self.telemetry_upload_consent_time
+        else:
+            return None
 
     @property
     def lang_code(self) -> str:
@@ -262,10 +329,14 @@ class GlobalConfig:
         for config_dir in reversed(list(self._dirs.app_config_dirs)):
             yield config_dir / "config.toml"
 
+    @property
+    def local_user_config_file(self) -> pathlib.Path:
+        return self._dirs.app_config / "config.toml"
+
     def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
         try:
             with open(path, "rb") as fp:
-                data: Any = tomllib.load(fp)
+                data: Any = tomlkit.load(fp)
         except FileNotFoundError:
             return
 

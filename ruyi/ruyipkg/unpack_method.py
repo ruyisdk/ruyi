@@ -1,8 +1,9 @@
 import enum
 import re
 import sys
+from typing import Final
 
-RE_TARBALL = re.compile(r"\.tar(?:\.gz|\.bz2|\.lz4|\.xz|\.zst)?$")
+RE_TARBALL: Final = re.compile(r"\.tar(?:\.gz|\.bz2|\.lz4|\.xz|\.zst)?$")
 
 
 if sys.version_info >= (3, 11):

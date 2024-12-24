@@ -1,7 +1,7 @@
 import datetime
 import io
 import time
-from typing import Any, IO, Optional
+from typing import Any, Final, IO, Optional
 import sys
 
 from rich.console import Console, ConsoleRenderable
@@ -26,14 +26,14 @@ def log_time_formatter(x: datetime.datetime) -> Text:
     return Text(f"debug: [{x.isoformat()}]")
 
 
-STDOUT_CONSOLE = Console(file=sys.stdout, highlight=False, soft_wrap=True)
-DEBUG_CONSOLE = Console(
+STDOUT_CONSOLE: Final = Console(file=sys.stdout, highlight=False, soft_wrap=True)
+DEBUG_CONSOLE: Final = Console(
     file=sys.stderr,
     log_time_format=log_time_formatter,
     soft_wrap=True,
 )
-LOG_CONSOLE = Console(file=sys.stderr, highlight=False, soft_wrap=True)
-PORCELAIN_SINK = PorcelainOutput(sys.stderr.buffer)
+LOG_CONSOLE: Final = Console(file=sys.stderr, highlight=False, soft_wrap=True)
+PORCELAIN_SINK: Final = PorcelainOutput(sys.stderr.buffer)
 
 Renderable = str | ConsoleRenderable
 

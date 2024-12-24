@@ -1,10 +1,11 @@
 import pathlib
 import re
+from typing import Final
 from urllib.parse import unquote, urlparse
 
-PLUGIN_ENTRYPOINT_FILENAME = "mod.star"
-PLUGIN_DATA_DIR = "data"
-PLUGIN_ID_RE = re.compile("^[A-Za-z_][A-Za-z0-9_-]*$")
+PLUGIN_ENTRYPOINT_FILENAME: Final = "mod.star"
+PLUGIN_DATA_DIR: Final = "data"
+PLUGIN_ID_RE: Final = re.compile("^[A-Za-z_][A-Za-z0-9_-]*$")
 
 
 def validate_plugin_id(name: str) -> None:

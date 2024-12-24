@@ -6,5 +6,7 @@ from ..ruyipkg import news_cli as news_cli
 from ..ruyipkg import pkg_cli as pkg_cli
 from ..ruyipkg import profile_cli as profile_cli
 from ..ruyipkg import update_cli as update_cli
+from ..telemetry import telemetry_cli as telemetry_cli
 from . import self_cli as self_cli
+from . import config_cli as config_cli
 from . import version_cli as version_cli

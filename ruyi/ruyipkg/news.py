@@ -1,13 +1,13 @@
 import functools
 import re
-from typing import Any, TypedDict
+from typing import Any, Final, TypedDict
 
 from ..config.news import NewsReadStatusStore
 from ..utils import frontmatter
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from ..utils.l10n import match_lang_code
 
-NEWS_FILENAME_RE = re.compile(r"^(\d+-\d{2}-\d{2}-.*?)(\.[0-9A-Za-z_-]+)?\.md$")
+NEWS_FILENAME_RE: Final = re.compile(r"^(\d+-\d{2}-\d{2}-.*?)(\.[0-9A-Za-z_-]+)?\.md$")
 
 
 @functools.total_ordering

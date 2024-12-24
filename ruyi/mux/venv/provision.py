@@ -6,7 +6,7 @@ import pathlib
 import re
 import shlex
 import shutil
-from typing import Any, Callable, Iterator, Tuple, TypedDict
+from typing import Any, Final, Callable, Iterator, Tuple, TypedDict
 import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
@@ -38,7 +38,7 @@ class EmbeddedLoader(BaseLoader):
         return unpack_payload(payload), None, None
 
 
-JINJA_ENV = Environment(
+JINJA_ENV: Final = Environment(
     loader=EmbeddedLoader(TEMPLATES),
     autoescape=False,  # we're not producing HTML
     auto_reload=False,  # we're serving statically embedded assets
@@ -355,7 +355,7 @@ def symlink_binaries(
         os.symlink(self_exe_path, dest_path)
 
 
-LLVM_BINUTILS_ALIASES = {
+LLVM_BINUTILS_ALIASES: Final = {
     "addr2line": "llvm-addr2line",
     "ar": "llvm-ar",
     "as": "llvm-as",
@@ -375,7 +375,7 @@ LLVM_BINUTILS_ALIASES = {
     "strip": "llvm-strip",
 }
 
-CLANG_GCC_ALIASES = {
+CLANG_GCC_ALIASES: Final = {
     "c++": "clang++",
     "cc": "clang",
     "cpp": "clang-cpp",
@@ -420,7 +420,7 @@ def is_command_specific_to_ct_ng(c: str) -> bool:
     return c.endswith("populate") or c.endswith("ct-ng.config")
 
 
-VERSIONED_CC_RE = re.compile(
+VERSIONED_CC_RE: Final = re.compile(
     r"(?:^|-)(?:g?cc|c\+\+|g\+\+|cpp|clang|clang\+\+)-[0-9.]+$"
 )
 

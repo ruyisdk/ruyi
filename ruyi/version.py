@@ -1,5 +1,5 @@
 import importlib.metadata
-from typing import TYPE_CHECKING
+from typing import Final, TYPE_CHECKING
 
 import packaging.version
 
@@ -18,7 +18,7 @@ else:
 # requires version info to be ready) that the porcelain status is not yet
 # available.
 
-PYPI_PRERELEASE_KINDS_MAP = {
+PYPI_PRERELEASE_KINDS_MAP: Final = {
     "a": "alpha",
     "b": "beta",
     "rc": "rc",
@@ -47,17 +47,17 @@ def init_pkg_semver() -> Version:
     return convert2semver(pkg_pypi_ver)
 
 
-RUYI_SEMVER = init_pkg_semver()
-RUYI_USER_AGENT = f"ruyi/{RUYI_SEMVER}"
+RUYI_SEMVER: Final = init_pkg_semver()
+RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
-COPYRIGHT_NOTICE = """\
+COPYRIGHT_NOTICE: Final = """\
 Copyright (C) 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).
 All rights reserved.
 License: Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0>
 \
 """
 
-MPL_REDIST_NOTICE = """\
+MPL_REDIST_NOTICE: Final = """\
 This distribution of ruyi contains code licensed under the Mozilla Public
 License 2.0 (https://mozilla.org/MPL/2.0/). You can get the respective
 project's sources from the project's official website:

@@ -4,7 +4,7 @@ import os
 import pathlib
 import re
 import time
-from typing import TYPE_CHECKING, Iterable, cast
+from typing import Final, Iterable, TYPE_CHECKING, cast
 import uuid
 
 import requests
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 # e.g. "run.202410201845.d06ca5d668e64fec833ed3e6eb926a2c.ndjson"
-RE_RAW_EVENT_FILENAME = re.compile(
+RE_RAW_EVENT_FILENAME: Final = re.compile(
     r"^run\.(?P<time_bucket>\d{12})\.(?P<uuid>[0-9a-f]{32})\.ndjson$"
 )
 
@@ -210,9 +210,9 @@ class TelemetryStore:
             log.I(
                 f"the next upload will happen anytime [yellow]ruyi[/] is executed between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
             )
-        log.I(
-            "you can turn off telemetry uploads by setting the telemetry mode to [green]local[/] or [green]off[/] in the local config; consult the RuyiSDK documentation for details"
-        )
+        log.I("in order to hide this banner:")
+        log.I("- opt out with [yellow]ruyi telemetry optout[/]")
+        log.I("- or give consent with [yellow]ruyi telemetry consent[/]")
 
     def next_upload_day(self, time_now: float | None = None) -> int | None:
         upload_wday = self.upload_weekday()

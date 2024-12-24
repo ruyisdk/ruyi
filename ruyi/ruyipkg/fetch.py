@@ -2,14 +2,14 @@ import abc
 import mmap
 import os
 import subprocess
-from typing import Any
+from typing import Any, Final
 
 import requests
 from rich import progress
 
 from .. import log
 
-ENV_OVERRIDE_FETCHER = "RUYI_OVERRIDE_FETCHER"
+ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
 
 
 class BaseFetcher:
@@ -55,7 +55,7 @@ class BaseFetcher:
         return get_usable_fetcher_cls()(urls, dest)
 
 
-KNOWN_FETCHERS: dict[str, type[BaseFetcher]] = {}
+KNOWN_FETCHERS: Final[dict[str, type[BaseFetcher]]] = {}
 
 
 def register_fetcher(name: str, f: type[BaseFetcher]) -> None:

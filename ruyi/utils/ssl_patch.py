@@ -2,13 +2,13 @@ import ctypes
 import os
 import ssl
 import sys
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 import certifi
 
 from .. import log
 
-_orig_get_default_verify_paths = ssl.get_default_verify_paths
+_orig_get_default_verify_paths: Final = ssl.get_default_verify_paths
 _cached_paths: ssl.DefaultVerifyPaths | None = None
 
 
@@ -124,7 +124,7 @@ class WellKnownCALocation(NamedTuple):
     capath: str
 
 
-WELL_KNOWN_CA_LOCATIONS: list[WellKnownCALocation] = [
+WELL_KNOWN_CA_LOCATIONS: Final[list[WellKnownCALocation]] = [
     # Debian-based distros
     WellKnownCALocation("/usr/lib/ssl/cert.pem", "/usr/lib/ssl/certs"),
     # RPM-based distros
