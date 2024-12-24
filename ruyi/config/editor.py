@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 import pathlib
-from typing import TYPE_CHECKING, cast
+from typing import Sequence, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -59,7 +59,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
         self._touched = True
         self._stage = cast(tomlkit.TOMLDocument, self._content.copy())
 
-    def set_value(self, key: str, val: object | None) -> None:
+    def set_value(self, key: str | Sequence[str], val: object | None) -> None:
         parsed_key = parse_config_key(key)
         ensure_valid_config_kv(parsed_key, check_val=True, val=val)
 
@@ -75,7 +75,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
             new_section.append(sel[0], val)
             self._stage.append(section, new_section)
 
-    def unset_value(self, key: str) -> None:
+    def unset_value(self, key: str | Sequence[str]) -> None:
         parsed_key = parse_config_key(key)
         ensure_valid_config_kv(parsed_key, check_val=False)
 
