@@ -1,6 +1,7 @@
 import argparse
 
 from .. import config
+from ..config.schema import encode_value
 from .. import log
 from .cmd import RootCommand
 
@@ -36,5 +37,5 @@ class ConfigGetCommand(
         if val is None:
             return 1
 
-        log.stdout(config.encode_value(val))
+        log.stdout(encode_value(val))
         return 0

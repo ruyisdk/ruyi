@@ -4,7 +4,7 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
+from typing import Any, Iterable, Sequence, TypedDict, TYPE_CHECKING
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -21,6 +21,7 @@ from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryStore
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
+from . import schema
 
 PRESET_GLOBAL_CONFIG_LOCATIONS: list[str] = []
 
@@ -84,43 +85,6 @@ class GlobalConfigRootType(TypedDict):
     telemetry: "NotRequired[GlobalConfigTelemetryType]"
 
 
-def parse_config_key(key: str) -> list[str]:
-    return key.split(".")
-
-
-SECTION_INSTALLATION: Final = "installation"
-KEY_INSTALLATION_EXTERNALLY_MANAGED: Final = "externally_managed"
-
-SECTION_PACKAGES: Final = "packages"
-KEY_PACKAGES_PRERELEASES: Final = "prereleases"
-
-SECTION_REPO: Final = "repo"
-KEY_REPO_BRANCH: Final = "branch"
-KEY_REPO_LOCAL: Final = "local"
-KEY_REPO_REMOTE: Final = "remote"
-
-SECTION_TELEMETRY: Final = "telemetry"
-KEY_TELEMETRY_MODE: Final = "mode"
-KEY_TELEMETRY_PM_TELEMETRY_URL: Final = "pm_telemetry_url"
-KEY_TELEMETRY_UPLOAD_CONSENT: Final = "upload_consent"
-
-
-def encode_value(v: object) -> str:
-    """Encodes the given config value into a string representation suitable for
-    display or storage into TOML config files."""
-
-    if isinstance(v, bool):
-        return "true" if v else "false"
-    elif isinstance(v, int):
-        return str(v)
-    elif isinstance(v, str):
-        return v
-    elif isinstance(v, datetime.datetime):
-        return v.isoformat()
-    else:
-        raise NotImplementedError(f"invalid type for config value: {type(v)}")
-
-
 class GlobalConfig:
     def __init__(self) -> None:
         # all defaults
@@ -143,19 +107,21 @@ class GlobalConfig:
         self._telemetry_pm_telemetry_url: str | None = None
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
-        if ins_cfg := config_data.get(SECTION_INSTALLATION):
+        if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
             self.is_installation_externally_managed = ins_cfg.get(
-                KEY_INSTALLATION_EXTERNALLY_MANAGED,
+                schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
                 False,
             )
 
-        if pkgs_cfg := config_data.get(SECTION_PACKAGES):
-            self.include_prereleases = pkgs_cfg.get(KEY_PACKAGES_PRERELEASES, False)
+        if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
+            self.include_prereleases = pkgs_cfg.get(
+                schema.KEY_PACKAGES_PRERELEASES, False
+            )
 
-        if repo_cfg := config_data.get(SECTION_REPO):
-            self.override_repo_dir = repo_cfg.get(KEY_REPO_LOCAL, None)
-            self.override_repo_url = repo_cfg.get(KEY_REPO_REMOTE, None)
-            self.override_repo_branch = repo_cfg.get(KEY_REPO_BRANCH, None)
+        if repo_cfg := config_data.get(schema.SECTION_REPO):
+            self.override_repo_dir = repo_cfg.get(schema.KEY_REPO_LOCAL, None)
+            self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
+            self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -164,31 +130,28 @@ class GlobalConfig:
                     )
                     self.override_repo_dir = None
 
-        if tele_cfg := config_data.get(SECTION_TELEMETRY):
-            self._telemetry_mode = tele_cfg.get(KEY_TELEMETRY_MODE, None)
+        if tele_cfg := config_data.get(schema.SECTION_TELEMETRY):
+            self._telemetry_mode = tele_cfg.get(schema.KEY_TELEMETRY_MODE, None)
             self._telemetry_pm_telemetry_url = tele_cfg.get(
-                KEY_TELEMETRY_PM_TELEMETRY_URL, None
+                schema.KEY_TELEMETRY_PM_TELEMETRY_URL,
+                None,
             )
 
             self._telemetry_upload_consent = None
-            if consent := tele_cfg.get(KEY_TELEMETRY_UPLOAD_CONSENT, None):
+            if consent := tele_cfg.get(schema.KEY_TELEMETRY_UPLOAD_CONSENT, None):
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
 
     def get_by_key(self, key: str | Sequence[str]) -> object | None:
-        if isinstance(key, str):
-            parsed_key = parse_config_key(key)
-        else:
-            parsed_key = list(key)
-
+        parsed_key = schema.parse_config_key(key)
         section, sel = parsed_key[0], parsed_key[1:]
-        if section == SECTION_INSTALLATION:
+        if section == schema.SECTION_INSTALLATION:
             return self._get_section_installation(sel)
-        elif section == SECTION_PACKAGES:
+        elif section == schema.SECTION_PACKAGES:
             return self._get_section_packages(sel)
-        elif section == SECTION_REPO:
+        elif section == schema.SECTION_REPO:
             return self._get_section_repo(sel)
-        elif section == SECTION_TELEMETRY:
+        elif section == schema.SECTION_TELEMETRY:
             return self._get_section_telemetry(sel)
         else:
             return None
@@ -197,7 +160,7 @@ class GlobalConfig:
         if len(selector) != 1:
             return None
         leaf = selector[0]
-        if leaf == KEY_INSTALLATION_EXTERNALLY_MANAGED:
+        if leaf == schema.KEY_INSTALLATION_EXTERNALLY_MANAGED:
             return self.is_installation_externally_managed
         else:
             return None
@@ -206,7 +169,7 @@ class GlobalConfig:
         if len(selector) != 1:
             return None
         leaf = selector[0]
-        if leaf == KEY_PACKAGES_PRERELEASES:
+        if leaf == schema.KEY_PACKAGES_PRERELEASES:
             return self.include_prereleases
         else:
             return None
@@ -215,11 +178,11 @@ class GlobalConfig:
         if len(selector) != 1:
             return None
         leaf = selector[0]
-        if leaf == KEY_REPO_BRANCH:
+        if leaf == schema.KEY_REPO_BRANCH:
             return self.override_repo_branch
-        elif leaf == KEY_REPO_LOCAL:
+        elif leaf == schema.KEY_REPO_LOCAL:
             return self.override_repo_dir
-        elif leaf == KEY_REPO_REMOTE:
+        elif leaf == schema.KEY_REPO_REMOTE:
             return self.override_repo_url
         else:
             return None
@@ -228,11 +191,11 @@ class GlobalConfig:
         if len(selector) != 1:
             return None
         leaf = selector[0]
-        if leaf == KEY_TELEMETRY_MODE:
+        if leaf == schema.KEY_TELEMETRY_MODE:
             return self.telemetry_mode
-        elif leaf == KEY_TELEMETRY_PM_TELEMETRY_URL:
+        elif leaf == schema.KEY_TELEMETRY_PM_TELEMETRY_URL:
             return self.override_pm_telemetry_url
-        elif leaf == KEY_TELEMETRY_UPLOAD_CONSENT:
+        elif leaf == schema.KEY_TELEMETRY_UPLOAD_CONSENT:
             return self.telemetry_upload_consent_time
         else:
             return None
@@ -364,6 +327,10 @@ class GlobalConfig:
 
         for config_dir in reversed(list(self._dirs.app_config_dirs)):
             yield config_dir / "config.toml"
+
+    @property
+    def local_user_config_file(self) -> pathlib.Path:
+        return self._dirs.app_config / "config.toml"
 
     def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
         try:
