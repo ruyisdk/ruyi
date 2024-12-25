@@ -4,10 +4,8 @@ import shutil
 import subprocess
 from typing import BinaryIO, NoReturn, Protocol
 
-import arpy
-
 from .. import log
-from ..utils import prereqs
+from ..utils import ar, prereqs
 from .unpack_method import (
     UnpackMethod,
     UnrecognizedPackFormatError,
@@ -281,8 +279,8 @@ def do_unpack_deb(
     filename: str,
     destdir: str | None,
 ) -> None:
-    with arpy.Archive(filename) as ar:
-        for f in ar.infolist():
+    with ar.ArpyArchiveWrapper(filename) as a:
+        for f in a.infolist():
             name = f.name.decode("utf-8")
             if name.startswith("data.tar"):
                 inner_unpack_method = determine_unpack_method(name)
@@ -291,7 +289,7 @@ def do_unpack_deb(
                     destdir,
                     0,
                     inner_unpack_method,
-                    ar.open(f),
+                    a.open(f),
                 )
 
     raise RuntimeError(f"file '{filename}' does not appear to be a deb")
