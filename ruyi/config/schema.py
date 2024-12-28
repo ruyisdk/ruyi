@@ -1,4 +1,5 @@
 import datetime
+import sys
 from typing import Final, Sequence
 
 from .errors import (
@@ -153,7 +154,11 @@ def encode_value(v: object) -> str:
     elif isinstance(v, datetime.datetime):
         if v.tzinfo is None:
             raise ValueError("only timezone-aware datetimes are supported for safety")
-        return v.isoformat()
+        s = v.isoformat()
+        if s.endswith("+00:00"):
+            # use the shorter 'Z' suffix for UTC
+            return f"{s[:-6]}Z"
+        return s
     else:
         raise NotImplementedError(f"invalid type for config value: {type(v)}")
 
@@ -182,6 +187,10 @@ def decode_value(
     elif expected_type is str:
         return val
     elif expected_type is datetime.datetime:
+        if sys.version_info < (3, 11) and val.endswith("Z"):
+            # datetime.fromisoformat() did not support the 'Z' suffix until
+            # Python 3.11
+            val = f"{val[:-1]}+00:00"
         v = datetime.datetime.fromisoformat(val)
         return v.astimezone() if v.tzinfo is None else v
     else:

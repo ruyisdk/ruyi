@@ -34,6 +34,7 @@ def test_decode_value_datetime() -> None:
         decode_value("telemetry.upload_consent", "2024-12-01T12:00:00Z") == tz_aware_dt
     )
     assert decode_value(datetime.datetime, "2024-12-01T12:00:00Z") == tz_aware_dt
+    assert decode_value(datetime.datetime, "2024-12-01T12:00:00+00:00") == tz_aware_dt
 
     # naive datetimes are decoded using the implicit local timezone
     decode_value(datetime.datetime, "2024-12-01T12:00:00")
@@ -55,7 +56,7 @@ def test_encode_value_str() -> None:
 
 def test_encode_value_datetime() -> None:
     tz_aware_dt = datetime.datetime(2024, 12, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
-    assert encode_value(tz_aware_dt) == "2024-12-01T12:00:00+00:00"
+    assert encode_value(tz_aware_dt) == "2024-12-01T12:00:00Z"
 
     # specifically check that naive datetimes are rejected
     tz_naive_dt = datetime.datetime(2024, 12, 1, 12, 0, 0)
