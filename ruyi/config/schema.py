@@ -151,6 +151,8 @@ def encode_value(v: object) -> str:
     elif isinstance(v, str):
         return v
     elif isinstance(v, datetime.datetime):
+        if v.tzinfo is None:
+            raise ValueError("only timezone-aware datetimes are supported for safety")
         return v.isoformat()
     else:
         raise NotImplementedError(f"invalid type for config value: {type(v)}")
@@ -176,6 +178,7 @@ def decode_value(
     elif expected_type is str:
         return val
     elif expected_type is datetime.datetime:
-        return datetime.datetime.fromisoformat(val)
+        v = datetime.datetime.fromisoformat(val)
+        return v.astimezone() if v.tzinfo is None else v
     else:
         raise NotImplementedError(f"invalid type for config value: {expected_type}")
