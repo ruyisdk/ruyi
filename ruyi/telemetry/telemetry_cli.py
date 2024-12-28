@@ -105,9 +105,23 @@ class TelemetryStatusCommand(
 ):
     @classmethod
     def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+        p.add_argument(
+            "--verbose",
+            "-v",
+            action="store_true",
+            help="Enable verbose output",
+        )
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
-        log.stdout(cfg.telemetry_mode)
+        verbose: bool = args.verbose
+        if not verbose:
+            log.stdout(cfg.telemetry_mode)
+            return 0
+
+        if cfg.telemetry is None:
+            log.I("telemetry mode is [green]off[/]: no further data will be collected")
+            return 0
+
+        cfg.telemetry.print_telemetry_notice(for_cli_verbose_output=True)
         return 0

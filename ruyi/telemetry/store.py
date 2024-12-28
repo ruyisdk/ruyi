@@ -166,12 +166,16 @@ class TelemetryStore:
             time_now = time.time()
         return self.upload_consent_time.timestamp() <= time_now
 
-    def print_telemetry_notice(self) -> None:
+    def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
         if self.local_mode:
+            if for_cli_verbose_output:
+                log.I(
+                    "telemetry mode is [green]local[/]: local data collection only, no uploads"
+                )
             return
 
         now = time.time()
-        if self.has_upload_consent(now):
+        if self.has_upload_consent(now) and not for_cli_verbose_output:
             log.D("user has consented to telemetry upload")
             return
 
@@ -190,9 +194,17 @@ class TelemetryStore:
 
         today_is_upload_day = self.is_upload_day(now)
         has_uploaded_today = self.has_uploaded_today(now)
-        log.W(
-            f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
-        )
+        if for_cli_verbose_output:
+            log.I(
+                "telemetry mode is [green]on[/]: data is collected and periodically uploaded"
+            )
+            log.I(
+                f"non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {upload_wday_name}[/]"
+            )
+        else:
+            log.W(
+                f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
+            )
         if today_is_upload_day:
             if has_uploaded_today:
                 if last_upload_time := self.last_upload_timestamp:
@@ -210,9 +222,11 @@ class TelemetryStore:
             log.I(
                 f"the next upload will happen anytime [yellow]ruyi[/] is executed between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
             )
-        log.I("in order to hide this banner:")
-        log.I("- opt out with [yellow]ruyi telemetry optout[/]")
-        log.I("- or give consent with [yellow]ruyi telemetry consent[/]")
+
+        if not for_cli_verbose_output:
+            log.I("in order to hide this banner:")
+            log.I("- opt out with [yellow]ruyi telemetry optout[/]")
+            log.I("- or give consent with [yellow]ruyi telemetry consent[/]")
 
     def next_upload_day(self, time_now: float | None = None) -> int | None:
         upload_wday = self.upload_weekday()
