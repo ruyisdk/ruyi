@@ -30,7 +30,7 @@ class TelemetryConsentCommand(
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now().astimezone()
         with ConfigEditor.work_on_user_local_config(cfg) as ed:
             ed.set_value((schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_MODE), "on")
             ed.set_value(

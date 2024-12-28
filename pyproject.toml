@@ -80,6 +80,7 @@ rich = ">=11.2.0"
 semver = ">=2.10"
 tomlkit = ">=0.9"
 tomli = { version = ">=1.2", python = "<3.11" }
+tzdata = { version = "^2024.2", platform = "win32" }
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"

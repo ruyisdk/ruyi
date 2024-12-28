@@ -48,7 +48,7 @@ class InvalidConfigValueTypeError(TypeError):
 class InvalidConfigValueError(ValueError):
     def __init__(
         self,
-        key: str | Sequence[str],
+        key: str | Sequence[str] | type,
         val: object | None,
     ) -> None:
         super().__init__()
@@ -56,7 +56,9 @@ class InvalidConfigValueError(ValueError):
         self._val = val
 
     def __str__(self) -> str:
-        return f"invalid value for config key {self._key}: {self._val}"
+        if isinstance(self._key, type):
+            return f"invalid config value for type {self._key}: {self._val}"
+        return f"invalid config value for key {self._key}: {self._val}"
 
     def __repr__(self) -> str:
         return f"InvalidConfigValueError({self._key:!r}, {self._val:!r})"
