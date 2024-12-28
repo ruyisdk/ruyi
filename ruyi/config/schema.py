@@ -159,13 +159,17 @@ def encode_value(v: object) -> str:
 
 
 def decode_value(
-    key: str | Sequence[str],
+    key: str | Sequence[str] | type,
     val: str,
 ) -> object:
     """Decodes the given string representation of a config value into a Python
     value, directed by type information implied by the config key."""
 
-    expected_type = get_expected_type_for_config_key(key)
+    if isinstance(key, type):
+        expected_type = key
+    else:
+        expected_type = get_expected_type_for_config_key(key)
+
     if expected_type is bool:
         if val in ("true", "yes", "1"):
             return True
