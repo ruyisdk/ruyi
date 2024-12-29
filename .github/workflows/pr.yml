@@ -87,7 +87,7 @@ jobs:
       - name: Test with pytest (system-wide)
         if: success() && matrix.baseline
         run: |
-          pip install --system -e .
+          pip install -e .
           pytest
 
   pylic:
