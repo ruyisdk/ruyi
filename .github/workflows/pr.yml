@@ -23,7 +23,7 @@ on:
 jobs:
   lint:
     name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs_on }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: true
@@ -34,13 +34,16 @@ jobs:
           - '3.12'
         experimental: [false]
         baseline: [false]
+        runs_on: ['ubuntu-latest']
         include:
           - python: '3.13'
             baseline: false
             experimental: true
+            runs_on: ubuntu-latest
           - python: '3.10'
             baseline: true
             experimental: false
+            runs_on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
