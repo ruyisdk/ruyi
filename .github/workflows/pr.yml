@@ -51,12 +51,16 @@ jobs:
         if: success() && matrix.baseline
         run: |
           ./scripts/install-baseline-deps.sh
-          # give the Poetry environment access to the system-wide deps
-          # this has to be done before virtualenv creation
+          # Install poetry with access to the system-wide deps
+          pipx install --system-site-packages poetry
+          # also give the Poetry environment access to the system-wide deps
+          # should it want to create its own venv
           export POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true
 
       - name: Install Poetry
+        if: success() && !matrix.baseline
         run: pipx install poetry
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
