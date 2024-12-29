@@ -8,8 +8,8 @@ import arpy
 
 
 class ArpyArchiveWrapper(arpy.Archive, AbstractContextManager["arpy.Archive"]):
-    """Compatibility context manager shim for arpy.Archive, for working across
-    arpy 1.x and 2.x."""
+    """Compatibility shim for arpy.Archive, for easy interop with both arpy 1.x
+    and 2.x."""
 
     def __init__(
         self,
@@ -38,3 +38,37 @@ class ArpyArchiveWrapper(arpy.Archive, AbstractContextManager["arpy.Archive"]):
 
         # backport of arpy 2.x __exit__ implementation
         self.close()
+
+    def infolist(self) -> list[arpy.ArchiveFileHeader]:
+        if hasattr(super(), "infolist"):
+            return super().infolist()
+
+        # backport of arpy 2.x infolist()
+        self.read_all_headers()
+        return [
+            header
+            for header in self.headers
+            if header.type
+            in (
+                arpy.HEADER_BSD,
+                arpy.HEADER_NORMAL,
+                arpy.HEADER_GNU,
+            )
+        ]
+
+    def open(self, name: bytes | arpy.ArchiveFileHeader) -> arpy.ArchiveFileData:
+        if hasattr(super(), "open"):
+            return super().open(name)
+
+        # backport of arpy 2.x open()
+        if isinstance(name, bytes):
+            ar_file = self.archived_files.get(name)
+            if ar_file is None:
+                raise KeyError("There is no item named %r in the archive" % (name,))
+
+            return ar_file
+
+        if name not in self.headers:
+            raise KeyError("Provided header does not match this archive")
+
+        return arpy.ArchiveFileData(ar_obj=self, header=name)
