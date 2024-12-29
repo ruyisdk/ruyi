@@ -53,9 +53,6 @@ jobs:
           ./scripts/install-baseline-deps.sh
           # Install poetry with access to the system-wide deps
           pipx install --system-site-packages poetry
-          # also give the Poetry environment access to the system-wide deps
-          # should it want to create its own venv
-          export POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true
 
       - name: Install Poetry
         if: success() && !matrix.baseline
@@ -71,7 +68,9 @@ jobs:
         run: poetry install --with=dev
       - name: Install only the dev tools in the venv
         if: success() && matrix.baseline
-        run: poetry install --only=dev
+        # we need to also give the Poetry environment access to the
+        # system-wide deps
+        run: POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true poetry install --only=dev
 
       - name: Lint with ruff
         run: poetry run ruff check
