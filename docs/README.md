@@ -1,4 +1,7 @@
-# RuyiSDK 包管理器开发文档
+# RuyiSDK 包管理器的技术文档
+
+以下是一些面向 RuyiSDK 贡献者、打包者群体的技术文档。如果您是使用 RuyiSDK
+开发自己项目的用户，请参考 [RuyiSDK 官网文档](https://ruyisdk.org/docs/intro)。
 
 ## 第三方 RuyiSDK 生态
 
@@ -9,6 +12,7 @@
 * [`ruyi` 的构建方式](./building.md)
 * [CI: 自动化版本发布](./ci-release-automation.md)
 * [Repo CI: Self-hosted runner 管理](./ci-self-hosted-runner.md)
+* [`ruyi` 的依赖兼容基线](./dep-baseline.md)
 
 ## 软件源
 
