@@ -22,7 +22,7 @@ on:
 
 jobs:
   lint:
-    name: 'lint & typecheck & test (Python ${{ matrix.python }})'
+    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -33,9 +33,14 @@ jobs:
           - '3.11'
           - '3.12'
         experimental: [false]
+        baseline: [false]
         include:
           - python: '3.13'
+            baseline: false
             experimental: true
+          - python: '3.10'
+            baseline: true
+            experimental: false
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
@@ -46,6 +51,9 @@ jobs:
           cache: poetry
       - name: Install deps
         run: poetry install --with=dev
+      - name: Replace deps with baseline versions
+        if: matrix.baseline
+        run: ./scripts/install-baseline-deps.sh
       - name: Lint with ruff
         run: poetry run ruff check
       - name: Type-check with mypy
