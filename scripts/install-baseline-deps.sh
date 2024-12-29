@@ -17,6 +17,9 @@ main() {
         python3-tomli  # 1.2.2
         python3-tomlkit  # 0.9.2
         python3-typing-extensions  # 3.10.0.2
+
+        # for installing ourselves
+        python3-pip
     )
 
     export DEBIAN_FRONTEND=noninteractive
@@ -25,7 +28,7 @@ main() {
     sudo apt-get install -y "${pkglist[@]}"
 
     # we need a recent pytest for running the tests though
-    pipx install pytest
+    pipx install --system-site-packages pytest
 }
 
 main "$@"

@@ -86,7 +86,9 @@ jobs:
         run: poetry run pytest
       - name: Test with pytest (system-wide)
         if: success() && matrix.baseline
-        run: pytest
+        run: |
+          pip install --system -e .
+          pytest
 
   pylic:
     name: license compatibility
