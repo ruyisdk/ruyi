@@ -43,17 +43,29 @@ jobs:
             experimental: false
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install deps system-wide
+        if: success() && matrix.baseline
+        run: |
+          ./scripts/install-baseline-deps.sh
+          # give the Poetry environment access to the system-wide deps
+          # this has to be done before virtualenv creation
+          export POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true
+
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           cache: poetry
-      - name: Install deps
+
+      - name: Install deps in the venv
+        if: success() && !matrix.baseline
         run: poetry install --with=dev
-      - name: Replace deps with baseline versions
-        if: matrix.baseline
-        run: ./scripts/install-baseline-deps.sh
+      - name: Install only the dev tools in the venv
+        if: success() && matrix.baseline
+        run: poetry install --only=dev
+
       - name: Lint with ruff
         run: poetry run ruff check
       - name: Type-check with mypy

@@ -2,25 +2,27 @@
 
 set -e
 
-MY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 main() {
-    local requirements_file="$MY_DIR/requirements.baseline.txt"
+    local pkglist=(
+        # Package versions provided by Ubuntu 22.04 LTS.
+        python3-arpy  # 1.1.1
+        python3-certifi  # 2020.6.20
+        python3-jinja2  # 3.0.3
+        python3-packaging  # 21.3
+        python3-pygit2  # 1.6.1
+        python3-yaml  # 5.4.1  # https://github.com/yaml/pyyaml/issues/724
+        python3-requests  # 2.25.1
+        python3-rich  # 11.2.0
+        python3-semver  # 2.10.2
+        python3-tomli  # 1.2.2
+        python3-tomlkit  # 0.9.2
+        python3-typing-extensions  # 3.10.0.2
+    )
 
-    # Install pygit2 build deps -- prebuilt 1.6.1 wheels on PyPI are only
-    # available for Python up to 3.9.
     export DEBIAN_FRONTEND=noninteractive
     export DEBCONF_NONINTERACTIVE_SEEN=true
     sudo apt-get update -qqy
-    sudo apt-get install -qqy libgit2-dev
-
-    # Workaround https://github.com/yaml/pyyaml/issues/724 because we need
-    # exactly this version of PyYAML for faithful reproduction of the baseline
-    # environment.
-    poetry run pip install 'Cython<3'
-    poetry run pip install --no-build-isolation 'PyYAML==5.4.1'
-
-    poetry run pip install -r "$requirements_file"
+    sudo apt-get install -y "${pkglist[@]}"
 }
 
 main "$@"
