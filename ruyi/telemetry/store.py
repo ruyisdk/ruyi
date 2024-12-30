@@ -354,6 +354,8 @@ class TelemetryStore:
         for f in staged_payloads:
             self.upload_one_staged_payload(f, self.pm_api_url)
 
+        self.record_upload_timestamp()
+
     def upload_one_staged_payload(
         self,
         f: pathlib.Path,
