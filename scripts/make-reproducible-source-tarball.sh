@@ -50,14 +50,14 @@ main() {
 
     git clone "$REPO_ROOT" "$TMPDIR/$staging_dirname"
     pushd "$TMPDIR/$staging_dirname" > /dev/null
-
     # remove Git metadata
     rm -rf .git
-
     # set all file timestamps to $SOURCE_EPOCH
     find . -exec touch -md "$source_epoch" '{}' '+'
+    popd > /dev/null
 
-    reproducible_tar -cf - . | reproducible_gzip > "$dest_dir/$artifact_name"
+    pushd "$TMPDIR" > /dev/null
+    reproducible_tar -cf - "./$staging_dirname" | reproducible_gzip > "$dest_dir/$artifact_name"
     popd > /dev/null
 
     echo "info: repo HEAD content is reproducibly packed at $dest_dir/$artifact_name"
