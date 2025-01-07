@@ -1,14 +1,16 @@
-[tool.poetry]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
 name = "ruyi"
 version = "0.26.0-alpha.20241228"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
-# license = { file = "LICENSE-Apache.txt" }
-license = "Apache-2.0"
+license = { file = "LICENSE-Apache.txt" }
 readme = "README.md"
 authors = [
-  # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
-  "WANG Xuerui <wangxuerui@iscas.ac.cn>",
+  { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -25,14 +27,53 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Typing :: Typed",
 ]
-include = ["ruyi/py.typed"]
+requires-python = ">=3.10"
+dependencies = [
+  "arpy",
+  "jinja2 (>=3, <4)",
+  "packaging>=21",
+  "pygit2>=1.6",
+  "pyyaml>=5.4",
+  "requests (>=2, <3)",
+  "rich>=11.2.0",
+  "semver>=2.10",
+  "tomlkit>=0.9",
+  "tomli>=1.2; python_version<'3.11'",
+  "tzdata; sys_platform=='win32'",
+]
 
-[tool.poetry.scripts]
+[project.scripts]
 ruyi = "ruyi.__main__:entrypoint"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[project.urls]
+homepage = "https://ruyisdk.org"
+documentation = "https://ruyisdk.org/docs/intro"
+download = "https://ruyisdk.org/download"
+github = "https://github.com/ruyisdk/ruyi"
+issues = "https://github.com/ruyisdk/ruyi/issues"
+repository = "https://github.com/ruyisdk/ruyi.git"
+
+[tool.poetry]
+include = ["ruyi/py.typed"]
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.9.0"
+pyright = "^1.1.389"
+pytest = "^8.2.2"
+ruff = "^0.8.1"
+typing-extensions = ">=3.10.0.2"
+
+types-cffi = "^1.16.0.20240106"
+types-pygit2 = "^1.14.0.20240317"
+types-PyYAML = "^6.0.12.20240311"
+types-requests = "^2.31.0.20240311"
+
+[tool.poetry.group.dist.dependencies]
+certifi = "*"
+nuitka = "^2.0"
+
+[tool.poetry.group.release-worker.dependencies]
+# empty for now
 
 
 [tool.mypy]
@@ -48,13 +89,6 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 mypy_path = "./stubs"
 
 
-[tool.pyright]
-include = ["ruyi", "scripts", "tests"]
-exclude = ["**/__pycache__", "tmp"]
-stubPath = "./stubs"
-pythonPlatform = "Linux"
-
-
 [tool.pylic]
 safe_licenses = [
   "Apache Software License",
@@ -67,38 +101,12 @@ safe_licenses = [
 ]
 
 
-[tool.poetry.dependencies]
-python = ">=3.10"
+[tool.pyright]
+include = ["ruyi", "scripts", "tests"]
+exclude = ["**/__pycache__", "tmp"]
+stubPath = "./stubs"
+pythonPlatform = "Linux"
 
-arpy = "*"
-jinja2 = "^3"
-packaging = ">=21"
-pygit2 = ">=1.6"
-pyyaml = ">=5.4"
-requests = "^2"
-rich = ">=11.2.0"
-semver = ">=2.10"
-tomlkit = ">=0.9"
-tomli = { version = ">=1.2", python = "<3.11" }
-tzdata = { version = "^2024.2", platform = "win32" }
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.9.0"
-pyright = "^1.1.389"
-pytest = "^8.2.2"
-ruff = "^0.8.1"
-typing-extensions = ">=3.10.0.2"
-
-types-cffi = "^1.16.0.20240106"
-types-pygit2 = "^1.14.0.20240317"
-types-PyYAML = "^6.0.12.20240311"
-types-requests = "^2.31.0.20240311"
-
-[tool.poetry.group.dist.dependencies]
-certifi = "^2024.2"
-nuitka = "^2.0"
-
-[tool.poetry.group.release-worker.dependencies]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
