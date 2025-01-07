@@ -35,7 +35,7 @@ dependencies = [
   "semver>=2.10",
   "tomlkit>=0.9",
   "tomli>=1.2; python_version<'3.11'",
-  "tzdata (>=2024.2, <2025); sys_platform=='win32'",
+  "tzdata; sys_platform=='win32'",
 ]
 
 [tool.poetry]
@@ -94,7 +94,7 @@ types-PyYAML = "^6.0.12.20240311"
 types-requests = "^2.31.0.20240311"
 
 [tool.poetry.group.dist.dependencies]
-certifi = "^2024.2"
+certifi = "*"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
