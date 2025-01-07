@@ -10,7 +10,7 @@ export MAKEFLAGS
 python3.12 -m venv /home/b/build-tools-venv
 /home/b/build-tools-venv/bin/pip install -U pip setuptools wheel
 /home/b/build-tools-venv/bin/pip install poetry
-/home/b/build-tools-venv/bin/pip install maturin==1.7.1 cibuildwheel==2.20.0 auditwheel==6.1.0
+/home/b/build-tools-venv/bin/pip install maturin==1.8.1 cibuildwheel==2.22.0 auditwheel==6.2.0
 for tool in poetry maturin cibuildwheel auditwheel; do
     ln -s /home/b/build-tools-venv/bin/"$tool" /usr/local/bin/"$tool"
 done
