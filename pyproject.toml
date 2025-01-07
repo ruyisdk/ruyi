@@ -45,6 +45,14 @@ dependencies = [
 [project.scripts]
 ruyi = "ruyi.__main__:entrypoint"
 
+[project.urls]
+homepage = "https://ruyisdk.org"
+documentation = "https://ruyisdk.org/docs/intro"
+download = "https://ruyisdk.org/download"
+github = "https://github.com/ruyisdk/ruyi"
+issues = "https://github.com/ruyisdk/ruyi/issues"
+repository = "https://github.com/ruyisdk/ruyi.git"
+
 [tool.poetry]
 include = ["ruyi/py.typed"]
 
