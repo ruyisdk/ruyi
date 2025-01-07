@@ -1,14 +1,12 @@
-[tool.poetry]
+[project]
 name = "ruyi"
 version = "0.26.0-alpha.20241228"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
-# license = { file = "LICENSE-Apache.txt" }
-license = "Apache-2.0"
+license = { file = "LICENSE-Apache.txt" }
 readme = "README.md"
 authors = [
-  # { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
-  "WANG Xuerui <wangxuerui@iscas.ac.cn>",
+  { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -25,9 +23,25 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Typing :: Typed",
 ]
+requires-python = ">=3.10"
+dependencies = [
+  "arpy",
+  "jinja2 (>=3, <4)",
+  "packaging>=21",
+  "pygit2>=1.6",
+  "pyyaml>=5.4",
+  "requests (>=2, <3)",
+  "rich>=11.2.0",
+  "semver>=2.10",
+  "tomlkit>=0.9",
+  "tomli>=1.2; python_version<'3.11'",
+  "tzdata (>=2024.2, <2025); sys_platform=='win32'",
+]
+
+[tool.poetry]
 include = ["ruyi/py.typed"]
 
-[tool.poetry.scripts]
+[project.scripts]
 ruyi = "ruyi.__main__:entrypoint"
 
 [build-system]
@@ -66,21 +80,6 @@ safe_licenses = [
   "Python Software Foundation License",
 ]
 
-
-[tool.poetry.dependencies]
-python = ">=3.10"
-
-arpy = "*"
-jinja2 = "^3"
-packaging = ">=21"
-pygit2 = ">=1.6"
-pyyaml = ">=5.4"
-requests = "^2"
-rich = ">=11.2.0"
-semver = ">=2.10"
-tomlkit = ">=0.9"
-tomli = { version = ">=1.2", python = "<3.11" }
-tzdata = { version = "^2024.2", platform = "win32" }
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
