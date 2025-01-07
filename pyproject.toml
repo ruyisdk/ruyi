@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [project]
 name = "ruyi"
 version = "0.26.0-alpha.20241228"
@@ -38,48 +42,11 @@ dependencies = [
   "tzdata; sys_platform=='win32'",
 ]
 
-[tool.poetry]
-include = ["ruyi/py.typed"]
-
 [project.scripts]
 ruyi = "ruyi.__main__:entrypoint"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-
-[tool.mypy]
-files = ["ruyi", "scripts", "tests"]
-show_error_codes = true
-strict = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-
-# https://github.com/eyeseast/python-frontmatter/issues/112
-# https://github.com/python/mypy/issues/8545
-# have to supply the typing info until upstream releases a new version with
-# the py.typed marker included
-mypy_path = "./stubs"
-
-
-[tool.pyright]
-include = ["ruyi", "scripts", "tests"]
-exclude = ["**/__pycache__", "tmp"]
-stubPath = "./stubs"
-pythonPlatform = "Linux"
-
-
-[tool.pylic]
-safe_licenses = [
-  "Apache Software License",
-  "BSD License",
-  "GPLv2 with linking exception",
-  "MIT",  # pyright spells "MIT License" differently
-  "MIT License",
-  "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
-  "Python Software Foundation License",
-]
-
+[tool.poetry]
+include = ["ruyi/py.typed"]
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
@@ -98,6 +65,40 @@ certifi = "*"
 nuitka = "^2.0"
 
 [tool.poetry.group.release-worker.dependencies]
+# empty for now
+
+
+[tool.mypy]
+files = ["ruyi", "scripts", "tests"]
+show_error_codes = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+# https://github.com/eyeseast/python-frontmatter/issues/112
+# https://github.com/python/mypy/issues/8545
+# have to supply the typing info until upstream releases a new version with
+# the py.typed marker included
+mypy_path = "./stubs"
+
+
+[tool.pylic]
+safe_licenses = [
+  "Apache Software License",
+  "BSD License",
+  "GPLv2 with linking exception",
+  "MIT",  # pyright spells "MIT License" differently
+  "MIT License",
+  "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
+  "Python Software Foundation License",
+]
+
+
+[tool.pyright]
+include = ["ruyi", "scripts", "tests"]
+exclude = ["**/__pycache__", "tmp"]
+stubPath = "./stubs"
+pythonPlatform = "Linux"
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
