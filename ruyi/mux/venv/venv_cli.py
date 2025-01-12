@@ -94,7 +94,6 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     seen_target_tuples: set[str] = set()
     targets: list[ConfiguredTargetTuple] = []
     warn_differing_target_arch = False
-    warn_multiple_sysroots = False
 
     for tc_atom_str in tc_atoms_str:
         tc_atom = Atom.parse(tc_atom_str)
