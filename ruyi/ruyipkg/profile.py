@@ -67,11 +67,32 @@ class PluginProfileProvider:
 
         return ret
 
-    def get_common_flags(self, profile_id: str) -> str:
+    def get_common_flags(self, profile_id: str, toolchain_flavors: list[str]) -> str:
+        result = self._maybe_get_common_flags_v2(profile_id, toolchain_flavors)
+        if result is not None:
+            return result
+        return self._get_common_flags_v1(profile_id)
+
+    def _get_common_flags_v1(self, profile_id: str) -> str:
         fn = self._must_get("get_common_flags_v1")
         ret = self._ev.eval_function(fn, profile_id)
         if not isinstance(ret, str):
             raise InvalidProfilePluginError("get_common_flags_v1 must return str")
+
+        return ret
+
+    def _maybe_get_common_flags_v2(
+        self,
+        profile_id: str,
+        toolchain_flavors: list[str],
+    ) -> str | None:
+        fn = self._phctx.get_from_plugin(self._plugin_id, "get_common_flags_v2")
+        if fn is None:
+            return None
+
+        ret = self._ev.eval_function(fn, profile_id, toolchain_flavors)
+        if not isinstance(ret, str):
+            raise InvalidProfilePluginError("get_common_flags_v2 must return str")
 
         return ret
 
@@ -156,8 +177,8 @@ class ProfileProxy:
         r = self._provider.list_needed_flavors(self._id)
         return set(r) if r else set()
 
-    def get_common_flags(self) -> str:
-        return self._provider.get_common_flags(self._id)
+    def get_common_flags(self, toolchain_flavors: list[str]) -> str:
+        return self._provider.get_common_flags(self._id, toolchain_flavors)
 
     def get_needed_emulator_pkg_flavors(
         self,

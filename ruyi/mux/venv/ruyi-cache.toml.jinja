@@ -1,18 +1,18 @@
 # NOTE: This file is managed by ruyi. DO NOT EDIT!
 
-[cached_v1]
-profile_common_flags = "{{ profile_common_flags }}"
+[cached_v2]
 {% if qemu_bin %}qemu_bin = "{{ qemu_bin }}"{% endif %}
 {% if profile_emu_env %}
-[cached_v1.profile_emu_env]
+[cached_v2.profile_emu_env]
 {% for k, v in profile_emu_env.items() %}{{ k }} = "{{ v }}"
 {% endfor %}{% endif %}
-{% for k, v in targets.items() %}[cached_v1.targets.{{ k }}]
+{% for k, v in targets.items() %}[cached_v2.targets.{{ k }}]
 toolchain_bindir = "{{ v['toolchain_bindir'] }}"
+toolchain_flags = "{{ v['toolchain_flags'] }}"
 {% if v["toolchain_sysroot"] %}toolchain_sysroot = "{{ v['toolchain_sysroot'] }}"{% endif %}
 {% if v["gcc_install_dir"] %}gcc_install_dir = "{{ v['gcc_install_dir'] }}"{% endif %}
 {% endfor %}
-{% for k, v in cmd_metadata_map.items() %}[cached_v1.cmd_metadata_map."{{ k }}"]
+{% for k, v in cmd_metadata_map.items() %}[cached_v2.cmd_metadata_map."{{ k }}"]
 dest = "{{ v['dest'] }}"
 target_tuple = "{{ v['target_tuple'] }}"
 {% endfor %}
