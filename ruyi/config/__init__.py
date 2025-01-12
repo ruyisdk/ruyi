@@ -1,10 +1,11 @@
+import copy
 import datetime
 import locale
 import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
+from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING, cast
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -386,6 +387,10 @@ class VenvCacheV1TargetType(TypedDict):
     gcc_install_dir: "NotRequired[str]"
 
 
+class VenvCacheV2TargetType(VenvCacheV1TargetType):
+    toolchain_flags: str
+
+
 class VenvCacheV1CmdMetadataEntryType(TypedDict):
     dest: str
     target_tuple: str
@@ -399,26 +404,46 @@ class VenvCacheV1Type(TypedDict):
     cmd_metadata_map: "NotRequired[dict[str, VenvCacheV1CmdMetadataEntryType]]"
 
 
+class VenvCacheV2Type(TypedDict):
+    profile_emu_env: "NotRequired[dict[str, str]]"
+    qemu_bin: "NotRequired[str]"
+    targets: dict[str, VenvCacheV2TargetType]
+    cmd_metadata_map: "NotRequired[dict[str, VenvCacheV1CmdMetadataEntryType]]"
+
+
 class VenvCacheRootType(TypedDict):
     cached: "NotRequired[VenvCacheV0Type]"
     cached_v1: "NotRequired[VenvCacheV1Type]"
+    cached_v2: "NotRequired[VenvCacheV2Type]"
 
 
 def parse_venv_cache(
     cache: VenvCacheRootType,
     global_sysroot: str | None,
-) -> VenvCacheV1Type:
+) -> VenvCacheV2Type:
+    if "cached_v2" in cache:
+        return cache["cached_v2"]
     if "cached_v1" in cache:
-        return cache["cached_v1"]
+        return upgrade_venv_cache_v1(cache["cached_v1"])
     if "cached" in cache:
         return upgrade_venv_cache_v0(cache["cached"], global_sysroot)
     raise RuntimeError("unsupported venv cache version")
 
 
+def upgrade_venv_cache_v1(x: VenvCacheV1Type) -> VenvCacheV2Type:
+    profile_common_flags = x["profile_common_flags"]
+    tmp = cast(dict[str, Any], copy.deepcopy(x))
+    del tmp["profile_common_flags"]
+    v2 = cast(VenvCacheV2Type, tmp)
+    for tgt in v2["targets"].values():
+        tgt["toolchain_flags"] = profile_common_flags
+    return v2
+
+
 def upgrade_venv_cache_v0(
     x: VenvCacheV0Type,
     global_sysroot: str | None,
-) -> VenvCacheV1Type:
+) -> VenvCacheV2Type:
     # v0 only supports one single target so upgrading is trivial
     v1_target: VenvCacheV1TargetType = {
         "toolchain_bindir": x["toolchain_bindir"],
@@ -437,7 +462,7 @@ def upgrade_venv_cache_v0(
     if "qemu_bin" in x:
         y["qemu_bin"] = x["qemu_bin"]
 
-    return y
+    return upgrade_venv_cache_v1(y)
 
 
 class RuyiVenvConfig:
@@ -453,7 +478,6 @@ class RuyiVenvConfig:
 
         parsed_cache = parse_venv_cache(cache, self.sysroot)
         self.targets = parsed_cache["targets"]
-        self.profile_common_flags = parsed_cache["profile_common_flags"]
         self.qemu_bin = parsed_cache.get("qemu_bin")
         self.profile_emu_env = parsed_cache.get("profile_emu_env")
         self.cmd_metadata_map = parsed_cache.get("cmd_metadata_map")
@@ -501,17 +525,23 @@ class RuyiVenvConfig:
             cfg: Any = tomllib.load(fp)  # in order to cast to our stricter type
 
         cache: Any  # in order to cast to our stricter type
-        venv_cache_v1_path = venv_root / "ruyi-cache.v1.toml"
+        venv_cache_v2_path = venv_root / "ruyi-cache.v2.toml"
         try:
-            with open(venv_cache_v1_path, "rb") as fp:
+            with open(venv_cache_v2_path, "rb") as fp:
                 cache = tomllib.load(fp)
         except FileNotFoundError:
-            venv_cache_v0_path = venv_root / "ruyi-cache.toml"
-            with open(venv_cache_v0_path, "rb") as fp:
-                cache = tomllib.load(fp)
+            venv_cache_v1_path = venv_root / "ruyi-cache.v1.toml"
+            try:
+                with open(venv_cache_v1_path, "rb") as fp:
+                    cache = tomllib.load(fp)
+            except FileNotFoundError:
+                venv_cache_v0_path = venv_root / "ruyi-cache.toml"
+                with open(venv_cache_v0_path, "rb") as fp:
+                    cache = tomllib.load(fp)
 
-        # NOTE: for now it's not prohibited to have v1 cache data in the v0
-        # cache path, but this situation is harmless
+        # NOTE: for now it's not prohibited to have cache data of a different
+        # version in a certain version's cache path, but this situation is
+        # harmless
         return cls(venv_root, cfg, cache)
 
     def resolve_cmd_metadata_with_cache(

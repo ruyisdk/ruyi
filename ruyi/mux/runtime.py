@@ -31,14 +31,16 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     target_tuple: str | None = None
     binpath: str | None = None
     toolchain_sysroot: str | None = None
+    toolchain_flags: str | None = None
     gcc_install_dir: str | None = None
 
-    # prefer v1 cached info which is lossless
+    # prefer v1+ cached info which is lossless
     if md := vcfg.resolve_cmd_metadata_with_cache(basename):
         target_tuple = md["target_tuple"]
         binpath = md["dest"]
         tgt_data = vcfg.targets[target_tuple]
         toolchain_sysroot = tgt_data.get("toolchain_sysroot")
+        toolchain_flags = tgt_data.get("toolchain_flags")
         gcc_install_dir = tgt_data.get("gcc_install_dir")
     else:
         toolchain_bindir: str | None = None
@@ -50,6 +52,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
             target_tuple = tgt_tuple
             toolchain_bindir = tgt_data["toolchain_bindir"]
             toolchain_sysroot = tgt_data.get("toolchain_sysroot")
+            toolchain_flags = tgt_data.get("toolchain_flags")
             gcc_install_dir = tgt_data.get("gcc_install_dir")
             break
 
@@ -64,6 +67,9 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
     if target_tuple is None:
         log.F(f"no configured target found for command [yellow]{basename}[/]")
+        return 1
+    if toolchain_flags is None:
+        log.F(f"no configured flags found for command [yellow]{basename}[/]")
         return 1
 
     log.D(f"binary to exec: {binpath}")
@@ -81,8 +87,8 @@ def mux_main(argv: List[str]) -> int | NoReturn:
                 log.D(f"informing clang of GCC install dir: {gcc_install_dir}")
                 argv_to_insert.append(f"--gcc-install-dir={gcc_install_dir}")
 
-        argv_to_insert.extend(shlex.split(vcfg.profile_common_flags))
-        log.D(f"parsed profile flags: {argv_to_insert}")
+        argv_to_insert.extend(shlex.split(toolchain_flags))
+        log.D(f"parsed toolchain flags: {argv_to_insert}")
 
         if toolchain_sysroot is not None:
             log.D(f"adding sysroot: {toolchain_sysroot}")

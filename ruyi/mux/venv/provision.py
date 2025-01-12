@@ -166,9 +166,12 @@ class VenvMaker:
 
         # provide initial cached configuration to venv
         render_and_write(
-            venv_root / "ruyi-cache.v1.toml",
+            venv_root / "ruyi-cache.v2.toml",
             "ruyi-cache.toml",
-            self.make_venv_cache_data(qemu_bin, profile_emu_env),
+            self.make_venv_cache_data(
+                qemu_bin,
+                profile_emu_env,
+            ),
         )
 
     def make_venv_cache_data(
@@ -180,6 +183,7 @@ class VenvMaker:
             tgt["target"]: {
                 "toolchain_bindir": str(pathlib.Path(tgt["toolchain_root"]) / "bin"),
                 "toolchain_sysroot": self.sysroot_destdir(tgt["target"]),
+                "toolchain_flags": tgt["toolchain_flags"],
                 "gcc_install_dir": tgt["gcc_install_dir"],
             }
             for tgt in self.targets
@@ -188,7 +192,6 @@ class VenvMaker:
         cmd_metadata_map = make_cmd_metadata_map(self.targets)
 
         return {
-            "profile_common_flags": self.profile.get_common_flags(),
             "profile_emu_env": profile_emu_env,
             "qemu_bin": qemu_bin,
             "targets": targets_cache_data,

@@ -94,7 +94,6 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     seen_target_tuples: set[str] = set()
     targets: list[ConfiguredTargetTuple] = []
     warn_differing_target_arch = False
-    warn_multiple_sysroots = False
 
     for tc_atom_str in tc_atoms_str:
         tc_atom = Atom.parse(tc_atom_str)
@@ -201,11 +200,15 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                     )
                     return 1
 
+        # derive flags for (the flavor(s) of) this toolchain
+        tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.flavors)
+
         # record the target tuple info to configure in the venv
         configured_target: ConfiguredTargetTuple = {
             "target": target_tuple,
             "toolchain_root": toolchain_root,
             "toolchain_sysroot": tc_sysroot_dir,
+            "toolchain_flags": tc_flags,
             # assume clang is preferred if package contains clang
             # this is mostly true given most packages don't contain both
             "cc_flavor": "clang" if tc_pm.toolchain_metadata.has_clang else "gcc",
