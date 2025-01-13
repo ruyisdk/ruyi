@@ -71,7 +71,7 @@ do_inner() {
 
     # build dep(s) with extension(s) if no prebuilt artifact is available on PyPI
     case "$arch" in
-    amd64|arm64|ppc64el) ;;  # current as of 1.15.1
+    amd64|arm64|ppc64el) ;;  # current as of 1.17.0
     *) ./scripts/build-pygit2.py ;;
     esac
 
