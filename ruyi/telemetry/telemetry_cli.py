@@ -125,3 +125,24 @@ class TelemetryStatusCommand(
 
         cfg.telemetry.print_telemetry_notice(for_cli_verbose_output=True)
         return 0
+
+
+class TelemetryUploadCommand(
+    TelemetryCommand,
+    cmd="upload",
+    help="Upload collected telemetry data now",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
+
+    @classmethod
+    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        if cfg.telemetry is None:
+            log.W("telemetry is disabled, nothing to upload")
+            return 0
+
+        cfg.telemetry.flush(upload_now=True)
+        # disable the flush at program exit because we have just done that
+        cfg.telemetry.discard_events()
+        return 0
