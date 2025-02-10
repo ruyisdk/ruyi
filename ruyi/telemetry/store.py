@@ -256,7 +256,7 @@ class TelemetryStore:
     def discard_events(self, v: bool = True) -> None:
         self._discard_events = v
 
-    def flush(self) -> None:
+    def flush(self, *, upload_now: bool = False) -> None:
         now = time.time()
 
         # We may be self-uninstalling and purging all state data, and in this
@@ -283,12 +283,12 @@ class TelemetryStore:
 
         log.D(f"persisted {len(self._events)} telemetry event(s)")
 
-        # try to upload if:
+        # try to upload if upload_now is True, or:
         #
         # * we're not in local mode
         # * today is the day
         # * we haven't uploaded today
-        if (
+        if not upload_now and (
             self.local_mode
             or not self.is_upload_day(now)
             or self.has_uploaded_today(now)
