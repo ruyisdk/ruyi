@@ -47,16 +47,16 @@ class ListCommand(
         augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo))
 
         if is_porcelain():
-            return do_list_porcelain(augmented_pkgs)
+            return _do_list_porcelain(augmented_pkgs)
 
         if not verbose:
-            return do_list_non_verbose(augmented_pkgs)
+            return _do_list_non_verbose(augmented_pkgs)
 
         for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
             if i > 0:
                 log.stdout("\n")
 
-            print_pkg_detail(ver.pm, cfg.lang_code)
+            _print_pkg_detail(ver.pm, cfg.lang_code)
 
         return 0
 
@@ -184,7 +184,7 @@ class AugmentedPkg:
         }
 
 
-def do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
+def _do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
     log.stdout("List of available packages:\n")
 
     for ap in augmented_pkgs:
@@ -209,7 +209,7 @@ class PorcelainPkgListOutputV1(PorcelainEntity):
     vers: list[PorcelainPkgVersionV1]
 
 
-def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
+def _do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     with PorcelainOutput() as po:
         for ap in augmented_pkgs:
             po.emit(ap.to_porcelain())
@@ -217,7 +217,7 @@ def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     return 0
 
 
-def print_pkg_detail(
+def _print_pkg_detail(
     pm: BoundPackageManifest,
     lang_code: str,
 ) -> None:
@@ -435,7 +435,7 @@ def do_install_atoms(
                 log.I(s)
 
         if pm.binary_metadata is not None:
-            ret = do_install_binary_pkg(
+            ret = _do_install_binary_pkg(
                 config,
                 mr,
                 pm,
@@ -448,7 +448,7 @@ def do_install_atoms(
             continue
 
         if pm.blob_metadata is not None:
-            ret = do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
+            ret = _do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
             if ret != 0:
                 return ret
             continue
@@ -459,7 +459,7 @@ def do_install_atoms(
     return 0
 
 
-def do_install_binary_pkg(
+def _do_install_binary_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -485,7 +485,7 @@ def do_install_binary_pkg(
     ir_parent = pathlib.Path(install_root).resolve().parent
     ir_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
-        ret = do_install_binary_pkg_to(
+        ret = _do_install_binary_pkg_to(
             config,
             mr,
             pm,
@@ -503,7 +503,7 @@ def do_install_binary_pkg(
     return 0
 
 
-def do_install_binary_pkg_to(
+def _do_install_binary_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -546,7 +546,7 @@ def do_install_binary_pkg_to(
     return 0
 
 
-def do_install_blob_pkg(
+def _do_install_blob_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -571,7 +571,7 @@ def do_install_blob_pkg(
     ir_parent = pathlib.Path(install_root).resolve().parent
     ir_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
-        ret = do_install_blob_pkg_to(
+        ret = _do_install_blob_pkg_to(
             config,
             mr,
             pm,
@@ -588,7 +588,7 @@ def do_install_blob_pkg(
     return 0
 
 
-def do_install_blob_pkg_to(
+def _do_install_blob_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
