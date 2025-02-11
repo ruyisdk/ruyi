@@ -353,6 +353,7 @@ class MetadataRepo:
                     pkg_name,
                     pkg_ver,
                     cast(InputPackageManifestType, tomllib.load(fp)),
+                    self,
                 )
 
         for f in glob.iglob("*/*.json", root_dir=category_dir):
@@ -362,7 +363,13 @@ class MetadataRepo:
                 # we've already processed the toml format data for this version
                 continue
             with open(os.path.join(category_dir, f), "rb") as fp:
-                yield BoundPackageManifest(category, pkg_name, pkg_ver, json.load(fp))
+                yield BoundPackageManifest(
+                    category,
+                    pkg_name,
+                    pkg_ver,
+                    json.load(fp),
+                    self,
+                )
 
     def get_supported_arches(self) -> list[str]:
         if self._supported_arches is not None:

@@ -56,7 +56,7 @@ class ListCommand(
             if i > 0:
                 log.stdout("\n")
 
-            print_pkg_detail(ver.pm)
+            print_pkg_detail(ver.pm, cfg.lang_code)
 
         return 0
 
@@ -68,6 +68,7 @@ if sys.version_info >= (3, 11):
         LatestPreRelease = "latest-prerelease"
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
+        HasKnownIssue = "known-issue"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -79,6 +80,8 @@ if sys.version_info >= (3, 11):
                     return "[red]no binary for current host[/red]"
                 case self.PreRelease:
                     return "prerelease"
+                case self.HasKnownIssue:
+                    return "[yellow]has known issue[/]"
             return ""
 
 else:
@@ -88,6 +91,7 @@ else:
         LatestPreRelease = "latest-prerelease"
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
+        HasKnownIssue = "known-issue"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -99,6 +103,8 @@ else:
                     return "[red]no binary for current host[/red]"
                 case self.PreRelease:
                     return "prerelease"
+                case self.HasKnownIssue:
+                    return "[yellow]has known issue[/]"
             return ""
 
 
@@ -159,6 +165,8 @@ class AugmentedPkg:
                         remarks.append(PkgRemark.Latest)
                     if latest_prerelease and not latest:
                         remarks.append(PkgRemark.LatestPreRelease)
+                if pm.service_level.has_known_issues:
+                    remarks.append(PkgRemark.HasKnownIssue)
                 if bm := pm.binary_metadata:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
@@ -209,7 +217,10 @@ def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     return 0
 
 
-def print_pkg_detail(pm: BoundPackageManifest) -> None:
+def print_pkg_detail(
+    pm: BoundPackageManifest,
+    lang_code: str,
+) -> None:
     log.stdout(
         f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
@@ -220,6 +231,12 @@ def print_pkg_detail(pm: BoundPackageManifest) -> None:
         log.stdout("* Slug: (none)")
     log.stdout(f"* Package kind: {sorted(pm.kind)}")
     log.stdout(f"* Vendor: {pm.vendor_name}\n")
+
+    sv = pm.service_level
+    if sv.has_known_issues:
+        log.stdout("\nPackage has known issue(s):\n")
+        for x in sv.render_known_issues(pm.repo.messages, lang_code):
+            log.stdout(x, end="\n\n")
 
     df = pm.distfiles()
     log.stdout(f"Package declares {len(df)} distfile(s):\n")
