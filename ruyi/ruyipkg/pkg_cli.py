@@ -305,6 +305,12 @@ class ExtractCommand(
                 return 1
             pkg_name = pm.name_for_installation
 
+            sv = pm.service_level
+            if sv.has_known_issues:
+                log.W("package has known issue(s)")
+                for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
+                    log.I(s)
+
             bm = pm.binary_metadata
             sm = pm.source_metadata
             if bm is None and sm is None:
@@ -421,6 +427,12 @@ def do_install_atoms(
             log.F(f"atom {a_str} matches no package in the repository")
             return 1
         pkg_name = pm.name_for_installation
+
+        sv = pm.service_level
+        if sv.has_known_issues:
+            log.W("package has known issue(s)")
+            for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
+                log.I(s)
 
         if pm.binary_metadata is not None:
             ret = do_install_binary_pkg(
