@@ -47,16 +47,16 @@ class ListCommand(
         augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo))
 
         if is_porcelain():
-            return do_list_porcelain(augmented_pkgs)
+            return _do_list_porcelain(augmented_pkgs)
 
         if not verbose:
-            return do_list_non_verbose(augmented_pkgs)
+            return _do_list_non_verbose(augmented_pkgs)
 
         for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
             if i > 0:
                 log.stdout("\n")
 
-            print_pkg_detail(ver.pm)
+            _print_pkg_detail(ver.pm, cfg.lang_code)
 
         return 0
 
@@ -68,6 +68,7 @@ if sys.version_info >= (3, 11):
         LatestPreRelease = "latest-prerelease"
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
+        HasKnownIssue = "known-issue"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -79,6 +80,8 @@ if sys.version_info >= (3, 11):
                     return "[red]no binary for current host[/red]"
                 case self.PreRelease:
                     return "prerelease"
+                case self.HasKnownIssue:
+                    return "[yellow]has known issue[/]"
             return ""
 
 else:
@@ -88,6 +91,7 @@ else:
         LatestPreRelease = "latest-prerelease"
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
+        HasKnownIssue = "known-issue"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -99,6 +103,8 @@ else:
                     return "[red]no binary for current host[/red]"
                 case self.PreRelease:
                     return "prerelease"
+                case self.HasKnownIssue:
+                    return "[yellow]has known issue[/]"
             return ""
 
 
@@ -159,6 +165,8 @@ class AugmentedPkg:
                         remarks.append(PkgRemark.Latest)
                     if latest_prerelease and not latest:
                         remarks.append(PkgRemark.LatestPreRelease)
+                if pm.service_level.has_known_issues:
+                    remarks.append(PkgRemark.HasKnownIssue)
                 if bm := pm.binary_metadata:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
@@ -176,7 +184,7 @@ class AugmentedPkg:
         }
 
 
-def do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
+def _do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
     log.stdout("List of available packages:\n")
 
     for ap in augmented_pkgs:
@@ -201,7 +209,7 @@ class PorcelainPkgListOutputV1(PorcelainEntity):
     vers: list[PorcelainPkgVersionV1]
 
 
-def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
+def _do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     with PorcelainOutput() as po:
         for ap in augmented_pkgs:
             po.emit(ap.to_porcelain())
@@ -209,7 +217,10 @@ def do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
     return 0
 
 
-def print_pkg_detail(pm: BoundPackageManifest) -> None:
+def _print_pkg_detail(
+    pm: BoundPackageManifest,
+    lang_code: str,
+) -> None:
     log.stdout(
         f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
@@ -220,6 +231,12 @@ def print_pkg_detail(pm: BoundPackageManifest) -> None:
         log.stdout("* Slug: (none)")
     log.stdout(f"* Package kind: {sorted(pm.kind)}")
     log.stdout(f"* Vendor: {pm.vendor_name}\n")
+
+    sv = pm.service_level
+    if sv.has_known_issues:
+        log.stdout("\nPackage has known issue(s):\n")
+        for x in sv.render_known_issues(pm.repo.messages, lang_code):
+            log.stdout(x, end="\n\n")
 
     df = pm.distfiles()
     log.stdout(f"Package declares {len(df)} distfile(s):\n")
@@ -287,6 +304,12 @@ class ExtractCommand(
                 log.F(f"atom {a_str} matches no package in the repository")
                 return 1
             pkg_name = pm.name_for_installation
+
+            sv = pm.service_level
+            if sv.has_known_issues:
+                log.W("package has known issue(s)")
+                for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
+                    log.I(s)
 
             bm = pm.binary_metadata
             sm = pm.source_metadata
@@ -405,8 +428,14 @@ def do_install_atoms(
             return 1
         pkg_name = pm.name_for_installation
 
+        sv = pm.service_level
+        if sv.has_known_issues:
+            log.W("package has known issue(s)")
+            for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
+                log.I(s)
+
         if pm.binary_metadata is not None:
-            ret = do_install_binary_pkg(
+            ret = _do_install_binary_pkg(
                 config,
                 mr,
                 pm,
@@ -419,7 +448,7 @@ def do_install_atoms(
             continue
 
         if pm.blob_metadata is not None:
-            ret = do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
+            ret = _do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
             if ret != 0:
                 return ret
             continue
@@ -430,7 +459,7 @@ def do_install_atoms(
     return 0
 
 
-def do_install_binary_pkg(
+def _do_install_binary_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -456,7 +485,7 @@ def do_install_binary_pkg(
     ir_parent = pathlib.Path(install_root).resolve().parent
     ir_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
-        ret = do_install_binary_pkg_to(
+        ret = _do_install_binary_pkg_to(
             config,
             mr,
             pm,
@@ -474,7 +503,7 @@ def do_install_binary_pkg(
     return 0
 
 
-def do_install_binary_pkg_to(
+def _do_install_binary_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -517,7 +546,7 @@ def do_install_binary_pkg_to(
     return 0
 
 
-def do_install_blob_pkg(
+def _do_install_blob_pkg(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,
@@ -542,7 +571,7 @@ def do_install_blob_pkg(
     ir_parent = pathlib.Path(install_root).resolve().parent
     ir_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".ruyi-tmp", dir=ir_parent) as tmp_root:
-        ret = do_install_blob_pkg_to(
+        ret = _do_install_blob_pkg_to(
             config,
             mr,
             pm,
@@ -559,7 +588,7 @@ def do_install_blob_pkg(
     return 0
 
 
-def do_install_blob_pkg_to(
+def _do_install_blob_pkg_to(
     config: GlobalConfig,
     mr: MetadataRepo,
     pm: BoundPackageManifest,

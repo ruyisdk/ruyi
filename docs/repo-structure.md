@@ -248,6 +248,11 @@ vendor = {
   eula = null
 }
 
+[[metadata.service_level]]
+level = "known-issue"
+msgid = "known-issue-foo"
+params = {}
+
 [[distfiles]]
 name = "RuyiSDK-20231026-HOST-riscv64-linux-gnu-riscv64-plct-linux-gnu.tar.xz"
 size = 162283388
@@ -301,6 +306,12 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
 * `vendor` 提供了包的提供者相关信息。其中：
     - `name`：提供者名称，目前仅用于向用户展示。
     - `eula`：目前仅支持取值为 `null`，表示安装该包前不需要征得用户明确同意任何协议。
+* `service_level` 是可选的该包的服务等级描述。如果不提供该字段，则等效于存在一条 `untested` 的记录。
+    - `level`：服务等级。目前支持以下取值：
+        - `known_issue`：存在已知问题。
+        - `untested`：测试状态未知：可能稳定可用，也可能存在问题。
+    - `msgid`：当 `level` 为 `known_issue` 时，用来描述问题的文案字符串在 `messages.toml` 中的消息 ID。
+    - `params`：键、值类型均为字符串的键值对，是渲染上述消息时要传入的参数。
 * `distfiles` 内含包的相关分发文件（distfile）声明。其中每条记录：
     - `name` 是文件名。当 `urls` 字段不存在时，表示此文件可从 `${config.dist}/dist/${name}` 这样的路径获取到。
     - `urls` 是可选的 URL 字符串列表，表示此文件可额外从这些 URL 中的任意一个获取到。下载到本地的文件仍应被保存为 `name` 所指的文件名。

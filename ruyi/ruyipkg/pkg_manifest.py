@@ -10,6 +10,7 @@ from typing import (
     BinaryIO,
     Final,
     Iterable,
+    Iterator,
     Literal,
     TypedDict,
     TYPE_CHECKING,
@@ -34,7 +35,12 @@ else:
         from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
 from .host import canonicalize_host_str, get_native_host
+from .msg import RepoMessageStore
 from .unpack_method import UnpackMethod, determine_unpack_method
+
+if TYPE_CHECKING:
+    # avoid circular import at runtime
+    from .repo import MetadataRepo
 
 
 class VendorDeclType(TypedDict):
@@ -144,12 +150,23 @@ ALL_PACKAGE_KINDS: Final[list[PackageKind]] = [
 
 RuyiPkgFormat = Literal["v1"]
 
+ServiceLevelKind = Literal["known_issue"] | Literal["untested"]
+
+ALL_SERVICE_LEVEL_KINDS: Final[list[ServiceLevelKind]] = ["known_issue", "untested"]
+
+
+class ServiceLevelDeclType(TypedDict):
+    level: ServiceLevelKind
+    msgid: "NotRequired[str]"
+    params: "NotRequired[dict[str, str]]"
+
 
 class PackageMetadataDeclType(TypedDict):
     slug: "NotRequired[str]"  # deprecated for v1+
     desc: str
     doc_uri: "NotRequired[str]"
     vendor: VendorDeclType
+    service_level: "NotRequired[list[ServiceLevelDeclType]]"
 
 
 class InputPackageManifestType(TypedDict):
@@ -408,6 +425,44 @@ def _translate_to_manifest_v1(obj: InputPackageManifestType) -> PackageManifestT
     return cast(PackageManifestType, result)
 
 
+class PackageServiceLevel:
+    def __init__(self, data: list[ServiceLevelDeclType]) -> None:
+        self._data = data
+
+    @property
+    def level(self) -> ServiceLevelKind:
+        for r in self._data:
+            if r["level"] == "untested":
+                continue
+            return r["level"]
+        return "untested"
+
+    @property
+    def has_known_issues(self) -> bool:
+        for r in self._data:
+            if r["level"] == "known_issue":
+                return True
+        return False
+
+    @property
+    def known_issues(self) -> Iterator[ServiceLevelDeclType]:
+        for r in self._data:
+            if r["level"] == "known_issue":
+                yield r
+
+    def render_known_issues(
+        self,
+        msg_store: RepoMessageStore,
+        lang_code: str,
+    ) -> Iterator[str]:
+        for x in self.known_issues:
+            if "msgid" not in x:
+                # malformed known issue declaration, but let's not panic
+                yield ""
+                continue
+            yield msg_store.render_message(x["msgid"], lang_code, x.get("params", {}))
+
+
 class PackageManifest:
     def __init__(
         self,
@@ -470,6 +525,10 @@ class PackageManifest:
 
     # TODO: vendor_eula
 
+    @property
+    def service_level(self) -> PackageServiceLevel:
+        return PackageServiceLevel(self._data["metadata"].get("service_level", []))
+
     def distfiles(self) -> dict[str, DistfileDecl]:
         return {x["name"]: DistfileDecl(x) for x in self._data["distfiles"]}
 
@@ -529,6 +588,7 @@ class BoundPackageManifest(PackageManifest):
         name: str,
         ver: str,
         data: InputPackageManifestType,
+        repo: "MetadataRepo",
     ) -> None:
         super().__init__(data)
 
@@ -536,6 +596,7 @@ class BoundPackageManifest(PackageManifest):
         self.name = name
         self.ver = ver
         self._semver = Version.parse(ver)
+        self.repo = repo
 
     @property
     def semver(self) -> Version:
