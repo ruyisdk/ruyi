@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     # for avoiding circular import
     from ..config import GlobalConfig
 
+FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
 # e.g. "run.202410201845.d06ca5d668e64fec833ed3e6eb926a2c.ndjson"
 RE_RAW_EVENT_FILENAME: Final = re.compile(
@@ -68,13 +69,12 @@ class TelemetryStore:
         self.local_mode = gc.telemetry_mode == "local"
         self.upload_consent_time = gc.telemetry_upload_consent_time
 
-        self.pm_api_url: str
+        self.pm_api_url = FALLBACK_PM_TELEMETRY_ENDPOINT
         _pm_cfg_src = "fallback"
         if gc.override_pm_telemetry_url is not None:
             _pm_cfg_src = "local config"
             self.pm_api_url = gc.override_pm_telemetry_url
         else:
-            self.pm_api_url = ""
             for api_decl in gc.repo.config.telemetry_apis.values():
                 if api_decl.get("scope", "") == "pm":
                     _pm_cfg_src = "repo"
