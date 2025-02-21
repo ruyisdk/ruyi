@@ -215,6 +215,7 @@ class MetadataRepo:
         self.repo: Repository | None = None
 
         self._cfg: RepoConfig | None = None
+        self._cfg_initialized = False
         self._messages: RepoMessageStore | None = None
         self._pkgs: dict[str, dict[str, BoundPackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
@@ -290,20 +291,47 @@ class MetadataRepo:
 
     @property
     def config(self) -> RepoConfig:
-        if self._cfg is not None:
+        x = self._read_config(True)
+        assert x is not None
+        return x
+
+    @property
+    def maybe_config(self) -> RepoConfig | None:
+        """Like ``config``, but does not pull down the repo in case the repo is
+        not locally present at invocation time."""
+        return self._read_config(False)
+
+    def _read_config(self, ensure_if_not_existing: bool) -> RepoConfig | None:
+        if self._cfg_initialized:
             return self._cfg
 
-        self.ensure_git_repo()
+        if ensure_if_not_existing:
+            self.ensure_git_repo()
 
         # we can read the config file directly because we're operating from a
         # working tree (as opposed to a bare repo)
-        try:
-            with open(os.path.join(self.root, "config.toml"), "rb") as fp:
-                obj = tomllib.load(fp)
-        except FileNotFoundError:
-            with open(os.path.join(self.root, "config.json"), "rb") as fp:
-                obj = json.load(fp)
+        #
+        # this is a fake loop (that "loops" only once)
+        # here it's only for being able to use break's
+        while True:
+            try:
+                with open(os.path.join(self.root, "config.toml"), "rb") as fp:
+                    obj = tomllib.load(fp)
+                    break
+            except FileNotFoundError:
+                pass
 
+            try:
+                with open(os.path.join(self.root, "config.json"), "rb") as fp:
+                    obj = json.load(fp)
+                    break
+            except FileNotFoundError:
+                pass
+
+            self._cfg_initialized = True
+            return None
+
+        self._cfg_initialized = True
         self._cfg = RepoConfig.from_object(obj)
         return self._cfg
 
