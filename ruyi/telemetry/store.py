@@ -75,10 +75,13 @@ class TelemetryStore:
             _pm_cfg_src = "local config"
             self.pm_api_url = gc.override_pm_telemetry_url
         else:
-            for api_decl in gc.repo.config.telemetry_apis.values():
-                if api_decl.get("scope", "") == "pm":
-                    _pm_cfg_src = "repo"
-                    self.pm_api_url = api_decl.get("url", "")
+            # do not clone the metadata repo if it is absent, in case the user
+            # is simply trying trivial commands like `ruyi version`.
+            if repo_cfg := gc.repo.maybe_config:
+                for api_decl in repo_cfg.telemetry_apis.values():
+                    if api_decl.get("scope", "") == "pm":
+                        _pm_cfg_src = "repo"
+                        self.pm_api_url = api_decl.get("url", "")
         log.D(
             f"configured PM telemetry endpoint via {_pm_cfg_src}: {self.pm_api_url or '(n/a)'}"
         )
