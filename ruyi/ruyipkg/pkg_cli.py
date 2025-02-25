@@ -6,7 +6,11 @@ import pathlib
 import shutil
 import sys
 import tempfile
-from typing import Iterable, TypedDict, TYPE_CHECKING
+from typing import (
+    Iterable,
+    TypedDict,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -18,6 +22,7 @@ from ..config import GlobalConfig
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .atom import Atom
 from .distfile import Distfile
+from .list_filter import ListFilter, ListFilterAction
 from .repo import MetadataRepo
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .unpack import ensure_unpack_cmd_for_method
@@ -40,11 +45,48 @@ class ListCommand(
             help="Also show details for every package",
         )
 
+        # filter expressions
+        p.add_argument(
+            "--category-contains",
+            action=ListFilterAction,
+            nargs=1,
+            dest="filters",
+            help="Match packages from categories whose names contain the given string",
+        )
+        p.add_argument(
+            "--category-is",
+            action=ListFilterAction,
+            nargs=1,
+            dest="filters",
+            help="Match packages from the given category",
+        )
+        p.add_argument(
+            "--name-contains",
+            action=ListFilterAction,
+            nargs=1,
+            dest="filters",
+            help="Match packages whose names contain the given string",
+        )
+
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         verbose = args.verbose
+        filters: ListFilter = args.filters
 
-        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo))
+        if not filters:
+            if is_porcelain():
+                # we don't want to print message for humans in case of porcelain
+                # mode, but we don't want to retain the old behavior of listing
+                # all packages either
+                return 1
+
+            log.F("no filter specified for list operation")
+            log.I(
+                "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+            )
+            return 1
+
+        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo, filters))
 
         if is_porcelain():
             return _do_list_porcelain(augmented_pkgs)
@@ -140,14 +182,23 @@ class AugmentedPkg:
         return self.versions[0].pm.name if self.versions else None
 
     @classmethod
-    def yield_from_repo(cls, mr: MetadataRepo) -> "Iterable[Self]":
-        for _, _, pkg_vers in mr.iter_pkgs():
+    def yield_from_repo(
+        cls,
+        mr: MetadataRepo,
+        filters: ListFilter,
+    ) -> "Iterable[Self]":
+        for category, pkg_name, pkg_vers in mr.iter_pkgs():
+            if not filters.check_pkg_name(category, pkg_name):
+                continue
+
             pkg = cls()
 
             semvers = [pm.semver for pm in pkg_vers.values()]
             semvers.sort(reverse=True)
             found_latest = False
             for i, sv in enumerate(semvers):
+                # TODO: support filter ops against individual versions
+
                 pm = pkg_vers[str(sv)]
 
                 latest = False
