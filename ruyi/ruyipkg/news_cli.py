@@ -112,8 +112,12 @@ class NewsReadCommand(
         if items is None:
             return 1
 
-        # render the items
-        if not quiet:
+        if is_porcelain():
+            with PorcelainOutput() as po:
+                for ni in items:
+                    po.emit(ni.to_porcelain())
+        elif not quiet:
+            # render the items
             if items:
                 for ni in items:
                     print_news(ni.get_content_for_lang(cfg.lang_code))
