@@ -371,7 +371,8 @@ class MetadataRepo:
 
         seen_pkgs: set[tuple[str, str]] = set()
 
-        for f in glob.iglob("*/*.toml", root_dir=category_dir):
+        # all valid semver strings start with a number
+        for f in glob.iglob("*/[0-9]*.toml", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
             seen_pkgs.add((pkg_name, pkg_ver))
@@ -384,7 +385,7 @@ class MetadataRepo:
                     self,
                 )
 
-        for f in glob.iglob("*/*.json", root_dir=category_dir):
+        for f in glob.iglob("*/[0-9]*.json", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
             if (pkg_name, pkg_ver) in seen_pkgs:
