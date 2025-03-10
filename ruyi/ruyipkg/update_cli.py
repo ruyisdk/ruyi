@@ -12,6 +12,10 @@ class UpdateCommand(
     help="Update RuyiSDK repo and packages",
 ):
     @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
+
+    @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         mr = cfg.repo
         mr.sync()

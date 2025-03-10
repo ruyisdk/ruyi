@@ -174,4 +174,6 @@ class AdminCommand(
     # help=argparse.SUPPRESS,
     help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
 ):
-    pass
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass

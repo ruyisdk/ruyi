@@ -40,7 +40,9 @@ class NewsCommand(
     has_subcommands=True,
     help="List and read news items from configured repository",
 ):
-    pass
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
 
 
 class NewsListCommand(
