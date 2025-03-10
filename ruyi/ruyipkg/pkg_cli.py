@@ -281,7 +281,12 @@ def _print_pkg_detail(
     else:
         log.stdout("* Slug: (none)")
     log.stdout(f"* Package kind: {sorted(pm.kind)}")
-    log.stdout(f"* Vendor: {pm.vendor_name}\n")
+    log.stdout(f"* Vendor: {pm.vendor_name}")
+    if upstream_ver := pm.upstream_version:
+        log.stdout(f"* Upstream version number: {upstream_ver}")
+    else:
+        log.stdout("* Upstream version number: (undeclared)")
+    log.stdout("")
 
     sv = pm.service_level
     if sv.has_known_issues:

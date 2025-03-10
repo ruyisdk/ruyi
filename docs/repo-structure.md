@@ -312,6 +312,7 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `untested`：测试状态未知：可能稳定可用，也可能存在问题。
     - `msgid`：当 `level` 为 `known_issue` 时，用来描述问题的文案字符串在 `messages.toml` 中的消息 ID。
     - `params`：键、值类型均为字符串的键值对，是渲染上述消息时要传入的参数。
+* `upstream_version` 是可选的字符串，用来记录该包在上游所用的版本号。这可以让 RuyiSDK 软件源的管理工具在一定程度上感知、处理那些不遵循 SemVer 规范的上游版本号。
 * `distfiles` 内含包的相关分发文件（distfile）声明。其中每条记录：
     - `name` 是文件名。当 `urls` 字段不存在时，表示此文件可从 `${config.dist}/dist/${name}` 这样的路径获取到。
     - `urls` 是可选的 URL 字符串列表，表示此文件可额外从这些 URL 中的任意一个获取到。下载到本地的文件仍应被保存为 `name` 所指的文件名。
