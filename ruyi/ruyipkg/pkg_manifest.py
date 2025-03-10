@@ -167,6 +167,7 @@ class PackageMetadataDeclType(TypedDict):
     doc_uri: "NotRequired[str]"
     vendor: VendorDeclType
     service_level: "NotRequired[list[ServiceLevelDeclType]]"
+    upstream_version: "NotRequired[str]"
 
 
 class InputPackageManifestType(TypedDict):
@@ -522,6 +523,10 @@ class PackageManifest:
     @property
     def vendor_name(self) -> str:
         return self._data["metadata"]["vendor"]["name"]
+
+    @property
+    def upstream_version(self) -> str | None:
+        return self._data["metadata"].get("upstream_version")
 
     # TODO: vendor_eula
 
