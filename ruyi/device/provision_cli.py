@@ -31,7 +31,9 @@ class DeviceCommand(
     has_subcommands=True,
     help="Manage devices",
 ):
-    pass
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
 
 
 class DeviceProvisionCommand(
@@ -39,6 +41,10 @@ class DeviceProvisionCommand(
     cmd="provision",
     help="Interactively initialize a device for development",
 ):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
+
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         try:

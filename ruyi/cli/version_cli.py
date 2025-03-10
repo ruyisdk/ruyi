@@ -13,6 +13,10 @@ class VersionCommand(
     help="Print version information",
 ):
     @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
+
+    @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
         return cli_version(cfg, args)
 

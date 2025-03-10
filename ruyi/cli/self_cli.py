@@ -30,7 +30,9 @@ class SelfCommand(
     has_subcommands=True,
     help="Manage this Ruyi installation",
 ):
-    pass
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        pass
 
 
 class SelfCleanCommand(
