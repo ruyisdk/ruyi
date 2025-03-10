@@ -1,6 +1,5 @@
 from copy import deepcopy
 from functools import cached_property
-import json
 import os
 import pathlib
 import re
@@ -474,11 +473,6 @@ class PackageManifest:
             self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
 
     @classmethod
-    def load_json(cls, stream: BinaryIO) -> "Self":
-        content = json.load(stream)
-        return cls(content)
-
-    @classmethod
     def load_toml(cls, stream: BinaryIO) -> "Self":
         content = cast(InputPackageManifestType, tomllib.load(stream))
         return cls(content)
@@ -487,9 +481,6 @@ class PackageManifest:
     def load_from_path(cls, p: pathlib.Path) -> "Self":
         suffix = p.suffix.lower()
         match suffix:
-            case ".json":
-                with open(p, "rb") as fp:
-                    return cls.load_json(fp)
             case ".toml":
                 with open(p, "rb") as fp:
                     return cls.load_toml(fp)

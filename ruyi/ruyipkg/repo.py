@@ -1,6 +1,5 @@
 import glob
 import itertools
-import json
 import os.path
 import pathlib
 import sys
@@ -321,13 +320,6 @@ class MetadataRepo:
             except FileNotFoundError:
                 pass
 
-            try:
-                with open(os.path.join(self.root, "config.json"), "rb") as fp:
-                    obj = json.load(fp)
-                    break
-            except FileNotFoundError:
-                pass
-
             self._cfg_initialized = True
             return None
 
@@ -369,34 +361,16 @@ class MetadataRepo:
 
         category = os.path.basename(category_dir)
 
-        seen_pkgs: set[tuple[str, str]] = set()
-
         # all valid semver strings start with a number
         for f in glob.iglob("*/[0-9]*.toml", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
-            seen_pkgs.add((pkg_name, pkg_ver))
             with open(os.path.join(category_dir, f), "rb") as fp:
                 yield BoundPackageManifest(
                     category,
                     pkg_name,
                     pkg_ver,
                     cast(InputPackageManifestType, tomllib.load(fp)),
-                    self,
-                )
-
-        for f in glob.iglob("*/[0-9]*.json", root_dir=category_dir):
-            pkg_name, pkg_ver = os.path.split(f)
-            pkg_ver = pkg_ver[:-5]  # strip the ".json" suffix
-            if (pkg_name, pkg_ver) in seen_pkgs:
-                # we've already processed the toml format data for this version
-                continue
-            with open(os.path.join(category_dir, f), "rb") as fp:
-                yield BoundPackageManifest(
-                    category,
-                    pkg_name,
-                    pkg_ver,
-                    json.load(fp),
                     self,
                 )
 

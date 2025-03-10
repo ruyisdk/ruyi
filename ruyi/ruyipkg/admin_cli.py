@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import pathlib
 import re
@@ -29,7 +28,7 @@ class AdminChecksumCommand(
             "--format",
             "-f",
             type=str,
-            choices=["json", "toml"],
+            choices=["toml"],
             default="toml",
             help="Format of checksum section to generate in",
         )
@@ -58,11 +57,6 @@ class AdminChecksumCommand(
             return 1
 
         entries = [gen_distfile_entry(f, restrict) for f in files]
-        if format == "json":
-            sys.stdout.write(json.dumps(entries, indent=2))
-            sys.stdout.write("\n")
-            return 0
-
         if format == "toml":
             doc = emit_toml_distfiles_section(entries)
             log.D(f"{doc}")
