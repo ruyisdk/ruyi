@@ -17,10 +17,20 @@ packages-index
 ├── manifests
 │   └── toolchain
 │       └── plct
-│           └── 0.20231026.0.json
+│           └── 0.20231026.0.toml
 ├── messages.toml
-├── profiles
-│   └── riscv64.json
+├── news
+│   ├── YYYY-MM-DD-news-title.en_US.md
+│   └── YYYY-MM-DD-news-title.zh_CN.md
+├── plugins
+│   ├── ruyi-cmd-foo-bar
+│   │   └── mod.star
+│   ├── ruyi-device-provision-strategy-baz
+│   │   └── mod.star
+│   ├── ruyi-device-provision-strategy-std
+│   │   └── mod.star
+│   └── ruyi-profile-riscv64
+│       └── mod.star
 └── README.md
 ```
 
@@ -33,17 +43,10 @@ packages-index
 ### 全局配置
 
 每个具体的 Ruyi 软件源都必须包含一个全局配置文件，文件名为
-`config.json` 或 `config.toml`。文件内容的格式必须与其扩展名所表示的格式一致。
+`config.toml`。文件内容的格式必须与其扩展名所表示的格式一致。
 
 当此数据的顶层不包含 `ruyi-repo` 字段时，应将其视作“旧版配置”解读。
 旧版配置支持两种配置字段，如示例：
-
-```json
-{
-    "dist": "https://path-to-distfiles-host",
-    "doc_uri": "https://ruyisdk.github.io/docs/"
-}
-```
 
 ```toml
 dist = "https://path-to-distfiles-host"
@@ -137,105 +140,10 @@ en_US = "Another message"
 合法的软件包名是仅由字母、数字、`-`（中划线）组成的非空字符串，且不以 `_`（下划线）开头。
 以 `_` 开头的软件包名为保留名，留作表示特殊语义用，或用于其他的必要使用场景。
 
-每个软件包的对应目录下，存在 0 或多个对应该包特定版本的具体定义文件；文件名即为版本号，格式为 JSON 或 TOML，后缀为 `.json` 或 `.toml`。
+每个软件包的对应目录下，存在 0 或多个对应该包特定版本的具体定义文件；文件名即为版本号，格式为
+TOML，后缀为 `.toml`。
 
 举例说明：
-
-```json
-// 工具链包示例
-{
-  "slug": "plct-20231026",
-  "kind": ["binary", "toolchain"],
-  "desc": "RuyiSDK RISC-V Linux Toolchain 20231026 (maintained by PLCT)",
-  "vendor": {
-    "name": "PLCT",
-    "eula": null
-  },
-  "distfiles": [
-    {
-      "name": "RuyiSDK-20231026-HOST-riscv64-linux-gnu-riscv64-plct-linux-gnu.tar.xz",
-      "size": 162283388,
-      "checksums": {
-        "sha256": "6e7f269e52afd07b5fb03d1d96666fa12561586e5558fc841cb81bb35f2e3b9b",
-        "sha512": "ad5da6ea6a68d5d572619591e767173433db005b78d0e7fbcfe53dc5a17468eb83c72879107e51aa70a42c9bca03f1b0e483eb00ddaf074bf00488d5a4f54914"
-      }
-    },
-    {
-      "name": "RuyiSDK-20231026-riscv64-plct-linux-gnu.tar.xz",
-      "size": 171803916,
-      "checksums": {
-        "sha256": "2ae0ad6b513a8cb9541cb6a3373d7d1517a8848137b27cc64823582d3e9c01de",
-        "sha512": "6fabe9642a0b2c60f67cdb6162fe6f4bcf399809ca4e0e216df7bebba480f2965e9cd49e4502efbdcc0174ea7dc1c8784bf9f9c920c33466189cd8990fa7c98e"
-      }
-    }
-  ],
-  "binary": [
-    {
-      "host": "riscv64",
-      "distfiles": ["RuyiSDK-20231026-HOST-riscv64-linux-gnu-riscv64-plct-linux-gnu.tar.xz"]
-    },
-    {
-      "host": "x86_64",
-      "distfiles": ["RuyiSDK-20231026-riscv64-plct-linux-gnu.tar.xz"]
-    }
-  ],
-  "toolchain": {
-    "target": "riscv64-plct-linux-gnu",
-    "flavors": [],
-    "components": [
-      {"name": "binutils", "version": "2.40"},
-      {"name": "gcc", "version": "13.1.0"},
-      {"name": "gdb", "version": "13.1"},
-      {"name": "glibc", "version": "2.38"},
-      {"name": "linux-headers", "version": "6.4"}
-    ],
-    "included_sysroot": "riscv64-plct-linux-gnu/sysroot"
-  }
-}
-
-// 模拟器包示例
-{
-  "kind": ["binary", "emulator"],
-  "desc": "RuyiSDK QEMU linux-user Build (Upstream 8.1.2, built by PLCT)",
-  "vendor": {
-    "name": "PLCT",
-    "eula": null
-  },
-  "distfiles": [
-    {
-      "name": "qemu-user-riscv-8.1.2.ruyi-20231121.amd64.tar.zst",
-      "size": 15154068,
-      "checksums": {
-        "sha512": "73ac9c82b4386b5d8cb3d5e6654f600e38a7af6043bd546c7a0ec2940add29382a08f6a769bf1d5db150966dd18224789362add691c89c4e89ea31ae24436bd2",
-        "sha256": "24b477630c5f9a01f8a2188e6b1a33bc24723d5217d34285a3bb3509f5a0948a"
-      },
-      "strip_components": 2
-    }
-  ],
-  "binary": [
-    {
-      "host": "x86_64",
-      "distfiles": ["qemu-user-riscv-8.1.2.ruyi-20231121.amd64.tar.zst"]
-    }
-  ],
-  "emulator": {
-    "programs": [
-      {
-        "path": "bin/qemu-riscv32",
-        "flavor": "qemu-linux-user",
-        "supported_arches": ["riscv32"],
-        "binfmt_misc": ":ruyi-qemu-riscv32:M::\\x7fELF\\x01\\x01\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\xf3\\x00:\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\x00\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xfe\\xff\\xff\\xff:$BIN:OCF"
-      },
-      {
-        "path": "bin/qemu-riscv64",
-        "flavor": "qemu-linux-user",
-        "supported_arches": ["riscv64"],
-        "binfmt_misc": ":ruyi-qemu-riscv64:M::\\x7fELF\\x02\\x01\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\xf3\\x00:\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\x00\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xfe\\xff\\xff\\xff:$BIN:OCF"
-      }
-    ]
-  }
-}
-```
 
 ```toml
 # 工具链包示例
@@ -404,77 +312,19 @@ if-installed: 'toolchain/plct(<1.0.0)'
 * `if-installed`: 可选提供，格式为 atom。
   如果提供了此字段，那么只有当本地已经安装了此字段取值所能匹配到的包版本时，相应的通知消息才会被重点展示。
 
-### `profiles`
+### `plugins`
 
-此目录内含 0 或多个 JSON 格式的配置文件定义。目前没有特殊规定文件名的语义，也没有对其特别限制。
+此目录内含 0 或多个 RuyiSDK 插件的代码实现。目前实现了如下几种插件类型：
 
-每个配置文件定义形如下：
+* 形如 `ruyi-cmd-foo-bar` 的插件，可以 `ruyi admin run-plugin-cmd foo-bar` 的方式被调用。
+* 形如 `ruyi-device-provision-strategy-foo` 的插件，可供设备安装器调用。
+    * 特别地，`ruyi-device-provision-strategy-std` 是设备安装器的“标准库”。
+* 形如 `ruyi-profile-quux` 的插件，为 `ruyi venv` 等工具提供 `quux` 架构的 profile 功能支持。
 
-```json
-{
-  "arch": "riscv64",
-  "generic_opts": {
-      "march": "rv64gc",
-      "mabi": "lp64d",
-      "mcpu": ""
-  },
-  "profiles": [
-    {
-      "name": "sipeed-lpi4a",
-      "need_flavor": ["xthead"],
-      "mcpu": "thead-c910"
-    },
-    {
-      "name": "milkv-duo",
-      "mcpu": "thead-c906"
-    }
-  ],
-  "flavor_specific_mcpus": {
-    "xthead": {
-      "thead-c906": "c906",
-      "thead-c910": "c910"
-    }
-  },
-  "emulator_presets": {
-    "generic": {
-      "qemu-linux-user": {
-        "env": {
-          "QEMU_CPU": "rv64"
-        }
-      }
-    },
-    "thead-c906": {
-      "qemu-linux-user": {
-        "env": {
-          "QEMU_CPU": "thead-c906"
-        }
-      }
-    }
-  }
-}
-```
+关于各类插件的具体写作方法，请参考官方软件源中的现有插件源码。
 
-其中 `arch` 是此配置文件定义对应的架构名，目前定义了 `riscv32`、`riscv64` 两种。
-其他字段的存在与否、取值、结构与含义均由 `arch` 取值决定。
-
-对 `riscv32`、`riscv64` 架构而言：
-
-* `generic_opts` 包含 `march`、`mabi`、`mcpu` 取值，是本文件所定义的每种配置相应字段不取值时，默认使用的值。
-* `profiles` 是具体配置定义列表，每条记录：
-    - `name` 是配置名，会被广泛用于展示、命令行参数等。
-    - `doc_uri` 是可选的指向该配置的配套文档首页的 URI 字符串。
-    - `need_flavor` 是该配置要求对应的工具链包需要提供的 flavors 列表，如不为空，所有条目必须全部匹配。
-    - `mabi` `march` `mcpu` 如果存在，代表此配置的相应编译器参数使用该值，而非通用值。对于 `-mcpu` 参数，如果 `need_flavor` 不为空，实际使用的值会额外经过一层映射，映射关系由 `flavor_specific_mcpus` 定义。
-* `flavor_specific_mcpus` 是当某配置文件需求了某工具链 flavor 时，对 `mcpu` 取值的映射关系。
-* `emulator_presets` 是对应各配置的模拟器预置设定。此键值对的每个键是 `mcpu` 取值，其值是从每种受支持的模拟器包 flavor 到相应预置设定数据的键值对。预置设定数据的结构如下：
-    - `need_flavor` 是该配置要求对应的模拟器包需要提供的 flavors 列表，如不为空，所有条目必须全部匹配。
-    - `env` 是键值对，每条记录的键为用户需设置的环境变量名，值为该环境变量需取的值。
-
-对于模拟器预置设定，如果一个 `mcpu` 取值没有相应的 `emulator_presets` 配置，则应为其适用 `generic` 配置的设定。
-
-对于 `qemu-linux-user` flavor 的模拟器，除了 `env` 所配置的环境变量之外，额外地还会有以下特殊处理：
-
-* 如当前虚拟环境有搭配了 sysroot 配置，那么将新增一个 `QEMU_LD_PREFIX` 环境变量，指向此 sysroot。
+目前我们不对插件 API 的稳定性、兼容性做任何保证，但在需要破坏兼容性的情况下，对位于官方软件源的插件，我们一般会尽力维持它们兼容最近的
+1~3 个 `ruyi` 版本。
 
 ## 分发
 
