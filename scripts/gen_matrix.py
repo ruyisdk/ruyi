@@ -38,12 +38,19 @@ class MatrixEntry(TypedDict):
     upload_artifact_name: str
 
 
+# https://github.blog/changelog/2025-01-16-linux-arm64-hosted-runners-now-available-for-free-in-public-repositories-public-preview/
+GHA_PUBLIC_UBUNTU_RUNNER_NAMES = {
+    'amd64': 'ubuntu-24.04',
+    'arm64': 'ubuntu-24.04-arm',
+}
+
+
 def runs_on(c: Combo) -> RunsOn:
     if c.self_hosted:
         return ["self-hosted", c.os, c.arch]
     match c.os:
         case "linux":
-            return "ubuntu-latest"
+            return GHA_PUBLIC_UBUNTU_RUNNER_NAMES[c.arch]
         case "windows":
             return "windows-latest"
         case _:
@@ -96,7 +103,7 @@ class MatrixFilter:
 
 COMBOS: list[Combo] = [
     Combo("linux", "amd64", False, True),
-    Combo("linux", "arm64", True, False),
+    Combo("linux", "arm64", False, True),
     Combo("linux", "riscv64", True, False),
     Combo("windows", "amd64", False, False),
 ]
