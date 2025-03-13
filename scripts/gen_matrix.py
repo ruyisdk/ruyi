@@ -103,7 +103,7 @@ class MatrixFilter:
 
 COMBOS: list[Combo] = [
     Combo("linux", "amd64", False, True),
-    Combo("linux", "arm64", False, True),
+    Combo("linux", "arm64", False, False),
     Combo("linux", "riscv64", True, False),
     Combo("windows", "amd64", False, False),
 ]
