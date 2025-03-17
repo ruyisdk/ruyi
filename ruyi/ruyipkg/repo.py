@@ -278,6 +278,10 @@ class MetadataRepo:
             # now by explicitly casting to the right runtime type.
             self.repo = cast(Repository, repo)  # type: ignore[redundant-cast]
 
+        # reinit config after cloning
+        self._cfg_initialized = False
+        self._read_config(False)
+
         return self.repo
 
     def sync(self) -> None:
