@@ -98,6 +98,14 @@ safe_licenses = [
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
   "Python Software Foundation License",
+
+  # not ruyi deps, but brought in by pylic which unfortunately cannot live
+  # outside of the project venv in order to work.
+  # Fortunately though, they are all permissive licenses, so inclusion of
+  # them would not accidentally allow unsafe licenses into the project.
+  "ISC License (ISCL)",  # shellingham
+  "BSD-2-Clause",  # boolean.py
+  "Apache-2.0",  # license-expression
 ]
 
 

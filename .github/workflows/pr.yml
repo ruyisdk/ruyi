@@ -108,7 +108,7 @@ jobs:
       - name: List all licenses involved
         run: poetry run pylic list
       - name: Check license compatibility with pylic
-        run: poetry run pylic check
+        run: poetry run pylic check --allow-extra-safe-licenses
 
   shellcheck:
     name: Lint shell scripts

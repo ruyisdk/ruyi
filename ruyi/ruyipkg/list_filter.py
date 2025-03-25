@@ -16,8 +16,9 @@ _T = TypeVar("_T")
 
 class ListFilterOpKind(enum.Enum):
     UNKNOWN = 0
-    CATEGORY_IS = 1
-    NAME_CONTAINS = 2
+    CATEGORY_CONTAINS = 1
+    CATEGORY_IS = 2
+    NAME_CONTAINS = 3
 
 
 class ListFilterOp(NamedTuple):
@@ -32,6 +33,8 @@ class ListFilterExecCtx(NamedTuple):
 
 def _execute_filter_op(op: ListFilterOp, ctx: ListFilterExecCtx) -> bool:
     match op.op:
+        case ListFilterOpKind.CATEGORY_CONTAINS:
+            return op.arg in ctx.category
         case ListFilterOpKind.CATEGORY_IS:
             return op.arg == ctx.category
         case ListFilterOpKind.NAME_CONTAINS:
@@ -103,6 +106,8 @@ class ListFilterAction(argparse.Action):
 
         self.filter_op_kind: ListFilterOpKind
         match option_strings[0].lstrip("-"):
+            case "category-contains":
+                self.filter_op_kind = ListFilterOpKind.CATEGORY_CONTAINS
             case "category-is":
                 self.filter_op_kind = ListFilterOpKind.CATEGORY_IS
             case "name-contains":
