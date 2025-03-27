@@ -61,6 +61,7 @@ jobs:
       # runs_on: RunsOn
       # skip: bool
       # upload_artifact_name: str
+      # needs_qemu: bool
       matrix: ${{ fromJson(needs.prepare_matrix_linux.outputs.matrix) }}
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
@@ -89,6 +90,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: success() && !matrix.skip && matrix.needs_qemu
+        uses: docker/setup-qemu-action@v3
 
       - name: Cache deps and Nuitka output
         if: success() && !matrix.skip

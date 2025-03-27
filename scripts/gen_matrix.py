@@ -36,13 +36,25 @@ class MatrixEntry(TypedDict):
     runs_on: RunsOn
     skip: bool
     upload_artifact_name: str
+    needs_qemu: bool
 
 
 # https://github.blog/changelog/2025-01-16-linux-arm64-hosted-runners-now-available-for-free-in-public-repositories-public-preview/
 GHA_PUBLIC_UBUNTU_RUNNER_NAMES = {
-    'amd64': 'ubuntu-24.04',
-    'arm64': 'ubuntu-24.04-arm',
+    "amd64": "ubuntu-24.04",
+    "arm64": "ubuntu-24.04-arm",
+    "riscv64": "ubuntu-24.04",
 }
+
+GHA_PUBLIC_RUNNER_ARCHES = {
+    "ubuntu-24.04": "amd64",
+    "ubuntu-24.04-arm": "arm64",
+    "windows-latest": "amd64",
+}
+
+
+def gha_runner_needs_qemu(arch: str) -> bool:
+    return arch != GHA_PUBLIC_RUNNER_ARCHES[GHA_PUBLIC_UBUNTU_RUNNER_NAMES[arch]]
 
 
 def runs_on(c: Combo) -> RunsOn:
@@ -76,6 +88,7 @@ def to_matrix_entry(c: Combo, should_run: bool) -> MatrixEntry:
         "runs_on": runs_on(c),
         "skip": not should_run,
         "upload_artifact_name": upload_artifact_name(c),
+        "needs_qemu": gha_runner_needs_qemu(c.arch),
     }
 
 
