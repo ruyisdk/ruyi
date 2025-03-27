@@ -118,7 +118,7 @@ COMBOS: list[Combo] = [
     Combo("linux", "amd64", False, True),
     Combo("linux", "arm64", False, False),
     # temporarily switch away from self-hosted runners due to resource migration
-    Combo("linux", "riscv64", False, False),
+    Combo("linux", "riscv64", False, True),
     Combo("windows", "amd64", False, False),
 ]
 
