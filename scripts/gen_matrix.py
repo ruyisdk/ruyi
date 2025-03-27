@@ -117,7 +117,8 @@ class MatrixFilter:
 COMBOS: list[Combo] = [
     Combo("linux", "amd64", False, True),
     Combo("linux", "arm64", False, False),
-    Combo("linux", "riscv64", True, False),
+    # temporarily switch away from self-hosted runners due to resource migration
+    Combo("linux", "riscv64", False, False),
     Combo("windows", "amd64", False, False),
 ]
 
