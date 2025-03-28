@@ -49,6 +49,9 @@ package_list=(
     # pygit2 build
     cmake
     wget
+
+    # for docker/setup-qemu-action
+    docker.io
 )
 
 apt-get update
