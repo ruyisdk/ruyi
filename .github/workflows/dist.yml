@@ -70,7 +70,7 @@ jobs:
       release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20250329
-      options: --user root  # https://github.com/actions/checkout/issues/1014
+      options: --user root --platform linux/${{ matrix.arch }}  # https://github.com/actions/checkout/issues/1014
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
