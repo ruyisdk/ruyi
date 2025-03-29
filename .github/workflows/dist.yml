@@ -67,7 +67,7 @@ jobs:
     runs-on: ${{ matrix.runs_on }}
     outputs:
       run_id: ${{ github.run_id }}
-      release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
+      release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -83,6 +83,11 @@ jobs:
           key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
           path: |
             build-cache
+
+      - name: Record various build info in GHA output
+        if: success() && !matrix.skip
+        id: set_env
+        run: scripts/set-gha-env.py
 
       - name: Run dist
         if: success() && !matrix.skip

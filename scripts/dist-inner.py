@@ -117,9 +117,6 @@ def main() -> None:
     delete_cached_files_older_than_days(cache_root, 21, epoch)
     end_group()
 
-    if "GITHUB_ACTIONS" in os.environ:
-        set_release_mirror_url_for_gha(vers["semver"])
-
 
 def is_in_gha() -> bool:
     return "GITHUB_ACTIONS" in os.environ
@@ -267,31 +264,6 @@ def to_version_for_nuitka(version: str) -> str:
     n_patch = PRERELEASE_NUITKA_PATCH_VER_MAP[prerelease_kind] + y
     n_extra = md * 10
     return f"{n_major}.{n_minor}.{n_patch}.{n_extra}"
-
-
-def set_release_mirror_url_for_gha(version: str) -> None:
-    release_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/releases/"
-    testing_url_base = "https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/"
-
-    sv = Version.parse(version)
-    url_base = testing_url_base if sv.prerelease else release_url_base
-    url = f"{url_base}{version}/"
-    set_gha_output("release_mirror_url", url)
-
-
-def set_gha_output(k: str, v: str) -> None:
-    if "\n" in v:
-        raise ValueError("this helper is only for small one-line outputs")
-
-    # only do this when the GitHub Actions output file is available
-    # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-output-parameter
-    outfile = os.environ.get("GITHUB_OUTPUT", "")
-    if not outfile:
-        return
-
-    INFO.print(f"GHA: setting output [cyan]{k}[/] to [cyan]{v}[/]")
-    with open(outfile, "a", encoding="utf-8") as fp:
-        fp.write(f"{k}={v}\n")
 
 
 if __name__ == "__main__":
