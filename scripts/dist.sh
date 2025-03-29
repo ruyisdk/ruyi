@@ -30,6 +30,11 @@ do_inner() {
         cd /home/b
         # shellcheck disable=SC1091
         . ./venv/bin/activate
+
+        : "${RUYI_DIST_BUILD_DIR:?RUYI_DIST_BUILD_DIR is expected for containerized builds}"
+        : "${POETRY_CACHE_DIR:?POETRY_CACHE_DIR is expected for containerized builds}"
+        : "${CCACHE_DIR:?CCACHE_DIR is expected for containerized builds}"
+        : "${RUYI_DIST_CACHE_DIR:?RUYI_DIST_CACHE_DIR is expected for containerized builds}"
     else
         # we're running in the host environment
         # give defaults for the directories
@@ -39,8 +44,8 @@ do_inner() {
         : "${RUYI_DIST_BUILD_DIR:=$tmp_prefix/build.$arch}"
         : "${RUYI_DIST_CACHE_DIR:=$tmp_prefix/ruyi-dist-cache.$arch}"
         export CCACHE_DIR POETRY_CACHE_DIR RUYI_DIST_BUILD_DIR RUYI_DIST_CACHE_DIR
-        mkdir -p "$RUYI_DIST_BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
     fi
+    mkdir -p "$RUYI_DIST_BUILD_DIR" "$POETRY_CACHE_DIR" "$CCACHE_DIR" "$RUYI_DIST_CACHE_DIR"
 
     : "${VIRTUAL_ENV:?you must build in a Python virtual environment}"
 
@@ -52,9 +57,11 @@ do_inner() {
         id
         endgroup
         green "home directory contents" group
+        echo "pwd: $(pwd)"
         ls -alF .
         endgroup
         green "repo contents" group
+        echo "REPO_ROOT: $REPO_ROOT"
         ls -alF "$REPO_ROOT"
         endgroup
         green "ruyi-dist-cache contents" group
