@@ -1,7 +1,7 @@
 #!/bin/bash
 # this file is meant to be sourced
 
-_COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20250107"
+_COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20250330"
 
 # Map of `uname -m` outputs to Debian arch name convention which Ruyi adopts
 #
@@ -14,6 +14,7 @@ _COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20250107"
 declare -A _UNAME_ARCH_MAP=(
     ["aarch64"]="arm64"
     ["i686"]="i386"
+    ["riscv64"]="riscv64"
     ["x86_64"]="amd64"
 )
 
@@ -25,6 +26,12 @@ declare -A _RUYI_DIST_IMAGE_TAGS=(
     ["amd64"]="$_COMMON_DIST_IMAGE_TAG"
     ["arm64"]="$_COMMON_DIST_IMAGE_TAG"
     ["riscv64"]="$_COMMON_DIST_IMAGE_TAG"
+)
+
+declare -A _RUYI_GHA_IMAGE_TAGS=(
+    ["amd64"]="$_COMMON_DIST_IMAGE_TAG"-gha-amd64
+    ["arm64"]="$_COMMON_DIST_IMAGE_TAG"-gha-arm64
+    ["riscv64"]="$_COMMON_DIST_IMAGE_TAG"-gha-riscv64
 )
 
 is_docker_dist_build_supported() {

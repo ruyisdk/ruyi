@@ -2,14 +2,22 @@
 FROM ubuntu:22.04
 
 ARG TARGETARCH
+ARG BUILDER_UID=1000
+ARG BUILDER_GID=1000
 
 SHELL ["/bin/bash", "-c"]
+
+RUN <<DOCKEREOF
+groupadd -g "$BUILDER_GID" b
+useradd -d /home/b -m -g "$BUILDER_GID" -u "$BUILDER_UID" -s /bin/bash b
+DOCKEREOF
 
 RUN <<DOCKEREOF
 export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 
-# No need to configure APT mirrors on the official GHA runners
+# HTTPS needs ca-certificates to work
+sed -E -i 's@http://(archive|ports)\.ubuntu\.com/@http://mirrors.tuna.tsinghua.edu.cn/@g' /etc/apt/sources.list
 
 # Non-interactive configuration of tzdata
 debconf-set-selections <<EOF
@@ -41,6 +49,9 @@ package_list=(
     # pygit2 build
     cmake
     wget
+
+    # for docker/setup-qemu-action
+    docker.io
 )
 
 apt-get update
@@ -57,4 +68,5 @@ RUN /tmp/build-python.sh
 COPY ./prepare-poetry.sh /tmp/prepare-poetry.sh
 RUN /tmp/prepare-poetry.sh
 
-WORKDIR /github/workspace
+USER $BUILDER_UID:$BUILDER_GID
+WORKDIR /home/b

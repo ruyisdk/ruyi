@@ -11,4 +11,5 @@ exec docker buildx build --rm \
     --platform "linux/amd64,linux/arm64,linux/riscv64" \
     -t "$(image_tag_base amd64)" \
     --push \
+    -f Dockerfile.dist \
     .
