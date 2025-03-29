@@ -87,7 +87,7 @@ jobs:
       - name: Run dist
         if: success() && !matrix.skip
         id: run_dist
-        uses: docker://ghcr.io/ruyisdk/ruyi-python-dist:20250329
+        uses: ./scripts/dist-image
         with:
           args: scripts/dist-gha.sh ${{ matrix.arch }}
 

@@ -27,9 +27,8 @@ do_inner() {
     local arch="$1"
 
     if [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]]; then
-        cd /home/b
         # shellcheck disable=SC1091
-        . ./venv/bin/activate
+        . /opt/venv/bin/activate
 
         : "${RUYI_DIST_BUILD_DIR:?RUYI_DIST_BUILD_DIR is expected for containerized builds}"
         : "${POETRY_CACHE_DIR:?POETRY_CACHE_DIR is expected for containerized builds}"
