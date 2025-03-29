@@ -67,7 +67,7 @@ jobs:
     runs-on: ${{ matrix.runs_on }}
     outputs:
       run_id: ${{ github.run_id }}
-      release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
+      release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
     container:
       image: ghcr.io/ruyisdk/ruyi-python-dist:20250107
       options: --user root  # https://github.com/actions/checkout/issues/1014
@@ -105,9 +105,13 @@ jobs:
             /poetry-cache
             /ruyi-dist-cache
 
+      - name: Record various build info in GHA output
+        if: success() && !matrix.skip
+        id: set_env
+        run: scripts/set-gha-env.py
+
       - name: Run dist
         if: success() && !matrix.skip
-        id: run_dist
         run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh ${{ matrix.arch }}
 
       - name: Upload artifact
