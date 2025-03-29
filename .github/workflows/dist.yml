@@ -89,10 +89,21 @@ jobs:
         id: set_env
         run: scripts/set-gha-env.py
 
-      - name: Run dist
-        if: success() && !matrix.skip
-        id: run_dist
-        uses: docker://ghcr.io/ruyisdk/ruyi-python-dist:20250330-gha-${{ matrix.arch }}
+      # This duplication is because we can't reference matrix in "uses" context,
+      # unfortunately.
+      - name: Run amd64 dist
+        if: success() && !matrix.skip && matrix.arch == 'amd64'
+        uses: docker://ghcr.io/ruyisdk/ruyi-python-dist:20250330-gha-amd64
+        with:
+          args: scripts/dist-gha.sh ${{ matrix.arch }}
+      - name: Run arm64 dist
+        if: success() && !matrix.skip && matrix.arch == 'arm64'
+        uses: docker://ghcr.io/ruyisdk/ruyi-python-dist:20250330-gha-arm64
+        with:
+          args: scripts/dist-gha.sh ${{ matrix.arch }}
+      - name: Run riscv64 dist
+        if: success() && !matrix.skip && matrix.arch == 'riscv64'
+        uses: docker://ghcr.io/ruyisdk/ruyi-python-dist:20250330-gha-riscv64
         with:
           args: scripts/dist-gha.sh ${{ matrix.arch }}
 
