@@ -28,6 +28,12 @@ declare -A _RUYI_DIST_IMAGE_TAGS=(
     ["riscv64"]="$_COMMON_DIST_IMAGE_TAG"
 )
 
+declare -A _RUYI_GHA_IMAGE_TAGS=(
+    ["amd64"]="$_COMMON_DIST_IMAGE_TAG"-gha-amd64
+    ["arm64"]="$_COMMON_DIST_IMAGE_TAG"-gha-arm64
+    ["riscv64"]="$_COMMON_DIST_IMAGE_TAG"-gha-riscv64
+)
+
 is_docker_dist_build_supported() {
     local arch="$1"
     [[ -n "${_RUYI_DIST_IMAGE_TAGS["$arch"]}" ]]
