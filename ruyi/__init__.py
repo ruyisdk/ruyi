@@ -11,10 +11,12 @@ def is_env_var_truthy(var: str) -> bool:
 
 
 ENV_DEBUG: typing.Final = "RUYI_DEBUG"
+ENV_EXPERIMENTAL: typing.Final = "RUYI_EXPERIMENTAL"
 ENV_FORCE_ALLOW_ROOT: typing.Final = "RUYI_FORCE_ALLOW_ROOT"
 
 
 _is_debug = False
+_is_experimental = False
 _is_porcelain = False
 
 
@@ -27,13 +29,19 @@ def is_debug() -> bool:
     return _is_debug
 
 
+def is_experimental() -> bool:
+    return _is_experimental
+
+
 def is_porcelain() -> bool:
     return _is_porcelain
 
 
 def init_debug_status() -> None:
     global _is_debug
+    global _is_experimental
     _is_debug = is_env_var_truthy(ENV_DEBUG)
+    _is_experimental = is_env_var_truthy(ENV_EXPERIMENTAL)
 
 
 _argv0: str = ""
