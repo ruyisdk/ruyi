@@ -113,6 +113,73 @@ jobs:
           path: /build/${{ matrix.build_output_name }}
           compression-level: 0  # the Nuitka onefile payload is already compressed
 
+  # the current riscv-builders project unfortunately doesn't support
+  # containerized builds, so we have to run this in a separate job
+  dist-linux-riscv64:
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    strategy:
+      matrix:
+        include:
+          - arch: riscv64
+            build_output_name: ruyi
+            is_windows: false
+            job_name: "Linux riscv64"
+            runs_on: riscv-builders
+            skip: false
+            upload_artifact_name: ruyi.riscv64
+    name: ${{ matrix.job_name }}
+    runs-on: ${{ matrix.runs_on }}
+    outputs:
+      run_id: ${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        if: success() && !matrix.skip
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v5
+        if: success() && !matrix.skip
+        with:
+          # don't let the ">=" directive bump the Python version without letting
+          # us know
+          # python-version-file: pyproject.toml
+          python-version: '3.12'
+          cache: poetry
+
+      - name: Cache deps and Nuitka output
+        if: success() && !matrix.skip
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
+          path: |
+            tmp/ccache
+            tmp/poetry-cache
+            tmp/ruyi-dist-cache
+
+      - name: Install deps
+        if: success() && !matrix.skip
+        run: poetry install && mkdir /build
+
+      - name: Run dist
+        if: success() && !matrix.skip
+        run: |
+          export CCACHE_DIR=$(pwd)/tmp/ccache
+          export POETRY_CACHE_DIR=$(pwd)/tmp/poetry-cache
+          export RUYI_DIST_BUILD_DIR=$(pwd)/build
+          export RUYI_DIST_CACHE_DIR=$(pwd)/tmp/ruyi-dist-cache
+          poetry install --with=dist --without=dev
+          RUYI_DIST_INNER=x scripts/dist.sh ${{ matrix.arch }}
+
+      - name: Upload artifact
+        if: success() && !matrix.skip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.upload_artifact_name }}
+          path: build/${{ matrix.build_output_name }}
+          compression-level: 0  # the Nuitka onefile payload is already compressed
+
   dist-windows:
     needs:
       - prepare_matrix_windows
@@ -196,6 +263,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs:
       - dist
+      - dist-linux-riscv64
       - dist-src
       - dist-windows
     steps:
@@ -207,6 +275,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ needs.dist.outputs.run_id }}
+          path: tmp/release
+      - name: Download dist build artifacts for release - linux/riscv64
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ needs['dist-linux-riscv64'].outputs.run_id }}
           path: tmp/release
       - name: Organize release artifacts
         run: scripts/organize-release-artifacts.py tmp/release
