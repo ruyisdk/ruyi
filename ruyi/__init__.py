@@ -18,11 +18,6 @@ _is_debug = False
 _is_porcelain = False
 
 
-def set_debug(v: bool) -> None:
-    global _is_debug
-    _is_debug = v
-
-
 def set_porcelain(v: bool) -> None:
     global _is_porcelain
     _is_porcelain = v
@@ -37,7 +32,8 @@ def is_porcelain() -> bool:
 
 
 def init_debug_status() -> None:
-    set_debug(is_env_var_truthy(ENV_DEBUG))
+    global _is_debug
+    _is_debug = is_env_var_truthy(ENV_DEBUG)
 
 
 _argv0: str = ""
