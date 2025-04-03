@@ -116,7 +116,7 @@ jobs:
   # the current riscv-builders project unfortunately doesn't support
   # containerized builds, so we have to run this in a separate job
   dist-linux-riscv64:
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    # if: ${{ startsWith(github.ref, 'refs/tags/') }}
     strategy:
       matrix:
         include:
