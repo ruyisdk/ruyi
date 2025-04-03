@@ -40,8 +40,8 @@ class MatrixEntry(TypedDict):
 
 # https://github.blog/changelog/2025-01-16-linux-arm64-hosted-runners-now-available-for-free-in-public-repositories-public-preview/
 GHA_PUBLIC_UBUNTU_RUNNER_NAMES = {
-    'amd64': 'ubuntu-24.04',
-    'arm64': 'ubuntu-24.04-arm',
+    "amd64": "ubuntu-24.04",
+    "arm64": "ubuntu-24.04-arm",
 }
 
 
