@@ -61,34 +61,20 @@ jobs:
       # runs_on: RunsOn
       # skip: bool
       # upload_artifact_name: str
+      # needs_qemu: bool
       matrix: ${{ fromJson(needs.prepare_matrix_linux.outputs.matrix) }}
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
     outputs:
       run_id: ${{ github.run_id }}
-      release_mirror_url: ${{ steps.run_dist.outputs.release_mirror_url }}
-    container:
-      image: ghcr.io/ruyisdk/ruyi-python-dist:20250107
-      options: --user root  # https://github.com/actions/checkout/issues/1014
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-      volumes:
-        - ${{ github.workspace }}:/home/b/ruyi
-        - tmp-build:/build
-        - tmp-poetry-cache:/poetry-cache
-        - tmp-ccache:/ccache
-        - tmp-ruyi-dist-cache:/ruyi-dist-cache
-      env:
-        # this has to mirror the setup in scripts/dist.sh
-        CCACHE_DIR: /ccache
-        POETRY_CACHE_DIR: /poetry-cache
-        RUYI_DIST_BUILD_DIR: /build
-        RUYI_DIST_CACHE_DIR: /ruyi-dist-cache
-        RUYI_DIST_INNER_CONTAINERIZED: x
+      release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: success() && !matrix.skip && matrix.needs_qemu
+        uses: docker/setup-qemu-action@v3
 
       - name: Cache deps and Nuitka output
         if: success() && !matrix.skip
@@ -96,21 +82,33 @@ jobs:
         with:
           key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
           path: |
-            /ccache
-            /poetry-cache
-            /ruyi-dist-cache
+            build-cache
+
+      - name: Record various build info in GHA output
+        if: success() && !matrix.skip
+        id: set_env
+        run: scripts/set-gha-env.py
 
       - name: Run dist
         if: success() && !matrix.skip
-        id: run_dist
-        run: RUYI_DIST_INNER=x /home/b/ruyi/scripts/dist.sh ${{ matrix.arch }}
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ghcr.io
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20250329
+          options: |
+            --user root
+            --platform linux/${{ matrix.arch }}
+            -v ${{ github.workspace }}:/github/workspace
+            -e CI=true
+            -e GITHUB_ACTIONS=true
+          run: /github/workspace/scripts/dist-gha.sh ${{ matrix.arch }}
 
       - name: Upload artifact
         if: success() && !matrix.skip
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.upload_artifact_name }}
-          path: /build/${{ matrix.build_output_name }}
+          path: build/${{ matrix.build_output_name }}
           compression-level: 0  # the Nuitka onefile payload is already compressed
 
   dist-windows:
