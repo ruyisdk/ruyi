@@ -97,7 +97,7 @@ safe_licenses = [
   "MIT",  # pyright spells "MIT License" differently
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
-  "Python Software Foundation License",
+  "PSF-2.0",  # typing_extensions 4.13
 
   # not ruyi deps, but brought in by pylic which unfortunately cannot live
   # outside of the project venv in order to work.
