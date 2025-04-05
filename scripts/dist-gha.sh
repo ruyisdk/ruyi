@@ -17,7 +17,7 @@ cache_uid="$(stat -c '%u' /github/workspace/build-cache)"
 workspace_uid="$(stat -c '%u' /github/workspace)"
 if [[ $cache_uid -ne $workspace_uid ]]; then
     echo "fixing ownership of build cache directory"
-    chown -v --reference=/github/workspace /github/workspace/build-cache
+    chown -Rv --reference=/github/workspace /github/workspace/build-cache
 fi
 
 exit $ret
