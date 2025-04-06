@@ -32,14 +32,16 @@ jobs:
           - '3.10'
           - '3.11'
           - '3.12'
+          - '3.13'
         experimental: [false]
         baseline: [false]
         runs_on: ['ubuntu-latest']
         include:
-          - python: '3.13'
-            baseline: false
-            experimental: true
-            runs_on: ubuntu-latest
+          # not yet available
+          #- python: '3.14'
+          #  baseline: false
+          #  experimental: true
+          #  runs_on: ubuntu-latest
           - python: '3.10'
             baseline: true
             experimental: false
