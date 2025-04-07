@@ -24,6 +24,7 @@ from ..pluginhost import PluginHostContext
 from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from ..utils.url import urljoin_for_sure
+from .entity import EntityStore
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
@@ -223,6 +224,9 @@ class MetadataRepo:
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
+        self._entity_store: EntityStore = EntityStore(
+            pathlib.Path(self.root) / "entities",
+        )
         self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
@@ -570,3 +574,8 @@ class MetadataRepo:
             log.I("forcing return code to 1; the plugin should be fixed")
             ret = 1
         return ret
+
+    @property
+    def entity_store(self) -> EntityStore:
+        """Get the entity store for this repository."""
+        return self._entity_store

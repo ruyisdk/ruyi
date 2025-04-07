@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Device Entity Schema",
+  "description": "Schema for device entity definitions",
+  "type": "object",
+  "required": ["ruyi-entity", "device"],
+  "properties": {
+    "ruyi-entity": {
+      "type": "string",
+      "description": "Version of the entity schema",
+      "enum": ["v0"]
+    },
+    "device": {
+      "type": "object",
+      "required": ["id", "display_name", "components"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the device"
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable name for the device"
+        },
+        "components": {
+          "type": "array",
+          "description": "List of component references, typically CPU identifiers",
+          "items": {
+            "type": "string",
+            "pattern": "^cpu:.+"
+          },
+          "minItems": 1
+        },
+        "variants": {
+          "type": "array",
+          "description": "List of device variants (different configurations of the same device)",
+          "items": {
+            "type": "object",
+            "required": ["id", "display_name"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the variant"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "Human-readable name for the variant"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

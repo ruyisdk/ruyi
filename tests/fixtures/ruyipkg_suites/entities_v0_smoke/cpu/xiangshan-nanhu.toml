@@ -1,0 +1,6 @@
+ruyi-entity = "v0"
+
+[cpu]
+id = "xiangshan-nanhu"
+display_name = "Xiangshan Nanhu"
+components = ["uarch:xiangshan-nanhu"]

@@ -1,0 +1,9 @@
+ruyi-entity = "v0"
+
+[uarch]
+id = "xuantie-c910"
+display_name = "Xuantie C910"
+arch = "riscv64"
+
+[uarch.riscv]
+isa = "rv64imafdc_zfh_xtheadc"

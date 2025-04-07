@@ -1,0 +1,9 @@
+ruyi-entity = "v0"
+
+[uarch]
+id = "xiangshan-nanhu"
+display_name = "Xiangshan Nanhu"
+arch = "riscv64"
+
+[uarch.riscv]
+isa = "rv64imafdc_zba_zbb_zbc_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksed_zksh_svinval_zicbom_zicboz"

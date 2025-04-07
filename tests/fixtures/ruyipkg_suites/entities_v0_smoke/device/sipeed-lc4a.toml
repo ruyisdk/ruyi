@@ -1,0 +1,14 @@
+ruyi-entity = "v0"
+
+[device]
+id = "sipeed-lc4a"
+display_name = "Sipeed Lichee Cluster 4A"
+components = ["cpu:xuantie-th1520"]
+
+[[device.variants]]
+id = "8g"
+display_name = "Sipeed Lichee Cluster 4A (8G RAM)"
+
+[[device.variants]]
+id = "16g"
+display_name = "Sipeed Lichee Cluster 4A (16G RAM)"

@@ -1,0 +1,6 @@
+ruyi-entity = "v0"
+
+[cpu]
+id = "xuantie-th1520"
+display_name = "Xuantie TH1520"
+components = ["uarch:xuantie-c910"]

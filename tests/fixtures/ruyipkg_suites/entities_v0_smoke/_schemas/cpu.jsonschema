@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CPU Entity Schema",
+  "description": "Schema for CPU entity definitions",
+  "type": "object",
+  "required": ["ruyi-entity", "cpu"],
+  "properties": {
+    "ruyi-entity": {
+      "type": "string",
+      "description": "Version of the entity schema",
+      "enum": ["v0"]
+    },
+    "cpu": {
+      "type": "object",
+      "required": ["id", "display_name", "components"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CPU"
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable name for the CPU"
+        },
+        "components": {
+          "type": "array",
+          "description": "List of component references, typically uarch identifiers",
+          "items": {
+            "type": "string",
+            "pattern": "^uarch:.+"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}
