@@ -3,7 +3,7 @@ import json
 import os
 import pathlib
 import sys
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -35,7 +35,12 @@ class EntityValidationError(EntityError):
 class BaseEntity:
     """Base class for all entity types."""
 
-    def __init__(self, entity_type: str, entity_id: str, data: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        entity_type: str,
+        entity_id: str,
+        data: Mapping[str, Any],
+    ) -> None:
         self._entity_type = entity_type
         self._id = entity_id
         self._data = data
@@ -114,7 +119,7 @@ class BaseEntityProvider(abc.ABC):
     def load_entities(
         self,
         entity_types: Sequence[str],
-    ) -> dict[str, dict[str, dict[str, Any]]]:
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
         """Load entities of the given types.
 
         Args:
@@ -183,7 +188,7 @@ class FSEntityProvider(BaseEntityProvider):
     def load_entities(
         self,
         entity_types: Sequence[str],
-    ) -> dict[str, dict[str, dict[str, Any]]]:
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
         """Load entity data from the filesystem.
 
         Args:

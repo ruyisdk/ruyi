@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Mapping
 
 import fastjsonschema
 from fastjsonschema.exceptions import JsonSchemaException
@@ -74,7 +74,7 @@ class EntityStore:
         self,
         entity_type: str,
         entity_id: str,
-        data: dict[str, Any],
+        data: Mapping[str, Any],
     ) -> None:
         """Validate an entity against its schema."""
         validator = self._get_validator(entity_type)

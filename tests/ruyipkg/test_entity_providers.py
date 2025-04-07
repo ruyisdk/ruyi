@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from ruyi.ruyipkg.entity_provider import BaseEntityProvider, FSEntityProvider
 from ruyi.ruyipkg.entity import EntityStore
@@ -31,7 +31,7 @@ class MockEntityProvider(BaseEntityProvider):
     def load_entities(
         self,
         entity_types: Sequence[str],
-    ) -> dict[str, dict[str, dict[str, Any]]]:
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
         """Return mock entity data if 'os' is in entity_types."""
         if "os" not in entity_types:
             return {}
