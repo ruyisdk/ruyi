@@ -17,6 +17,51 @@ class EntityCommand(
         pass
 
 
+class EntityDescribeCommand(
+    EntityCommand,
+    cmd="describe",
+    help="Describe an entity",
+):
+    @classmethod
+    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "ref",
+            help="Reference to the entity to describe in the form of '<type>:<name>'",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        ref = args.ref
+
+        entity_store = cfg.repo.entity_store
+        entity = entity_store.get_entity_by_ref(ref)
+        if entity is None:
+            log.F(f"entity [yellow]{ref}[/] not found")
+            return 1
+
+        log.stdout(f"Entity [bold]{str(entity)}[/] ([green]{entity.display_name}[/])\n")
+
+        fwd_refs = entity.related_refs
+        if fwd_refs:
+            log.stdout("  Direct forward relationships:")
+            for ref in sorted(fwd_refs):
+                log.stdout(f"    - [yellow]{ref}[/]")
+        else:
+            log.stdout("  Direct forward relationships: [gray]none[/]")
+
+        rev_refs = entity.reverse_refs
+        if rev_refs:
+            log.stdout("  Direct reverse relationships:")
+            for ref in sorted(rev_refs):
+                log.stdout(f"    - [yellow]{ref}[/]")
+        else:
+            log.stdout("  Direct reverse relationships: [gray]none[/]")
+
+        # TODO: render type-specific data and transitive relationships
+
+        return 0
+
+
 class EntityListCommand(
     EntityCommand,
     cmd="list",
