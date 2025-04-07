@@ -182,14 +182,15 @@ def test_traverse_related_entities_with_type_filter(
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
         store = EntityStore(entities_path)
 
-        # Start from a device entity
-        device = store.get_entity("device", "sipeed-lpi4a")
-        assert device is not None
+        # Start from a device entity reference
+        ref = "device:sipeed-lpi4a"
 
         # Only get entities of type "cpu"
         cpu_entities = list(
             store.traverse_related_entities(
-                device, transitive=True, entity_types=["cpu"]
+                ref,
+                transitive=True,
+                entity_types=["cpu"],
             )
         )
 
@@ -200,7 +201,9 @@ def test_traverse_related_entities_with_type_filter(
         # Only get entities of type "uarch"
         uarch_entities = list(
             store.traverse_related_entities(
-                device, transitive=True, entity_types=["uarch"]
+                ref,
+                transitive=True,
+                entity_types=["uarch"],
             )
         )
 
@@ -210,7 +213,9 @@ def test_traverse_related_entities_with_type_filter(
         # Test with multiple entity types
         mixed_entities = list(
             store.traverse_related_entities(
-                device, transitive=True, entity_types=["cpu", "uarch"]
+                ref,
+                transitive=True,
+                entity_types=["cpu", "uarch"],
             )
         )
 

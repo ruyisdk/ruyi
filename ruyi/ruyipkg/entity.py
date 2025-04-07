@@ -240,15 +240,23 @@ class EntityStore:
         self.load_all()
         return self.get_entity(entity_type, entity_id)
 
-    def list_related_entities(self, entity: BaseEntity) -> list[BaseEntity]:
+    def list_related_entities(self, entity: BaseEntity | str) -> list[BaseEntity]:
         """Get all directly related entities of the given entity.
 
         Args:
-            entity: The entity whose related entities to retrieve
+            entity: The entity whose related entities to retrieve, or an entity reference
+                    in the form ``type:id``.
 
         Returns:
             A list of directly related entities
         """
+
+        if isinstance(entity, str):
+            e = self.get_entity_by_ref(entity)
+            if e is None:
+                raise ValueError(f"Entity not found: {entity}")
+            entity = e
+
         related_entities = []
         for ref in entity.related_refs:
             related_entity = self.get_entity_by_ref(ref)
@@ -258,14 +266,14 @@ class EntityStore:
 
     def traverse_related_entities(
         self,
-        entity: BaseEntity,
+        entity: BaseEntity | str,
         transitive: bool = False,
         entity_types: list[str] | None = None,
     ) -> Iterator[BaseEntity]:
         """Traverse related entities of the given entity.
 
         Args:
-            entity: The starting entity
+            entity: The starting entity or reference (in the form ``type:id``).
             transitive: If True, traverse the transitive closure of related entities.
                         If False, only traverse direct related entities.
             entity_types: Optional list of entity types to filter by. If provided,
@@ -274,6 +282,14 @@ class EntityStore:
         Returns:
             An iterator over the related entities
         """
+
+        if isinstance(entity, str):
+            # If a string is provided, resolve it to an entity
+            e = self.get_entity_by_ref(entity)
+            if e is None:
+                raise ValueError(f"Entity not found: {entity}")
+            entity = e
+
         # Dictionary to track visited entities and avoid cycles
         visited = set()
 
