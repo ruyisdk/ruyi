@@ -1,13 +1,13 @@
 import argparse
 import itertools
 import os.path
-from typing import TypedDict, TypeGuard, cast
+from typing import TYPE_CHECKING, TypedDict, TypeGuard, cast
 
 from .. import log
 from ..cli import user_input
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
-from ..ruyipkg.atom import Atom
+from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
 from ..ruyipkg.host import get_native_host
 from ..ruyipkg.pkg_cli import do_install_atoms
 from ..ruyipkg.pkg_manifest import (
@@ -23,6 +23,9 @@ from ..ruyipkg.provisioner import (
 )
 from ..ruyipkg.repo import MetadataRepo
 from ..utils import prereqs
+
+if TYPE_CHECKING:
+    from ..ruyipkg.pkg_manifest import BoundPackageManifest
 
 
 class DeviceCommand(
@@ -150,6 +153,13 @@ def do_provision_combo_interactive(
         )
         return 1
 
+    new_pkg_atoms = customize_package_versions(config, mr, pkg_atoms)
+    if new_pkg_atoms is None:
+        log.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+        return 1
+    else:
+        pkg_atoms = new_pkg_atoms
+
     pkg_names_for_display = "\n".join(f" * [green]{i}[/green]" for i in pkg_atoms)
     log.stdout(
         f"""
@@ -158,6 +168,7 @@ We are about to download and install the following packages for your device:
 {pkg_names_for_display}
 """
     )
+
     if not user_input.ask_for_yesno_confirmation("Proceed?"):
         log.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
         return 1
@@ -423,3 +434,159 @@ def make_pkg_part_map(
     pmd = pm.provisionable_metadata
     assert pmd is not None
     return {p: os.path.join(pkg_root, f) for p, f in pmd.partition_map.items()}
+
+
+def is_package_version_customization_possible(
+    gc: GlobalConfig,
+    mr: MetadataRepo,
+    pkg_atoms: list[str],
+) -> bool:
+    """
+    Check if package version customization is possible, which means there
+    are at least one package atom specified that matches more than one versions.
+    """
+
+    for atom_str in pkg_atoms:
+        # Get all available versions for this package
+        a = Atom.parse(atom_str)
+        try:
+            if len(list(a.iter_in_repo(mr, gc.include_prereleases))) > 1:
+                return True
+        except KeyError:
+            continue
+
+    return False
+
+
+def customize_package_versions(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    pkg_atoms: list[str],
+) -> list[str] | None:
+    """
+    Allow the user to customize the versions of packages to be installed.
+    Returns a new list of package atoms with user-selected versions.
+    """
+
+    if not is_package_version_customization_possible(config, mr, pkg_atoms):
+        return pkg_atoms
+
+    # Ask if the user wants to customize package versions
+    log.stdout(
+        "By default, we'll install the latest version of each package, but in this case, other choices are possible."
+    )
+    if not user_input.ask_for_yesno_confirmation(
+        "Would you like to customize package versions?"
+    ):
+        return pkg_atoms
+
+    while True:  # Loop to allow restarting the selection process
+        result: list[str] = []
+        log.stdout("\n[bold]Package Version Selection[/]")
+
+        for atom_str in pkg_atoms:
+            # Parse the atom to get package name
+            a = Atom.parse(atom_str)
+            if isinstance(a, ExprAtom):
+                # If it's already an expression with version constraints, show the constraints
+                log.stdout(
+                    f"\nPackage [green]{atom_str}[/] already has version constraints."
+                )
+                if not user_input.ask_for_yesno_confirmation(
+                    "Would you like to change them?"
+                ):
+                    result.append(atom_str)
+                    continue
+            elif isinstance(a, SlugAtom):
+                # Slugs already fix the version, so we can't change them
+                log.W(
+                    f"version cannot be overridden for slug atom [green]{atom_str}[/]"
+                )
+                result.append(atom_str)
+                continue
+
+            # Get all available versions for this package
+            package_name = a.name
+            category = a.category
+
+            available_versions: "list[BoundPackageManifest]" = []
+            try:
+                available_versions = list(mr.iter_pkg_vers(package_name, category))
+            except KeyError:
+                log.W(
+                    f"could not find package [yellow]{category}/{package_name}[/] in repository"
+                )
+                result.append(atom_str)
+
+            if not available_versions:
+                log.W(
+                    f"no versions found for package [yellow]{category}/{package_name}[/]"
+                )
+                result.append(atom_str)
+                continue
+
+            if len(available_versions) == 1:
+                # If there's only one version available, use it
+                selected_version = available_versions[0]
+                log.stdout(
+                    f"Only one version available for [green]{category}/{package_name}[/]: [blue]{selected_version.ver}[/], using it."
+                )
+                result.append(atom_str)
+                continue
+
+            # Sort versions with newest first
+            available_versions.sort(key=lambda pm: pm.semver, reverse=True)
+
+            # Create a list of version choices for display
+            version_choices = []
+            for pm in available_versions:
+                version_str = str(pm.semver)
+                remarks = []
+
+                if pm.is_prerelease:
+                    remarks.append("prerelease")
+                if pm.service_level.has_known_issues:
+                    remarks.append("has known issues")
+                if pm.upstream_version:
+                    remarks.append(f"upstream: {pm.upstream_version}")
+
+                remark_str = f" ({', '.join(remarks)})" if remarks else ""
+                version_choices.append(f"{version_str}{remark_str}")
+
+            # Ask the user to select a version
+            version_idx = user_input.ask_for_choice(
+                f"\nSelect a version for package [green]{category or ''}{('/' + package_name) if category else package_name}[/]:",
+                version_choices,
+            )
+
+            selected_version = available_versions[version_idx]
+
+            # Create the new atom string with the selected version
+            if category:
+                new_atom = f"{category}/{package_name}(=={selected_version.ver})"
+            else:
+                new_atom = f"{package_name}(=={selected_version.ver})"
+
+            log.stdout(f"Selected: [blue]{new_atom}[/]")
+            result.append(new_atom)
+
+        log.stdout("\nPackage versions to be installed:")
+        for atom in result:
+            log.stdout(f" * [green]{atom}[/]")
+
+        confirmation = user_input.ask_for_choice(
+            "\nHow would you like to proceed?",
+            [
+                "Continue with these versions",
+                "Restart version selection",
+                "Abort device provisioning",
+            ],
+        )
+
+        if confirmation == 0:  # Continue with these versions
+            return result
+        elif confirmation == 1:  # Restart version selection
+            log.stdout("\nRestarting package version selection...")
+            continue
+        else:  # Abort installation
+            return None
