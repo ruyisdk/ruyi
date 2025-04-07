@@ -37,6 +37,8 @@ class BaseEntity:
         self._id = entity_id
         self._data = data
 
+        self._reverse_refs: set[str] = set()
+
     @property
     def entity_type(self) -> str:
         """Type of the entity."""
@@ -69,6 +71,14 @@ class BaseEntity:
                 return r
         # return empty list if that is the case, or if the type is unexpected
         return []
+
+    @property
+    def reverse_refs(self) -> list[str]:
+        """Get the list of reverse-related entity references."""
+        return list(self._reverse_refs)
+
+    def _add_reverse_ref(self, ref: str) -> None:
+        self._reverse_refs.add(ref)
 
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.id}"
@@ -215,6 +225,17 @@ class EntityStore:
                 )
 
         self._loaded = True
+
+        # Populate reverse references
+        # This must happen after the loaded flag is set, because the getter
+        # is lazy and will infinitely recurse otherwise.
+        for entity_type, entities in self._entities.items():
+            for entity_id, entity in entities.items():
+                # Collect reverse references
+                for ref in entity.related_refs:
+                    if related_entity := self.get_entity_by_ref(ref):
+                        related_entity._add_reverse_ref(str(entity))
+
         entity_counts = {t: len(entities) for t, entities in self._entities.items()}
         log.D(f"count of loaded entities: {entity_counts}")
 
@@ -248,12 +269,17 @@ class EntityStore:
         self.load_all()
         return self.get_entity(entity_type, entity_id)
 
-    def list_related_entities(self, entity: BaseEntity | str) -> list[BaseEntity]:
+    def list_related_entities(
+        self,
+        entity: BaseEntity | str,
+        reverse_refs: bool = False,
+    ) -> list[BaseEntity]:
         """Get all directly related entities of the given entity.
 
         Args:
             entity: The entity whose related entities to retrieve, or an entity reference
                     in the form ``type:id``.
+            reverse_refs: If True, return reverse references instead of forward references.
 
         Returns:
             A list of directly related entities
@@ -266,7 +292,7 @@ class EntityStore:
             entity = e
 
         related_entities = []
-        for ref in entity.related_refs:
+        for ref in entity.reverse_refs if reverse_refs else entity.related_refs:
             related_entity = self.get_entity_by_ref(ref)
             if related_entity:
                 related_entities.append(related_entity)
@@ -276,6 +302,7 @@ class EntityStore:
         self,
         entity: BaseEntity | str,
         transitive: bool = False,
+        reverse_refs: bool = False,
         entity_types: list[str] | None = None,
     ) -> Iterator[BaseEntity]:
         """Traverse related entities of the given entity.
@@ -284,6 +311,7 @@ class EntityStore:
             entity: The starting entity or reference (in the form ``type:id``).
             transitive: If True, traverse the transitive closure of related entities.
                         If False, only traverse direct related entities.
+            reverse_refs: If True, traverse reverse references instead of forward references.
             entity_types: Optional list of entity types to filter by. If provided,
                           only entities of the specified types will be yielded.
 
@@ -312,7 +340,9 @@ class EntityStore:
             visited.add(entity_key)
 
             # Process related entities
-            for related_entity in self.list_related_entities(current_entity):
+            for related_entity in self.list_related_entities(
+                current_entity, reverse_refs=reverse_refs
+            ):
                 # Check if this entity matches the desired type filter
                 if entity_types is None or related_entity.entity_type in entity_types:
                     yield related_entity
@@ -363,6 +393,8 @@ class EntityStore:
         # Check if the two entities are directly related
         if related_entity in self.list_related_entities(entity):
             return True
+        if related_entity in self.list_related_entities(entity, reverse_refs=True):
+            return True
 
         # If transitive mode is enabled, check for indirect relationships
         if transitive:
@@ -371,6 +403,14 @@ class EntityStore:
                 transitive=True,
             ):
                 if related_entity in self.list_related_entities(e):
+                    return True
+
+            for e in self.traverse_related_entities(
+                entity,
+                reverse_refs=True,
+                transitive=True,
+            ):
+                if related_entity in self.list_related_entities(e, reverse_refs=True):
                     return True
 
         return False

@@ -234,13 +234,25 @@ def test_entity_store_is_entity_related_to(ruyi_file: RuyiFileFixtureFactory) ->
             "cpu:xiangshan-nanhu",
             "uarch:xiangshan-nanhu",
         )
+        assert store.is_entity_related_to(
+            "uarch:xiangshan-nanhu",
+            "cpu:xiangshan-nanhu",
+        )
         assert not store.is_entity_related_to(
             "cpu:xiangshan-nanhu",
             "uarch:xuantie-c910",
         )
         assert not store.is_entity_related_to(
+            "uarch:xuantie-c910",
+            "cpu:xiangshan-nanhu",
+        )
+        assert not store.is_entity_related_to(
             "cpu:xiangshan-nanhu",
             "uarch:nonexistent",
+        )
+        assert not store.is_entity_related_to(
+            "uarch:nonexistent",
+            "cpu:xiangshan-nanhu",
         )
 
         assert not store.is_entity_related_to("device:sipeed-lpi4a", "arch:riscv64")
@@ -249,6 +261,17 @@ def test_entity_store_is_entity_related_to(ruyi_file: RuyiFileFixtureFactory) ->
             "arch:riscv64",
             transitive=True,
         )
+        assert store.is_entity_related_to(
+            "arch:riscv64",
+            "device:sipeed-lpi4a",
+            transitive=True,
+        )
+        assert not store.is_entity_related_to(
+            "uarch:xiangshan-nanhu",
+            "device:sipeed-lpi4a",
+            transitive=True,
+        )
+
         assert not store.is_entity_related_to(
             "device:sipeed-lpi4a",
             "uarch:xiangshan-nanhu",
