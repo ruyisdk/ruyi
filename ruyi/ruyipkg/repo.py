@@ -7,6 +7,8 @@ from typing import (
     Any,
     Final,
     Iterable,
+    Mapping,
+    Sequence,
     Tuple,
     TypedDict,
     TypeGuard,
@@ -25,7 +27,7 @@ from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
-from .entity_provider import FSEntityProvider
+from .entity_provider import BaseEntityProvider, FSEntityProvider
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
@@ -227,6 +229,7 @@ class MetadataRepo:
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
         self._entity_store: EntityStore = EntityStore(
             FSEntityProvider(pathlib.Path(self.root) / "entities"),
+            MetadataRepoEntityProvider(self),
         )
         self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
@@ -580,3 +583,68 @@ class MetadataRepo:
     def entity_store(self) -> EntityStore:
         """Get the entity store for this repository."""
         return self._entity_store
+
+
+PACKAGE_ENTITY_TYPE = "pkg"
+PACKAGE_ENTITY_TYPE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "required": ["pkg"],
+    "properties": {
+        "pkg": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string"},
+                "display_name": {"type": "string"},
+                "name": {"type": "string"},
+                "category": {"type": "string"},
+            },
+            "required": ["id", "display_name", "name", "category"],
+        },
+    },
+}
+
+
+class PackageEntityData(TypedDict):
+    id: str
+    display_name: str
+    name: str
+    category: str
+
+
+class PackageEntity(TypedDict):
+    pkg: PackageEntityData
+
+
+class MetadataRepoEntityProvider(BaseEntityProvider):
+    def __init__(self, repo: MetadataRepo) -> None:
+        super().__init__()
+        self._repo = repo
+
+    def discover_schemas(self) -> dict[str, object]:
+        return {
+            PACKAGE_ENTITY_TYPE: PACKAGE_ENTITY_TYPE_SCHEMA,
+        }
+
+    def load_entities(
+        self,
+        entity_types: Sequence[str],
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
+        result: dict[str, Mapping[str, Mapping[str, Any]]] = {}
+        for ty in entity_types:
+            if ty == PACKAGE_ENTITY_TYPE:
+                result[ty] = self._load_package_entities()
+        return result
+
+    def _load_package_entities(self) -> dict[str, PackageEntity]:
+        result: dict[str, PackageEntity] = {}
+        for cat, pkg_name, pkg_vers in self._repo.iter_pkgs():
+            full_name = f"{cat}/{pkg_name}"
+            result[full_name] = {
+                "pkg": {
+                    "id": full_name,
+                    "display_name": full_name,
+                    "name": pkg_name,
+                    "category": cat,
+                },
+            }
+        return result
