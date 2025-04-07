@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Architecture Entity Schema",
+  "description": "Schema for architecture entity definitions",
+  "type": "object",
+  "required": ["ruyi-entity", "arch"],
+  "properties": {
+    "ruyi-entity": {
+      "type": "string",
+      "description": "Version of the entity schema",
+      "enum": ["v0"]
+    },
+    "arch": {
+      "type": "object",
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the architecture"
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable name for the architecture"
+        }
+      }
+    },
+    "related": {
+      "type": "array",
+      "description": "List of related entity references",
+      "items": {
+        "type": "string",
+        "pattern": "^.+:.+"
+      }
+    }
+  }
+}

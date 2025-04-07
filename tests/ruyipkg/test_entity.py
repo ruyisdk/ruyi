@@ -11,10 +11,11 @@ def test_entity_store_discovery(ruyi_file: RuyiFileFixtureFactory) -> None:
         store = EntityStore(entities_path)
         entity_types = set(store.get_entity_types())
 
-        assert "uarch" in entity_types
+        assert "arch" in entity_types
         assert "cpu" in entity_types
         assert "device" in entity_types
-        assert len(entity_types) == 3
+        assert "uarch" in entity_types
+        assert len(entity_types) == 4
 
 
 def test_entity_store_get_entity(ruyi_file: RuyiFileFixtureFactory) -> None:
@@ -222,3 +223,34 @@ def test_traverse_related_entities_with_type_filter(
         # Should only include entities of the specified types
         assert all(e.entity_type in ["cpu", "uarch"] for e in mixed_entities)
         assert not any(e.entity_type == "device" for e in mixed_entities)
+
+
+def test_entity_store_is_entity_related_to(ruyi_file: RuyiFileFixtureFactory) -> None:
+    """Test the ``is_related_to`` method of ``EntityStore``."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        assert store.is_entity_related_to(
+            "cpu:xiangshan-nanhu",
+            "uarch:xiangshan-nanhu",
+        )
+        assert not store.is_entity_related_to(
+            "cpu:xiangshan-nanhu",
+            "uarch:xuantie-c910",
+        )
+        assert not store.is_entity_related_to(
+            "cpu:xiangshan-nanhu",
+            "uarch:nonexistent",
+        )
+
+        assert not store.is_entity_related_to("device:sipeed-lpi4a", "arch:riscv64")
+        assert store.is_entity_related_to(
+            "device:sipeed-lpi4a",
+            "arch:riscv64",
+            transitive=True,
+        )
+        assert not store.is_entity_related_to(
+            "device:sipeed-lpi4a",
+            "uarch:xiangshan-nanhu",
+            transitive=True,
+        )

@@ -73,6 +73,14 @@ class BaseEntity:
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.id}"
 
+    def __hash__(self) -> int:
+        return hash((self.entity_type, self.id))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BaseEntity):
+            return NotImplemented
+        return self.entity_type == other.entity_type and self.id == other.id
+
 
 class EntityStore:
     def __init__(self, entities_root: os.PathLike[Any]) -> None:
@@ -315,3 +323,54 @@ class EntityStore:
 
         # Start traversal from the given entity
         yield from _traverse(entity)
+
+    def is_entity_related_to(
+        self,
+        entity: BaseEntity | str,
+        related_entity: BaseEntity | str,
+        transitive: bool = False,
+        not_found_ok: bool = True,
+    ) -> bool:
+        """Check if the given entity is related to another entity.
+
+        Args:
+            entity: The starting entity or reference (in the form ``type:id``).
+            related_entity: The related entity or reference (in the form ``type:id``).
+            transitive: If True, check for transitive relationships.
+            not_found_ok: If True, return False if either entity is not found.
+                          If False, raise an error if either entity is not found.
+
+        Returns:
+            True if the entities are related, False otherwise.
+        """
+
+        if isinstance(entity, str):
+            e = self.get_entity_by_ref(entity)
+            if e is None:
+                if not_found_ok:
+                    return False
+                raise ValueError(f"Entity not found: {entity}")
+            entity = e
+
+        if isinstance(related_entity, str):
+            re = self.get_entity_by_ref(related_entity)
+            if re is None:
+                if not_found_ok:
+                    return False
+                raise ValueError(f"Entity not found: {related_entity}")
+            related_entity = re
+
+        # Check if the two entities are directly related
+        if related_entity in self.list_related_entities(entity):
+            return True
+
+        # If transitive mode is enabled, check for indirect relationships
+        if transitive:
+            for e in self.traverse_related_entities(
+                entity,
+                transitive=True,
+            ):
+                if related_entity in self.list_related_entities(e):
+                    return True
+
+        return False
