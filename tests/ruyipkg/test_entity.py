@@ -78,3 +78,142 @@ def test_entity_validation(ruyi_file: RuyiFileFixtureFactory) -> None:
 
         device = store.get_entity("device", "sipeed-lpi4a")
         assert device is not None
+
+
+def test_entity_related_refs(ruyi_file: RuyiFileFixtureFactory) -> None:
+    """Test retrieving related entity references from an entity."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        # Test entity with related entities
+        cpu = store.get_entity("cpu", "xiangshan-nanhu")
+        assert cpu is not None
+        assert isinstance(cpu.related_refs, list)
+        assert "uarch:xiangshan-nanhu" in cpu.related_refs
+
+        # Test device with related entities
+        device = store.get_entity("device", "sipeed-lpi4a")
+        assert device is not None
+        assert isinstance(device.related_refs, list)
+        assert "cpu:xuantie-th1520" in device.related_refs
+
+
+def test_get_related_entities(ruyi_file: RuyiFileFixtureFactory) -> None:
+    """Test retrieving related entities from an entity."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        # Test CPU entity with a related uarch entity
+        cpu = store.get_entity("cpu", "xiangshan-nanhu")
+        assert cpu is not None
+
+        related_entities = store.list_related_entities(cpu)
+        assert len(related_entities) == 1
+        assert related_entities[0].entity_type == "uarch"
+        assert related_entities[0].id == "xiangshan-nanhu"
+
+        # Test device entity with a related CPU entity
+        device = store.get_entity("device", "sipeed-lpi4a")
+        assert device is not None
+
+        related_entities = store.list_related_entities(device)
+        assert len(related_entities) == 1
+        assert related_entities[0].entity_type == "cpu"
+        assert related_entities[0].id == "xuantie-th1520"
+
+
+def test_traverse_related_entities_direct(ruyi_file: RuyiFileFixtureFactory) -> None:
+    """Test traversing directly related entities."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        # Start from a device entity
+        device = store.get_entity("device", "sipeed-lpi4a")
+        assert device is not None
+
+        # Get direct related entities (transitive=False)
+        related = list(store.traverse_related_entities(device, transitive=False))
+
+        # Should only include the directly related CPU entity
+        assert len(related) == 1
+        assert related[0].entity_type == "cpu"
+        assert related[0].id == "xuantie-th1520"
+
+
+def test_traverse_related_entities_transitive(
+    ruyi_file: RuyiFileFixtureFactory,
+) -> None:
+    """Test traversing the transitive closure of related entities."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        # Start from a device entity
+        device = store.get_entity("device", "sipeed-lpi4a")
+        assert device is not None
+
+        # Get transitive related entities (transitive=True)
+        related = list(store.traverse_related_entities(device, transitive=True))
+
+        # Should include:
+        # 1. The directly related CPU entity
+        # 2. Any entities related to that CPU entity
+        assert len(related) >= 1
+
+        # Check that the CPU is included
+        cpu_entities = [e for e in related if e.entity_type == "cpu"]
+        assert len(cpu_entities) >= 1
+        assert any(e.id == "xuantie-th1520" for e in cpu_entities)
+
+        # If the CPU has related entities, they should also be included
+        # Get the CPU entity to check its relationships
+        cpu = store.get_entity("cpu", "xuantie-th1520")
+        if cpu and cpu.related_refs:
+            for ref in cpu.related_refs:
+                entity_type, entity_id = ref.split(":", 1)
+                assert any(
+                    e.entity_type == entity_type and e.id == entity_id for e in related
+                )
+
+
+def test_traverse_related_entities_with_type_filter(
+    ruyi_file: RuyiFileFixtureFactory,
+) -> None:
+    """Test traversing related entities with filtering by entity type."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(entities_path)
+
+        # Start from a device entity
+        device = store.get_entity("device", "sipeed-lpi4a")
+        assert device is not None
+
+        # Only get entities of type "cpu"
+        cpu_entities = list(
+            store.traverse_related_entities(
+                device, transitive=True, entity_types=["cpu"]
+            )
+        )
+
+        # Should only include CPU entities
+        assert all(e.entity_type == "cpu" for e in cpu_entities)
+        assert any(e.id == "xuantie-th1520" for e in cpu_entities)
+
+        # Only get entities of type "uarch"
+        uarch_entities = list(
+            store.traverse_related_entities(
+                device, transitive=True, entity_types=["uarch"]
+            )
+        )
+
+        # Should only include uarch entities
+        assert all(e.entity_type == "uarch" for e in uarch_entities)
+
+        # Test with multiple entity types
+        mixed_entities = list(
+            store.traverse_related_entities(
+                device, transitive=True, entity_types=["cpu", "uarch"]
+            )
+        )
+
+        # Should only include entities of the specified types
+        assert all(e.entity_type in ["cpu", "uarch"] for e in mixed_entities)
+        assert not any(e.entity_type == "device" for e in mixed_entities)

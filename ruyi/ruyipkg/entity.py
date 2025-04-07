@@ -61,6 +61,15 @@ class BaseEntity:
         """Raw data of the entity."""
         return self._data[self.entity_type]
 
+    @property
+    def related_refs(self) -> list[str]:
+        """Get the list of related entity references."""
+        if r := self._data.get("related"):
+            if isinstance(r, list):
+                return r
+        # return empty list if that is the case, or if the type is unexpected
+        return []
+
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.id}"
 
@@ -230,3 +239,63 @@ class EntityStore:
 
         self.load_all()
         return self.get_entity(entity_type, entity_id)
+
+    def list_related_entities(self, entity: BaseEntity) -> list[BaseEntity]:
+        """Get all directly related entities of the given entity.
+
+        Args:
+            entity: The entity whose related entities to retrieve
+
+        Returns:
+            A list of directly related entities
+        """
+        related_entities = []
+        for ref in entity.related_refs:
+            related_entity = self.get_entity_by_ref(ref)
+            if related_entity:
+                related_entities.append(related_entity)
+        return related_entities
+
+    def traverse_related_entities(
+        self,
+        entity: BaseEntity,
+        transitive: bool = False,
+        entity_types: list[str] | None = None,
+    ) -> Iterator[BaseEntity]:
+        """Traverse related entities of the given entity.
+
+        Args:
+            entity: The starting entity
+            transitive: If True, traverse the transitive closure of related entities.
+                        If False, only traverse direct related entities.
+            entity_types: Optional list of entity types to filter by. If provided,
+                          only entities of the specified types will be yielded.
+
+        Returns:
+            An iterator over the related entities
+        """
+        # Dictionary to track visited entities and avoid cycles
+        visited = set()
+
+        # Helper function for recursive traversal
+        def _traverse(current_entity: BaseEntity) -> Iterator[BaseEntity]:
+            # Skip if already visited (prevents cycles)
+            entity_key = f"{current_entity.entity_type}:{current_entity.id}"
+            if entity_key in visited:
+                return
+
+            # Mark as visited
+            visited.add(entity_key)
+
+            # Process related entities
+            for related_entity in self.list_related_entities(current_entity):
+                # Check if this entity matches the desired type filter
+                if entity_types is None or related_entity.entity_type in entity_types:
+                    yield related_entity
+
+                # Recursively traverse if transitive mode is enabled
+                if transitive:
+                    yield from _traverse(related_entity)
+
+        # Start traversal from the given entity
+        yield from _traverse(entity)
