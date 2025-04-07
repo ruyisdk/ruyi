@@ -7,6 +7,7 @@ main() {
         # Package versions provided by Ubuntu 22.04 LTS.
         python3-arpy  # 1.1.1
         python3-certifi  # 2020.6.20
+        python3-fastjsonschema  # 2.15.1
         python3-jinja2  # 3.0.3
         python3-packaging  # 21.3
         python3-pygit2  # 1.6.1
