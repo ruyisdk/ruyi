@@ -12,7 +12,7 @@
     },
     "device": {
       "type": "object",
-      "required": ["id", "display_name", "components"],
+      "required": ["id", "display_name"],
       "properties": {
         "id": {
           "type": "string",
@@ -21,15 +21,6 @@
         "display_name": {
           "type": "string",
           "description": "Human-readable name for the device"
-        },
-        "components": {
-          "type": "array",
-          "description": "List of component references, typically CPU identifiers",
-          "items": {
-            "type": "string",
-            "pattern": "^cpu:.+"
-          },
-          "minItems": 1
         },
         "variants": {
           "type": "array",
@@ -49,6 +40,14 @@
             }
           }
         }
+      }
+    },
+    "related": {
+      "type": "array",
+      "description": "List of related entity references",
+      "items": {
+        "type": "string",
+        "pattern": "^.+:.+"
       }
     }
   }

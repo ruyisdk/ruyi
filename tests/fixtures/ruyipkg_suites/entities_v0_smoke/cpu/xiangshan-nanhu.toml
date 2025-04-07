@@ -1,6 +1,7 @@
 ruyi-entity = "v0"
 
+related = ["uarch:xiangshan-nanhu"]
+
 [cpu]
 id = "xiangshan-nanhu"
 display_name = "Xiangshan Nanhu"
-components = ["uarch:xiangshan-nanhu"]

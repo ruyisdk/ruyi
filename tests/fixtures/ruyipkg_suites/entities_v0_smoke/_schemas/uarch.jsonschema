@@ -48,6 +48,14 @@
           }
         }
       ]
+    },
+    "related": {
+      "type": "array",
+      "description": "List of related entity references",
+      "items": {
+        "type": "string",
+        "pattern": "^.+:.+"
+      }
     }
   }
 }

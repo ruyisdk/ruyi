@@ -12,7 +12,7 @@
     },
     "cpu": {
       "type": "object",
-      "required": ["id", "display_name", "components"],
+      "required": ["id", "display_name"],
       "properties": {
         "id": {
           "type": "string",
@@ -21,16 +21,15 @@
         "display_name": {
           "type": "string",
           "description": "Human-readable name for the CPU"
-        },
-        "components": {
-          "type": "array",
-          "description": "List of component references, typically uarch identifiers",
-          "items": {
-            "type": "string",
-            "pattern": "^uarch:.+"
-          },
-          "minItems": 1
         }
+      }
+    },
+    "related": {
+      "type": "array",
+      "description": "List of related entity references",
+      "items": {
+        "type": "string",
+        "pattern": "^.+:.+"
       }
     }
   }
