@@ -600,6 +600,11 @@ PACKAGE_ENTITY_TYPE_SCHEMA = {
             },
             "required": ["id", "display_name", "name", "category"],
         },
+        "related": {
+            "type": "array",
+            "description": "List of related entity references",
+            "items": {"type": "string", "pattern": "^.+:.+"},
+        },
     },
 }
 
@@ -613,6 +618,7 @@ class PackageEntityData(TypedDict):
 
 class PackageEntity(TypedDict):
     pkg: PackageEntityData
+    related: "NotRequired[list[str]]"
 
 
 class MetadataRepoEntityProvider(BaseEntityProvider):
@@ -639,6 +645,43 @@ class MetadataRepoEntityProvider(BaseEntityProvider):
         result: dict[str, PackageEntity] = {}
         for cat, pkg_name, pkg_vers in self._repo.iter_pkgs():
             full_name = f"{cat}/{pkg_name}"
+            relations = []
+
+            # see if all versions of the package are toolchains and share the
+            # same arch
+            tc_arch: str | None = None
+            for pkg_ver in pkg_vers.values():
+                if tm := pkg_ver.toolchain_metadata:
+                    if tc_arch is None:
+                        tc_arch = tm.target_arch
+                        continue
+                    if tc_arch != tm.target_arch:
+                        tc_arch = None
+                        break
+                else:
+                    break
+            if tc_arch is not None:
+                # this is a toolchain package, add the arch as a related entity
+                relations.append(f"arch:{tc_arch}")
+
+            # similarly, check for the emulator kind
+            emu_arches: set[str] | None = None
+            for pkg_ver in pkg_vers.values():
+                if em := pkg_ver.emulator_metadata:
+                    pkg_ver_arches: set[str] = set()
+                    for p in em.programs:
+                        pkg_ver_arches.update(p.supported_arches)
+                    if emu_arches is None:
+                        emu_arches = pkg_ver_arches
+                        continue
+                    if emu_arches != pkg_ver_arches:
+                        emu_arches = emu_arches.intersection(pkg_ver_arches)
+                else:
+                    break
+            if emu_arches is not None:
+                for emu_arch in emu_arches:
+                    relations.append(f"arch:{emu_arch}")
+
             result[full_name] = {
                 "pkg": {
                     "id": full_name,
@@ -646,5 +689,6 @@ class MetadataRepoEntityProvider(BaseEntityProvider):
                     "name": pkg_name,
                     "category": cat,
                 },
+                "related": relations,
             }
         return result
