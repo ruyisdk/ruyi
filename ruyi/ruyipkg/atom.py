@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import Final, Literal, Tuple
+from typing import Final, Iterator, Literal, Tuple
 
 import semver
 
@@ -52,6 +52,14 @@ class Atom(abc.ABC):
     ) -> BoundPackageManifest | None:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def iter_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> Iterator[BoundPackageManifest]:
+        raise NotImplementedError
+
 
 def split_category(name: str) -> Tuple[str | None, str]:
     fragments = name.split("/", 1)
@@ -80,6 +88,16 @@ class NameAtom(Atom):
             )
         except KeyError:
             return None
+
+    def iter_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> Iterator[BoundPackageManifest]:
+        # return all versions of the package named self.name in the given repo
+        for pm in repo.iter_pkg_vers(self.name, self.category):
+            if not is_prerelease(pm.semver) or include_prerelease_vers:
+                yield pm
 
 
 def fix_version_matcher_for_semver2(match_expr: str) -> str:
@@ -127,6 +145,16 @@ class ExprAtom(Atom):
         latest_ver = max(semvers)
         return matching_pms[str(latest_ver)]
 
+    def iter_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> Iterator[BoundPackageManifest]:
+        for pm in repo.iter_pkg_vers(self.name, self.category):
+            if self._is_pm_matching_my_exprs(pm):
+                if not is_prerelease(pm.semver) or include_prerelease_vers:
+                    yield pm
+
 
 class SlugAtom(Atom):
     def __init__(self, s: str) -> None:
@@ -142,3 +170,15 @@ class SlugAtom(Atom):
         if pm and is_prerelease(pm.semver):
             return pm if include_prerelease_vers else None
         return pm
+
+    def iter_in_repo(
+        self,
+        repo: MetadataRepo,
+        include_prerelease_vers: bool,
+    ) -> Iterator[BoundPackageManifest]:
+        pm = repo.get_pkg_by_slug(self.slug)
+        if pm is None:
+            return None
+
+        if is_prerelease(pm.semver) and include_prerelease_vers:
+            yield pm
