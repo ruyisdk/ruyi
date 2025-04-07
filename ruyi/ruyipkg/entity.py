@@ -1,104 +1,23 @@
-import os
-import pathlib
-import tomllib
-import json
 from typing import Any, Callable, Iterator
 
 import fastjsonschema
 from fastjsonschema.exceptions import JsonSchemaException
 
 from .. import log
-
-
-class EntityError(Exception):
-    """Base exception for entity-related errors."""
-
-    pass
-
-
-class EntityValidationError(EntityError):
-    """Exception raised when an entity fails validation."""
-
-    def __init__(self, entity_type: str, entity_id: str, cause: Exception) -> None:
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        self.cause = cause
-        message = (
-            f"Entity validation failed for entity '{entity_type}:{entity_id}': {cause}"
-        )
-        super().__init__(message)
-
-
-class BaseEntity:
-    """Base class for all entity types."""
-
-    def __init__(self, entity_type: str, entity_id: str, data: dict[str, Any]) -> None:
-        self._entity_type = entity_type
-        self._id = entity_id
-        self._data = data
-
-        self._reverse_refs: set[str] = set()
-
-    @property
-    def entity_type(self) -> str:
-        """Type of the entity."""
-        return self._entity_type
-
-    @property
-    def id(self) -> str:
-        """ID of the entity."""
-        return self._id
-
-    @property
-    def display_name(self) -> str | None:
-        """Human-readable name of the entity."""
-        result = self._data[self.entity_type].get("display_name", None)
-        if result is None or isinstance(result, str):
-            return result
-        # return None if type is unexpected
-        return None
-
-    @property
-    def data(self) -> Any:
-        """Raw data of the entity."""
-        return self._data[self.entity_type]
-
-    @property
-    def related_refs(self) -> list[str]:
-        """Get the list of related entity references."""
-        if r := self._data.get("related"):
-            if isinstance(r, list):
-                return r
-        # return empty list if that is the case, or if the type is unexpected
-        return []
-
-    @property
-    def reverse_refs(self) -> list[str]:
-        """Get the list of reverse-related entity references."""
-        return list(self._reverse_refs)
-
-    def _add_reverse_ref(self, ref: str) -> None:
-        self._reverse_refs.add(ref)
-
-    def __str__(self) -> str:
-        return f"{self.entity_type}:{self.id}"
-
-    def __hash__(self) -> int:
-        return hash((self.entity_type, self.id))
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, BaseEntity):
-            return NotImplemented
-        return self.entity_type == other.entity_type and self.id == other.id
+from .entity_provider import BaseEntity, BaseEntityProvider, EntityValidationError
 
 
 class EntityStore:
-    def __init__(self, entities_root: os.PathLike[Any]) -> None:
-        self._entities_root = pathlib.Path(entities_root)
-        self._schemas_root = self._entities_root / "_schemas"
+    def __init__(self, *providers: BaseEntityProvider) -> None:
+        """Initialize the entity store.
+
+        Args:
+            providers: A list of entity providers to use for loading entity data.
+        """
+        self._providers = providers
 
         self._entity_types: set[str] = set()
-        """Cache of entity types discovered in the repository."""
+        """Cache of entity types discovered."""
 
         self._entities: dict[str, dict[str, BaseEntity]] = {}
         """Cache of loaded entities by type."""
@@ -113,41 +32,20 @@ class EntityStore:
         self._discovered = False
 
     def _discover_entity_types(self) -> None:
-        """Discover all entity types by examining schema files in the _schemas directory."""
-
+        """Discover all entity types by examining schemas from all providers."""
         if self._discovered:
             return
 
-        if not os.path.isdir(self._schemas_root):
-            log.D(f"entity schemas directory not found: {self._schemas_root}")
-            self._discovered = True
-            return
+        # Collect schemas from all providers
+        for provider in self._providers:
+            schemas = provider.discover_schemas()
 
-        try:
-            schema_files = list(self._schemas_root.glob("*.jsonschema"))
-        except IOError as e:
-            log.W(
-                f"failed to access entity schemas directory {self._schemas_root}: {e}"
-            )
-            self._discovered = True
-            return
-
-        for p in schema_files:
-            # Extract entity type from schema filename (remove .jsonschema extension)
-            entity_type = p.name[:-11]  # 11 is the length of ".jsonschema"
-
-            try:
-                with open(p, "r", encoding="utf-8") as f:
-                    schema = json.load(f)
-            except (IOError, json.JSONDecodeError) as e:
-                log.D(f"failed to load schema for entity type '{entity_type}': {e}")
-                continue
-
-            # cache the schema
-            # validator is created later on demand
-            self._schemas[entity_type] = schema
-            self._entity_types.add(entity_type)
-            self._entities[entity_type] = {}
+            # Add new schemas to our cache
+            for entity_type, schema in schemas.items():
+                if entity_type not in self._schemas:
+                    self._schemas[entity_type] = schema
+                    self._entity_types.add(entity_type)
+                    self._entities[entity_type] = {}
 
         log.D(f"discovered entity types from schemas: {self._entity_types}")
         self._discovered = True
@@ -187,42 +85,29 @@ class EntityStore:
             raise EntityValidationError(entity_type, entity_id, e) from e
 
     def load_all(self, validate: bool = True) -> None:
-        """Load all entities from the repository."""
+        """Load all entities from all providers."""
         if self._loaded:
             return
 
         # Discover entity types from schemas if not already done
         self._discover_entity_types()
 
-        for entity_type in self._entity_types:
-            type_dir = self._entities_root / entity_type
+        # Load entities from all providers
+        for provider in self._providers:
+            provider_entities = provider.load_entities(list(self._entity_types))
 
-            for file_path in type_dir.glob("*.toml"):
-                try:
-                    with open(file_path, "rb") as f:
-                        data = tomllib.load(f)
-                except (IOError, tomllib.TOMLDecodeError) as e:
-                    log.W(f"failed to load entity from {file_path}: {e}")
-                    continue
-
-                # Extract entity ID from filename (remove .toml extension)
-                entity_id = file_path.name[:-5]
-
-                if validate:
-                    try:
-                        self._validate_entity(entity_type, entity_id, data)
-                    except Exception as e:
-                        log.W(
-                            f"failed to validate entity from {file_path}: {e}\ndata={data}"
-                        )
-                        continue
-
-                # Create and store a generic entity
-                self._entities[entity_type][entity_id] = BaseEntity(
-                    entity_type,
-                    entity_id,
-                    data,
-                )
+            # Merge entities from this provider with our cache
+            for entity_type, entities_by_id in provider_entities.items():
+                for entity_id, entity_data in entities_by_id.items():
+                    # Validate entity data
+                    if validate:
+                        self._validate_entity(entity_type, entity_id, entity_data)
+                    # Create and store a generic entity
+                    self._entities[entity_type][entity_id] = BaseEntity(
+                        entity_type,
+                        entity_id,
+                        entity_data,
+                    )
 
         self._loaded = True
 

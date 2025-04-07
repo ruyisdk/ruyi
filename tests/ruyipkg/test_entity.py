@@ -1,6 +1,7 @@
 import pytest
 
 from ruyi.ruyipkg.entity import EntityStore
+from ruyi.ruyipkg.entity_provider import FSEntityProvider
 
 from ..fixtures import RuyiFileFixtureFactory
 
@@ -8,7 +9,7 @@ from ..fixtures import RuyiFileFixtureFactory
 def test_entity_store_discovery(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test that EntityStore correctly discovers entity types."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
         entity_types = set(store.get_entity_types())
 
         assert "arch" in entity_types
@@ -21,7 +22,7 @@ def test_entity_store_discovery(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_entity_store_get_entity(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test retrieving entities by type and ID."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Test valid entity retrieval
         cpu = store.get_entity("cpu", "xiangshan-nanhu")
@@ -38,7 +39,7 @@ def test_entity_store_get_entity(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_entity_store_iter_entities(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test iterating over entities."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Test iterating over a specific type
         cpus = list(store.iter_entities("cpu"))
@@ -52,7 +53,7 @@ def test_entity_store_iter_entities(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_entity_store_get_entity_by_ref(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test retrieving entities by reference string."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Test valid reference
         cpu = store.get_entity_by_ref("cpu:xiangshan-nanhu")
@@ -68,7 +69,7 @@ def test_entity_store_get_entity_by_ref(ruyi_file: RuyiFileFixtureFactory) -> No
 def test_entity_validation(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test entity validation against schemas."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Force validation by explicitly loading
         store.load_all(validate=True)
@@ -84,7 +85,7 @@ def test_entity_validation(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_entity_related_refs(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test retrieving related entity references from an entity."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Test entity with related entities
         cpu = store.get_entity("cpu", "xiangshan-nanhu")
@@ -102,7 +103,7 @@ def test_entity_related_refs(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_get_related_entities(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test retrieving related entities from an entity."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Test CPU entity with a related uarch entity
         cpu = store.get_entity("cpu", "xiangshan-nanhu")
@@ -126,7 +127,7 @@ def test_get_related_entities(ruyi_file: RuyiFileFixtureFactory) -> None:
 def test_traverse_related_entities_direct(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test traversing directly related entities."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Start from a device entity
         device = store.get_entity("device", "sipeed-lpi4a")
@@ -146,7 +147,7 @@ def test_traverse_related_entities_transitive(
 ) -> None:
     """Test traversing the transitive closure of related entities."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Start from a device entity
         device = store.get_entity("device", "sipeed-lpi4a")
@@ -181,7 +182,7 @@ def test_traverse_related_entities_with_type_filter(
 ) -> None:
     """Test traversing related entities with filtering by entity type."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         # Start from a device entity reference
         ref = "device:sipeed-lpi4a"
@@ -228,7 +229,7 @@ def test_traverse_related_entities_with_type_filter(
 def test_entity_store_is_entity_related_to(ruyi_file: RuyiFileFixtureFactory) -> None:
     """Test the ``is_related_to`` method of ``EntityStore``."""
     with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
-        store = EntityStore(entities_path)
+        store = EntityStore(FSEntityProvider(entities_path))
 
         assert store.is_entity_related_to(
             "cpu:xiangshan-nanhu",
