@@ -187,6 +187,7 @@ class EntityStore:
         self,
         entity: BaseEntity | str,
         transitive: bool = False,
+        forward_refs: bool = True,
         reverse_refs: bool = False,
         entity_types: list[str] | None = None,
     ) -> Iterator[BaseEntity]:
@@ -196,7 +197,8 @@ class EntityStore:
             entity: The starting entity or reference (in the form ``type:id``).
             transitive: If True, traverse the transitive closure of related entities.
                         If False, only traverse direct related entities.
-            reverse_refs: If True, traverse reverse references instead of forward references.
+            forward_refs: If True, traverse forward references.
+            reverse_refs: If True, traverse reverse references.
             entity_types: Optional list of entity types to filter by. If provided,
                           only entities of the specified types will be yielded.
 
@@ -217,24 +219,45 @@ class EntityStore:
         # Helper function for recursive traversal
         def _traverse(current_entity: BaseEntity) -> Iterator[BaseEntity]:
             # Skip if already visited (prevents cycles)
-            entity_key = f"{current_entity.entity_type}:{current_entity.id}"
-            if entity_key in visited:
+            if current_entity in visited:
                 return
 
             # Mark as visited
-            visited.add(entity_key)
+            visited.add(current_entity)
 
-            # Process related entities
-            for related_entity in self.list_related_entities(
-                current_entity, reverse_refs=reverse_refs
-            ):
-                # Check if this entity matches the desired type filter
-                if entity_types is None or related_entity.entity_type in entity_types:
-                    yield related_entity
+            # Process forward edges if requested
+            if forward_refs:
+                for related_entity in self.list_related_entities(
+                    current_entity,
+                    reverse_refs=False,
+                ):
+                    # Check if this entity matches the desired type filter
+                    if (
+                        entity_types is None
+                        or related_entity.entity_type in entity_types
+                    ):
+                        yield related_entity
 
-                # Recursively traverse if transitive mode is enabled
-                if transitive:
-                    yield from _traverse(related_entity)
+                    # Recursively traverse if transitive mode is enabled
+                    if transitive:
+                        yield from _traverse(related_entity)
+
+            # Process reverse edges if requested
+            if reverse_refs:
+                for related_entity in self.list_related_entities(
+                    current_entity,
+                    reverse_refs=True,
+                ):
+                    # Check if this entity matches the desired type filter
+                    if (
+                        entity_types is None
+                        or related_entity.entity_type in entity_types
+                    ):
+                        yield related_entity
+
+                    # Recursively traverse if transitive mode is enabled
+                    if transitive:
+                        yield from _traverse(related_entity)
 
         # Start traversal from the given entity
         yield from _traverse(entity)
@@ -244,6 +267,7 @@ class EntityStore:
         entity: BaseEntity | str,
         related_entity: BaseEntity | str,
         transitive: bool = False,
+        unidirectional: bool = True,
         not_found_ok: bool = True,
     ) -> bool:
         """Check if the given entity is related to another entity.
@@ -252,6 +276,9 @@ class EntityStore:
             entity: The starting entity or reference (in the form ``type:id``).
             related_entity: The related entity or reference (in the form ``type:id``).
             transitive: If True, check for transitive relationships.
+            unidirectional: If True, entities are considered related if and only if
+                            the relationship chain consists of forward or reverse
+                            edges only.
             not_found_ok: If True, return False if either entity is not found.
                           If False, raise an error if either entity is not found.
 
@@ -283,19 +310,46 @@ class EntityStore:
 
         # If transitive mode is enabled, check for indirect relationships
         if transitive:
-            for e in self.traverse_related_entities(
-                entity,
-                transitive=True,
-            ):
-                if related_entity in self.list_related_entities(e):
-                    return True
+            if unidirectional:
+                for e in self.traverse_related_entities(
+                    entity,
+                    forward_refs=True,
+                    reverse_refs=False,
+                    transitive=True,
+                ):
+                    if related_entity in self.list_related_entities(
+                        e,
+                        reverse_refs=False,
+                    ):
+                        return True
 
-            for e in self.traverse_related_entities(
-                entity,
-                reverse_refs=True,
-                transitive=True,
-            ):
-                if related_entity in self.list_related_entities(e, reverse_refs=True):
-                    return True
+                for e in self.traverse_related_entities(
+                    entity,
+                    forward_refs=False,
+                    reverse_refs=True,
+                    transitive=True,
+                ):
+                    if related_entity in self.list_related_entities(
+                        e,
+                        reverse_refs=True,
+                    ):
+                        return True
+            else:
+                for e in self.traverse_related_entities(
+                    entity,
+                    forward_refs=True,
+                    reverse_refs=True,
+                    transitive=True,
+                ):
+                    if related_entity in self.list_related_entities(
+                        e,
+                        reverse_refs=False,
+                    ):
+                        return True
+                    if related_entity in self.list_related_entities(
+                        e,
+                        reverse_refs=True,
+                    ):
+                        return True
 
         return False

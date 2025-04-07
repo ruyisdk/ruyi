@@ -272,9 +272,20 @@ def test_entity_store_is_entity_related_to(ruyi_file: RuyiFileFixtureFactory) ->
             "device:sipeed-lpi4a",
             transitive=True,
         )
-
         assert not store.is_entity_related_to(
             "device:sipeed-lpi4a",
             "uarch:xiangshan-nanhu",
+            transitive=True,
+        )
+        assert store.is_entity_related_to(
+            "device:sipeed-lpi4a",
+            "uarch:xiangshan-nanhu",
+            unidirectional=False,
+            transitive=True,
+        )
+        assert store.is_entity_related_to(
+            "uarch:xiangshan-nanhu",
+            "device:sipeed-lpi4a",
+            unidirectional=False,
             transitive=True,
         )
