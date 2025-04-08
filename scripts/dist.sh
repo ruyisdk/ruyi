@@ -97,6 +97,18 @@ do_inner() {
         endgroup
     fi
 
+    case "$arch" in
+    riscv*)
+        green "setting up extra build flags for $arch build" group
+        # seems the https://github.com/python/cpython/issues/112779 fix didn't
+        # work in our case, maybe the python in the builder image got incorrectly
+        # configured because it was built with emulation
+        export LDFLAGS="$LDFLAGS -latomic"
+        echo "LDFLAGS='$LDFLAGS'"
+        endgroup
+        ;;
+    esac
+
     exec ./scripts/dist-inner.py
 }
 
