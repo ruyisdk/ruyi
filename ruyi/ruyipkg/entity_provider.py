@@ -67,6 +67,24 @@ class BaseEntity:
         return None
 
     @property
+    def unique_among_type_during_traversal(self) -> bool:
+        """Whether the entity should be unique among all entities of the same type
+        during traversal.
+
+        For example, if the entity is ``arch:foo64`` and there is also ``arch:foo32``,
+        with this property set to ``True`` on each, there will be only one
+        ``arch:foo*`` entity in any traversal path involving them, so that a
+        hypothetical traversal starting from a "foo64" device will not return
+        entities only related to the "foo32" architecture.
+        """
+
+        if r := self._data.get("unique_among_type_during_traversal", None):
+            if isinstance(r, bool):
+                return r
+        # return False if type is unexpected
+        return False
+
+    @property
     def data(self) -> Any:
         """Raw data of the entity."""
         return self._data[self.entity_type]

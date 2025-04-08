@@ -605,6 +605,10 @@ PACKAGE_ENTITY_TYPE_SCHEMA = {
             "description": "List of related entity references",
             "items": {"type": "string", "pattern": "^.+:.+"},
         },
+        "unique_among_type_during_traversal": {
+            "type": "boolean",
+            "description": "Whether this entity should be unique among all entities of the same type during traversal",
+        },
     },
 }
 
@@ -619,6 +623,7 @@ class PackageEntityData(TypedDict):
 class PackageEntity(TypedDict):
     pkg: PackageEntityData
     related: "NotRequired[list[str]]"
+    unique_among_type_during_traversal: "NotRequired[bool]"
 
 
 class MetadataRepoEntityProvider(BaseEntityProvider):

@@ -219,10 +219,21 @@ class EntityStore:
         visited = set()
 
         # Helper function for recursive traversal
-        def _traverse(current_entity: BaseEntity, depth: int) -> Iterator[BaseEntity]:
+        def _traverse(
+            current_entity: BaseEntity,
+            path: list[BaseEntity],
+        ) -> Iterator[BaseEntity]:
             # Skip if already visited (prevents cycles)
             if current_entity in visited:
                 return
+
+            # Enforce uniqueness-among-type
+            if current_entity.unique_among_type_during_traversal:
+                for e in path:
+                    if e.entity_type == current_entity.entity_type:
+                        return
+
+            depth = len(path)
 
             # Do not yield related entities if either:
             # - we're the root entity (depth == 0)
@@ -240,6 +251,9 @@ class EntityStore:
             # Mark as visited
             visited.add(current_entity)
 
+            new_path = path.copy()
+            new_path.append(current_entity)
+
             # Process forward edges if requested
             if forward_refs:
                 for related_entity in self.list_related_entities(
@@ -249,7 +263,7 @@ class EntityStore:
                     # Recursively traverse if transitive mode is enabled
                     # or if we're at the root entity
                     if depth == 0 or transitive:
-                        yield from _traverse(related_entity, depth + 1)
+                        yield from _traverse(related_entity, new_path)
 
             # Process reverse edges if requested
             if reverse_refs:
@@ -260,10 +274,10 @@ class EntityStore:
                     # Recursively traverse if transitive mode is enabled
                     # or if we're at the root entity
                     if depth == 0 or transitive:
-                        yield from _traverse(related_entity, depth + 1)
+                        yield from _traverse(related_entity, new_path)
 
         # Start traversal from the given entity
-        yield from _traverse(entity, 0)
+        yield from _traverse(entity, [])
 
     def is_entity_related_to(
         self,
