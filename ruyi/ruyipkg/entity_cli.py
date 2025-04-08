@@ -57,7 +57,17 @@ class EntityDescribeCommand(
         else:
             log.stdout("  Direct reverse relationships: [gray]none[/]")
 
-        # TODO: render type-specific data and transitive relationships
+        log.stdout("  All indirectly related entities:")
+        for e in entity_store.traverse_related_entities(
+            entity,
+            transitive=True,
+            no_direct_refs=True,
+            forward_refs=True,
+            reverse_refs=True,
+        ):
+            log.stdout(f"    - [yellow]{e}[/]")
+
+        # TODO: render type-specific data
 
         return 0
 
