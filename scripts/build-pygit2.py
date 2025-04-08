@@ -206,6 +206,10 @@ def get_pygit2_wheel_build_env(pygit2_dir: str) -> dict[str, str]:
         # bump it up
         r["AUDITWHEEL_PLAT"] = "manylinux_2_35_riscv64"
 
+    # This controls the build type for the CMake-built libgit2, and defaults to
+    # Debug otherwise in the pygit2 build.sh.
+    r["BUILD_TYPE"] = "Release"
+
     return r
 
 
