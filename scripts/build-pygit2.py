@@ -26,6 +26,20 @@ PYGIT2_SETUPTOOLS_PATCH = """
  
 """
 
+PYGIT2_OPENSSL_NO_DOCS_PATCH = """
+--- a/build.sh
++++ b/build.sh
+@@ -134,7 +134,7 @@ if [ -n "$OPENSSL_VERSION" ]; then
+         # Linux
+         tar xf $FILENAME.tar.gz
+         cd $FILENAME
+-        ./Configure shared --prefix=$PREFIX --libdir=$PREFIX/lib
++        ./Configure shared no-docs --prefix=$PREFIX --libdir=$PREFIX/lib
+         make
+         make install
+         OPENSSL_PREFIX=$(pwd)
+"""
+
 
 def get_pygit2_src_uri(tag: str) -> tuple[str, str]:
     filename = f"{tag}.tar.gz"
@@ -136,6 +150,14 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
         ("patch", "-Np1"),
         cwd=pygit2_workdir,
         input=PYGIT2_SETUPTOOLS_PATCH.encode("utf-8"),
+        check=True,
+    )
+
+    log("disabling docs generation during pygit2 openssl build")
+    subprocess.run(
+        ("patch", "-Np1"),
+        cwd=pygit2_workdir,
+        input=PYGIT2_OPENSSL_NO_DOCS_PATCH.encode("utf-8"),
         check=True,
     )
 
