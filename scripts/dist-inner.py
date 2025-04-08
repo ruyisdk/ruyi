@@ -102,6 +102,7 @@ def main() -> None:
         "--include-package=pygments.styles",
         "--include-package=_cffi_backend",  # https://github.com/Nuitka/Nuitka/issues/2505
         "--windows-icon-from-ico=resources/ruyi.ico",
+        "--show-scons",
         "./ruyi/__main__.py",
     )
     end_group()
