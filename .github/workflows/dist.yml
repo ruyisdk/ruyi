@@ -139,7 +139,7 @@ jobs:
           # don't let the ">=" directive bump the Python version without letting
           # us know
           # python-version-file: pyproject.toml
-          python-version: '3.12'
+          python-version: '3.13'
           cache: poetry
 
       - name: Cache/restore Nuitka clcache contents
