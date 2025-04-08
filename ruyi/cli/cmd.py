@@ -1,6 +1,7 @@
 import argparse
 from typing import Callable, IO, Protocol
 
+from .. import is_experimental
 from ..config import GlobalConfig
 from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
@@ -26,6 +27,7 @@ class BaseCommand:
     cmd: str | None
     _tele_key: str | None
     has_subcommands: bool
+    is_experimental: bool
     is_subcommand_required: bool
     has_main: bool
     aliases: list[str]
@@ -38,6 +40,7 @@ class BaseCommand:
         cmd: str | None,
         has_subcommands: bool = False,
         is_subcommand_required: bool = False,
+        is_experimental: bool = False,
         has_main: bool | None = None,
         aliases: list[str] | None = None,
         description: str | None = None,
@@ -59,6 +62,7 @@ class BaseCommand:
 
         cls.has_subcommands = has_subcommands
         cls.is_subcommand_required = is_subcommand_required
+        cls.is_experimental = is_experimental
         cls.has_main = has_main if has_main is not None else not has_subcommands
 
         # argparse params
@@ -112,6 +116,10 @@ class BaseCommand:
         for subcmd_cls in cls.parsers:
             if subcmd_cls.mro()[1] is not cls:
                 # do not recurse onto self or non-direct subclasses
+                continue
+            if subcmd_cls.is_experimental and not is_experimental():
+                # skip configuring experimental commands if not enabled in
+                # the environment
                 continue
             subcmd_cls._configure_subcommand(sp)
 

@@ -1,0 +1,15 @@
+ruyi-entity = "v0"
+
+related = ["cpu:xuantie-th1520"]
+
+[device]
+id = "sipeed-lcon4a"
+display_name = "Sipeed Lichee Console 4A"
+
+[[device.variants]]
+id = "8g"
+display_name = "Sipeed Lichee Console 4A (8G RAM)"
+
+[[device.variants]]
+id = "16g"
+display_name = "Sipeed Lichee Console 4A (16G RAM)"

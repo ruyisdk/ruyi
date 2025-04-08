@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from .host import RuyiHost, canonicalize_host_str, get_native_host
-from .. import is_porcelain, log
+from .. import is_experimental, is_porcelain, log
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
@@ -67,6 +67,15 @@ class ListCommand(
             dest="filters",
             help="Match packages whose names contain the given string",
         )
+
+        if is_experimental():
+            p.add_argument(
+                "--related-to-entity",
+                action=ListFilterAction,
+                nargs=1,
+                dest="filters",
+                help="Match packages related to the given entity",
+            )
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
@@ -188,7 +197,7 @@ class AugmentedPkg:
         filters: ListFilter,
     ) -> "Iterable[Self]":
         for category, pkg_name, pkg_vers in mr.iter_pkgs():
-            if not filters.check_pkg_name(category, pkg_name):
+            if not filters.check_pkg_name(mr, category, pkg_name):
                 continue
 
             pkg = cls()

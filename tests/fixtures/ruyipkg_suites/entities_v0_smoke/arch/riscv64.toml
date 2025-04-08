@@ -1,0 +1,5 @@
+ruyi-entity = "v0"
+
+[arch]
+id = "riscv64"
+display_name = "64-bit RISC-V"

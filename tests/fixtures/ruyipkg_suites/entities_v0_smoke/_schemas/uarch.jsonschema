@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UArch Entity Schema",
+  "description": "Schema for micro-architecture entity definitions",
+  "type": "object",
+  "required": ["ruyi-entity", "uarch"],
+  "properties": {
+    "ruyi-entity": {
+      "type": "string",
+      "description": "Version of the entity schema",
+      "enum": ["v0"]
+    },
+    "uarch": {
+      "type": "object",
+      "required": ["id", "display_name", "arch"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the microarchitecture"
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable name for the microarchitecture"
+        },
+        "arch": {
+          "type": "string",
+          "description": "Architecture family identifier (e.g., riscv64)"
+        },
+        "riscv": {
+          "type": "object",
+          "description": "RISC-V specific configuration (only present for RISC-V architectures)",
+          "properties": {
+            "isa": {
+              "type": "string",
+              "description": "RISC-V ISA specification string"
+            }
+          },
+          "required": ["isa"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "arch": { "const": "riscv64" } }
+          },
+          "then": {
+            "required": ["riscv"]
+          }
+        }
+      ]
+    },
+    "related": {
+      "type": "array",
+      "description": "List of related entity references",
+      "items": {
+        "type": "string",
+        "pattern": "^.+:.+"
+      }
+    }
+  }
+}

@@ -1,15 +1,11 @@
 import argparse
 import enum
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    NamedTuple,
-    Sequence,
-    TypeVar,
-)
+from typing import Any, Callable, Iterable, NamedTuple, Sequence, TypeVar, TYPE_CHECKING
 
 from ruyi import log
+
+if TYPE_CHECKING:
+    from .repo import MetadataRepo
 
 _T = TypeVar("_T")
 
@@ -19,6 +15,7 @@ class ListFilterOpKind(enum.Enum):
     CATEGORY_CONTAINS = 1
     CATEGORY_IS = 2
     NAME_CONTAINS = 3
+    RELATED_TO_ENTITY = 4
 
 
 class ListFilterOp(NamedTuple):
@@ -27,6 +24,7 @@ class ListFilterOp(NamedTuple):
 
 
 class ListFilterExecCtx(NamedTuple):
+    mr: "MetadataRepo"
     category: str
     pkg_name: str
 
@@ -39,6 +37,14 @@ def _execute_filter_op(op: ListFilterOp, ctx: ListFilterExecCtx) -> bool:
             return op.arg == ctx.category
         case ListFilterOpKind.NAME_CONTAINS:
             return op.arg in ctx.pkg_name
+        case ListFilterOpKind.RELATED_TO_ENTITY:
+            es = ctx.mr.entity_store
+            return es.is_entity_related_to(
+                f"pkg:{ctx.category}/{ctx.pkg_name}",
+                op.arg,
+                transitive=True,
+                unidirectional=False,
+            )
         case _:
             return False
 
@@ -56,8 +62,13 @@ class ListFilter:
     def append(self, op: ListFilterOp) -> None:
         self.ops.append(op)
 
-    def check_pkg_name(self, category: str, pkg_name: str) -> bool:
-        ctx = ListFilterExecCtx(category, pkg_name)
+    def check_pkg_name(
+        self,
+        mr: "MetadataRepo",
+        category: str,
+        pkg_name: str,
+    ) -> bool:
+        ctx = ListFilterExecCtx(mr, category, pkg_name)
         return all(_execute_filter_op(op, ctx) for op in self.ops)
 
 
@@ -112,6 +123,8 @@ class ListFilterAction(argparse.Action):
                 self.filter_op_kind = ListFilterOpKind.CATEGORY_IS
             case "name-contains":
                 self.filter_op_kind = ListFilterOpKind.NAME_CONTAINS
+            case "related-to-entity":
+                self.filter_op_kind = ListFilterOpKind.RELATED_TO_ENTITY
             case _:
                 # should never happen
                 self.filter_op_kind = ListFilterOpKind.UNKNOWN

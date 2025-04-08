@@ -7,6 +7,8 @@ from typing import (
     Any,
     Final,
     Iterable,
+    Mapping,
+    Sequence,
     Tuple,
     TypedDict,
     TypeGuard,
@@ -24,6 +26,8 @@ from ..pluginhost import PluginHostContext
 from ..telemetry.scope import TelemetryScope
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from ..utils.url import urljoin_for_sure
+from .entity import EntityStore
+from .entity_provider import BaseEntityProvider, FSEntityProvider
 from .msg import RepoMessageStore
 from .news import NewsItemStore
 from .pkg_manifest import (
@@ -223,6 +227,10 @@ class MetadataRepo:
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
         self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
+        self._entity_store: EntityStore = EntityStore(
+            FSEntityProvider(pathlib.Path(self.root) / "entities"),
+            MetadataRepoEntityProvider(self),
+        )
         self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
@@ -570,3 +578,122 @@ class MetadataRepo:
             log.I("forcing return code to 1; the plugin should be fixed")
             ret = 1
         return ret
+
+    @property
+    def entity_store(self) -> EntityStore:
+        """Get the entity store for this repository."""
+        return self._entity_store
+
+
+PACKAGE_ENTITY_TYPE = "pkg"
+PACKAGE_ENTITY_TYPE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "required": ["pkg"],
+    "properties": {
+        "pkg": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string"},
+                "display_name": {"type": "string"},
+                "name": {"type": "string"},
+                "category": {"type": "string"},
+            },
+            "required": ["id", "display_name", "name", "category"],
+        },
+        "related": {
+            "type": "array",
+            "description": "List of related entity references",
+            "items": {"type": "string", "pattern": "^.+:.+"},
+        },
+        "unique_among_type_during_traversal": {
+            "type": "boolean",
+            "description": "Whether this entity should be unique among all entities of the same type during traversal",
+        },
+    },
+}
+
+
+class PackageEntityData(TypedDict):
+    id: str
+    display_name: str
+    name: str
+    category: str
+
+
+class PackageEntity(TypedDict):
+    pkg: PackageEntityData
+    related: "NotRequired[list[str]]"
+    unique_among_type_during_traversal: "NotRequired[bool]"
+
+
+class MetadataRepoEntityProvider(BaseEntityProvider):
+    def __init__(self, repo: MetadataRepo) -> None:
+        super().__init__()
+        self._repo = repo
+
+    def discover_schemas(self) -> dict[str, object]:
+        return {
+            PACKAGE_ENTITY_TYPE: PACKAGE_ENTITY_TYPE_SCHEMA,
+        }
+
+    def load_entities(
+        self,
+        entity_types: Sequence[str],
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
+        result: dict[str, Mapping[str, Mapping[str, Any]]] = {}
+        for ty in entity_types:
+            if ty == PACKAGE_ENTITY_TYPE:
+                result[ty] = self._load_package_entities()
+        return result
+
+    def _load_package_entities(self) -> dict[str, PackageEntity]:
+        result: dict[str, PackageEntity] = {}
+        for cat, pkg_name, pkg_vers in self._repo.iter_pkgs():
+            full_name = f"{cat}/{pkg_name}"
+            relations = []
+
+            # see if all versions of the package are toolchains and share the
+            # same arch
+            tc_arch: str | None = None
+            for pkg_ver in pkg_vers.values():
+                if tm := pkg_ver.toolchain_metadata:
+                    if tc_arch is None:
+                        tc_arch = tm.target_arch
+                        continue
+                    if tc_arch != tm.target_arch:
+                        tc_arch = None
+                        break
+                else:
+                    break
+            if tc_arch is not None:
+                # this is a toolchain package, add the arch as a related entity
+                relations.append(f"arch:{tc_arch}")
+
+            # similarly, check for the emulator kind
+            emu_arches: set[str] | None = None
+            for pkg_ver in pkg_vers.values():
+                if em := pkg_ver.emulator_metadata:
+                    pkg_ver_arches: set[str] = set()
+                    for p in em.programs:
+                        pkg_ver_arches.update(p.supported_arches)
+                    if emu_arches is None:
+                        emu_arches = pkg_ver_arches
+                        continue
+                    if emu_arches != pkg_ver_arches:
+                        emu_arches = emu_arches.intersection(pkg_ver_arches)
+                else:
+                    break
+            if emu_arches is not None:
+                for emu_arch in emu_arches:
+                    relations.append(f"arch:{emu_arch}")
+
+            result[full_name] = {
+                "pkg": {
+                    "id": full_name,
+                    "display_name": full_name,
+                    "name": pkg_name,
+                    "category": cat,
+                },
+                "related": relations,
+            }
+        return result
