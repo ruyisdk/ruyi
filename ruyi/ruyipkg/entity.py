@@ -187,6 +187,7 @@ class EntityStore:
         self,
         entity: BaseEntity | str,
         transitive: bool = False,
+        no_direct_refs: bool = False,
         forward_refs: bool = True,
         reverse_refs: bool = False,
         entity_types: list[str] | None = None,
@@ -197,6 +198,7 @@ class EntityStore:
             entity: The starting entity or reference (in the form ``type:id``).
             transitive: If True, traverse the transitive closure of related entities.
                         If False, only traverse direct related entities.
+            no_direct_refs: If True, skip direct references.
             forward_refs: If True, traverse forward references.
             reverse_refs: If True, traverse reverse references.
             entity_types: Optional list of entity types to filter by. If provided,
@@ -213,14 +215,27 @@ class EntityStore:
                 raise ValueError(f"Entity not found: {entity}")
             entity = e
 
-        # Dictionary to track visited entities and avoid cycles
+        # Set to track visited entities and avoid cycles
         visited = set()
 
         # Helper function for recursive traversal
-        def _traverse(current_entity: BaseEntity) -> Iterator[BaseEntity]:
+        def _traverse(current_entity: BaseEntity, depth: int) -> Iterator[BaseEntity]:
             # Skip if already visited (prevents cycles)
             if current_entity in visited:
                 return
+
+            # Do not yield related entities if either:
+            # - we're the root entity (depth == 0)
+            # - no_direct_refs is True and we're at depth == 1
+            skip_current_level = depth == 0 or (no_direct_refs and depth == 1)
+
+            # Check if this entity matches the desired type filter
+            entity_type_okay = (
+                entity_types is None or current_entity.entity_type in entity_types
+            )
+
+            if not skip_current_level and entity_type_okay:
+                yield current_entity
 
             # Mark as visited
             visited.add(current_entity)
@@ -231,16 +246,10 @@ class EntityStore:
                     current_entity,
                     reverse_refs=False,
                 ):
-                    # Check if this entity matches the desired type filter
-                    if (
-                        entity_types is None
-                        or related_entity.entity_type in entity_types
-                    ):
-                        yield related_entity
-
                     # Recursively traverse if transitive mode is enabled
-                    if transitive:
-                        yield from _traverse(related_entity)
+                    # or if we're at the root entity
+                    if depth == 0 or transitive:
+                        yield from _traverse(related_entity, depth + 1)
 
             # Process reverse edges if requested
             if reverse_refs:
@@ -248,19 +257,13 @@ class EntityStore:
                     current_entity,
                     reverse_refs=True,
                 ):
-                    # Check if this entity matches the desired type filter
-                    if (
-                        entity_types is None
-                        or related_entity.entity_type in entity_types
-                    ):
-                        yield related_entity
-
                     # Recursively traverse if transitive mode is enabled
-                    if transitive:
-                        yield from _traverse(related_entity)
+                    # or if we're at the root entity
+                    if depth == 0 or transitive:
+                        yield from _traverse(related_entity, depth + 1)
 
         # Start traversal from the given entity
-        yield from _traverse(entity)
+        yield from _traverse(entity, 0)
 
     def is_entity_related_to(
         self,
