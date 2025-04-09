@@ -26,6 +26,20 @@ PYGIT2_SETUPTOOLS_PATCH = """
  
 """
 
+PYGIT2_OPENSSL_NO_DOCS_PATCH = """
+--- a/build.sh
++++ b/build.sh
+@@ -134,7 +134,7 @@ if [ -n "$OPENSSL_VERSION" ]; then
+         # Linux
+         tar xf $FILENAME.tar.gz
+         cd $FILENAME
+-        ./Configure shared --prefix=$PREFIX --libdir=$PREFIX/lib
++        ./Configure shared no-apps no-docs no-tests --prefix=$PREFIX --libdir=$PREFIX/lib
+         make
+         make install
+         OPENSSL_PREFIX=$(pwd)
+"""
+
 
 def get_pygit2_src_uri(tag: str) -> tuple[str, str]:
     filename = f"{tag}.tar.gz"
@@ -139,6 +153,14 @@ def build_pygit2(pygit2_ver: str, workdir: str) -> str:
         check=True,
     )
 
+    log("disabling docs generation during pygit2 openssl build")
+    subprocess.run(
+        ("patch", "-Np1"),
+        cwd=pygit2_workdir,
+        input=PYGIT2_OPENSSL_NO_DOCS_PATCH.encode("utf-8"),
+        check=True,
+    )
+
     # build wheel
     extra_env = get_pygit2_wheel_build_env(pygit2_workdir)
     log("extra envvar(s):", fgcolor=36)
@@ -183,6 +205,10 @@ def get_pygit2_wheel_build_env(pygit2_dir: str) -> dict[str, str]:
         # is too low for our environment
         # bump it up
         r["AUDITWHEEL_PLAT"] = "manylinux_2_35_riscv64"
+
+    # This controls the build type for the CMake-built libgit2, and defaults to
+    # Debug otherwise in the pygit2 build.sh.
+    r["BUILD_TYPE"] = "Release"
 
     return r
 
