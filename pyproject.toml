@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "ruyi"
-version = "0.32.0-alpha.20250408"
+version = "0.32.0-alpha.20250409"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 license = { file = "LICENSE-Apache.txt" }
