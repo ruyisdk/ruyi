@@ -119,3 +119,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
+
+  dco:
+    name: DCO compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run dco-check
+        uses: christophebedard/dco-check@0.5.0
+        with:
+          python-version: '3.12'
+          args: '--verbose'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
