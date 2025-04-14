@@ -138,6 +138,10 @@ We collect the following information with `ruyi`:
 
 You can see our Privacy Policy on the RuyiSDK website.
 
+## Contributing
+
+We welcome contributions to Ruyi! Please see our [contribution guidelines](./CONTRIBUTING.md) ([中文](./CONTRIBUTING.zh.md)) for details on how to get started.
+
 ## License
 
 Copyright &copy; 2023-2024 Institute of Software, Chinese Academy of Sciences (ISCAS).
