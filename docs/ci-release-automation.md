@@ -18,13 +18,13 @@ GitHub Release 的同步。
 首先准备一台既能访问 GitHub API、GitHub Release assets，又有权限访问 RuyiSDK
 rsync 镜像源的 Linux 主机，用来部署 helper 服务。
 
-在此主机上准备一个 `ruyi` 的开发环境：
+在此主机上准备一个 `ruyi-backend` 的开发环境：
 
 ```sh
-git clone https://github.com/ruyisdk/ruyi.git
-cd ruyi
+git clone https://github.com/ruyisdk/ruyi-backend.git
+cd ruyi-backend
 # 略过了初始化 Python virtualenv 的步骤
-poetry install --with=release-worker
+poetry install
 ```
 
 准备一个目录，用于存储 rsync 同步状态与相关的 release assets：
@@ -34,37 +34,14 @@ poetry install --with=release-worker
 mkdir /opt/ruyi-tmp-rsync
 ```
 
-配置系统，使此任务被周期性执行。以下以 systemd 为例：
+配置系统，使此任务被周期性执行。您可参考 [ruyi-backend 项目随附的 systemd 单元定义][systemd-example-units]：
 
-```ini
-# /etc/systemd/system/ruyi-ci-sync-release.timer
-[Unit]
-Description=Sync Ruyi releases with rsync
-
-[Timer]
-# 每 5 分钟与 GitHub 同步一次
-OnCalendar=*:0/5
-
-[Install]
-WantedBy=timers.target
-```
-
-```ini
-# /etc/systemd/system/ruyi-ci-sync-release.service
-[Unit]
-Description=Sync Ruyi releases with rsync
-
-[Service]
-Type=oneshot
-ExecStart=/path/to/venv/bin/python /path/to/ruyi/scripts/release-worker/sync-releases.py
-Environment="RUYI_RELEASE_WORKER_RSYNC_STAGING_DIR=/opt/ruyi-tmp-rsync"
-Environment="RUYI_RELEASE_WORKER_RSYNC_REMOTE_URL=rsync://user@hostname.example/ruyisdk/ruyi"
-Environment="RUYI_RELEASE_WORKER_RSYNC_REMOTE_PASS=password"
-```
+[systemd-example-units]: https://github.com/ruyisdk/ruyi-backend/tree/main/examples/systemd
 
 ```sh
+# 把示例单元文件复制到 /etc/systemd/system/ 然后调整其内容以适应您的环境
 systemctl daemon-reload
 systemctl enable ruyi-ci-sync-release.timer
 ```
 
-后续，应不时更新此 `ruyi` checkout，并跟进依赖版本变更、此处的流程变更等等。
+后续，应不时更新此 `ruyi-backend` checkout，并跟进依赖版本变更、此处的流程变更等等。
