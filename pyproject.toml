@@ -73,9 +73,6 @@ types-requests = "^2.31.0.20240311"
 certifi = "*"
 nuitka = "^2.0"
 
-[tool.poetry.group.release-worker.dependencies]
-# empty for now
-
 
 [tool.mypy]
 files = ["ruyi", "scripts", "tests"]
