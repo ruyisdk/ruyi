@@ -120,8 +120,6 @@ def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
     *objects: Any,
     sep: str = " ",
     end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
 ) -> None:
     if is_porcelain():
         return _emit_porcelain_log("I", message, sep, *objects)
