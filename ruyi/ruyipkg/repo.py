@@ -19,7 +19,6 @@ from urllib import parse
 
 from pygit2 import clone_repository
 from pygit2.repository import Repository
-import yaml
 
 from .. import log
 from ..pluginhost import PluginHostContext
@@ -37,7 +36,6 @@ from .pkg_manifest import (
     is_prerelease,
 )
 from .profile import PluginProfileProvider, ProfileProxy
-from .provisioner import ProvisionerConfig
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -226,7 +224,6 @@ class MetadataRepo:
         self._supported_arches: set[str] | None = None
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
-        self._provisioner_config_cache: tuple[ProvisionerConfig | None] | None = None
         self._entity_store: EntityStore = EntityStore(
             FSEntityProvider(pathlib.Path(self.root) / "entities"),
             MetadataRepoEntityProvider(self),
@@ -539,25 +536,6 @@ class MetadataRepo:
             self.ensure_news_cache()
         assert self._news_cache is not None
         return self._news_cache
-
-    def ensure_provisioner_config_cache(self) -> None:
-        cfg_dir = os.path.join(self.root, "provisioner")
-        parsed_config: ProvisionerConfig | None = None
-        for filename in ("config.yml", "config.yaml"):
-            try:
-                with open(os.path.join(cfg_dir, filename), "r", encoding="utf-8") as fp:
-                    parsed_config = yaml.safe_load(fp)
-                    break
-            except FileNotFoundError:
-                continue
-
-        self._provisioner_config_cache = (parsed_config,)
-
-    def get_provisioner_config(self) -> ProvisionerConfig | None:
-        if self._provisioner_config_cache is None:
-            self.ensure_provisioner_config_cache()
-        assert self._provisioner_config_cache is not None
-        return self._provisioner_config_cache[0]
 
     def run_plugin_cmd(self, cmd_name: str, args: list[str]) -> int:
         plugin_id = f"ruyi-cmd-{cmd_name.lower()}"
