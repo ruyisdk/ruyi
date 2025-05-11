@@ -8,18 +8,13 @@ from ..cli import user_input
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
+from ..ruyipkg.entity_provider import BaseEntity
 from ..ruyipkg.host import get_native_host
 from ..ruyipkg.pkg_cli import do_install_atoms
 from ..ruyipkg.pkg_manifest import (
     KNOWN_PARTITION_KINDS,
     PartitionKind,
     PartitionMapDecl,
-)
-from ..ruyipkg.provisioner import (
-    DeviceDecl,
-    DeviceVariantDecl,
-    ImageComboDecl,
-    ProvisionerConfig,
 )
 from ..ruyipkg.repo import MetadataRepo
 from ..utils import prereqs
@@ -57,21 +52,17 @@ class DeviceProvisionCommand(
             return 1
 
 
+def get_variant_display_name(dev: BaseEntity, variant: BaseEntity) -> str:
+    """Get the display name of a device variant."""
+    if n := variant.display_name:
+        return n
+    return f"{dev.display_name} ({variant.data['variant_name']})"
+
+
 def do_provision_interactive(config: GlobalConfig) -> int:
     # ensure ruyi repo is present, for good out-of-the-box experience
     mr = config.repo
     mr.ensure_git_repo()
-
-    dpcfg = mr.get_provisioner_config()
-    if dpcfg is None:
-        log.F("no device provisioner config found in the current Ruyi repository")
-        return 1
-    cfg_ver = dpcfg["ruyi_provisioner_config"]
-    if cfg_ver != "v1":
-        log.F(
-            f"unknown device provisioner config version '{cfg_ver}', please update [yellow]ruyi[/yellow] and retry"
-        )
-        return 1
 
     log.stdout(
         """
@@ -99,57 +90,82 @@ configuration does not allow so.
         )
         return 1
 
-    devices_by_id = {x["id"]: x for x in dpcfg["devices"]}
-    img_combos_by_id = {x["id"]: x for x in dpcfg["image_combos"]}
+    device_entities = list(mr.entity_store.iter_entities("device"))
+    device_entities.sort(key=lambda x: x.display_name or "")
+    devices_by_id = {x.id: x for x in device_entities}
 
-    dev_choices = {k: v["display_name"] for k, v in devices_by_id.items()}
+    dev_choices = {k: v.display_name or "" for k, v in devices_by_id.items()}
     dev_id = user_input.ask_for_kv_choice(
         "\nThe following devices are currently supported by the wizard. Please pick your device:",
         dev_choices,
     )
     dev = devices_by_id[dev_id]
 
-    variant_choices = [i["display_name"] for i in dev["variants"]]
+    variants = list(
+        mr.entity_store.traverse_related_entities(
+            dev,
+            entity_types=["device-variant"],
+        )
+    )
+    variants.sort(key=lambda x: x.data.get("variant_name", ""))
+
+    variant_choices = [get_variant_display_name(dev, i) for i in variants]
     variant_idx = user_input.ask_for_choice(
         "\nThe device has the following variants. Please choose the one corresponding to your hardware at hand:",
         variant_choices,
     )
-    variant = dev["variants"][variant_idx]
+    variant = variants[variant_idx]
 
-    combo_choices = {
-        combo_id: img_combos_by_id[combo_id]["display_name"]
-        for combo_id in variant["supported_combos"]
-    }
-    combo_id = user_input.ask_for_kv_choice(
+    supported_combos = list(
+        mr.entity_store.traverse_related_entities(
+            variant,
+            forward_refs=False,
+            reverse_refs=True,
+            entity_types=["image-combo"],
+        )
+    )
+    supported_combos.sort(key=lambda x: x.display_name or "")
+    combo_choices = [combo.display_name or "" for combo in supported_combos]
+    combo_idx = user_input.ask_for_choice(
         "\nThe following system configurations are supported by the device variant you have chosen. Please pick the one you want to put on the device:",
         combo_choices,
     )
-    combo = img_combos_by_id[combo_id]
+    combo = supported_combos[combo_idx]
 
-    return do_provision_combo_interactive(config, dpcfg, mr, dev, variant, combo)
+    return do_provision_combo_interactive(config, mr, dev, variant, combo)
+
+
+def maybe_render_postinst_msg(
+    mr: MetadataRepo,
+    combo: BaseEntity,
+    lang_code: str,
+) -> bool:
+    if postinst_msgid := combo.data.get("postinst_msgid"):
+        # This field is named just "msgid" so no variables to render for
+        # the retrieved text
+        if msg := mr.messages.get_message_template(postinst_msgid, lang_code):
+            log.stdout(f"\n{msg}")
+            return True
+    return False
 
 
 def do_provision_combo_interactive(
     config: GlobalConfig,
-    dpcfg: ProvisionerConfig,
     mr: MetadataRepo,
-    dev_decl: DeviceDecl,
-    variant_decl: DeviceVariantDecl,
-    combo: ImageComboDecl,
+    dev_decl: BaseEntity,
+    variant_decl: BaseEntity,
+    combo: BaseEntity,
 ) -> int:
-    log.D(f"provisioning device variant '{dev_decl['id']}@{variant_decl['id']}'")
+    log.D(f"provisioning device variant '{dev_decl.id}@{variant_decl.id}'")
 
     # download packages
-    pkg_atoms = combo["packages"]
+    pkg_atoms = combo.data.get("package_atoms", [])
     if not pkg_atoms:
-        if postinst_msgid := combo.get("postinst_msgid"):
-            if postinst_msgs := dpcfg.get("postinst_messages"):
-                postinst_msg = postinst_msgs[postinst_msgid]
-                log.stdout(f"\n{postinst_msg}")
-                return 0
+        if maybe_render_postinst_msg(mr, combo, config.lang_code):
+            return 0
 
         log.F(
-            f"malformed config: device variant '{dev_decl['id']}@{variant_decl['id']}' asks for no packages but provides no messages either"
+            f"malformed config: device variant '{dev_decl.id}@{variant_decl.id}' asks for no packages but provides no messages either"
         )
         return 1
 
@@ -289,10 +305,7 @@ It seems the flashing has finished without errors.
 """
     )
 
-    if postinst_msgid := combo.get("postinst_msgid"):
-        if postinst_msgs := dpcfg.get("postinst_messages"):
-            postinst_msg = postinst_msgs[postinst_msgid]
-            log.stdout(f"\n{postinst_msg}")
+    maybe_render_postinst_msg(mr, combo, config.lang_code)
 
     return 0
 
