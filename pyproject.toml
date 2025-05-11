@@ -103,6 +103,7 @@ safe_licenses = [
   # them would not accidentally allow unsafe licenses into the project.
   "ISC License (ISCL)",  # shellingham
   "BSD-2-Clause",  # boolean.py
+  "BSD-3-Clause",  # click
   "Apache-2.0",  # license-expression
 ]
 
