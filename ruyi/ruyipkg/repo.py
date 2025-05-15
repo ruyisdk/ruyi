@@ -70,6 +70,8 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
 
 class RepoConfigV1Repo(TypedDict):
     doc_uri: "NotRequired[str]"
+    id: "NotRequired[str]"
+    name: "NotRequired[str]"
 
 
 class RepoConfigV1Mirror(TypedDict):
@@ -145,7 +147,9 @@ class RepoConfig:
 
         v1_repo: RepoConfigV1Repo | None = None
         if "doc_uri" in obj:
-            v1_repo = {"doc_uri": obj["doc_uri"]}
+            v1_repo = {
+                "doc_uri": obj["doc_uri"],
+            }
 
         return cls(v1_mirrors, v1_repo, None)
 
@@ -155,6 +159,18 @@ class RepoConfig:
             # TODO: more detail in the error message
             raise RuntimeError("malformed v1 repo config")
         return cls(obj["mirrors"], obj.get("repo"), obj.get("telemetry"))
+
+    @property
+    def repo_id(self) -> str:
+        if self.repo is not None and "id" in self.repo:
+            return self.repo["id"]
+        return "ruyisdk"
+
+    @property
+    def repo_name(self) -> str:
+        if self.repo is not None and "name" in self.repo:
+            return self.repo["name"]
+        return "RuyiSDK official repository"
 
     def get_dist_urls_for_file(self, logger: RuyiLogger, url: str) -> list[str]:
         u = parse.urlparse(url)
@@ -243,8 +259,13 @@ class MetadataRepo(ProvidesPackageManifests):
 
     @property
     def repo_id(self) -> str:
-        # TODO: proper multi-repo support
+        # TODO: read from config after multi-repo support is complete
         return "ruyisdk"
+
+    @property
+    def repo_name(self) -> str:
+        # TODO: read from config after multi-repo support is complete
+        return "RuyiSDK official repository"
 
     @property
     def logger(self) -> RuyiLogger:
