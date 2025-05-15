@@ -26,14 +26,32 @@ def ask_for_yesno_confirmation(prompt: str, default: bool = False) -> bool:
             log.stdout("Accepted choices: Y/y/yes for YES, N/n/no for NO.")
 
 
-def ask_for_kv_choice(prompt: str, choices_kv: dict[str, str]) -> str:
+def ask_for_kv_choice(
+    prompt: str,
+    choices_kv: dict[str, str],
+    default_key: str | None = None,
+) -> str:
     choices_kv_list = list(choices_kv.items())
     choices_prompts = [i[1] for i in choices_kv_list]
-    choice = ask_for_choice(prompt, choices_prompts)
+
+    default_idx: int | None = None
+    if default_key is not None:
+        for i, k in enumerate(choices_kv_list):
+            if k[0] == default_key:
+                default_idx = i
+                break
+        if default_idx is None:
+            raise ValueError(f"Default choice key '{default_key}' not in choices")
+
+    choice = ask_for_choice(prompt, choices_prompts, default_idx)
     return choices_kv_list[choice][0]
 
 
-def ask_for_choice(prompt: str, choices_texts: list[str]) -> int:
+def ask_for_choice(
+    prompt: str,
+    choices_texts: list[str],
+    default_idx: int | None = None,
+) -> int:
     log.stdout(prompt, end="\n\n")
     for i, choice_text in enumerate(choices_texts):
         log.stdout(f"  {i + 1}. {choice_text}")
@@ -41,12 +59,20 @@ def ask_for_choice(prompt: str, choices_texts: list[str]) -> int:
     log.stdout("")
 
     nr_choices = len(choices_texts)
-    choices_help = f"(1-{nr_choices})"
+    if default_idx is not None:
+        if not (0 <= default_idx < nr_choices):
+            raise ValueError(f"Default choice index {default_idx} out of range")
+        choices_help = f"(1-{nr_choices}, default {default_idx + 1})"
+    else:
+        choices_help = f"(1-{nr_choices})"
     while True:
         try:
             user_input = input(f"Choice? {choices_help} ")
         except EOFError:
             raise ValueError("EOF while reading user choice")
+
+        if default_idx is not None and not user_input:
+            return default_idx
 
         try:
             choice_int = int(user_input)
