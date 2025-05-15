@@ -238,6 +238,11 @@ class MetadataRepo:
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property
+    def repo_id(self) -> str:
+        # TODO: proper multi-repo support
+        return "ruyisdk"
+
+    @property
     def plugin_root(self) -> pathlib.Path:
         return pathlib.Path(self.root) / "plugins"
 
