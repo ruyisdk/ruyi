@@ -86,6 +86,10 @@ class TelemetryStore:
         self._discard_events = v
 
     def persist(self, now: float | None = None) -> None:
+        if not self._events:
+            log.D(f"scope {self.scope}: no event to persist")
+            return
+
         now = time.time() if now is None else now
 
         log.D(f"scope {self.scope}: flushing telemetry to persistent store")
