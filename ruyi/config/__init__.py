@@ -19,7 +19,7 @@ import tomlkit
 
 from .. import argv0, is_env_var_truthy, log
 from ..ruyipkg.repo import MetadataRepo
-from ..telemetry import TelemetryStore
+from ..telemetry import TelemetryProvider
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 from . import schema
@@ -98,7 +98,7 @@ class GlobalConfig:
 
         self._metadata_repo: MetadataRepo | None = None
         self._news_read_status_store: NewsReadStatusStore | None = None
-        self._telemetry_store: TelemetryStore | None = None
+        self._telemetry_provider: TelemetryProvider | None = None
 
         self._lang_code = _get_lang_code()
 
@@ -232,14 +232,14 @@ class GlobalConfig:
         return pathlib.Path(self.ensure_state_dir()) / "telemetry"
 
     @property
-    def telemetry(self) -> TelemetryStore | None:
+    def telemetry(self) -> TelemetryProvider | None:
         if self.telemetry_mode == "off":
             return None
-        if self._telemetry_store is not None:
-            return self._telemetry_store
+        if self._telemetry_provider is not None:
+            return self._telemetry_provider
 
-        self._telemetry_store = TelemetryStore(self)
-        return self._telemetry_store
+        self._telemetry_provider = TelemetryProvider(self)
+        return self._telemetry_provider
 
     @property
     def telemetry_mode(self) -> str:

@@ -25,6 +25,15 @@ class TelemetryScope:
             return f"repo:{self._repo_name}"
         return "pm"
 
+    def __hash__(self) -> int:
+        # behave like the inner field
+        return hash(self._repo_name)
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, TelemetryScope):
+            return False
+        return self._repo_name == value._repo_name
+
     @property
     def repo_name(self) -> str | None:
         return self._repo_name
