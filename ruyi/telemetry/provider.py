@@ -119,7 +119,8 @@ class TelemetryProvider:
 
         # create the PM store
         self.init_store(TelemetryScope(None))
-        # TODO: create the repo stores
+        # TODO: add real multi-repo support
+        self.init_store(TelemetryScope("ruyisdk"))
 
     def store(self, scope: TelemetryScope) -> TelemetryStore | None:
         return self._stores.get(scope)
@@ -128,8 +129,10 @@ class TelemetryProvider:
         store_root = self.state_root
         api_url = None
         if repo_name := scope.repo_name:
+            if repo_name != "ruyisdk":
+                raise NotImplementedError("multi-repo support not implemented yet")
             store_root = store_root / "repos" / repo_name
-            # TODO: configure repo-wide telemetry endpoint
+            api_url = self._gc.repo.get_telemetry_api_url("repo")
         else:
             # configure the PM telemetry endpoint
             api_url = self._detect_pm_api_url(self._gc)
@@ -137,20 +140,16 @@ class TelemetryProvider:
         store = TelemetryStore(scope, store_root, api_url)
         self._stores[scope] = store
 
-    def _detect_pm_api_url(self, gc: "GlobalConfig") -> str:
+    def _detect_pm_api_url(self, gc: "GlobalConfig") -> str | None:
         url = FALLBACK_PM_TELEMETRY_ENDPOINT
         cfg_src = "fallback"
         if gc.override_pm_telemetry_url is not None:
             cfg_src = "local config"
             url = gc.override_pm_telemetry_url
         else:
-            # do not clone the metadata repo if it is absent, in case the user
-            # is simply trying trivial commands like `ruyi version`.
-            if repo_cfg := gc.repo.maybe_config:
-                for api_decl in repo_cfg.telemetry_apis.values():
-                    if api_decl.get("scope", "") == "pm":
-                        cfg_src = "repo"
-                        url = api_decl.get("url", "")
+            if repo_provided_url := gc.repo.get_telemetry_api_url("pm"):
+                cfg_src = "repo"
+                url = repo_provided_url
         log.D(f"configured PM telemetry endpoint via {cfg_src}: {url or '(n/a)'}")
         return url
 
