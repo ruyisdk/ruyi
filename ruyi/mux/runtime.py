@@ -1,3 +1,4 @@
+import atexit
 import os
 import re
 import shlex
@@ -5,6 +6,17 @@ from typing import Final, List, NoReturn
 
 from .. import log
 from ..config import RuyiVenvConfig
+
+
+def _run_exit_handlers_and_execv(
+    path: str,
+    argv: list[str],
+) -> NoReturn:
+    # run all exit handlers before execv
+    # crucially this includes our telemetry handler so we don't lose telemetry
+    # events in mux mode
+    atexit._run_exitfuncs()
+    os.execv(path, argv)
 
 
 def mux_main(argv: List[str]) -> int | NoReturn:
@@ -103,7 +115,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
     ensure_venv_in_path(vcfg)
 
     log.D(f"exec-ing with argv {new_argv}")
-    return os.execv(binpath, new_argv)
+    return _run_exit_handlers_and_execv(binpath, new_argv)
 
 
 # TODO: dedup with venv provision logic (into a command name parser)
@@ -164,7 +176,7 @@ def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
         new_argv.extend(argv[1:])
 
     log.D(f"exec-ing with argv {new_argv}")
-    return os.execv(binpath, new_argv)
+    return _run_exit_handlers_and_execv(binpath, new_argv)
 
 
 def ensure_venv_in_path(vcfg: RuyiVenvConfig) -> None:
