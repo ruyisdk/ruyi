@@ -21,8 +21,10 @@ def is_called_as_ruyi(argv0: str) -> bool:
 def main(argv: list[str]) -> int:
     gc = GlobalConfig.load_from_config()
     if gc.telemetry is not None:
+        gc.telemetry.check_first_run_status()
         gc.telemetry.init_installation(False)
         atexit.register(gc.telemetry.flush)
+        gc.telemetry.maybe_prompt_for_first_run_upload()
 
     if not is_called_as_ruyi(argv[0]):
         from ..mux.runtime import mux_main

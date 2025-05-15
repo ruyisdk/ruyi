@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 import time
 from typing import Final, Iterable, TYPE_CHECKING, cast
 import uuid
@@ -28,6 +29,22 @@ FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 RE_RAW_EVENT_FILENAME: Final = re.compile(
     r"^run\.(?P<time_bucket>\d{12})\.(?P<uuid>[0-9a-f]{32})\.ndjson$"
 )
+
+FIRST_RUN_PROMPT = """
+Welcome to RuyiSDK! This appears to be your first run of [yellow]ruyi[/].
+
+By default, the RuyiSDK team collects anonymous usage data to help us improve
+the product. No personal information or detail about your project is ever
+collected. The data will be uploaded to RuyiSDK team-managed servers located
+in the Chinese mainland if you agree to the uploading. You can change this
+setting at any time by running [yellow]ruyi telemetry consent[/] or
+[yellow]ruyi telemetry optout[/].
+
+We would like to ask if you agree to have basic information about this [yellow]ruyi[/]
+installation uploaded, right now, for one time. This will allow the RuyiSDK team
+to have more precise knowledge about the product's adoption. Thank you for
+your support!
+"""
 
 
 def get_time_bucket(timestamp: int | float | time.struct_time | None = None) -> str:
@@ -119,6 +136,7 @@ class TelemetryStore:
         self.store_root = pathlib.Path(gc.telemetry_root)
         self.local_mode = gc.telemetry_mode == "local"
         self.upload_consent_time = gc.telemetry_upload_consent_time
+        self._is_first_run = False
 
         self.pm_api_url = FALLBACK_PM_TELEMETRY_ENDPOINT
         _pm_cfg_src = "fallback"
@@ -139,6 +157,7 @@ class TelemetryStore:
 
         self._events: list[TelemetryEvent] = []
         self._discard_events = False
+        self._upload_on_exit = False
 
     @property
     def raw_events_dir(self) -> pathlib.Path:
@@ -173,6 +192,17 @@ class TelemetryStore:
         f = self.last_upload_marker_file
         f.touch()
         os.utime(f, (time_now, time_now))
+
+    def check_first_run_status(self) -> None:
+        """Check if this is the first run of the application by checking if installation file exists.
+        This must be done before init_installation() is potentially called.
+        """
+        self._is_first_run = not self.installation_file.exists()
+
+    @property
+    def is_first_run(self) -> bool:
+        """Check if this is the first run of the application."""
+        return self._is_first_run
 
     def init_installation(self, force_reinit: bool) -> NodeInfo | None:
         installation_file = self.installation_file
@@ -337,12 +367,12 @@ class TelemetryStore:
 
         log.D(f"persisted {len(self._events)} telemetry event(s)")
 
-        # try to upload if upload_now is True, or:
+        # try to upload if forced (upload_now or _upload_on_exit), or:
         #
         # * we're not in local mode
         # * today is the day
         # * we haven't uploaded today
-        if not upload_now and (
+        if not (upload_now or self._upload_on_exit) and (
             self.local_mode
             or not self.is_upload_day(now)
             or self.has_uploaded_today(now)
@@ -454,3 +484,21 @@ class TelemetryStore:
             f.rename(self.uploaded_dir / f.name)
         except OSError as e:
             log.D(f"failed to move uploaded payload away: {e}")
+
+    def maybe_prompt_for_first_run_upload(self) -> None:
+        """
+        Ask whether the user consents to a first-run telemetry upload when
+        running for the first time (OOBE) and with an interactive stdin.
+        """
+
+        # Only prompt if this is first run and stdin is a TTY
+        if not (self.is_first_run and sys.stdin.isatty()):
+            return
+
+        from ..cli import user_input
+
+        log.I(FIRST_RUN_PROMPT)
+        if not user_input.ask_for_yesno_confirmation("Do you agree?", True):
+            return
+
+        self._upload_on_exit = True
