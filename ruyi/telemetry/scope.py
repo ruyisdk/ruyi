@@ -1,9 +1,9 @@
 from typing import Literal, TypeAlias, TypeGuard
 
-TelemetryScope: TypeAlias = Literal["pm"] | Literal["repo"]
+TelemetryScopeConfig: TypeAlias = Literal["pm"] | Literal["repo"]
 
 
-def is_telemetry_scope(x: object) -> TypeGuard[TelemetryScope]:
+def is_telemetry_scope_config(x: object) -> TypeGuard[TelemetryScopeConfig]:
     if not isinstance(x, str):
         return False
     match x:
