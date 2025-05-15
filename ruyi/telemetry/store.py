@@ -1,4 +1,5 @@
 import calendar
+import datetime
 import json
 import os
 import pathlib
@@ -61,6 +62,56 @@ def next_utc_weekday(wday: int, now: float | None = None) -> int:
         -1,  # tm_isdst
     )
     return calendar.timegm(next_t)
+
+
+def set_telemetry_mode(
+    gc: "GlobalConfig",
+    mode: str,
+    consent_time: datetime.datetime | None = None,
+    show_cli_feedback: bool = True,
+) -> None:
+    """Set telemetry mode and consent time (if applicable) in the user preference."""
+    from ..config.editor import ConfigEditor
+    from ..config import schema
+
+    with ConfigEditor.work_on_user_local_config(gc) as ed:
+        ed.set_value((schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_MODE), mode)
+
+        if mode == "on":
+            if consent_time is None:
+                consent_time = datetime.datetime.now().astimezone()
+            ed.set_value(
+                (schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_UPLOAD_CONSENT),
+                consent_time,
+            )
+        else:
+            ed.unset_value(
+                (schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_UPLOAD_CONSENT)
+            )
+
+        ed.stage()
+
+    if not show_cli_feedback:
+        return
+    match mode:
+        case "on":
+            log.I("telemetry data uploading is now enabled")
+            log.I(
+                "you can opt out at any time by running [yellow]ruyi telemetry optout[/]"
+            )
+        case "local":
+            log.I("telemetry mode is now set to local collection only")
+            log.I(
+                "you can re-enable telemetry data uploading at any time by running [yellow]ruyi telemetry consent[/]"
+            )
+            log.I("or opt out at any time by running [yellow]ruyi telemetry optout[/]")
+        case "off":
+            log.I("telemetry data collection is now disabled")
+            log.I(
+                "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
+            )
+        case _:
+            raise ValueError(f"invalid telemetry mode: {mode}")
 
 
 class TelemetryStore:
