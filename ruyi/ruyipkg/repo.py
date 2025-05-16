@@ -22,7 +22,7 @@ from pygit2.repository import Repository
 
 from .. import log
 from ..pluginhost import PluginHostContext
-from ..telemetry.scope import TelemetryScope
+from ..telemetry.scope import TelemetryScopeConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
@@ -77,7 +77,7 @@ class RepoConfigV1Mirror(TypedDict):
 
 class RepoConfigV1Telemetry(TypedDict):
     id: str
-    scope: TelemetryScope
+    scope: TelemetryScopeConfig
     url: str
 
 
@@ -174,6 +174,12 @@ class RepoConfig:
         mirror_urls = self.mirrors.get(mirror_id, [])
         return [parse.urljoin(base, path) for base in mirror_urls]
 
+    def get_telemetry_api_url(self, scope: TelemetryScopeConfig) -> str | None:
+        for api_decl in self.telemetry_apis.values():
+            if api_decl.get("scope", "") == scope:
+                return api_decl.get("url", None)
+        return None
+
 
 class ArchProfileStore:
     def __init__(self, phctx: PluginHostContext[Any, Any], arch: str) -> None:
@@ -230,6 +236,11 @@ class MetadataRepo:
         )
         self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
+
+    @property
+    def repo_id(self) -> str:
+        # TODO: proper multi-repo support
+        return "ruyisdk"
 
     @property
     def plugin_root(self) -> pathlib.Path:
@@ -561,6 +572,13 @@ class MetadataRepo:
     def entity_store(self) -> EntityStore:
         """Get the entity store for this repository."""
         return self._entity_store
+
+    def get_telemetry_api_url(self, scope: TelemetryScopeConfig) -> str | None:
+        # do not clone the metadata repo if it is absent, in case the user
+        # is simply trying trivial commands like `ruyi version`.
+        if repo_cfg := self.maybe_config:
+            return repo_cfg.get_telemetry_api_url(scope)
+        return None
 
 
 PACKAGE_ENTITY_TYPE = "pkg"

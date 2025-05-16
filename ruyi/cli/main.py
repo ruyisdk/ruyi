@@ -4,6 +4,7 @@ import sys
 from typing import Final
 
 from ..config import GlobalConfig
+from ..telemetry import TelemetryScope
 from . import RUYI_ENTRYPOINT_NAME
 
 ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
@@ -32,7 +33,11 @@ def main(argv: list[str]) -> int:
         # record an invocation and the command name being proxied to
         if gc.telemetry is not None:
             target = os.path.basename(argv[0])
-            gc.telemetry.record("cli:mux-invocation-v1", target=target)
+            gc.telemetry.record(
+                TelemetryScope(None),
+                "cli:mux-invocation-v1",
+                target=target,
+            )
 
         return mux_main(argv)
 
@@ -69,6 +74,10 @@ def main(argv: list[str]) -> int:
 
     if gc.telemetry is not None:
         gc.telemetry.print_telemetry_notice()
-        gc.telemetry.record("cli:invocation-v1", key=telemetry_key)
+        gc.telemetry.record(
+            TelemetryScope(None),
+            "cli:invocation-v1",
+            key=telemetry_key,
+        )
 
     return func(gc, args)

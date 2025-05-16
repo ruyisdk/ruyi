@@ -3,7 +3,7 @@ import datetime
 
 from .. import config, log
 from ..cli.cmd import RootCommand
-from .store import set_telemetry_mode
+from .provider import set_telemetry_mode
 
 
 # Telemetry preference commands

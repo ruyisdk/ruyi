@@ -15,16 +15,17 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .host import RuyiHost, canonicalize_host_str, get_native_host
 from .. import is_experimental, is_porcelain, log
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..telemetry.scope import TelemetryScope
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .atom import Atom
 from .distfile import Distfile
+from .host import RuyiHost, canonicalize_host_str, get_native_host
 from .list_filter import ListFilter, ListFilterAction
-from .repo import MetadataRepo
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
+from .repo import MetadataRepo
 from .unpack import ensure_unpack_cmd_for_method
 
 
@@ -498,6 +499,18 @@ def do_install_atoms(
             log.W("package has known issue(s)")
             for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
                 log.I(s)
+
+        if tm := config.telemetry:
+            tm.record(
+                TelemetryScope(mr.repo_id),
+                "repo:package-install-v1",
+                atom=a_str,
+                host=canonicalized_host,
+                pkg_category=pm.category,
+                pkg_kinds=pm.kind,
+                pkg_name=pm.name,
+                pkg_version=pm.ver,
+            )
 
         if pm.binary_metadata is not None:
             ret = _do_install_binary_pkg(
