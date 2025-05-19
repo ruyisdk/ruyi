@@ -3,7 +3,6 @@ import argparse
 from .. import config
 from ..config.schema import decode_value, encode_value
 from ..config.editor import ConfigEditor
-from .. import log
 from .cmd import RootCommand
 
 
@@ -40,7 +39,7 @@ class ConfigGetCommand(
         if val is None:
             return 1
 
-        log.stdout(encode_value(val))
+        cfg.logger.stdout(encode_value(val))
         return 0
 
 

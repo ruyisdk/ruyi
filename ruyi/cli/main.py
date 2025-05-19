@@ -42,12 +42,12 @@ def main(argv: list[str]) -> int:
         return mux_main(gc, argv)
 
     import ruyi
-    from .. import log
     from .cmd import CLIEntrypoint, RootCommand
     from . import builtin_commands
 
     del builtin_commands
 
+    logger = gc.logger
     p = RootCommand.build_argparse()
     args = p.parse_args(argv[1:])
     ruyi.set_porcelain(args.porcelain)
@@ -56,11 +56,11 @@ def main(argv: list[str]) -> int:
     if hasattr(ruyi, "__compiled__"):
         nuitka_info = f"__compiled__ = {ruyi.__compiled__}"
 
-    log.D(
+    logger.D(
         f"__main__.__file__ = {ruyi.main_file()}, sys.executable = {sys.executable}, {nuitka_info}"
     )
-    log.D(f"argv[0] = {argv[0]}, self_exe = {ruyi.self_exe()}")
-    log.D(f"args={args}")
+    logger.D(f"argv[0] = {argv[0]}, self_exe = {ruyi.self_exe()}")
+    logger.D(f"args={args}")
 
     func: CLIEntrypoint = args.func
 
@@ -69,7 +69,7 @@ def main(argv: list[str]) -> int:
     try:
         telemetry_key = args.tele_key
     except AttributeError:
-        log.F("internal error: CLI entrypoint was added without a telemetry key")
+        logger.F("internal error: CLI entrypoint was added without a telemetry key")
         return 1
 
     if gc.telemetry is not None:

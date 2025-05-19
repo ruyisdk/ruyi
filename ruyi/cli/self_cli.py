@@ -6,7 +6,6 @@ from typing import Final
 
 import ruyi
 from .. import config
-from .. import log
 from . import user_input
 from .cmd import RootCommand
 
@@ -86,6 +85,7 @@ class SelfCleanCommand(
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         quiet: bool = args.quiet
         all: bool = args.all
         distfiles: bool = args.distfiles
@@ -113,8 +113,8 @@ class SelfCleanCommand(
                 telemetry,
             ]
         ):
-            log.F("no data specified for cleaning")
-            log.I(
+            logger.F("no data specified for cleaning")
+            logger.I(
                 "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
             )
             return 1
@@ -208,10 +208,12 @@ def _do_reset(
     repo: bool = False,  # ignored if all_cache=True
     self_binary: bool = False,
 ) -> None:
+    logger = cfg.logger
+
     def status(s: str) -> None:
         if quiet:
             return
-        log.I(s)
+        logger.I(s)
 
     if installed_pkgs:
         status("removing installed packages")
@@ -261,7 +263,7 @@ def _do_reset(
                     break
 
             if not repo_is_below_cache_root:
-                log.W(
+                logger.W(
                     "not removing the Ruyi repo: it is outside of the Ruyi cache directory"
                 )
             else:
