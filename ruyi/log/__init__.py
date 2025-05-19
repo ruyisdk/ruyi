@@ -1,3 +1,4 @@
+import abc
 import datetime
 import io
 import sys
@@ -47,12 +48,77 @@ def _make_porcelain_log(
         }
 
 
-class RuyiLogger:
+class RuyiLogger(metaclass=abc.ABCMeta):
+    def __init__(self) -> None:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def log_console(self) -> Console:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def stdout(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def D(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        _stack_offset_delta: int = 0,
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def F(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        file: Optional[IO[str]] = None,
+        flush: bool = False,
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def W(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+
+class RuyiConsoleLogger(RuyiLogger):
     def __init__(
         self,
         stdout: TextIO = sys.stdout,
         stderr: TextIO = sys.stderr,
     ) -> None:
+        super().__init__()
+
         self._stdout_console = Console(
             file=stdout,
             highlight=False,

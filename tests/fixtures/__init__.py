@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from ruyi.log import RuyiLogger
+from ruyi.log import RuyiConsoleLogger, RuyiLogger
 
 
 class RuyiFileFixtureFactory:
@@ -40,4 +40,4 @@ def ruyi_file() -> RuyiFileFixtureFactory:
 @pytest.fixture
 def ruyi_logger() -> RuyiLogger:
     """Fixture for creating a RuyiLogger instance."""
-    return RuyiLogger()
+    return RuyiConsoleLogger()

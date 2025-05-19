@@ -6,7 +6,7 @@ from typing import Final, NamedTuple
 
 import certifi
 
-from ..log import RuyiLogger
+from ..log import RuyiConsoleLogger, RuyiLogger
 
 _orig_get_default_verify_paths: Final = ssl.get_default_verify_paths
 _cached_paths: ssl.DefaultVerifyPaths | None = None
@@ -18,7 +18,7 @@ def get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
     if _cached_paths is None:
         # no way to pass in the logger because of the function signature
         # so we have to use a new logger
-        _cached_paths = _get_system_ssl_default_verify_paths(RuyiLogger())
+        _cached_paths = _get_system_ssl_default_verify_paths(RuyiConsoleLogger())
     return _cached_paths
 
 

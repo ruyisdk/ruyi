@@ -21,9 +21,9 @@ def is_allowed_to_run_as_root() -> bool:
 
 
 def entrypoint() -> None:
-    from ruyi.log import RuyiLogger
+    from ruyi.log import RuyiConsoleLogger
 
-    logger = RuyiLogger()
+    logger = RuyiConsoleLogger()
 
     if ruyi.is_running_as_root() and not is_allowed_to_run_as_root():
         logger.F("refusing to run as super user outside CI without explicit consent")

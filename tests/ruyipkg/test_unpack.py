@@ -10,12 +10,13 @@ from ..fixtures import RuyiFileFixtureFactory
 
 def test_unpack_deb(
     ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
     tmp_path: pathlib.Path,
 ) -> None:
     with ruyi_file.path("cpp-for-host_14-20240120-6_riscv64.deb") as p:
         assert determine_unpack_method(str(p)) == UnpackMethod.DEB
         unpack.do_unpack(
-            RuyiLogger(),
+            ruyi_logger,
             str(p),
             str(tmp_path),
             0,
