@@ -53,7 +53,7 @@ def entrypoint() -> None:
         logger.F("no argv?")
         sys.exit(1)
 
-    if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
+    if gm.is_packaged and ruyi.__compiled__.standalone:
         # If we're running from a bundle, our bundled libssl may remember a
         # different path for loading certificates than appropriate for the
         # current system, in which case the pygit2 import will fail. To avoid
@@ -72,14 +72,9 @@ def entrypoint() -> None:
     #
     # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
     # work if it's just `ruyi` so we have to check our parent process in that case
-    if hasattr(ruyi, "__compiled__"):
-        ruyi.IS_PACKAGED = True
-        self_exe = get_nuitka_self_exe()
-    else:
-        self_exe = __file__
-
+    self_exe = get_nuitka_self_exe() if gm.is_packaged else __file__
     sys.argv[0] = get_argv0()
-    ruyi.record_self_exe(sys.argv[0], __file__, self_exe)
+    gm.record_self_exe(sys.argv[0], __file__, self_exe)
 
     from ruyi.config import GlobalConfig
     from ruyi.cli.main import main

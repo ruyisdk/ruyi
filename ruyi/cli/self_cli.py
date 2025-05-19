@@ -4,7 +4,6 @@ import pathlib
 import shutil
 from typing import Final
 
-import ruyi
 from .. import config
 from . import user_input
 from .cmd import RootCommand
@@ -172,7 +171,7 @@ class SelfUninstallCommand(
             logger.I("please uninstall via the external manager instead")
             return 1
 
-        if not ruyi.IS_PACKAGED:
+        if not cfg.is_packaged:
             logger.F(
                 "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
             )
@@ -279,7 +278,7 @@ def _do_reset(
     if self_binary:
         status("removing the ruyi binary")
         try:
-            os.unlink(ruyi.self_exe())
+            os.unlink(cfg.self_exe)
         except FileNotFoundError:
             # we might have already removed ourselves during the purge; nothing to
             # do now.

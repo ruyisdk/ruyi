@@ -17,11 +17,10 @@ if TYPE_CHECKING:
 
 import tomlkit
 
-from .. import argv0
 from ..log import RuyiLogger
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryProvider
-from ..utils.global_mode import ProvidesGlobalMode, is_env_var_truthy
+from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 from . import schema
@@ -205,12 +204,28 @@ class GlobalConfig:
             return None
 
     @property
+    def argv0(self) -> str:
+        return self._gm.argv0
+
+    @property
+    def main_file(self) -> str:
+        return self._gm.main_file
+
+    @property
+    def self_exe(self) -> str:
+        return self._gm.self_exe
+
+    @property
     def is_debug(self) -> bool:
         return self._gm.is_debug
 
     @property
     def is_experimental(self) -> bool:
         return self._gm.is_experimental
+
+    @property
+    def is_packaged(self) -> bool:
+        return self._gm.is_packaged
 
     @property
     def is_porcelain(self) -> bool:
@@ -521,7 +536,7 @@ class RuyiVenvConfig:
         # this only works if it contains a path separator, otherwise it's really
         # hard without an explicit root (/proc/*/exe points to the resolved file,
         # but we want the path to the first symlink without any symlink dereference)
-        argv0_path = argv0()
+        argv0_path = gm.argv0
         if os.path.sep not in argv0_path:
             return None
 

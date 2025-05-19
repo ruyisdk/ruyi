@@ -2,6 +2,8 @@ import abc
 import os
 from typing import Final, Mapping, Protocol, runtime_checkable
 
+import ruyi
+
 ENV_DEBUG: Final = "RUYI_DEBUG"
 ENV_EXPERIMENTAL: Final = "RUYI_EXPERIMENTAL"
 ENV_FORCE_ALLOW_ROOT: Final = "RUYI_FORCE_ALLOW_ROOT"
@@ -17,13 +19,42 @@ def is_env_var_truthy(env: Mapping[str, str], var: str) -> bool:
     return False
 
 
+_argv0: str = ""
+_main_file: str = ""
+_self_exe: str = ""
+
+
+def argv0() -> str:
+    return _argv0
+
+
+def main_file() -> str:
+    return _main_file
+
+
+def self_exe() -> str:
+    return _self_exe
+
+
 @runtime_checkable
 class ProvidesGlobalMode(Protocol):
+    @property
+    def argv0(self) -> str: ...
+
+    @property
+    def main_file(self) -> str: ...
+
+    @property
+    def self_exe(self) -> str: ...
+
     @property
     def is_debug(self) -> bool: ...
 
     @property
     def is_experimental(self) -> bool: ...
+
+    @property
+    def is_packaged(self) -> bool: ...
 
     @property
     def is_porcelain(self) -> bool: ...
@@ -42,12 +73,35 @@ class GlobalModeProvider(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def argv0(self) -> str:
+        return ""
+
+    @property
+    @abc.abstractmethod
+    def main_file(self) -> str:
+        return ""
+
+    @property
+    @abc.abstractmethod
+    def self_exe(self) -> str:
+        return ""
+
+    def record_self_exe(self, argv0: str, main_file: str, self_exe: str) -> None:
+        pass
+
+    @property
+    @abc.abstractmethod
     def is_debug(self) -> bool:
         return False
 
     @property
     @abc.abstractmethod
     def is_experimental(self) -> bool:
+        return False
+
+    @property
+    @abc.abstractmethod
+    def is_packaged(self) -> bool:
         return False
 
     @property
@@ -76,11 +130,32 @@ class EnvGlobalModeProvider(GlobalModeProvider):
         if env is None:
             env = os.environ
 
+        self._argv0 = ""
+        self._main_file = ""
+        self._self_exe = ""
+
         self._is_debug = is_env_var_truthy(env, ENV_DEBUG)
         self._is_experimental = is_env_var_truthy(env, ENV_EXPERIMENTAL)
         self._is_porcelain = False  # this has to be initialized later
         self._is_telemetry_optout = is_env_var_truthy(env, ENV_TELEMETRY_OPTOUT_KEY)
         self._venv_root = env.get(ENV_VENV_ROOT_KEY)
+
+    @property
+    def argv0(self) -> str:
+        return self._argv0
+
+    @property
+    def main_file(self) -> str:
+        return self._main_file
+
+    @property
+    def self_exe(self) -> str:
+        return self._self_exe
+
+    def record_self_exe(self, argv0: str, main_file: str, self_exe: str) -> None:
+        self._argv0 = argv0
+        self._main_file = main_file
+        self._self_exe = self_exe
 
     @property
     def is_debug(self) -> bool:
@@ -89,6 +164,10 @@ class EnvGlobalModeProvider(GlobalModeProvider):
     @property
     def is_experimental(self) -> bool:
         return self._is_experimental
+
+    @property
+    def is_packaged(self) -> bool:
+        return hasattr(ruyi, "__compiled__")
 
     @property
     def is_porcelain(self) -> bool:

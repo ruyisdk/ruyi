@@ -1,36 +1,5 @@
 import typing
 
-
-_argv0: str = ""
-_main_file: str = ""
-_self_exe: str = ""
-
-
-def argv0() -> str:
-    return _argv0
-
-
-def main_file() -> str:
-    return _main_file
-
-
-def self_exe() -> str:
-    return _self_exe
-
-
-def record_self_exe(argv0: str, main_file: str, x: str) -> None:
-    global _argv0
-    global _main_file
-    global _self_exe
-    _argv0 = argv0
-    _main_file = main_file
-    _self_exe = x
-
-
-
-# This is true if we're packaged
-IS_PACKAGED = False
-
 if typing.TYPE_CHECKING:
 
     class NuitkaVersion(typing.NamedTuple):

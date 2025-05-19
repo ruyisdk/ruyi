@@ -2,7 +2,6 @@ from contextlib import AbstractContextManager
 from importlib import resources
 import pathlib
 import sys
-from typing import is_protocol
 
 import pytest
 
@@ -50,12 +49,28 @@ class MockGlobalModeProvider(GlobalModeProvider):
         self._venv_root = venv_root
 
     @property
+    def argv0(self) -> str:
+        return "ruyi"
+
+    @property
+    def main_file(self) -> str:
+        return "ruyi/__main__.py"
+
+    @property
+    def self_exe(self) -> str:
+        return "ruyi"
+
+    @property
     def is_debug(self) -> bool:
         return self._is_debug
 
     @property
     def is_experimental(self) -> bool:
         return self._is_experimental
+
+    @property
+    def is_packaged(self) -> bool:
+        return False
 
     @property
     def is_porcelain(self) -> bool:

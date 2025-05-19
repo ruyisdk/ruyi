@@ -39,7 +39,7 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
                 target=target,
             )
 
-        return mux_main(gc, argv)
+        return mux_main(gm, gc, argv)
 
     import ruyi
     from .cmd import CLIEntrypoint, RootCommand
@@ -57,9 +57,9 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         nuitka_info = f"__compiled__ = {ruyi.__compiled__}"
 
     logger.D(
-        f"__main__.__file__ = {ruyi.main_file()}, sys.executable = {sys.executable}, {nuitka_info}"
+        f"__main__.__file__ = {gm.main_file}, sys.executable = {sys.executable}, {nuitka_info}"
     )
-    logger.D(f"argv[0] = {argv[0]}, self_exe = {ruyi.self_exe()}")
+    logger.D(f"argv[0] = {gm.argv0}, self_exe = {gm.self_exe}")
     logger.D(f"args={args}")
 
     func: CLIEntrypoint = args.func

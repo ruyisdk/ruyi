@@ -11,11 +11,12 @@ import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
-from ... import self_exe
+
 from ...config import GlobalConfig
 from ...log import RuyiLogger
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
+from ...utils.global_mode import ProvidesGlobalMode
 from . import ConfiguredTargetTuple
 from .data import TEMPLATES
 from .emulator_cfg import ResolvedEmulatorProg
@@ -66,7 +67,7 @@ class VenvMaker:
         emulator_root: PathLike[Any] | None,
         override_name: str | None = None,
     ) -> None:
-        self.logger = gc.logger
+        self.gc = gc
         self.profile = profile
         self.targets = targets
         self.venv_root = pathlib.Path(dest)
@@ -75,6 +76,10 @@ class VenvMaker:
         self.override_name = override_name
 
         self.bindir = self.venv_root / "bin"
+
+    @property
+    def logger(self) -> RuyiLogger:
+        return self.gc.logger
 
     def render_and_write(
         self,
@@ -171,7 +176,7 @@ class VenvMaker:
                 profile_emu_env = resolved_emu_progs[i].env
 
                 self.logger.D("symlinking the ruyi-qemu wrapper")
-                os.symlink(self_exe(), bindir / "ruyi-qemu")
+                os.symlink(self.gc.self_exe, bindir / "ruyi-qemu")
 
         # provide initial cached configuration to venv
         self.render_and_write(
@@ -238,7 +243,7 @@ class VenvMaker:
 
         self.logger.D(f"symlinking {target_tuple} binaries into venv")
         toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
-        symlink_binaries(self.logger, toolchain_bindir, bindir)
+        symlink_binaries(self.gc, self.logger, toolchain_bindir, bindir)
 
         make_llvm_tool_aliases(
             self.logger,
@@ -356,13 +361,14 @@ def make_cmd_metadata_map(
 
 
 def symlink_binaries(
+    gm: ProvidesGlobalMode,
     logger: RuyiLogger,
     src_bindir: PathLike[Any],
     dest_bindir: PathLike[Any],
 ) -> None:
     src_binpath = pathlib.Path(src_bindir)
     dest_binpath = pathlib.Path(dest_bindir)
-    self_exe_path = self_exe()
+    self_exe_path = gm.self_exe
 
     for src_cmd_path in iter_binaries_to_symlink(logger, src_binpath):
         filename = src_cmd_path.name
