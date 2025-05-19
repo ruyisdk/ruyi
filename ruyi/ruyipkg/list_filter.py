@@ -2,8 +2,6 @@ import argparse
 import enum
 from typing import Any, Callable, Iterable, NamedTuple, Sequence, TypeVar, TYPE_CHECKING
 
-from ruyi import log
-
 if TYPE_CHECKING:
     from .repo import MetadataRepo
 
@@ -148,7 +146,8 @@ class ListFilterAction(argparse.Action):
             val = values[0]
         else:
             # should never happen
-            log.D(f"unexpected values type: {type(values)}")
+            # XXX: no easy way to wire to the global logger instance here
+            # log.D(f"unexpected values type: {type(values)}")
             val = ""
 
         dest.append(ListFilterOp(self.filter_op_kind, val))

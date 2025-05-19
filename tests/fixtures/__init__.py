@@ -5,6 +5,8 @@ import sys
 
 import pytest
 
+from ruyi.log import RuyiLogger
+
 
 class RuyiFileFixtureFactory:
     def __init__(self, module: resources.Package | None = None) -> None:
@@ -33,3 +35,9 @@ class RuyiFileFixtureFactory:
 @pytest.fixture
 def ruyi_file() -> RuyiFileFixtureFactory:
     return RuyiFileFixtureFactory(None if sys.version_info >= (3, 12) else __name__)
+
+
+@pytest.fixture
+def ruyi_logger() -> RuyiLogger:
+    """Fixture for creating a RuyiLogger instance."""
+    return RuyiLogger()

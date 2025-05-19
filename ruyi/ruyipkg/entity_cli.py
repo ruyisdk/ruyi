@@ -1,6 +1,5 @@
 import argparse
 
-from .. import log
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 
@@ -31,33 +30,36 @@ class EntityDescribeCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         ref = args.ref
 
         entity_store = cfg.repo.entity_store
         entity = entity_store.get_entity_by_ref(ref)
         if entity is None:
-            log.F(f"entity [yellow]{ref}[/] not found")
+            logger.F(f"entity [yellow]{ref}[/] not found")
             return 1
 
-        log.stdout(f"Entity [bold]{str(entity)}[/] ([green]{entity.display_name}[/])\n")
+        logger.stdout(
+            f"Entity [bold]{str(entity)}[/] ([green]{entity.display_name}[/])\n"
+        )
 
         fwd_refs = entity.related_refs
         if fwd_refs:
-            log.stdout("  Direct forward relationships:")
+            logger.stdout("  Direct forward relationships:")
             for ref in sorted(fwd_refs):
-                log.stdout(f"    - [yellow]{ref}[/]")
+                logger.stdout(f"    - [yellow]{ref}[/]")
         else:
-            log.stdout("  Direct forward relationships: [gray]none[/]")
+            logger.stdout("  Direct forward relationships: [gray]none[/]")
 
         rev_refs = entity.reverse_refs
         if rev_refs:
-            log.stdout("  Direct reverse relationships:")
+            logger.stdout("  Direct reverse relationships:")
             for ref in sorted(rev_refs):
-                log.stdout(f"    - [yellow]{ref}[/]")
+                logger.stdout(f"    - [yellow]{ref}[/]")
         else:
-            log.stdout("  Direct reverse relationships: [gray]none[/]")
+            logger.stdout("  Direct reverse relationships: [gray]none[/]")
 
-        log.stdout("  All indirectly related entities:")
+        logger.stdout("  All indirectly related entities:")
         for e in entity_store.traverse_related_entities(
             entity,
             transitive=True,
@@ -65,7 +67,7 @@ class EntityDescribeCommand(
             forward_refs=True,
             reverse_refs=True,
         ):
-            log.stdout(f"    - [yellow]{e}[/]")
+            logger.stdout(f"    - [yellow]{e}[/]")
 
         # TODO: render type-specific data
 
@@ -83,11 +85,12 @@ class EntityListCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         entity_store = cfg.repo.entity_store
         for e in entity_store.iter_entities(None):
-            log.stdout(f"'{str(e)}':")
-            log.stdout(f"  display name: {e.display_name}")
-            log.stdout(f"  data: {e.data}")
-            log.stdout(f"  forward_refs: {e.related_refs}")
-            log.stdout(f"  reverse_refs: {e.reverse_refs}")
+            logger.stdout(f"'{str(e)}':")
+            logger.stdout(f"  display name: {e.display_name}")
+            logger.stdout(f"  data: {e.data}")
+            logger.stdout(f"  forward_refs: {e.related_refs}")
+            logger.stdout(f"  reverse_refs: {e.reverse_refs}")
         return 0

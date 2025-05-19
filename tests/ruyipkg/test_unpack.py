@@ -1,6 +1,7 @@
 import pathlib
 import sys
 
+from ruyi.log import RuyiLogger
 from ruyi.ruyipkg import unpack
 from ruyi.ruyipkg.unpack_method import UnpackMethod, determine_unpack_method
 
@@ -13,7 +14,14 @@ def test_unpack_deb(
 ) -> None:
     with ruyi_file.path("cpp-for-host_14-20240120-6_riscv64.deb") as p:
         assert determine_unpack_method(str(p)) == UnpackMethod.DEB
-        unpack.do_unpack(str(p), str(tmp_path), 0, UnpackMethod.DEB, None)
+        unpack.do_unpack(
+            RuyiLogger(),
+            str(p),
+            str(tmp_path),
+            0,
+            UnpackMethod.DEB,
+            None,
+        )
         check = tmp_path / "usr" / "share" / "doc" / "cpp-for-host"
         if sys.version_info >= (3, 12):
             assert check.exists(follow_symlinks=False)

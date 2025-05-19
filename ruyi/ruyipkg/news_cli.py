@@ -3,15 +3,17 @@ import argparse
 from rich import box
 from rich.table import Table
 
-from .. import is_porcelain, log
+from .. import is_porcelain
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..log import RuyiLogger
 from ..utils.markdown import RuyiStyledMarkdown
 from ..utils.porcelain import PorcelainOutput
 from .news import NewsItem, NewsItemContent, NewsItemStore
 
 
 def print_news_item_titles(
+    logger: RuyiLogger,
     newsitems: list[NewsItem],
     lang: str,
 ) -> None:
@@ -31,7 +33,7 @@ def print_news_item_titles(
             ni.get_content_for_lang(lang).display_title,
         )
 
-    log.stdout(tbl)
+    logger.stdout(tbl)
 
 
 class NewsCommand(
@@ -60,6 +62,7 @@ class NewsListCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         only_unread = args.new
 
         store = cfg.repo.news_store()
@@ -71,12 +74,12 @@ class NewsListCommand(
                     po.emit(ni.to_porcelain())
             return 0
 
-        log.stdout("[bold green]News items:[/bold green]\n")
+        logger.stdout("[bold green]News items:[/bold green]\n")
         if not newsitems:
-            log.stdout("  (no unread item)" if only_unread else "  (no item)")
+            logger.stdout("  (no unread item)" if only_unread else "  (no item)")
             return 0
 
-        print_news_item_titles(newsitems, cfg.lang_code)
+        print_news_item_titles(logger, newsitems, cfg.lang_code)
 
         return 0
 
@@ -104,13 +107,14 @@ class NewsReadCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         quiet = args.quiet
         items_strs = args.item
 
         store = cfg.repo.news_store()
 
         # filter out requested news items
-        items = filter_news_items_by_specs(store, items_strs)
+        items = filter_news_items_by_specs(logger, store, items_strs)
         if items is None:
             return 1
 
@@ -122,9 +126,9 @@ class NewsReadCommand(
             # render the items
             if items:
                 for ni in items:
-                    print_news(ni.get_content_for_lang(cfg.lang_code))
+                    print_news(logger, ni.get_content_for_lang(cfg.lang_code))
             else:
-                log.stdout("No news to display.")
+                logger.stdout("No news to display.")
 
         # record read statuses
         store.mark_as_read(*(ni.id for ni in items))
@@ -133,6 +137,7 @@ class NewsReadCommand(
 
 
 def filter_news_items_by_specs(
+    logger: RuyiLogger,
     store: NewsItemStore,
     specs: list[str],
 ) -> list[NewsItem] | None:
@@ -148,20 +153,20 @@ def filter_news_items_by_specs(
         try:
             ni_ord = int(i)
             if ni_ord not in ni_by_ord:
-                log.F(f"there is no news item with ordinal {ni_ord}")
+                logger.F(f"there is no news item with ordinal {ni_ord}")
                 return None
             items.append(ni_by_ord[ni_ord])
         except ValueError:
             # treat i as id
             if i not in ni_by_id:
-                log.F(f"there is no news item with ID '{i}'")
+                logger.F(f"there is no news item with ID '{i}'")
                 return None
             items.append(ni_by_id[i])
 
     return items
 
 
-def print_news(nic: NewsItemContent) -> None:
+def print_news(logger: RuyiLogger, nic: NewsItemContent) -> None:
     md = RuyiStyledMarkdown(nic.content)
-    log.stdout(md)
-    log.stdout("")
+    logger.stdout(md)
+    logger.stdout("")

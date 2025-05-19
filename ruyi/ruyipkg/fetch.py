@@ -7,19 +7,20 @@ from typing import Any, Final
 import requests
 from rich import progress
 
-from .. import log
+from ..log import RuyiLogger
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
 
 
 class BaseFetcher:
-    def __init__(self, urls: list[str], dest: str) -> None:
+    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+        self._logger = logger
         self.urls = urls
         self.dest = dest
 
     @classmethod
     @abc.abstractmethod
-    def is_available(cls) -> bool:
+    def is_available(cls, logger: RuyiLogger) -> bool:
         return False
 
     @abc.abstractmethod
@@ -35,14 +36,14 @@ class BaseFetcher:
     ) -> bool:
         for t in range(retries):
             if t > 0:
-                log.I(f"retrying download ({t + 1} of {retries} times)")
+                self._logger.I(f"retrying download ({t + 1} of {retries} times)")
             if self.fetch_one(url, dest, resume):
                 return True
         return False
 
     def fetch(self, *, resume: bool = False, retries: int = 3) -> None:
         for url in self.urls:
-            log.I(f"downloading {url} to {self.dest}")
+            self._logger.I(f"downloading {url} to {self.dest}")
             if self.fetch_one_with_retry(url, self.dest, resume, retries):
                 return
         # all URLs have been tried and all have failed
@@ -51,8 +52,8 @@ class BaseFetcher:
         )
 
     @classmethod
-    def new(cls, urls: list[str], dest: str) -> "BaseFetcher":
-        return get_usable_fetcher_cls()(urls, dest)
+    def new(cls, logger: RuyiLogger, urls: list[str], dest: str) -> "BaseFetcher":
+        return get_usable_fetcher_cls(logger)(logger, urls, dest)
 
 
 KNOWN_FETCHERS: Final[dict[str, type[BaseFetcher]]] = {}
@@ -67,7 +68,7 @@ _fetcher_cache_populated: bool = False
 _cached_usable_fetcher_class: type[BaseFetcher] | None = None
 
 
-def get_usable_fetcher_cls() -> type[BaseFetcher]:
+def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
     global _fetcher_cache_populated
     global _cached_usable_fetcher_class
 
@@ -79,12 +80,12 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
     _fetcher_cache_populated = True
 
     if override_name := os.environ.get(ENV_OVERRIDE_FETCHER):
-        log.D(f"forcing fetcher '{override_name}'")
+        logger.D(f"forcing fetcher '{override_name}'")
 
         cls = KNOWN_FETCHERS.get(override_name)
         if cls is None:
             raise RuntimeError(f"unknown fetcher '{override_name}'")
-        if not cls.is_available():
+        if not cls.is_available(logger):
             raise RuntimeError(
                 f"the requested fetcher '{override_name}' is unavailable on the system"
             )
@@ -92,8 +93,8 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
         return cls
 
     for name, cls in KNOWN_FETCHERS.items():
-        if not cls.is_available():
-            log.D(f"fetcher '{name}' is unavailable")
+        if not cls.is_available(logger):
+            logger.D(f"fetcher '{name}' is unavailable")
             continue
         _cached_usable_fetcher_class = cls
         return cls
@@ -102,17 +103,17 @@ def get_usable_fetcher_cls() -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, urls: list[str], dest: str) -> None:
-        super().__init__(urls, dest)
+    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+        super().__init__(logger, urls, dest)
 
     @classmethod
-    def is_available(cls) -> bool:
+    def is_available(cls, logger: RuyiLogger) -> bool:
         # try running "curl --version" and it should succeed
         try:
             retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D("exception occurred when trying to curl --version:", e)
+            logger.D("exception occurred when trying to curl --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -133,7 +134,7 @@ class CurlFetcher(BaseFetcher):
 
         retcode = subprocess.call(argv)
         if retcode != 0:
-            log.W(
+            self._logger.W(
                 f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
             )
             return False
@@ -145,17 +146,17 @@ register_fetcher("curl", CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, urls: list[str], dest: str) -> None:
-        super().__init__(urls, dest)
+    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+        super().__init__(logger, urls, dest)
 
     @classmethod
-    def is_available(cls) -> bool:
+    def is_available(cls, logger: RuyiLogger) -> bool:
         # try running "wget --version" and it should succeed
         try:
             retcode = subprocess.call(["wget", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            log.D("exception occurred when trying to wget --version:", e)
+            logger.D("exception occurred when trying to wget --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -167,7 +168,7 @@ class WgetFetcher(BaseFetcher):
 
         retcode = subprocess.call(argv)
         if retcode != 0:
-            log.W(
+            self._logger.W(
                 f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
             )
             return False
@@ -179,25 +180,25 @@ register_fetcher("wget", WgetFetcher)
 
 
 class PythonRequestsFetcher(BaseFetcher):
-    def __init__(self, urls: list[str], dest: str) -> None:
-        super().__init__(urls, dest)
+    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+        super().__init__(logger, urls, dest)
 
         self.chunk_size = 4 * mmap.PAGESIZE
         # TODO: User-Agent
 
     @classmethod
-    def is_available(cls) -> bool:
+    def is_available(cls, logger: RuyiLogger) -> bool:
         return True
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
-        log.D(f"downloading [cyan]{url}[/] to [cyan]{dest}")
+        self._logger.D(f"downloading [cyan]{url}[/] to [cyan]{dest}")
 
         open_mode = "ab" if resume else "wb"
         start_from = 0
         headers: dict[str, str] = {}
         if resume:
             filesize = os.stat(dest).st_size
-            log.D(f"resuming from position {filesize}")
+            self._logger.D(f"resuming from position {filesize}")
             start_from = filesize
             headers["Range"] = f"bytes={filesize}-"
 
@@ -224,7 +225,7 @@ class PythonRequestsFetcher(BaseFetcher):
         )
         dest_filename = os.path.basename(dest)
         with open(dest, open_mode) as f:
-            with progress.Progress(*columns, console=log.LOG_CONSOLE) as pg:
+            with progress.Progress(*columns, console=self._logger.log_console) as pg:
                 indeterminate = total_len is None
                 kwargs: dict[str, Any]
                 if indeterminate:

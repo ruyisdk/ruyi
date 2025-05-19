@@ -61,6 +61,10 @@ class RuyiLogger:
         # TODO: make this configurable
         pass
 
+    @property
+    def log_console(self) -> Console:
+        return LOG_CONSOLE
+
     def _emit_porcelain_log(
         self,
         lvl: str,
