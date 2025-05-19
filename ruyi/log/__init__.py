@@ -161,15 +161,6 @@ class RuyiLogger:
         )
 
 
-# For refactoring ease
-DEFAULT_LOGGER = RuyiLogger()
-stdout = DEFAULT_LOGGER.stdout
-D = DEFAULT_LOGGER.D
-F = DEFAULT_LOGGER.F
-I = DEFAULT_LOGGER.I  # noqa: E741 # the name intentionally mimics Android logging for brevity
-W = DEFAULT_LOGGER.W
-
-
 def humanize_list(
     obj: list[str] | set[str],
     *,

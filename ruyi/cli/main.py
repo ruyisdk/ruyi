@@ -19,8 +19,7 @@ def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 
 
-def main(argv: list[str]) -> int:
-    gc = GlobalConfig.load_from_config()
+def main(gc: GlobalConfig, argv: list[str]) -> int:
     if gc.telemetry is not None:
         gc.telemetry.check_first_run_status()
         gc.telemetry.init_installation(False)

@@ -2,9 +2,12 @@
 
 import os
 import sys
+
 import ruyi
-from ruyi import log
 from ruyi.utils.ci import is_running_in_ci
+# NOTE: no imports that directly or indirectly pull in pygit2 should go here,
+# because import of pygit2 will fail if done before ssl_patch. Notably this
+# means no GlobalConfig here because it depends on ruyi.ruyipkg.repo.
 
 
 def is_allowed_to_run_as_root() -> bool:
@@ -18,11 +21,15 @@ def is_allowed_to_run_as_root() -> bool:
 
 
 def entrypoint() -> None:
+    from ruyi.log import RuyiLogger
+
+    logger = RuyiLogger()
+
     if ruyi.is_running_as_root() and not is_allowed_to_run_as_root():
-        log.F("refusing to run as super user outside CI without explicit consent")
+        logger.F("refusing to run as super user outside CI without explicit consent")
 
         choices = ", ".join(f"'{x}'" for x in ruyi.TRUTHY_ENV_VAR_VALUES)
-        log.I(
+        logger.I(
             f"re-run with environment variable [yellow]{ruyi.ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
         )
         sys.exit(1)
@@ -30,7 +37,7 @@ def entrypoint() -> None:
     ruyi.init_debug_status()
 
     if not sys.argv:
-        log.F("no argv?")
+        logger.F("no argv?")
         sys.exit(1)
 
     if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
@@ -45,7 +52,6 @@ def entrypoint() -> None:
 
         del ssl_patch
 
-    from ruyi.cli.main import main
     from ruyi.utils.nuitka import get_nuitka_self_exe, get_argv0
 
     # note down our own executable path, for identity-checking in mux, if not
@@ -62,7 +68,11 @@ def entrypoint() -> None:
     sys.argv[0] = get_argv0()
     ruyi.record_self_exe(sys.argv[0], __file__, self_exe)
 
-    sys.exit(main(sys.argv))
+    from ruyi.config import GlobalConfig
+    from ruyi.cli.main import main
+
+    gc = GlobalConfig.load_from_config(logger)
+    sys.exit(main(gc, sys.argv))
 
 
 if __name__ == "__main__":

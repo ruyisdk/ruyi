@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 import tomlkit
 
 from .. import argv0, is_env_var_truthy
-from ..log import RuyiLogger, DEFAULT_LOGGER
+from ..log import RuyiLogger
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryProvider
 from ..utils.xdg_basedir import XDGBaseDir
@@ -89,7 +89,7 @@ class GlobalConfigRootType(TypedDict):
 
 
 class GlobalConfig:
-    def __init__(self) -> None:
+    def __init__(self, logger: RuyiLogger) -> None:
         # all defaults
         self.override_repo_dir: str | None = None
         self.override_repo_url: str | None = None
@@ -109,7 +109,7 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
-        self.logger = DEFAULT_LOGGER
+        self.logger = logger
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
@@ -348,8 +348,8 @@ class GlobalConfig:
         self.apply_config(data)
 
     @classmethod
-    def load_from_config(cls) -> "Self":
-        obj = cls()
+    def load_from_config(cls, logger: RuyiLogger) -> "Self":
+        obj = cls(logger)
 
         for config_path in obj.iter_preset_configs():
             obj.logger.D(f"trying config file from preset location: {config_path}")
