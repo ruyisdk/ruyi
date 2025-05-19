@@ -108,6 +108,8 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
+        self.logger = log.DEFAULT_LOGGER
+
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
             self.is_installation_externally_managed = ins_cfg.get(
