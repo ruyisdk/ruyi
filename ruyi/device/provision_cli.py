@@ -3,10 +3,10 @@ import itertools
 import os.path
 from typing import TYPE_CHECKING, TypedDict, TypeGuard, cast
 
-from .. import log
 from ..cli import user_input
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..log import RuyiLogger
 from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
 from ..ruyipkg.entity_provider import BaseEntity
 from ..ruyipkg.host import get_native_host
@@ -48,7 +48,7 @@ class DeviceProvisionCommand(
         try:
             return do_provision_interactive(cfg)
         except KeyboardInterrupt:
-            log.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
+            cfg.logger.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
             return 1
 
 
@@ -60,6 +60,8 @@ def get_variant_display_name(dev: BaseEntity, variant: BaseEntity) -> str:
 
 
 def do_provision_interactive(config: GlobalConfig) -> int:
+    log = config.logger
+
     # ensure ruyi repo is present, for good out-of-the-box experience
     mr = config.repo
     mr.ensure_git_repo()
@@ -136,6 +138,7 @@ configuration does not allow so.
 
 
 def maybe_render_postinst_msg(
+    logger: RuyiLogger,
     mr: MetadataRepo,
     combo: BaseEntity,
     lang_code: str,
@@ -144,7 +147,7 @@ def maybe_render_postinst_msg(
         # This field is named just "msgid" so no variables to render for
         # the retrieved text
         if msg := mr.messages.get_message_template(postinst_msgid, lang_code):
-            log.stdout(f"\n{msg}")
+            logger.stdout(f"\n{msg}")
             return True
     return False
 
@@ -156,28 +159,29 @@ def do_provision_combo_interactive(
     variant_decl: BaseEntity,
     combo: BaseEntity,
 ) -> int:
-    log.D(f"provisioning device variant '{dev_decl.id}@{variant_decl.id}'")
+    logger = config.logger
+    logger.D(f"provisioning device variant '{dev_decl.id}@{variant_decl.id}'")
 
     # download packages
     pkg_atoms = combo.data.get("package_atoms", [])
     if not pkg_atoms:
-        if maybe_render_postinst_msg(mr, combo, config.lang_code):
+        if maybe_render_postinst_msg(logger, mr, combo, config.lang_code):
             return 0
 
-        log.F(
+        logger.F(
             f"malformed config: device variant '{dev_decl.id}@{variant_decl.id}' asks for no packages but provides no messages either"
         )
         return 1
 
     new_pkg_atoms = customize_package_versions(config, mr, pkg_atoms)
     if new_pkg_atoms is None:
-        log.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+        logger.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
         return 1
     else:
         pkg_atoms = new_pkg_atoms
 
     pkg_names_for_display = "\n".join(f" * [green]{i}[/green]" for i in pkg_atoms)
-    log.stdout(
+    logger.stdout(
         f"""
 We are about to download and install the following packages for your device:
 
@@ -186,7 +190,7 @@ We are about to download and install the following packages for your device:
     )
 
     if not user_input.ask_for_yesno_confirmation("Proceed?"):
-        log.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+        logger.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
         return 1
 
     ret = do_install_atoms(
@@ -198,8 +202,8 @@ We are about to download and install the following packages for your device:
         reinstall=False,
     )
     if ret != 0:
-        log.F("failed to download and install packages")
-        log.I("your device was not touched")
+        logger.F("failed to download and install packages")
+        logger.I("your device was not touched")
         return 2
 
     strat_provider = ProvisionStrategyProvider(mr)
@@ -221,7 +225,7 @@ We are about to download and install the following packages for your device:
 
     host_blkdev_map: PartitionMapDecl = {}
     if requested_host_blkdevs:
-        log.stdout(
+        logger.stdout(
             """
 For initializing this target device, you should plug into this host system the
 device's storage (e.g. SD card or NVMe SSD), or a removable disk to be
@@ -237,7 +241,7 @@ information you will need later.
             host_blkdev_map[part] = path
 
     # final confirmation
-    log.stdout(
+    logger.stdout(
         """
 We have collected enough information for the actual flashing. Now is the last
 chance to re-check and confirm everything is fine.
@@ -255,10 +259,10 @@ We are about to:
             )
         )
     )
-    log.stdout(pretend_steps, end="\n\n")
+    logger.stdout(pretend_steps, end="\n\n")
 
     if not user_input.ask_for_yesno_confirmation("Proceed with flashing?"):
-        log.stdout(
+        logger.stdout(
             "\nExiting. The device is not touched and you may re-start the wizard at will.",
             end="\n\n",
         )
@@ -272,7 +276,7 @@ We are about to:
         if "fastboot" in all_needed_cmds:
             # ask the user to ensure the device shows up
             # TODO: automate doing so
-            log.stdout(
+            logger.stdout(
                 """
 Some flashing steps require the use of fastboot, in which case you should
 ensure the target device is showing up in [yellow]fastboot devices[/yellow] output.
@@ -282,7 +286,7 @@ Please confirm it yourself before the flashing begins.
             if not user_input.ask_for_yesno_confirmation(
                 "Is the device identified by fastboot now?"
             ):
-                log.stdout(
+                logger.stdout(
                     "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/yellow] is fixed for the device.",
                     end="\n\n",
                 )
@@ -290,14 +294,14 @@ Please confirm it yourself before the flashing begins.
 
     # flash
     for pkg, strat in strategies:
-        log.D(f"flashing {pkg} with strategy {strat}")
+        logger.D(f"flashing {pkg} with strategy {strat}")
         ret = strat.flash(pkg_part_maps[pkg], host_blkdev_map)
         if ret != 0:
-            log.F("flashing failed, check your device right now")
+            logger.F("flashing failed, check your device right now")
             return ret
 
     # parting words
-    log.stdout(
+    logger.stdout(
         """
 It seems the flashing has finished without errors.
 
@@ -305,7 +309,7 @@ It seems the flashing has finished without errors.
 """
     )
 
-    maybe_render_postinst_msg(mr, combo, config.lang_code)
+    maybe_render_postinst_msg(logger, mr, combo, config.lang_code)
 
     return 0
 
@@ -484,8 +488,10 @@ def customize_package_versions(
     if not is_package_version_customization_possible(config, mr, pkg_atoms):
         return pkg_atoms
 
+    logger = config.logger
+
     # Ask if the user wants to customize package versions
-    log.stdout(
+    logger.stdout(
         "By default, we'll install the latest version of each package, but in this case, other choices are possible."
     )
     if not user_input.ask_for_yesno_confirmation(
@@ -495,14 +501,14 @@ def customize_package_versions(
 
     while True:  # Loop to allow restarting the selection process
         result: list[str] = []
-        log.stdout("\n[bold]Package Version Selection[/]")
+        logger.stdout("\n[bold]Package Version Selection[/]")
 
         for atom_str in pkg_atoms:
             # Parse the atom to get package name
             a = Atom.parse(atom_str)
             if isinstance(a, ExprAtom):
                 # If it's already an expression with version constraints, show the constraints
-                log.stdout(
+                logger.stdout(
                     f"\nPackage [green]{atom_str}[/] already has version constraints."
                 )
                 if not user_input.ask_for_yesno_confirmation(
@@ -512,7 +518,7 @@ def customize_package_versions(
                     continue
             elif isinstance(a, SlugAtom):
                 # Slugs already fix the version, so we can't change them
-                log.W(
+                logger.W(
                     f"version cannot be overridden for slug atom [green]{atom_str}[/]"
                 )
                 result.append(atom_str)
@@ -526,13 +532,13 @@ def customize_package_versions(
             try:
                 available_versions = list(mr.iter_pkg_vers(package_name, category))
             except KeyError:
-                log.W(
+                logger.W(
                     f"could not find package [yellow]{category}/{package_name}[/] in repository"
                 )
                 result.append(atom_str)
 
             if not available_versions:
-                log.W(
+                logger.W(
                     f"no versions found for package [yellow]{category}/{package_name}[/]"
                 )
                 result.append(atom_str)
@@ -541,7 +547,7 @@ def customize_package_versions(
             if len(available_versions) == 1:
                 # If there's only one version available, use it
                 selected_version = available_versions[0]
-                log.stdout(
+                logger.stdout(
                     f"Only one version available for [green]{category}/{package_name}[/]: [blue]{selected_version.ver}[/], using it."
                 )
                 result.append(atom_str)
@@ -580,12 +586,12 @@ def customize_package_versions(
             else:
                 new_atom = f"{package_name}(=={selected_version.ver})"
 
-            log.stdout(f"Selected: [blue]{new_atom}[/]")
+            logger.stdout(f"Selected: [blue]{new_atom}[/]")
             result.append(new_atom)
 
-        log.stdout("\nPackage versions to be installed:")
+        logger.stdout("\nPackage versions to be installed:")
         for atom in result:
-            log.stdout(f" * [green]{atom}[/]")
+            logger.stdout(f" * [green]{atom}[/]")
 
         confirmation = user_input.ask_for_choice(
             "\nHow would you like to proceed?",
@@ -599,7 +605,7 @@ def customize_package_versions(
         if confirmation == 0:  # Continue with these versions
             return result
         elif confirmation == 1:  # Restart version selection
-            log.stdout("\nRestarting package version selection...")
+            logger.stdout("\nRestarting package version selection...")
             continue
         else:  # Abort installation
             return None
