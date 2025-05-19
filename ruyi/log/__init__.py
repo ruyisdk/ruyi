@@ -56,99 +56,114 @@ def _make_porcelain_log(
         }
 
 
-def _emit_porcelain_log(
-    lvl: str,
-    message: Renderable,
-    sep: str = " ",
-    *objects: Any,
-) -> None:
-    t = int(time.time() * 1000000)
-    obj = _make_porcelain_log(t, lvl, message, sep, *objects)
-    PORCELAIN_SINK.emit(obj)
+class RuyiLogger:
+    def __init__(self) -> None:
+        # TODO: make this configurable
+        pass
+
+    def _emit_porcelain_log(
+        self,
+        lvl: str,
+        message: Renderable,
+        sep: str = " ",
+        *objects: Any,
+    ) -> None:
+        t = int(time.time() * 1000000)
+        obj = _make_porcelain_log(t, lvl, message, sep, *objects)
+        PORCELAIN_SINK.emit(obj)
+
+    def stdout(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        return STDOUT_CONSOLE.print(message, *objects, sep=sep, end=end)
+
+    def D(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        _stack_offset_delta: int = 0,
+    ) -> None:
+        if not is_debug():
+            return
+
+        if is_porcelain():
+            return self._emit_porcelain_log("D", message, sep, *objects)
+
+        return DEBUG_CONSOLE.log(
+            message,
+            *objects,
+            sep=sep,
+            end=end,
+            _stack_offset=2 + _stack_offset_delta,
+        )
+
+    def F(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        if is_porcelain():
+            return self._emit_porcelain_log("F", message, sep, *objects)
+
+        return LOG_CONSOLE.print(
+            f"[bold red]fatal error:[/bold red] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
+
+    def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        file: Optional[IO[str]] = None,
+        flush: bool = False,
+    ) -> None:
+        if is_porcelain():
+            return self._emit_porcelain_log("I", message, sep, *objects)
+
+        return LOG_CONSOLE.print(
+            f"[bold green]info:[/bold green] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
+
+    def W(
+        self,
+        message: Renderable,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        if is_porcelain():
+            return self._emit_porcelain_log("W", message, sep, *objects)
+
+        return LOG_CONSOLE.print(
+            f"[bold yellow]warn:[/bold yellow] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
 
 
-def stdout(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    return STDOUT_CONSOLE.print(message, *objects, sep=sep, end=end)
-
-
-def D(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-    _stack_offset_delta: int = 0,
-) -> None:
-    if not is_debug():
-        return
-
-    if is_porcelain():
-        return _emit_porcelain_log("D", message, sep, *objects)
-
-    return DEBUG_CONSOLE.log(
-        message,
-        *objects,
-        sep=sep,
-        end=end,
-        _stack_offset=2 + _stack_offset_delta,
-    )
-
-
-def F(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("F", message, sep, *objects)
-
-    return LOG_CONSOLE.print(
-        f"[bold red]fatal error:[/bold red] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
-
-
-def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("I", message, sep, *objects)
-
-    return LOG_CONSOLE.print(
-        f"[bold green]info:[/bold green] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
-
-
-def W(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("W", message, sep, *objects)
-
-    return LOG_CONSOLE.print(
-        f"[bold yellow]warn:[/bold yellow] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
+# For refactoring ease
+DEFAULT_LOGGER = RuyiLogger()
+stdout = DEFAULT_LOGGER.stdout
+D = DEFAULT_LOGGER.D
+F = DEFAULT_LOGGER.F
+I = DEFAULT_LOGGER.I  # noqa: E741 # the name intentionally mimics Android logging for brevity
+W = DEFAULT_LOGGER.W
 
 
 def humanize_list(
