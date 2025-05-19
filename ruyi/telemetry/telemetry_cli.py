@@ -1,7 +1,7 @@
 import argparse
 import datetime
 
-from .. import config, log
+from .. import config
 from ..cli.cmd import RootCommand
 from .provider import set_telemetry_mode
 
@@ -84,11 +84,13 @@ class TelemetryStatusCommand(
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
         verbose: bool = args.verbose
         if not verbose:
-            log.stdout(cfg.telemetry_mode)
+            cfg.logger.stdout(cfg.telemetry_mode)
             return 0
 
         if cfg.telemetry is None:
-            log.I("telemetry mode is [green]off[/]: no further data will be collected")
+            cfg.logger.I(
+                "telemetry mode is [green]off[/]: no further data will be collected"
+            )
             return 0
 
         cfg.telemetry.print_telemetry_notice(for_cli_verbose_output=True)
@@ -107,7 +109,7 @@ class TelemetryUploadCommand(
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
         if cfg.telemetry is None:
-            log.W("telemetry is disabled, nothing to upload")
+            cfg.logger.W("telemetry is disabled, nothing to upload")
             return 0
 
         cfg.telemetry.flush(upload_now=True)

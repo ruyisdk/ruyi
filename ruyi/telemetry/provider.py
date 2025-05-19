@@ -146,7 +146,7 @@ class TelemetryProvider:
             # configure the PM telemetry endpoint
             api_url = self._detect_pm_api_url(self._gc)
 
-        store = TelemetryStore(scope, store_root, api_url)
+        store = TelemetryStore(self.logger, scope, store_root, api_url)
         self._stores[scope] = store
 
     def _detect_pm_api_url(self, gc: "GlobalConfig") -> str | None:
