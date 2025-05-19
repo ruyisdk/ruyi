@@ -339,9 +339,12 @@ def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
             raise ValueError(f"the unpack method {m} must be resolved prior to use")
 
 
-def ensure_unpack_cmd_for_method(m: UnpackMethod) -> None | NoReturn:
+def ensure_unpack_cmd_for_method(
+    logger: RuyiLogger,
+    m: UnpackMethod,
+) -> None | NoReturn:
     required_cmds = _get_unpack_cmds_for_method(m)
     if not required_cmds:
         return None
 
-    return prereqs.ensure_cmds(*required_cmds)
+    return prereqs.ensure_cmds(logger, *required_cmds)

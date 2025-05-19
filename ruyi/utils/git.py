@@ -29,7 +29,7 @@ from rich.text import Text
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .. import log
+from ..log import RuyiLogger
 
 
 class RemoteGitProgressIndicator(
@@ -91,6 +91,7 @@ class RemoteGitProgressIndicator(
 
 # based on https://stackoverflow.com/questions/27749418/implementing-pull-with-pygit2
 def pull_ff_or_die(
+    logger: RuyiLogger,
     repo: Repository,
     remote_name: str,
     remote_url: str,
@@ -98,10 +99,12 @@ def pull_ff_or_die(
 ) -> None:
     remote = repo.remotes[remote_name]
     if remote.url != remote_url:
-        log.D(f"updating url of remote {remote_name} from {remote.url} to {remote_url}")
+        logger.D(
+            f"updating url of remote {remote_name} from {remote.url} to {remote_url}"
+        )
         repo.remotes.set_url("origin", remote_url)
 
-    log.D("fetching")
+    logger.D("fetching")
     with RemoteGitProgressIndicator() as pr:
         remote.fetch(callbacks=pr)
 
@@ -117,23 +120,23 @@ def pull_ff_or_die(
 
     if merge_analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE:
         # nothing to do
-        log.D("repo state already up-to-date")
+        logger.D("repo state already up-to-date")
         return
 
     if merge_analysis & (GIT_MERGE_ANALYSIS_UNBORN | GIT_MERGE_ANALYSIS_FASTFORWARD):
         # simple fast-forwarding is enough in both cases
-        log.D(f"fast-forwarding repo to {remote_head}")
+        logger.D(f"fast-forwarding repo to {remote_head}")
         tgt = repo.get(remote_head)
         assert tgt is not None
         repo.checkout_tree(tgt)
 
-        log.D(f"updating branch {branch_name} HEAD")
+        logger.D(f"updating branch {branch_name} HEAD")
         local_branch_ref = repo.lookup_reference(f"refs/heads/{branch_name}")
         local_branch_ref.set_target(remote_head)
         repo.head.set_target(remote_head)
         return
 
     # cannot handle these cases
-    log.F("cannot fast-forward repo to newly fetched state")
-    log.I("manual intervention is required to avoid data loss")
+    logger.F("cannot fast-forward repo to newly fetched state")
+    logger.I("manual intervention is required to avoid data loss")
     raise SystemExit(1)

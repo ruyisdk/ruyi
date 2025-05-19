@@ -414,7 +414,7 @@ class ExtractCommand(
                 df_decl = dfs[df_name]
                 urls = mr.get_distfile_urls(df_decl)
                 dest = os.path.join(cfg.ensure_distfiles_dir(), df_name)
-                ensure_unpack_cmd_for_method(df_decl.unpack_method)
+                ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
                 df = Distfile(urls, dest, df_decl, mr)
                 df.ensure(logger)
 
@@ -618,7 +618,7 @@ def _do_install_binary_pkg_to(
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_method(df_decl.unpack_method)
+        ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl, mr)
         df.ensure(logger)
 
@@ -701,7 +701,7 @@ def _do_install_blob_pkg_to(
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_method(df_decl.unpack_method)
+        ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl, mr)
         df.ensure(logger)
 

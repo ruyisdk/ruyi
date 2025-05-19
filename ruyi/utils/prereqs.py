@@ -2,7 +2,7 @@ import shutil
 import sys
 from typing import Final, NoReturn
 
-from ruyi import log
+from ..log import RuyiLogger, humanize_list
 
 
 def has_cmd_in_path(cmd: str) -> bool:
@@ -31,7 +31,7 @@ def init_cmd_presence_map() -> None:
         _CMD_PRESENCE_MAP[cmd] = has_cmd_in_path(cmd)
 
 
-def ensure_cmds(*cmds: str) -> None | NoReturn:
+def ensure_cmds(logger: RuyiLogger, *cmds: str) -> None | NoReturn:
     if not _CMD_PRESENCE_MAP:
         init_cmd_presence_map()
 
@@ -44,9 +44,9 @@ def ensure_cmds(*cmds: str) -> None | NoReturn:
     if not absent_cmds:
         return None
 
-    cmds_str = log.humanize_list(absent_cmds, item_color="yellow")
-    log.F(
+    cmds_str = humanize_list(absent_cmds, item_color="yellow")
+    logger.F(
         f"The command(s) {cmds_str} cannot be found in PATH, which [yellow]ruyi[/yellow] requires"
     )
-    log.I("please install and retry")
+    logger.I("please install and retry")
     sys.exit(1)

@@ -6,7 +6,7 @@ from typing import Final, NamedTuple
 
 import certifi
 
-from .. import log
+from ..log import RuyiLogger
 
 _orig_get_default_verify_paths: Final = ssl.get_default_verify_paths
 _cached_paths: ssl.DefaultVerifyPaths | None = None
@@ -16,11 +16,13 @@ def get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
     global _cached_paths
 
     if _cached_paths is None:
-        _cached_paths = _get_system_ssl_default_verify_paths()
+        # no way to pass in the logger because of the function signature
+        # so we have to use a new logger
+        _cached_paths = _get_system_ssl_default_verify_paths(RuyiLogger())
     return _cached_paths
 
 
-def _get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
+def _get_system_ssl_default_verify_paths(logger: RuyiLogger) -> ssl.DefaultVerifyPaths:
     orig_paths = _orig_get_default_verify_paths()
     if sys.platform != "linux":
         return orig_paths
@@ -29,24 +31,24 @@ def _get_system_ssl_default_verify_paths() -> ssl.DefaultVerifyPaths:
 
     # imitate the stdlib flow but with overridden data source
     try:
-        parts = _query_linux_system_ssl_default_cert_paths()
+        parts = _query_linux_system_ssl_default_cert_paths(logger)
         if parts is None:
-            log.W("failed to probe system libcrypto")
+            logger.W("failed to probe system libcrypto")
         else:
             result = to_ssl_paths(parts)
     except Exception as e:
-        log.D(f"cannot get system libcrypto default cert paths: {e}")
+        logger.D(f"cannot get system libcrypto default cert paths: {e}")
 
     if result is None:
-        log.D("falling back to probing hard-coded paths")
+        logger.D("falling back to probing hard-coded paths")
         result = probe_fallback_verify_paths()
 
     if result != orig_paths:
-        log.D(
+        logger.D(
             "get_default_verify_paths() values differ between bundled and system libssl"
         )
-        log.D(f"bundled: {orig_paths}")
-        log.D(f" system: {result}")
+        logger.D(f"bundled: {orig_paths}")
+        logger.D(f" system: {result}")
 
     return result
 
@@ -80,6 +82,7 @@ def _decode_fsdefault_or_none(val: int | None) -> str:
 
 
 def _query_linux_system_ssl_default_cert_paths(
+    logger: RuyiLogger,
     soname: str | None = None,
 ) -> tuple[str, str, str, str] | None:
     if soname is None:
@@ -89,9 +92,9 @@ def _query_linux_system_ssl_default_cert_paths(
         # functions actually reside in libcrypto, after all.
         for soname in ("libcrypto.so", "libcrypto.so.3", "libcrypto.so.1.1"):
             try:
-                return _query_linux_system_ssl_default_cert_paths(soname)
+                return _query_linux_system_ssl_default_cert_paths(logger, soname)
             except OSError as e:
-                log.D(f"soname {soname} not working: {e}")
+                logger.D(f"soname {soname} not working: {e}")
                 continue
 
         return None
@@ -110,11 +113,11 @@ def _query_linux_system_ssl_default_cert_paths(
         _decode_fsdefault_or_none(lib.X509_get_default_cert_dir()),
     )
 
-    log.D(f"got defaults from system libcrypto {soname}")
-    log.D(f"X509_get_default_cert_file_env() = {result[0]}")
-    log.D(f"X509_get_default_cert_file() = {result[1]}")
-    log.D(f"X509_get_default_cert_dir_env() = {result[2]}")
-    log.D(f"X509_get_default_cert_dir() = {result[3]}")
+    logger.D(f"got defaults from system libcrypto {soname}")
+    logger.D(f"X509_get_default_cert_file_env() = {result[0]}")
+    logger.D(f"X509_get_default_cert_file() = {result[1]}")
+    logger.D(f"X509_get_default_cert_dir_env() = {result[2]}")
+    logger.D(f"X509_get_default_cert_dir() = {result[3]}")
 
     return result
 

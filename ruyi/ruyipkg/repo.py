@@ -307,7 +307,7 @@ class MetadataRepo:
 
     def sync(self) -> None:
         repo = self.ensure_git_repo()
-        return pull_ff_or_die(repo, "origin", self.remote, self.branch)
+        return pull_ff_or_die(self.logger, repo, "origin", self.remote, self.branch)
 
     @property
     def global_config(self) -> "GlobalConfig":
