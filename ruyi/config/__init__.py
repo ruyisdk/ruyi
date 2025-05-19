@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 
 import tomlkit
 
-from .. import argv0, is_env_var_truthy, log
+from .. import argv0, is_env_var_truthy
+from ..log import RuyiLogger, DEFAULT_LOGGER
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryProvider
 from ..utils.xdg_basedir import XDGBaseDir
@@ -108,7 +109,7 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
-        self.logger = log.DEFAULT_LOGGER
+        self.logger = DEFAULT_LOGGER
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
@@ -129,7 +130,7 @@ class GlobalConfig:
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
-                    log.W(
+                    self.logger.W(
                         f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
                     )
                     self.override_repo_dir = None
@@ -343,7 +344,7 @@ class GlobalConfig:
         except FileNotFoundError:
             return
 
-        log.D(f"applying config: {data}")
+        self.logger.D(f"applying config: {data}")
         self.apply_config(data)
 
     @classmethod
@@ -351,11 +352,11 @@ class GlobalConfig:
         obj = cls()
 
         for config_path in obj.iter_preset_configs():
-            log.D(f"trying config file from preset location: {config_path}")
+            obj.logger.D(f"trying config file from preset location: {config_path}")
             obj.try_apply_config_file(config_path)
 
         for config_path in obj.iter_xdg_configs():
-            log.D(f"trying config file from XDG path: {config_path}")
+            obj.logger.D(f"trying config file from XDG path: {config_path}")
             obj.try_apply_config_file(config_path)
 
         # let environment variable take precedence
@@ -512,15 +513,15 @@ class RuyiVenvConfig:
         return None
 
     @classmethod
-    def load_from_venv(cls) -> "Self | None":
+    def load_from_venv(cls, logger: RuyiLogger) -> "Self | None":
         venv_root = cls.probe_venv_root()
         if venv_root is None:
             return None
 
         if cls.explicit_ruyi_venv_root() is not None:
-            log.D(f"using explicit venv root {venv_root}")
+            logger.D(f"using explicit venv root {venv_root}")
         else:
-            log.D(f"detected implicit venv root {venv_root}")
+            logger.D(f"detected implicit venv root {venv_root}")
 
         venv_config_path = venv_root / "ruyi-venv.toml"
         with open(venv_config_path, "rb") as fp:

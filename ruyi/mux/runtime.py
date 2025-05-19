@@ -5,7 +5,7 @@ import shlex
 from typing import Final, List, NoReturn
 
 from .. import log
-from ..config import RuyiVenvConfig
+from ..config import GlobalConfig, RuyiVenvConfig
 
 
 def _run_exit_handlers_and_execv(
@@ -19,11 +19,11 @@ def _run_exit_handlers_and_execv(
     os.execv(path, argv)
 
 
-def mux_main(argv: List[str]) -> int | NoReturn:
+def mux_main(gc: GlobalConfig, argv: List[str]) -> int | NoReturn:
     basename = os.path.basename(argv[0])
     log.D(f"mux mode: argv = {argv}, basename = {basename}")
 
-    vcfg = RuyiVenvConfig.load_from_venv()
+    vcfg = RuyiVenvConfig.load_from_venv(gc.logger)
     if vcfg is None:
         log.F("the Ruyi toolchain mux is not configured")
         log.I("check out `ruyi venv` for making a virtual environment")

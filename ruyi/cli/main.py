@@ -39,7 +39,7 @@ def main(argv: list[str]) -> int:
                 target=target,
             )
 
-        return mux_main(argv)
+        return mux_main(gc, argv)
 
     import ruyi
     from .. import log
