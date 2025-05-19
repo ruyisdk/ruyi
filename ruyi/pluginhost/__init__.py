@@ -150,6 +150,10 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         self.is_cmd = is_cmd
 
     @property
+    def host_logger(self) -> RuyiLogger:
+        return self._phctx.host_logger
+
+    @property
     def root(self) -> pathlib.Path:
         return self._phctx.plugin_root
 
