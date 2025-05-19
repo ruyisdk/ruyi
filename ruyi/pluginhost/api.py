@@ -10,8 +10,8 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
-from .. import log
 from ..cli import user_input
+from ..log import RuyiLogger
 from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
@@ -36,7 +36,9 @@ class RuyiHostAPI:
         self._ev = phctx.make_evaluator()
         self._allow_host_fs_access = allow_host_fs_access
 
-        self._logger = RuyiPluginLogger()
+        self._logger = RuyiPluginLogger(self._phctx.host_logger)
+        # TODO: unify into the plugin logger
+        self._host_logger = self._phctx.host_logger
 
     @property
     def ruyi_version(self) -> str:
@@ -62,20 +64,20 @@ class RuyiHostAPI:
         return self._logger
 
     def cli_ask_for_choice(self, prompt: str, choice_texts: list[str]) -> int:
-        return user_input.ask_for_choice(prompt, choice_texts)
+        return user_input.ask_for_choice(self._host_logger, prompt, choice_texts)
 
     def cli_ask_for_file(self, prompt: str) -> str:
-        return user_input.ask_for_file(prompt)
+        return user_input.ask_for_file(self._host_logger, prompt)
 
     def cli_ask_for_kv_choice(self, prompt: str, choices_kv: dict[str, str]) -> str:
-        return user_input.ask_for_kv_choice(prompt, choices_kv)
+        return user_input.ask_for_kv_choice(self._host_logger, prompt, choices_kv)
 
     def cli_ask_for_yesno_confirmation(
         self,
         prompt: str,
         default: bool = False,
     ) -> bool:
-        return user_input.ask_for_yesno_confirmation(prompt, default)
+        return user_input.ask_for_yesno_confirmation(self._host_logger, prompt, default)
 
     def call_subprocess_argv(
         self,
@@ -97,8 +99,8 @@ class RuyiHostAPI:
 
 
 class RuyiPluginLogger:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, host_logger: RuyiLogger) -> None:
+        self._h = host_logger
 
     def stdout(
         self,
@@ -107,7 +109,7 @@ class RuyiPluginLogger:
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        log.stdout(message, *objects, sep=sep, end=end)
+        self._h.stdout(message, *objects, sep=sep, end=end)
 
     def D(
         self,
@@ -116,7 +118,7 @@ class RuyiPluginLogger:
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        log.D(message, *objects, sep=sep, end=end, _stack_offset_delta=1)
+        self._h.D(message, *objects, sep=sep, end=end, _stack_offset_delta=1)
 
     def W(
         self,
@@ -125,7 +127,7 @@ class RuyiPluginLogger:
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        log.W(message, *objects, sep=sep, end=end)
+        self._h.W(message, *objects, sep=sep, end=end)
 
     def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
         self,
@@ -134,7 +136,7 @@ class RuyiPluginLogger:
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        log.I(message, *objects, sep=sep, end=end)
+        self._h.I(message, *objects, sep=sep, end=end)
 
     def F(
         self,
@@ -143,7 +145,7 @@ class RuyiPluginLogger:
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        log.F(message, *objects, sep=sep, end=end)
+        self._h.F(message, *objects, sep=sep, end=end)
 
 
 def _ruyi_plugin_rev(

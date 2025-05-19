@@ -154,30 +154,31 @@ class SelfUninstallCommand(
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         purge: bool = args.purge
         consent: bool = args.consent
-        log.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
+        logger.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
 
         if cfg.is_installation_externally_managed:
-            log.F(
+            logger.F(
                 "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
             )
-            log.I("please uninstall via the external manager instead")
+            logger.I("please uninstall via the external manager instead")
             return 1
 
         if not ruyi.IS_PACKAGED:
-            log.F(
+            logger.F(
                 "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
             )
             return 1
 
         if not consent:
-            log.stdout(UNINSTALL_NOTICE)
-            if not user_input.ask_for_yesno_confirmation("Continue?"):
-                log.I("aborting uninstallation")
+            logger.stdout(UNINSTALL_NOTICE)
+            if not user_input.ask_for_yesno_confirmation(logger, "Continue?"):
+                logger.I("aborting uninstallation")
                 return 0
         else:
-            log.I("uninstallation consent given over CLI, proceeding")
+            logger.I("uninstallation consent given over CLI, proceeding")
 
         _do_reset(
             cfg,
@@ -188,7 +189,7 @@ class SelfUninstallCommand(
             self_binary=True,
         )
 
-        log.I("[yellow]ruyi[/yellow] is uninstalled")
+        logger.I("[yellow]ruyi[/yellow] is uninstalled")
 
         return 0
 

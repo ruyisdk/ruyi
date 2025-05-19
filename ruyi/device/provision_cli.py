@@ -85,7 +85,7 @@ configuration does not allow so.
 """
     )
 
-    if not user_input.ask_for_yesno_confirmation("Continue?"):
+    if not user_input.ask_for_yesno_confirmation(log, "Continue?"):
         log.stdout(
             "\nExiting. You can restart the wizard whenever prepared.",
             end="\n\n",
@@ -98,6 +98,7 @@ configuration does not allow so.
 
     dev_choices = {k: v.display_name or "" for k, v in devices_by_id.items()}
     dev_id = user_input.ask_for_kv_choice(
+        log,
         "\nThe following devices are currently supported by the wizard. Please pick your device:",
         dev_choices,
     )
@@ -113,6 +114,7 @@ configuration does not allow so.
 
     variant_choices = [get_variant_display_name(dev, i) for i in variants]
     variant_idx = user_input.ask_for_choice(
+        log,
         "\nThe device has the following variants. Please choose the one corresponding to your hardware at hand:",
         variant_choices,
     )
@@ -129,6 +131,7 @@ configuration does not allow so.
     supported_combos.sort(key=lambda x: x.display_name or "")
     combo_choices = [combo.display_name or "" for combo in supported_combos]
     combo_idx = user_input.ask_for_choice(
+        log,
         "\nThe following system configurations are supported by the device variant you have chosen. Please pick the one you want to put on the device:",
         combo_choices,
     )
@@ -189,7 +192,7 @@ We are about to download and install the following packages for your device:
 """
     )
 
-    if not user_input.ask_for_yesno_confirmation("Proceed?"):
+    if not user_input.ask_for_yesno_confirmation(logger, "Proceed?"):
         logger.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
         return 1
 
@@ -237,7 +240,10 @@ information you will need later.
         )
         for part in requested_host_blkdevs:
             part_desc = get_part_desc(part)
-            path = user_input.ask_for_file(f"Please give the path for the {part_desc}:")
+            path = user_input.ask_for_file(
+                logger,
+                f"Please give the path for the {part_desc}:",
+            )
             host_blkdev_map[part] = path
 
     # final confirmation
@@ -261,7 +267,7 @@ We are about to:
     )
     logger.stdout(pretend_steps, end="\n\n")
 
-    if not user_input.ask_for_yesno_confirmation("Proceed with flashing?"):
+    if not user_input.ask_for_yesno_confirmation(logger, "Proceed with flashing?"):
         logger.stdout(
             "\nExiting. The device is not touched and you may re-start the wizard at will.",
             end="\n\n",
@@ -284,7 +290,8 @@ Please confirm it yourself before the flashing begins.
 """
             )
             if not user_input.ask_for_yesno_confirmation(
-                "Is the device identified by fastboot now?"
+                logger,
+                "Is the device identified by fastboot now?",
             ):
                 logger.stdout(
                     "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/yellow] is fixed for the device.",
@@ -495,7 +502,8 @@ def customize_package_versions(
         "By default, we'll install the latest version of each package, but in this case, other choices are possible."
     )
     if not user_input.ask_for_yesno_confirmation(
-        "Would you like to customize package versions?"
+        logger,
+        "Would you like to customize package versions?",
     ):
         return pkg_atoms
 
@@ -512,7 +520,8 @@ def customize_package_versions(
                     f"\nPackage [green]{atom_str}[/] already has version constraints."
                 )
                 if not user_input.ask_for_yesno_confirmation(
-                    "Would you like to change them?"
+                    logger,
+                    "Would you like to change them?",
                 ):
                     result.append(atom_str)
                     continue
@@ -574,6 +583,7 @@ def customize_package_versions(
 
             # Ask the user to select a version
             version_idx = user_input.ask_for_choice(
+                logger,
                 f"\nSelect a version for package [green]{category or ''}{('/' + package_name) if category else package_name}[/]:",
                 version_choices,
             )
@@ -594,6 +604,7 @@ def customize_package_versions(
             logger.stdout(f" * [green]{atom}[/]")
 
         confirmation = user_input.ask_for_choice(
+            logger,
             "\nHow would you like to proceed?",
             [
                 "Continue with these versions",

@@ -235,7 +235,7 @@ class MetadataRepo:
             FSEntityProvider(gc.logger, pathlib.Path(self.root) / "entities"),
             MetadataRepoEntityProvider(self),
         )
-        self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
+        self._plugin_host_ctx = PluginHostContext.new(gc.logger, self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property

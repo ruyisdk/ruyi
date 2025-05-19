@@ -7,7 +7,7 @@ import time
 from typing import TYPE_CHECKING, cast
 import uuid
 
-from .. import log
+from ..log import RuyiLogger
 from .node_info import NodeInfo, gather_node_info
 from .scope import TelemetryScope
 from .store import TelemetryStore
@@ -62,8 +62,11 @@ def set_telemetry_mode(
     show_cli_feedback: bool = True,
 ) -> None:
     """Set telemetry mode and consent time (if applicable) in the user preference."""
+
     from ..config.editor import ConfigEditor
     from ..config import schema
+
+    logger = gc.logger
 
     with ConfigEditor.work_on_user_local_config(gc) as ed:
         ed.set_value((schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_MODE), mode)
@@ -86,19 +89,21 @@ def set_telemetry_mode(
         return
     match mode:
         case "on":
-            log.I("telemetry data uploading is now enabled")
-            log.I(
+            logger.I("telemetry data uploading is now enabled")
+            logger.I(
                 "you can opt out at any time by running [yellow]ruyi telemetry optout[/]"
             )
         case "local":
-            log.I("telemetry mode is now set to local collection only")
-            log.I(
+            logger.I("telemetry mode is now set to local collection only")
+            logger.I(
                 "you can re-enable telemetry data uploading at any time by running [yellow]ruyi telemetry consent[/]"
             )
-            log.I("or opt out at any time by running [yellow]ruyi telemetry optout[/]")
+            logger.I(
+                "or opt out at any time by running [yellow]ruyi telemetry optout[/]"
+            )
         case "off":
-            log.I("telemetry data collection is now disabled")
-            log.I(
+            logger.I("telemetry data collection is now disabled")
+            logger.I(
                 "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
             )
         case _:
@@ -121,6 +126,10 @@ class TelemetryProvider:
         self.init_store(TelemetryScope(None))
         # TODO: add real multi-repo support
         self.init_store(TelemetryScope("ruyisdk"))
+
+    @property
+    def logger(self) -> RuyiLogger:
+        return self._gc.logger
 
     def store(self, scope: TelemetryScope) -> TelemetryStore | None:
         return self._stores.get(scope)
@@ -150,7 +159,9 @@ class TelemetryProvider:
             if repo_provided_url := gc.repo.get_telemetry_api_url("pm"):
                 cfg_src = "repo"
                 url = repo_provided_url
-        log.D(f"configured PM telemetry endpoint via {cfg_src}: {url or '(n/a)'}")
+        self.logger.D(
+            f"configured PM telemetry endpoint via {cfg_src}: {url or '(n/a)'}"
+        )
         return url
 
     @property
@@ -175,7 +186,7 @@ class TelemetryProvider:
 
         # either this is a fresh installation or we're forcing a refresh
         installation_id = uuid.uuid4()
-        log.D(
+        self.logger.D(
             f"initializing telemetry data store, installation_id={installation_id.hex}"
         )
         self.state_root.mkdir(parents=True, exist_ok=True)
@@ -217,14 +228,14 @@ class TelemetryProvider:
     def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
         if self.local_mode:
             if for_cli_verbose_output:
-                log.I(
+                self.logger.I(
                     "telemetry mode is [green]local[/]: local data collection only, no uploads"
                 )
             return
 
         now = time.time()
         if self.has_upload_consent(now) and not for_cli_verbose_output:
-            log.D("user has consented to telemetry upload")
+            self.logger.D("user has consented to telemetry upload")
             return
 
         upload_wday = self.upload_weekday()
@@ -242,14 +253,14 @@ class TelemetryProvider:
 
         today_is_upload_day = self.is_upload_day(now)
         if for_cli_verbose_output:
-            log.I(
+            self.logger.I(
                 "telemetry mode is [green]on[/]: data is collected and periodically uploaded"
             )
-            log.I(
+            self.logger.I(
                 f"non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {upload_wday_name}[/]"
             )
         else:
-            log.W(
+            self.logger.W(
                 f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
             )
 
@@ -261,26 +272,26 @@ class TelemetryProvider:
                         last_upload_time_str = time.strftime(
                             "%Y-%m-%d %H:%M:%S %z", time.localtime(last_upload_time)
                         )
-                        log.I(
+                        self.logger.I(
                             f"scope {scope}: usage information has already been uploaded today at {last_upload_time_str}"
                         )
                     else:
-                        log.I(
+                        self.logger.I(
                             f"scope {scope}: usage information has already been uploaded sometime today"
                         )
                 else:
-                    log.I(
+                    self.logger.I(
                         f"scope {scope}: the next upload will happen [bold green]today[/] if not already"
                     )
         else:
-            log.I(
+            self.logger.I(
                 f"the next upload will happen anytime [yellow]ruyi[/] is executed between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
             )
 
         if not for_cli_verbose_output:
-            log.I("in order to hide this banner:")
-            log.I("- opt out with [yellow]ruyi telemetry optout[/]")
-            log.I("- or give consent with [yellow]ruyi telemetry consent[/]")
+            self.logger.I("in order to hide this banner:")
+            self.logger.I("- opt out with [yellow]ruyi telemetry optout[/]")
+            self.logger.I("- or give consent with [yellow]ruyi telemetry consent[/]")
 
     def next_upload_day(self, time_now: float | None = None) -> int | None:
         upload_wday = self.upload_weekday()
@@ -314,7 +325,7 @@ class TelemetryProvider:
     def record(self, scope: TelemetryScope, kind: str, **params: object) -> None:
         if store := self.store(scope):
             return store.record(kind, **params)
-        log.D(f"no telemetry store for scope {scope}, discarding event")
+        self.logger.D(f"no telemetry store for scope {scope}, discarding event")
 
     def discard_events(self, v: bool = True) -> None:
         self._discard_events = v
@@ -325,10 +336,10 @@ class TelemetryProvider:
         # We may be self-uninstalling and purging all state data, and in this
         # case we don't want to record anything (thus re-creating directories).
         if self._discard_events:
-            log.D("discarding collected telemetry data")
+            self.logger.D("discarding collected telemetry data")
             return
 
-        log.D("flushing telemetry to persistent store")
+        self.logger.D("flushing telemetry to persistent store")
 
         for scope, store in self._stores.items():
             store.persist(now)
@@ -378,8 +389,12 @@ class TelemetryProvider:
 
         from ..cli import user_input
 
-        log.I(FIRST_RUN_PROMPT)
-        if not user_input.ask_for_yesno_confirmation("Do you agree?", True):
+        self.logger.I(FIRST_RUN_PROMPT)
+        if not user_input.ask_for_yesno_confirmation(
+            self.logger,
+            "Do you agree?",
+            True,
+        ):
             return
 
         self._upload_on_exit = True
