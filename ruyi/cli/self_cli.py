@@ -4,9 +4,7 @@ import pathlib
 import shutil
 from typing import Final
 
-import ruyi
 from .. import config
-from .. import log
 from . import user_input
 from .cmd import RootCommand
 
@@ -30,9 +28,7 @@ class SelfCommand(
     has_subcommands=True,
     help="Manage this Ruyi installation",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class SelfCleanCommand(
@@ -41,7 +37,11 @@ class SelfCleanCommand(
     help="Remove various Ruyi-managed data to reclaim storage",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--quiet",
             "-q",
@@ -86,6 +86,7 @@ class SelfCleanCommand(
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         quiet: bool = args.quiet
         all: bool = args.all
         distfiles: bool = args.distfiles
@@ -113,8 +114,8 @@ class SelfCleanCommand(
                 telemetry,
             ]
         ):
-            log.F("no data specified for cleaning")
-            log.I(
+            logger.F("no data specified for cleaning")
+            logger.I(
                 "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
             )
             return 1
@@ -139,7 +140,11 @@ class SelfUninstallCommand(
     help="Uninstall Ruyi",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--purge",
             action="store_true",
@@ -154,30 +159,31 @@ class SelfUninstallCommand(
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         purge: bool = args.purge
         consent: bool = args.consent
-        log.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
+        logger.D(f"ruyi self uninstall: purge={purge}, consent={consent}")
 
         if cfg.is_installation_externally_managed:
-            log.F(
+            logger.F(
                 "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
             )
-            log.I("please uninstall via the external manager instead")
+            logger.I("please uninstall via the external manager instead")
             return 1
 
-        if not ruyi.IS_PACKAGED:
-            log.F(
+        if not cfg.is_packaged:
+            logger.F(
                 "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
             )
             return 1
 
         if not consent:
-            log.stdout(UNINSTALL_NOTICE)
-            if not user_input.ask_for_yesno_confirmation("Continue?"):
-                log.I("aborting uninstallation")
+            logger.stdout(UNINSTALL_NOTICE)
+            if not user_input.ask_for_yesno_confirmation(logger, "Continue?"):
+                logger.I("aborting uninstallation")
                 return 0
         else:
-            log.I("uninstallation consent given over CLI, proceeding")
+            logger.I("uninstallation consent given over CLI, proceeding")
 
         _do_reset(
             cfg,
@@ -188,7 +194,7 @@ class SelfUninstallCommand(
             self_binary=True,
         )
 
-        log.I("[yellow]ruyi[/yellow] is uninstalled")
+        logger.I("[yellow]ruyi[/yellow] is uninstalled")
 
         return 0
 
@@ -207,10 +213,12 @@ def _do_reset(
     repo: bool = False,  # ignored if all_cache=True
     self_binary: bool = False,
 ) -> None:
+    logger = cfg.logger
+
     def status(s: str) -> None:
         if quiet:
             return
-        log.I(s)
+        logger.I(s)
 
     if installed_pkgs:
         status("removing installed packages")
@@ -260,7 +268,7 @@ def _do_reset(
                     break
 
             if not repo_is_below_cache_root:
-                log.W(
+                logger.W(
                     "not removing the Ruyi repo: it is outside of the Ruyi cache directory"
                 )
             else:
@@ -270,7 +278,7 @@ def _do_reset(
     if self_binary:
         status("removing the ruyi binary")
         try:
-            os.unlink(ruyi.self_exe())
+            os.unlink(cfg.self_exe)
         except FileNotFoundError:
             # we might have already removed ourselves during the purge; nothing to
             # do now.

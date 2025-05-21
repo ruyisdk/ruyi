@@ -1,18 +1,24 @@
 import os.path
 
-from .. import log
+from ..log import RuyiLogger
 
 
-def ask_for_yesno_confirmation(prompt: str, default: bool = False) -> bool:
+def ask_for_yesno_confirmation(
+    logger: RuyiLogger,
+    prompt: str,
+    default: bool = False,
+) -> bool:
     choices_help = "(Y/n)" if default else "(y/N)"
 
     while True:
         try:
-            log.stdout(f"{prompt} {choices_help} ", end="")
+            logger.stdout(f"{prompt} {choices_help} ", end="")
             user_input = input()
         except EOFError:
             yesno = "YES" if default else "NO"
-            log.W(f"EOF while reading user input, assuming the default choice {yesno}")
+            logger.W(
+                f"EOF while reading user input, assuming the default choice {yesno}"
+            )
             return default
 
         if not user_input:
@@ -22,11 +28,12 @@ def ask_for_yesno_confirmation(prompt: str, default: bool = False) -> bool:
         if user_input in {"N", "n", "no"}:
             return False
         else:
-            log.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
-            log.stdout("Accepted choices: Y/y/yes for YES, N/n/no for NO.")
+            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
+            logger.stdout("Accepted choices: Y/y/yes for YES, N/n/no for NO.")
 
 
 def ask_for_kv_choice(
+    logger: RuyiLogger,
     prompt: str,
     choices_kv: dict[str, str],
     default_key: str | None = None,
@@ -43,20 +50,21 @@ def ask_for_kv_choice(
         if default_idx is None:
             raise ValueError(f"Default choice key '{default_key}' not in choices")
 
-    choice = ask_for_choice(prompt, choices_prompts, default_idx)
+    choice = ask_for_choice(logger, prompt, choices_prompts, default_idx)
     return choices_kv_list[choice][0]
 
 
 def ask_for_choice(
+    logger: RuyiLogger,
     prompt: str,
     choices_texts: list[str],
     default_idx: int | None = None,
 ) -> int:
-    log.stdout(prompt, end="\n\n")
+    logger.stdout(prompt, end="\n\n")
     for i, choice_text in enumerate(choices_texts):
-        log.stdout(f"  {i + 1}. {choice_text}")
+        logger.stdout(f"  {i + 1}. {choice_text}")
 
-    log.stdout("")
+    logger.stdout("")
 
     nr_choices = len(choices_texts)
     if default_idx is not None:
@@ -77,8 +85,8 @@ def ask_for_choice(
         try:
             choice_int = int(user_input)
         except ValueError:
-            log.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
-            log.stdout(
+            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
+            logger.stdout(
                 f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
             )
             continue
@@ -86,13 +94,16 @@ def ask_for_choice(
         if 1 <= choice_int <= nr_choices:
             return choice_int - 1
 
-        log.stdout(f"Out-of-range input [yellow]'{user_input}'[/yellow].")
-        log.stdout(
+        logger.stdout(f"Out-of-range input [yellow]'{user_input}'[/yellow].")
+        logger.stdout(
             f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
         )
 
 
-def ask_for_file(prompt: str) -> str:
+def ask_for_file(
+    logger: RuyiLogger,
+    prompt: str,
+) -> str:
     while True:
         try:
             user_input = input(f"{prompt} ")
@@ -102,6 +113,6 @@ def ask_for_file(prompt: str) -> str:
         if os.path.exists(user_input):
             return user_input
 
-        log.stdout(
+        logger.stdout(
             f"[yellow]'{user_input}'[/yellow] is not a path to an existing file."
         )

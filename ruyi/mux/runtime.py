@@ -4,8 +4,8 @@ import re
 import shlex
 from typing import Final, List, NoReturn
 
-from .. import log
-from ..config import RuyiVenvConfig
+from ..config import GlobalConfig, RuyiVenvConfig
+from ..utils.global_mode import ProvidesGlobalMode
 
 
 def _run_exit_handlers_and_execv(
@@ -19,25 +19,30 @@ def _run_exit_handlers_and_execv(
     os.execv(path, argv)
 
 
-def mux_main(argv: List[str]) -> int | NoReturn:
-    basename = os.path.basename(argv[0])
-    log.D(f"mux mode: argv = {argv}, basename = {basename}")
+def mux_main(
+    gm: ProvidesGlobalMode,
+    gc: GlobalConfig,
+    argv: List[str],
+) -> int | NoReturn:
+    basename = os.path.basename(gm.argv0)
+    logger = gc.logger
+    logger.D(f"mux mode: argv = {argv}, basename = {basename}")
 
-    vcfg = RuyiVenvConfig.load_from_venv()
+    vcfg = RuyiVenvConfig.load_from_venv(gm, logger)
     if vcfg is None:
-        log.F("the Ruyi toolchain mux is not configured")
-        log.I("check out `ruyi venv` for making a virtual environment")
+        logger.F("the Ruyi toolchain mux is not configured")
+        logger.I("check out `ruyi venv` for making a virtual environment")
         return 1
 
-    direct_symlink_target = resolve_direct_symlink_target(argv[0], vcfg)
+    direct_symlink_target = resolve_direct_symlink_target(gm.argv0, vcfg)
     if direct_symlink_target is not None:
-        log.D(
+        logger.D(
             f"detected direct symlink target: {direct_symlink_target}, overriding basename"
         )
         basename = direct_symlink_target
 
     if basename == "ruyi-qemu":
-        return mux_qemu_main(argv, vcfg)
+        return mux_qemu_main(gc, vcfg, argv)
 
     # match the basename with one of the configured target tuples
     target_tuple: str | None = None
@@ -60,7 +65,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
             if not basename.startswith(f"{tgt_tuple}-"):
                 continue
 
-            log.D(f"matched target '{tgt_tuple}', data {tgt_data}")
+            logger.D(f"matched target '{tgt_tuple}', data {tgt_data}")
             target_tuple = tgt_tuple
             toolchain_bindir = tgt_data["toolchain_bindir"]
             toolchain_sysroot = tgt_data.get("toolchain_sysroot")
@@ -70,7 +75,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
         if toolchain_bindir is None:
             # should not happen
-            log.F(
+            logger.F(
                 f"internal error: no bindir configured for target [yellow]{target_tuple}[/]"
             )
             return 1
@@ -78,32 +83,32 @@ def mux_main(argv: List[str]) -> int | NoReturn:
         binpath = os.path.join(toolchain_bindir, basename)
 
     if target_tuple is None:
-        log.F(f"no configured target found for command [yellow]{basename}[/]")
+        logger.F(f"no configured target found for command [yellow]{basename}[/]")
         return 1
     if toolchain_flags is None:
-        log.F(f"no configured flags found for command [yellow]{basename}[/]")
+        logger.F(f"no configured flags found for command [yellow]{basename}[/]")
         return 1
 
-    log.D(f"binary to exec: {binpath}")
+    logger.D(f"binary to exec: {binpath}")
 
     argv_to_insert: list[str] | None = None
     if is_proxying_to_cc(basename):
-        log.D(f"{basename} is considered a CC")
+        logger.D(f"{basename} is considered a CC")
 
         argv_to_insert = []
 
         if is_proxying_to_clang(basename):
-            log.D(f"adding target for clang: {target_tuple}")
+            logger.D(f"adding target for clang: {target_tuple}")
             argv_to_insert.append(f"--target={target_tuple}")
             if gcc_install_dir is not None:
-                log.D(f"informing clang of GCC install dir: {gcc_install_dir}")
+                logger.D(f"informing clang of GCC install dir: {gcc_install_dir}")
                 argv_to_insert.append(f"--gcc-install-dir={gcc_install_dir}")
 
         argv_to_insert.extend(shlex.split(toolchain_flags))
-        log.D(f"parsed toolchain flags: {argv_to_insert}")
+        logger.D(f"parsed toolchain flags: {argv_to_insert}")
 
         if toolchain_sysroot is not None:
-            log.D(f"adding sysroot: {toolchain_sysroot}")
+            logger.D(f"adding sysroot: {toolchain_sysroot}")
             argv_to_insert.extend(("--sysroot", toolchain_sysroot))
 
     new_argv = [binpath]
@@ -114,7 +119,7 @@ def mux_main(argv: List[str]) -> int | NoReturn:
 
     ensure_venv_in_path(vcfg)
 
-    log.D(f"exec-ing with argv {new_argv}")
+    logger.D(f"exec-ing with argv {new_argv}")
     return _run_exit_handlers_and_execv(binpath, new_argv)
 
 
@@ -158,24 +163,29 @@ def is_proxying_to_clang(basename: str) -> bool:
     return "clang" in basename
 
 
-def mux_qemu_main(argv: List[str], vcfg: RuyiVenvConfig) -> int | NoReturn:
+def mux_qemu_main(
+    gc: GlobalConfig,
+    vcfg: RuyiVenvConfig,
+    argv: List[str],
+) -> int | NoReturn:
+    logger = gc.logger
     binpath = vcfg.qemu_bin
     if binpath is None:
-        log.F("this virtual environment has no QEMU-like emulator configured")
+        logger.F("this virtual environment has no QEMU-like emulator configured")
         return 1
 
     if vcfg.profile_emu_env is not None:
-        log.D(f"seeding QEMU environment with {vcfg.profile_emu_env}")
+        logger.D(f"seeding QEMU environment with {vcfg.profile_emu_env}")
         for k, v in vcfg.profile_emu_env.items():
             os.environ[k] = v
 
-    log.D(f"QEMU binary to exec: {binpath}")
+    logger.D(f"QEMU binary to exec: {binpath}")
 
     new_argv = [binpath]
     if len(argv) > 1:
         new_argv.extend(argv[1:])
 
-    log.D(f"exec-ing with argv {new_argv}")
+    logger.D(f"exec-ing with argv {new_argv}")
     return _run_exit_handlers_and_execv(binpath, new_argv)
 
 

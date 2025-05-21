@@ -20,7 +20,7 @@ from urllib import parse
 from pygit2 import clone_repository
 from pygit2.repository import Repository
 
-from .. import log
+from ..log import RuyiLogger
 from ..pluginhost import PluginHostContext
 from ..telemetry.scope import TelemetryScopeConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
@@ -154,7 +154,7 @@ class RepoConfig:
             raise RuntimeError("malformed v1 repo config")
         return cls(obj["mirrors"], obj.get("repo"), obj.get("telemetry"))
 
-    def get_dist_urls_for_file(self, url: str) -> list[str]:
+    def get_dist_urls_for_file(self, logger: RuyiLogger, url: str) -> list[str]:
         u = parse.urlparse(url)
         path = u.path.lstrip("/")
         match u.scheme:
@@ -167,7 +167,7 @@ class RepoConfig:
                 return [url]
             case _:
                 # deny others
-                log.W(f"unrecognized dist URL scheme: {u.scheme}")
+                logger.W(f"unrecognized dist URL scheme: {u.scheme}")
                 return []
 
     def get_mirror_urls_for_file(self, mirror_id: str, path: str) -> list[str]:
@@ -231,16 +231,21 @@ class MetadataRepo:
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
         self._entity_store: EntityStore = EntityStore(
-            FSEntityProvider(pathlib.Path(self.root) / "entities"),
+            gc.logger,
+            FSEntityProvider(gc.logger, pathlib.Path(self.root) / "entities"),
             MetadataRepoEntityProvider(self),
         )
-        self._plugin_host_ctx = PluginHostContext.new(self.plugin_root)
+        self._plugin_host_ctx = PluginHostContext.new(gc.logger, self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property
     def repo_id(self) -> str:
         # TODO: proper multi-repo support
         return "ruyisdk"
+
+    @property
+    def logger(self) -> RuyiLogger:
+        return self._gc.logger
 
     @property
     def plugin_root(self) -> pathlib.Path:
@@ -279,7 +284,7 @@ class MetadataRepo:
             self.repo = Repository(self.root)
             return self.repo
 
-        log.D(f"{self.root} does not exist, cloning from {self.remote}")
+        self.logger.D(f"{self.root} does not exist, cloning from {self.remote}")
 
         with RemoteGitProgressIndicator() as pr:
             repo = clone_repository(
@@ -302,7 +307,7 @@ class MetadataRepo:
 
     def sync(self) -> None:
         repo = self.ensure_git_repo()
-        return pull_ff_or_die(repo, "origin", self.remote, self.branch)
+        return pull_ff_or_die(self.logger, repo, "origin", self.remote, self.branch)
 
     @property
     def global_config(self) -> "GlobalConfig":
@@ -515,7 +520,10 @@ class MetadataRepo:
         cfg = self.config
         return list(
             itertools.chain(
-                *(cfg.get_dist_urls_for_file(url) for url in urls_to_expand)
+                *(
+                    cfg.get_dist_urls_for_file(self.logger, url)
+                    for url in urls_to_expand
+                )
             )
         )
 
@@ -535,7 +543,7 @@ class MetadataRepo:
                 try:
                     contents = fp.read()
                 except UnicodeDecodeError:
-                    log.W(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
+                    self.logger.W(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
                     continue
                 cache.add(f, contents)  # may fail but failures are harmless
 
@@ -561,10 +569,10 @@ class MetadataRepo:
 
         ret = self.eval_plugin_fn(plugin_entrypoint, args)
         if not isinstance(ret, int):
-            log.W(
+            self.logger.W(
                 f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int."
             )
-            log.I("forcing return code to 1; the plugin should be fixed")
+            self.logger.I("forcing return code to 1; the plugin should be fixed")
             ret = 1
         return ret
 

@@ -1,7 +1,7 @@
 import argparse
 import datetime
 
-from .. import config, log
+from .. import config
 from ..cli.cmd import RootCommand
 from .provider import set_telemetry_mode
 
@@ -13,9 +13,7 @@ class TelemetryCommand(
     has_subcommands=True,
     help="Manage your telemetry preferences",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class TelemetryConsentCommand(
@@ -25,7 +23,11 @@ class TelemetryConsentCommand(
     help="Give consent to telemetry data uploads",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -41,7 +43,11 @@ class TelemetryLocalCommand(
     help="Set telemetry mode to local collection only",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -57,7 +63,11 @@ class TelemetryOptoutCommand(
     help="Opt out of telemetry data collection",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -72,7 +82,11 @@ class TelemetryStatusCommand(
     help="Print the current telemetry mode",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -84,11 +98,13 @@ class TelemetryStatusCommand(
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
         verbose: bool = args.verbose
         if not verbose:
-            log.stdout(cfg.telemetry_mode)
+            cfg.logger.stdout(cfg.telemetry_mode)
             return 0
 
         if cfg.telemetry is None:
-            log.I("telemetry mode is [green]off[/]: no further data will be collected")
+            cfg.logger.I(
+                "telemetry mode is [green]off[/]: no further data will be collected"
+            )
             return 0
 
         cfg.telemetry.print_telemetry_notice(for_cli_verbose_output=True)
@@ -101,13 +117,17 @@ class TelemetryUploadCommand(
     help="Upload collected telemetry data now",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
     def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
         if cfg.telemetry is None:
-            log.W("telemetry is disabled, nothing to upload")
+            cfg.logger.W("telemetry is disabled, nothing to upload")
             return 0
 
         cfg.telemetry.flush(upload_now=True)

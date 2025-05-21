@@ -14,6 +14,7 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+from ..log import RuyiLogger
 from . import api
 from . import paths
 
@@ -41,6 +42,7 @@ EvalTy = TypeVar("EvalTy", bound=SupportsEvalFunction, covariant=True)
 class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @staticmethod
     def new(
+        host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
@@ -49,14 +51,16 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
         match plugin_backend:
             case "unsandboxed":
-                return UnsandboxedPluginHostContext(plugin_root)
+                return UnsandboxedPluginHostContext(host_logger, plugin_root)
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
 
     def __init__(
         self,
+        host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
     ) -> None:
+        self._host_logger = host_logger
         self._plugin_root = plugin_root
         # resolved path: finalized module
         self._module_cache: MutableMapping[str, ModuleTy] = {}
@@ -77,6 +81,10 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def make_evaluator(self) -> EvalTy:
         raise NotImplementedError
+
+    @property
+    def host_logger(self) -> RuyiLogger:
+        return self._host_logger
 
     @property
     def plugin_root(self) -> pathlib.Path:
@@ -140,6 +148,10 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         self.originating_file = originating_file
         self.module_cache = module_cache
         self.is_cmd = is_cmd
+
+    @property
+    def host_logger(self) -> RuyiLogger:
+        return self._phctx.host_logger
 
     @property
     def root(self) -> pathlib.Path:

@@ -2,13 +2,30 @@
 
 import os
 import sys
+
 import ruyi
-from ruyi import log
 from ruyi.utils.ci import is_running_in_ci
+from ruyi.utils.global_mode import (
+    EnvGlobalModeProvider,
+    ENV_FORCE_ALLOW_ROOT,
+    TRUTHY_ENV_VAR_VALUES,
+    is_env_var_truthy,
+)
+# NOTE: no imports that directly or indirectly pull in pygit2 should go here,
+# because import of pygit2 will fail if done before ssl_patch. Notably this
+# means no GlobalConfig here because it depends on ruyi.ruyipkg.repo.
 
 
-def is_allowed_to_run_as_root() -> bool:
-    if ruyi.is_env_var_truthy(ruyi.ENV_FORCE_ALLOW_ROOT):
+def _is_running_as_root() -> bool:
+    # this is way too simplistic but works on *nix systems which is all we
+    # support currently
+    if hasattr(os, "getuid"):
+        return os.getuid() == 0
+    return False
+
+
+def _is_allowed_to_run_as_root() -> bool:
+    if is_env_var_truthy(os.environ, ENV_FORCE_ALLOW_ROOT):
         return True
     if is_running_in_ci(os.environ):
         # CI environments are usually considered to be controlled, and safe
@@ -18,22 +35,25 @@ def is_allowed_to_run_as_root() -> bool:
 
 
 def entrypoint() -> None:
-    if ruyi.is_running_as_root() and not is_allowed_to_run_as_root():
-        log.F("refusing to run as super user outside CI without explicit consent")
+    from ruyi.log import RuyiConsoleLogger
 
-        choices = ", ".join(f"'{x}'" for x in ruyi.TRUTHY_ENV_VAR_VALUES)
-        log.I(
-            f"re-run with environment variable [yellow]{ruyi.ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
+    gm = EnvGlobalModeProvider(os.environ)
+    logger = RuyiConsoleLogger(gm)
+
+    if _is_running_as_root() and not _is_allowed_to_run_as_root():
+        logger.F("refusing to run as super user outside CI without explicit consent")
+
+        choices = ", ".join(f"'{x}'" for x in TRUTHY_ENV_VAR_VALUES)
+        logger.I(
+            f"re-run with environment variable [yellow]{ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
         )
         sys.exit(1)
 
-    ruyi.init_debug_status()
-
     if not sys.argv:
-        log.F("no argv?")
+        logger.F("no argv?")
         sys.exit(1)
 
-    if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
+    if gm.is_packaged and ruyi.__compiled__.standalone:
         # If we're running from a bundle, our bundled libssl may remember a
         # different path for loading certificates than appropriate for the
         # current system, in which case the pygit2 import will fail. To avoid
@@ -45,7 +65,6 @@ def entrypoint() -> None:
 
         del ssl_patch
 
-    from ruyi.cli.main import main
     from ruyi.utils.nuitka import get_nuitka_self_exe, get_argv0
 
     # note down our own executable path, for identity-checking in mux, if not
@@ -53,16 +72,15 @@ def entrypoint() -> None:
     #
     # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
     # work if it's just `ruyi` so we have to check our parent process in that case
-    if hasattr(ruyi, "__compiled__"):
-        ruyi.IS_PACKAGED = True
-        self_exe = get_nuitka_self_exe()
-    else:
-        self_exe = __file__
-
+    self_exe = get_nuitka_self_exe() if gm.is_packaged else __file__
     sys.argv[0] = get_argv0()
-    ruyi.record_self_exe(sys.argv[0], __file__, self_exe)
+    gm.record_self_exe(sys.argv[0], __file__, self_exe)
 
-    sys.exit(main(sys.argv))
+    from ruyi.config import GlobalConfig
+    from ruyi.cli.main import main
+
+    gc = GlobalConfig.load_from_config(gm, logger)
+    sys.exit(main(gm, gc, sys.argv))
 
 
 if __name__ == "__main__":

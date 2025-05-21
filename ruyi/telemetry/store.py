@@ -8,7 +8,7 @@ import uuid
 
 import requests
 
-from .. import log
+from ..log import RuyiLogger
 from ..utils.url import urljoin_for_sure
 from ..version import RUYI_SEMVER, RUYI_USER_AGENT
 from .aggregate import UploadPayload, aggregate_events
@@ -39,10 +39,12 @@ def time_bucket_from_filename(filename: str) -> str | None:
 class TelemetryStore:
     def __init__(
         self,
+        logger: RuyiLogger,
         scope: TelemetryScope,
         store_root: pathlib.Path,
         api_url: str | None = None,
     ) -> None:
+        self._logger = logger
         self.scope = scope
         self.store_root = store_root
         self.api_url = api_url
@@ -87,12 +89,12 @@ class TelemetryStore:
 
     def persist(self, now: float | None = None) -> None:
         if not self._events:
-            log.D(f"scope {self.scope}: no event to persist")
+            self._logger.D(f"scope {self.scope}: no event to persist")
             return
 
         now = time.time() if now is None else now
 
-        log.D(f"scope {self.scope}: flushing telemetry to persistent store")
+        self._logger.D(f"scope {self.scope}: flushing telemetry to persistent store")
 
         raw_events_dir = self.raw_events_dir
         raw_events_dir.mkdir(parents=True, exist_ok=True)
@@ -108,7 +110,9 @@ class TelemetryStore:
                 fp.write(payload.encode("utf-8"))
                 fp.write(b"\n")
 
-        log.D(f"scope {self.scope}: persisted {len(self._events)} telemetry event(s)")
+        self._logger.D(
+            f"scope {self.scope}: persisted {len(self._events)} telemetry event(s)"
+        )
 
     def upload(self, installation_data: NodeInfo | None = None) -> None:
         self.prepare_data_for_upload(installation_data)
@@ -186,7 +190,7 @@ class TelemetryStore:
         endpoint: str,
     ) -> None:
         api_path = urljoin_for_sure(endpoint, "upload-v1")
-        log.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
+        self._logger.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
 
         resp = requests.post(
             api_path,
@@ -197,12 +201,12 @@ class TelemetryStore:
         )
 
         if not (200 <= resp.status_code < 300):
-            log.D(
+            self._logger.D(
                 f"scope {self.scope}: telemetry upload failed: status code {resp.status_code}, content {resp.content.decode('utf-8', 'replace')}"
             )
             return
 
-        log.D(
+        self._logger.D(
             f"scope {self.scope}: telemetry upload ok: status code {resp.status_code}"
         )
 
@@ -211,4 +215,6 @@ class TelemetryStore:
         try:
             f.rename(self.uploaded_dir / f.name)
         except OSError as e:
-            log.D(f"scope {self.scope}: failed to move uploaded payload away: {e}")
+            self._logger.D(
+                f"scope {self.scope}: failed to move uploaded payload away: {e}"
+            )

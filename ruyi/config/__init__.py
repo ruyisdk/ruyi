@@ -17,9 +17,10 @@ if TYPE_CHECKING:
 
 import tomlkit
 
-from .. import argv0, is_env_var_truthy, log
+from ..log import RuyiLogger
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryProvider
+from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 from . import schema
@@ -38,9 +39,6 @@ else:
 DEFAULT_APP_NAME: Final = "ruyi"
 DEFAULT_REPO_URL: Final = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH: Final = "main"
-
-ENV_TELEMETRY_OPTOUT_KEY: Final = "RUYI_TELEMETRY_OPTOUT"
-ENV_VENV_ROOT_KEY: Final = "RUYI_VENV"
 
 
 def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:
@@ -88,7 +86,10 @@ class GlobalConfigRootType(TypedDict):
 
 
 class GlobalConfig:
-    def __init__(self) -> None:
+    def __init__(self, gm: ProvidesGlobalMode, logger: RuyiLogger) -> None:
+        self._gm = gm
+        self.logger = logger
+
         # all defaults
         self.override_repo_dir: str | None = None
         self.override_repo_url: str | None = None
@@ -127,7 +128,7 @@ class GlobalConfig:
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
-                    log.W(
+                    self.logger.W(
                         f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
                     )
                     self.override_repo_dir = None
@@ -201,6 +202,42 @@ class GlobalConfig:
             return self.telemetry_upload_consent_time
         else:
             return None
+
+    @property
+    def argv0(self) -> str:
+        return self._gm.argv0
+
+    @property
+    def main_file(self) -> str:
+        return self._gm.main_file
+
+    @property
+    def self_exe(self) -> str:
+        return self._gm.self_exe
+
+    @property
+    def is_debug(self) -> bool:
+        return self._gm.is_debug
+
+    @property
+    def is_experimental(self) -> bool:
+        return self._gm.is_experimental
+
+    @property
+    def is_packaged(self) -> bool:
+        return self._gm.is_packaged
+
+    @property
+    def is_porcelain(self) -> bool:
+        return self._gm.is_porcelain
+
+    @property
+    def is_telemetry_optout(self) -> bool:
+        return self._gm.is_telemetry_optout
+
+    @property
+    def venv_root(self) -> str | None:
+        return self._gm.venv_root
 
     @property
     def lang_code(self) -> str:
@@ -341,23 +378,23 @@ class GlobalConfig:
         except FileNotFoundError:
             return
 
-        log.D(f"applying config: {data}")
+        self.logger.D(f"applying config: {data}")
         self.apply_config(data)
 
     @classmethod
-    def load_from_config(cls) -> "Self":
-        obj = cls()
+    def load_from_config(cls, gm: ProvidesGlobalMode, logger: RuyiLogger) -> "Self":
+        obj = cls(gm, logger)
 
         for config_path in obj.iter_preset_configs():
-            log.D(f"trying config file from preset location: {config_path}")
+            obj.logger.D(f"trying config file from preset location: {config_path}")
             obj.try_apply_config_file(config_path)
 
         for config_path in obj.iter_xdg_configs():
-            log.D(f"trying config file from XDG path: {config_path}")
+            obj.logger.D(f"trying config file from XDG path: {config_path}")
             obj.try_apply_config_file(config_path)
 
         # let environment variable take precedence
-        if is_env_var_truthy(ENV_TELEMETRY_OPTOUT_KEY):
+        if gm.is_telemetry_optout:
             obj._telemetry_mode = "off"
 
         return obj
@@ -487,19 +524,19 @@ class RuyiVenvConfig:
         self._cached_cmd_targets_dir = self._ruyi_priv_dir / "cached-cmd-targets"
 
     @classmethod
-    def explicit_ruyi_venv_root(cls) -> str | None:
-        return os.environ.get(ENV_VENV_ROOT_KEY)
+    def explicit_ruyi_venv_root(cls, gm: ProvidesGlobalMode) -> str | None:
+        return gm.venv_root
 
     @classmethod
-    def probe_venv_root(cls) -> pathlib.Path | None:
-        if explicit_root := cls.explicit_ruyi_venv_root():
+    def probe_venv_root(cls, gm: ProvidesGlobalMode) -> pathlib.Path | None:
+        if explicit_root := cls.explicit_ruyi_venv_root(gm):
             return pathlib.Path(explicit_root)
 
         # check ../.. from argv[0]
         # this only works if it contains a path separator, otherwise it's really
         # hard without an explicit root (/proc/*/exe points to the resolved file,
         # but we want the path to the first symlink without any symlink dereference)
-        argv0_path = argv0()
+        argv0_path = gm.argv0
         if os.path.sep not in argv0_path:
             return None
 
@@ -510,15 +547,19 @@ class RuyiVenvConfig:
         return None
 
     @classmethod
-    def load_from_venv(cls) -> "Self | None":
-        venv_root = cls.probe_venv_root()
+    def load_from_venv(
+        cls,
+        gm: ProvidesGlobalMode,
+        logger: RuyiLogger,
+    ) -> "Self | None":
+        venv_root = cls.probe_venv_root(gm)
         if venv_root is None:
             return None
 
-        if cls.explicit_ruyi_venv_root() is not None:
-            log.D(f"using explicit venv root {venv_root}")
+        if cls.explicit_ruyi_venv_root(gm) is not None:
+            logger.D(f"using explicit venv root {venv_root}")
         else:
-            log.D(f"detected implicit venv root {venv_root}")
+            logger.D(f"detected implicit venv root {venv_root}")
 
         venv_config_path = venv_root / "ruyi-venv.toml"
         with open(venv_config_path, "rb") as fp:

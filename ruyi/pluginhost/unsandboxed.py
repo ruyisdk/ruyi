@@ -10,7 +10,6 @@ from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cas
 if TYPE_CHECKING:
     from typing_extensions import Buffer
 
-from .. import log
 from . import PluginHostContext, BasePluginLoader
 from .api import RuyiHostAPI
 
@@ -101,7 +100,7 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
         program: str,
         ruyi_host_bridge: Callable[[object], RuyiHostAPI],
     ) -> UnsandboxedModuleDict:
-        log.D(f"unsandboxed module load: path {resolved_path}")
+        self.host_logger.D(f"unsandboxed module load: path {resolved_path}")
 
         sub_loader = self.make_sub_loader(resolved_path)
 

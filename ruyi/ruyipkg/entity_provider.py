@@ -10,7 +10,7 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
-from .. import log
+from ..log import RuyiLogger
 
 
 class EntityError(Exception):
@@ -156,13 +156,16 @@ class FSEntityProvider(BaseEntityProvider):
     subdirectories organized by entity type.
     """
 
-    def __init__(self, entities_root: os.PathLike[Any]) -> None:
+    def __init__(self, logger: RuyiLogger, entities_root: os.PathLike[Any]) -> None:
         """Initialize the filesystem-based entity provider.
 
         Args:
+            logger: Logger instance to use.
             entities_root: Path to the root directory containing entity data.
                            The ``_schemas`` directory should be a subdirectory of this path.
         """
+
+        self._logger = logger
         self._entities_root = pathlib.Path(entities_root)
         self._schemas_root = self._entities_root / "_schemas"
 
@@ -175,13 +178,13 @@ class FSEntityProvider(BaseEntityProvider):
         schemas: dict[str, object] = {}
 
         if not os.path.isdir(self._schemas_root):
-            log.D(f"entity schemas directory not found: {self._schemas_root}")
+            self._logger.D(f"entity schemas directory not found: {self._schemas_root}")
             return schemas
 
         try:
             schema_files = list(self._schemas_root.glob("*.jsonschema"))
         except IOError as e:
-            log.W(
+            self._logger.W(
                 f"failed to access entity schemas directory {self._schemas_root}: {e}"
             )
             return schemas
@@ -194,13 +197,15 @@ class FSEntityProvider(BaseEntityProvider):
                 with open(p, "r", encoding="utf-8") as f:
                     schema = json.load(f)
             except (IOError, json.JSONDecodeError) as e:
-                log.D(f"failed to load schema for entity type '{entity_type}': {e}")
+                self._logger.D(
+                    f"failed to load schema for entity type '{entity_type}': {e}"
+                )
                 continue
 
             # Cache the schema
             schemas[entity_type] = schema
 
-        log.D(f"discovered entity types from schemas: {list(schemas.keys())}")
+        self._logger.D(f"discovered entity types from schemas: {list(schemas.keys())}")
         return schemas
 
     def load_entities(
@@ -223,7 +228,7 @@ class FSEntityProvider(BaseEntityProvider):
             type_dir = self._entities_root / entity_type
 
             if not type_dir.exists():
-                log.D(f"entity type directory does not exist: {type_dir}")
+                self._logger.D(f"entity type directory does not exist: {type_dir}")
                 continue
 
             for file_path in type_dir.glob("*.toml"):
@@ -231,7 +236,7 @@ class FSEntityProvider(BaseEntityProvider):
                     with open(file_path, "rb") as f:
                         data = tomllib.load(f)
                 except (IOError, tomllib.TOMLDecodeError) as e:
-                    log.W(f"failed to load entity from {file_path}: {e}")
+                    self._logger.W(f"failed to load entity from {file_path}: {e}")
                     continue
 
                 # Extract entity ID from filename (remove .toml extension)
@@ -241,5 +246,5 @@ class FSEntityProvider(BaseEntityProvider):
                 entities[entity_type][entity_id] = data
 
         entity_counts = {t: len(e) for t, e in entities.items()}
-        log.D(f"count of loaded entities from filesystem: {entity_counts}")
+        self._logger.D(f"count of loaded entities from filesystem: {entity_counts}")
         return entities

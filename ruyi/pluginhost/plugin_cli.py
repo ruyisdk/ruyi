@@ -10,7 +10,7 @@ class AdminRunPluginCommand(
     help="Run a plugin-defined command",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "cmd_name",
             type=str,

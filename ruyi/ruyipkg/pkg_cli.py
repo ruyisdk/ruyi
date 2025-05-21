@@ -15,9 +15,9 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .. import is_experimental, is_porcelain, log
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..log import RuyiLogger
 from ..telemetry.scope import TelemetryScope
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .atom import Atom
@@ -38,7 +38,7 @@ class ListCommand(
     help="List available packages in configured repository",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -69,7 +69,7 @@ class ListCommand(
             help="Match packages whose names contain the given string",
         )
 
-        if is_experimental():
+        if gc.is_experimental:
             p.add_argument(
                 "--related-to-entity",
                 action=ListFilterAction,
@@ -80,35 +80,36 @@ class ListCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         verbose = args.verbose
         filters: ListFilter = args.filters
 
         if not filters:
-            if is_porcelain():
+            if cfg.is_porcelain:
                 # we don't want to print message for humans in case of porcelain
                 # mode, but we don't want to retain the old behavior of listing
                 # all packages either
                 return 1
 
-            log.F("no filter specified for list operation")
-            log.I(
+            logger.F("no filter specified for list operation")
+            logger.I(
                 "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
             )
             return 1
 
         augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo, filters))
 
-        if is_porcelain():
+        if cfg.is_porcelain:
             return _do_list_porcelain(augmented_pkgs)
 
         if not verbose:
-            return _do_list_non_verbose(augmented_pkgs)
+            return _do_list_non_verbose(logger, augmented_pkgs)
 
         for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
             if i > 0:
-                log.stdout("\n")
+                logger.stdout("\n")
 
-            _print_pkg_detail(ver.pm, cfg.lang_code)
+            _print_pkg_detail(logger, ver.pm, cfg.lang_code)
 
         return 0
 
@@ -245,15 +246,18 @@ class AugmentedPkg:
         }
 
 
-def _do_list_non_verbose(augmented_pkgs: list[AugmentedPkg]) -> int:
-    log.stdout("List of available packages:\n")
+def _do_list_non_verbose(
+    logger: RuyiLogger,
+    augmented_pkgs: list[AugmentedPkg],
+) -> int:
+    logger.stdout("List of available packages:\n")
 
     for ap in augmented_pkgs:
-        log.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
+        logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
         for ver in ap.versions:
             comments_str = f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
             slug_str = f" slug: [yellow]{ver.pm.slug}[/yellow]" if ver.pm.slug else ""
-            log.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
+            logger.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
 
     return 0
 
@@ -279,51 +283,52 @@ def _do_list_porcelain(augmented_pkgs: list[AugmentedPkg]) -> int:
 
 
 def _print_pkg_detail(
+    logger: RuyiLogger,
     pm: BoundPackageManifest,
     lang_code: str,
 ) -> None:
-    log.stdout(
+    logger.stdout(
         f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
     )
 
     if pm.slug is not None:
-        log.stdout(f"* Slug: [yellow]{pm.slug}[/yellow]")
+        logger.stdout(f"* Slug: [yellow]{pm.slug}[/yellow]")
     else:
-        log.stdout("* Slug: (none)")
-    log.stdout(f"* Package kind: {sorted(pm.kind)}")
-    log.stdout(f"* Vendor: {pm.vendor_name}")
+        logger.stdout("* Slug: (none)")
+    logger.stdout(f"* Package kind: {sorted(pm.kind)}")
+    logger.stdout(f"* Vendor: {pm.vendor_name}")
     if upstream_ver := pm.upstream_version:
-        log.stdout(f"* Upstream version number: {upstream_ver}")
+        logger.stdout(f"* Upstream version number: {upstream_ver}")
     else:
-        log.stdout("* Upstream version number: (undeclared)")
-    log.stdout("")
+        logger.stdout("* Upstream version number: (undeclared)")
+    logger.stdout("")
 
     sv = pm.service_level
     if sv.has_known_issues:
-        log.stdout("\nPackage has known issue(s):\n")
+        logger.stdout("\nPackage has known issue(s):\n")
         for x in sv.render_known_issues(pm.repo.messages, lang_code):
-            log.stdout(x, end="\n\n")
+            logger.stdout(x, end="\n\n")
 
     df = pm.distfiles()
-    log.stdout(f"Package declares {len(df)} distfile(s):\n")
+    logger.stdout(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
-        log.stdout(f"* [green]{dd.name}[/green]")
-        log.stdout(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
+        logger.stdout(f"* [green]{dd.name}[/green]")
+        logger.stdout(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
         for kind, csum in dd.checksums.items():
-            log.stdout(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
+            logger.stdout(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
 
     if bm := pm.binary_metadata:
-        log.stdout("\n### Binary artifacts\n")
+        logger.stdout("\n### Binary artifacts\n")
         for host, distfile_names in bm.data.items():
-            log.stdout(f"* Host [green]{host}[/green]: {distfile_names}")
+            logger.stdout(f"* Host [green]{host}[/green]: {distfile_names}")
 
     if tm := pm.toolchain_metadata:
-        log.stdout("\n### Toolchain metadata\n")
-        log.stdout(f"* Target: [bold][green]{tm.target}[/green][/bold]")
-        log.stdout(f"* Flavors: {tm.flavors}")
-        log.stdout("* Components:")
+        logger.stdout("\n### Toolchain metadata\n")
+        logger.stdout(f"* Target: [bold][green]{tm.target}[/green][/bold]")
+        logger.stdout(f"* Flavors: {tm.flavors}")
+        logger.stdout("* Components:")
         for tc in tm.components:
-            log.stdout(
+            logger.stdout(
                 f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]'
             )
 
@@ -341,7 +346,7 @@ class ExtractCommand(
     help="Fetch package(s) then extract to current directory",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -357,9 +362,10 @@ class ExtractCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        logger = cfg.logger
         host = args.host
         atom_strs: set[str] = set(args.atom)
-        log.D(f"about to extract for host {host}: {atom_strs}")
+        logger.D(f"about to extract for host {host}: {atom_strs}")
 
         mr = cfg.repo
 
@@ -367,24 +373,24 @@ class ExtractCommand(
             a = Atom.parse(a_str)
             pm = a.match_in_repo(mr, cfg.include_prereleases)
             if pm is None:
-                log.F(f"atom {a_str} matches no package in the repository")
+                logger.F(f"atom {a_str} matches no package in the repository")
                 return 1
             pkg_name = pm.name_for_installation
 
             sv = pm.service_level
             if sv.has_known_issues:
-                log.W("package has known issue(s)")
+                logger.W("package has known issue(s)")
                 for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
-                    log.I(s)
+                    logger.I(s)
 
             bm = pm.binary_metadata
             sm = pm.source_metadata
             if bm is None and sm is None:
-                log.F(f"don't know how to extract package [green]{pkg_name}[/green]")
+                logger.F(f"don't know how to extract package [green]{pkg_name}[/green]")
                 return 2
 
             if bm is not None and sm is not None:
-                log.F(
+                logger.F(
                     f"cannot handle package [green]{pkg_name}[/green]: package is both binary and source"
                 )
                 return 2
@@ -396,7 +402,7 @@ class ExtractCommand(
                 distfiles_for_host = sm.get_distfile_names_for_host(host)
 
             if not distfiles_for_host:
-                log.F(
+                logger.F(
                     f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
                 )
                 return 2
@@ -407,17 +413,17 @@ class ExtractCommand(
                 df_decl = dfs[df_name]
                 urls = mr.get_distfile_urls(df_decl)
                 dest = os.path.join(cfg.ensure_distfiles_dir(), df_name)
-                ensure_unpack_cmd_for_method(df_decl.unpack_method)
+                ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
                 df = Distfile(urls, dest, df_decl, mr)
-                df.ensure()
+                df.ensure(logger)
 
-                log.I(
+                logger.I(
                     f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
                 )
                 # unpack into CWD
-                df.unpack(None)
+                df.unpack(None, logger)
 
-            log.I(
+            logger.I(
                 f"package [green]{pkg_name}[/green] extracted to current working directory"
             )
 
@@ -431,7 +437,7 @@ class InstallCommand(
     help="Install package from configured repository",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -484,21 +490,22 @@ def do_install_atoms(
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
-    log.D(f"about to install for host {canonicalized_host}: {atom_strs}")
+    logger = config.logger
+    logger.D(f"about to install for host {canonicalized_host}: {atom_strs}")
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
         pm = a.match_in_repo(mr, config.include_prereleases)
         if pm is None:
-            log.F(f"atom {a_str} matches no package in the repository")
+            logger.F(f"atom {a_str} matches no package in the repository")
             return 1
         pkg_name = pm.name_for_installation
 
         sv = pm.service_level
         if sv.has_known_issues:
-            log.W("package has known issue(s)")
+            logger.W("package has known issue(s)")
             for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
-                log.I(s)
+                logger.I(s)
 
         if tm := config.telemetry:
             tm.record(
@@ -531,7 +538,9 @@ def do_install_atoms(
                 return ret
             continue
 
-        log.F(f"don't know how to handle non-binary package [green]{pkg_name}[/green]")
+        logger.F(
+            f"don't know how to handle non-binary package [green]{pkg_name}[/green]"
+        )
         return 2
 
     return 0
@@ -545,6 +554,7 @@ def _do_install_binary_pkg(
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
+    logger = config.logger
     bm = pm.binary_metadata
     assert bm is not None
 
@@ -552,10 +562,10 @@ def _do_install_binary_pkg(
     install_root = config.global_binary_install_root(str(canonicalized_host), pkg_name)
     if is_root_likely_populated(install_root):
         if not reinstall:
-            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
-        log.W(
+        logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
         )
         shutil.rmtree(install_root)
@@ -575,7 +585,7 @@ def _do_install_binary_pkg(
             return ret
         os.rename(tmp_root, install_root)
 
-    log.I(
+    logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
     )
     return 0
@@ -589,6 +599,7 @@ def _do_install_binary_pkg_to(
     fetch_only: bool,
     install_root: str,
 ) -> int:
+    logger = config.logger
     bm = pm.binary_metadata
     assert bm is not None
 
@@ -597,7 +608,7 @@ def _do_install_binary_pkg_to(
     pkg_name = pm.name_for_installation
     distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
     if not distfiles_for_host:
-        log.F(
+        logger.F(
             f"package [green]{pkg_name}[/green] declares no binary for host {canonicalized_host}"
         )
         return 2
@@ -606,20 +617,20 @@ def _do_install_binary_pkg_to(
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_method(df_decl.unpack_method)
+        ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl, mr)
-        df.ensure()
+        df.ensure(logger)
 
         if fetch_only:
-            log.D(
+            logger.D(
                 "skipping installation because [yellow]--fetch-only[/yellow] is given"
             )
             continue
 
-        log.I(
+        logger.I(
             f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
-        df.unpack(install_root)
+        df.unpack(install_root, logger)
 
     return 0
 
@@ -631,6 +642,7 @@ def _do_install_blob_pkg(
     fetch_only: bool,
     reinstall: bool,
 ) -> int:
+    logger = config.logger
     bm = pm.blob_metadata
     assert bm is not None
 
@@ -638,10 +650,10 @@ def _do_install_blob_pkg(
     install_root = config.global_blob_install_root(pkg_name)
     if is_root_likely_populated(install_root):
         if not reinstall:
-            log.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
-        log.W(
+        logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
         )
         shutil.rmtree(install_root)
@@ -660,7 +672,7 @@ def _do_install_blob_pkg(
             return ret
         os.rename(tmp_root, install_root)
 
-    log.I(
+    logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
     )
     return 0
@@ -673,6 +685,7 @@ def _do_install_blob_pkg_to(
     fetch_only: bool,
     install_root: str,
 ) -> int:
+    logger = config.logger
     bm = pm.blob_metadata
     assert bm is not None
 
@@ -680,26 +693,26 @@ def _do_install_blob_pkg_to(
     dfs = pm.distfiles()
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
-        log.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
+        logger.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
         return 2
 
     for df_name in distfile_names:
         df_decl = dfs[df_name]
         urls = mr.get_distfile_urls(df_decl)
         dest = os.path.join(config.ensure_distfiles_dir(), df_name)
-        ensure_unpack_cmd_for_method(df_decl.unpack_method)
+        ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(urls, dest, df_decl, mr)
-        df.ensure()
+        df.ensure(logger)
 
         if fetch_only:
-            log.D(
+            logger.D(
                 "skipping installation because [yellow]--fetch-only[/yellow] is given"
             )
             continue
 
-        log.I(
+        logger.I(
             f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
         )
-        df.unpack_or_symlink(install_root)
+        df.unpack_or_symlink(install_root, logger)
 
     return 0

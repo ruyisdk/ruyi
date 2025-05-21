@@ -3,17 +3,23 @@ from typing import Any, Callable, Iterator, Mapping
 import fastjsonschema
 from fastjsonschema.exceptions import JsonSchemaException
 
-from .. import log
+from ..log import RuyiLogger
 from .entity_provider import BaseEntity, BaseEntityProvider, EntityValidationError
 
 
 class EntityStore:
-    def __init__(self, *providers: BaseEntityProvider) -> None:
+    def __init__(
+        self,
+        logger: RuyiLogger,
+        *providers: BaseEntityProvider,
+    ) -> None:
         """Initialize the entity store.
 
         Args:
+            logger: The logger to use.
             providers: A list of entity providers to use for loading entity data.
         """
+        self._logger = logger
         self._providers = providers
 
         self._entity_types: set[str] = set()
@@ -47,7 +53,7 @@ class EntityStore:
                     self._entity_types.add(entity_type)
                     self._entities[entity_type] = {}
 
-        log.D(f"discovered entity types from schemas: {self._entity_types}")
+        self._logger.D(f"discovered entity types from schemas: {self._entity_types}")
         self._discovered = True
 
     def _get_validator(self, entity_type: str) -> Callable[[object], object | None]:
@@ -57,7 +63,7 @@ class EntityStore:
 
         schema = self._schemas.get(entity_type)
         if not schema:
-            log.W(f"no schema found for entity type: {entity_type}")
+            self._logger.W(f"no schema found for entity type: {entity_type}")
             # Return a simple validator that accepts anything
             return lambda x: x
 
@@ -66,7 +72,7 @@ class EntityStore:
             self._validators[entity_type] = validator
             return validator
         except Exception as e:
-            log.W(f"failed to compile schema for {entity_type}: {e}")
+            self._logger.W(f"failed to compile schema for {entity_type}: {e}")
             # Return a simple validator that accepts anything
             return lambda x: x
 
@@ -122,7 +128,7 @@ class EntityStore:
                         related_entity._add_reverse_ref(str(entity))
 
         entity_counts = {t: len(entities) for t, entities in self._entities.items()}
-        log.D(f"count of loaded entities: {entity_counts}")
+        self._logger.D(f"count of loaded entities: {entity_counts}")
 
     def get_entity_types(self) -> Iterator[str]:
         """Get all available entity types from the schemas."""

@@ -1,13 +1,14 @@
+import abc
 import datetime
 import io
-import time
-from typing import Any, Final, IO, Optional
 import sys
+import time
+from typing import Any, TextIO
 
-from rich.console import Console, ConsoleRenderable
+from rich.console import Console, RenderableType
 from rich.text import Text
 
-from .. import is_debug, is_porcelain
+from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
 
@@ -26,22 +27,10 @@ def log_time_formatter(x: datetime.datetime) -> Text:
     return Text(f"debug: [{x.isoformat()}]")
 
 
-STDOUT_CONSOLE: Final = Console(file=sys.stdout, highlight=False, soft_wrap=True)
-DEBUG_CONSOLE: Final = Console(
-    file=sys.stderr,
-    log_time_format=log_time_formatter,
-    soft_wrap=True,
-)
-LOG_CONSOLE: Final = Console(file=sys.stderr, highlight=False, soft_wrap=True)
-PORCELAIN_SINK: Final = PorcelainOutput(sys.stderr.buffer)
-
-Renderable = str | ConsoleRenderable
-
-
 def _make_porcelain_log(
     t: int,
     lvl: str,
-    message: Renderable,
+    message: RenderableType,
     sep: str,
     *objects: Any,
 ) -> PorcelainLog:
@@ -56,99 +45,190 @@ def _make_porcelain_log(
         }
 
 
-def _emit_porcelain_log(
-    lvl: str,
-    message: Renderable,
-    sep: str = " ",
-    *objects: Any,
-) -> None:
-    t = int(time.time() * 1000000)
-    obj = _make_porcelain_log(t, lvl, message, sep, *objects)
-    PORCELAIN_SINK.emit(obj)
+class RuyiLogger(metaclass=abc.ABCMeta):
+    def __init__(self) -> None:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def log_console(self) -> Console:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def stdout(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def D(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        _stack_offset_delta: int = 0,
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def F(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def W(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        raise NotImplementedError
 
 
-def stdout(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    return STDOUT_CONSOLE.print(message, *objects, sep=sep, end=end)
+class RuyiConsoleLogger(RuyiLogger):
+    def __init__(
+        self,
+        gm: ProvidesGlobalMode,
+        stdout: TextIO = sys.stdout,
+        stderr: TextIO = sys.stderr,
+    ) -> None:
+        super().__init__()
 
+        self._gm = gm
+        self._stdout_console = Console(
+            file=stdout,
+            highlight=False,
+            soft_wrap=True,
+        )
+        self._debug_console = Console(
+            file=stderr,
+            log_time_format=log_time_formatter,
+            soft_wrap=True,
+        )
+        self._log_console = Console(
+            file=stderr,
+            highlight=False,
+            soft_wrap=True,
+        )
+        self._porcelain_sink = PorcelainOutput(stderr.buffer)
 
-def D(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-    _stack_offset_delta: int = 0,
-) -> None:
-    if not is_debug():
-        return
+    @property
+    def log_console(self) -> Console:
+        return self._log_console
 
-    if is_porcelain():
-        return _emit_porcelain_log("D", message, sep, *objects)
+    def _emit_porcelain_log(
+        self,
+        lvl: str,
+        message: RenderableType,
+        sep: str = " ",
+        *objects: Any,
+    ) -> None:
+        t = int(time.time() * 1000000)
+        obj = _make_porcelain_log(t, lvl, message, sep, *objects)
+        self._porcelain_sink.emit(obj)
 
-    return DEBUG_CONSOLE.log(
-        message,
-        *objects,
-        sep=sep,
-        end=end,
-        _stack_offset=2 + _stack_offset_delta,
-    )
+    def stdout(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        return self._stdout_console.print(message, *objects, sep=sep, end=end)
 
+    def D(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+        _stack_offset_delta: int = 0,
+    ) -> None:
+        if not self._gm.is_debug:
+            return
 
-def F(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("F", message, sep, *objects)
+        if self._gm.is_porcelain:
+            return self._emit_porcelain_log("D", message, sep, *objects)
 
-    return LOG_CONSOLE.print(
-        f"[bold red]fatal error:[/bold red] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
+        return self._debug_console.log(
+            message,
+            *objects,
+            sep=sep,
+            end=end,
+            _stack_offset=2 + _stack_offset_delta,
+        )
 
+    def F(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        if self._gm.is_porcelain:
+            return self._emit_porcelain_log("F", message, sep, *objects)
 
-def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-    file: Optional[IO[str]] = None,
-    flush: bool = False,
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("I", message, sep, *objects)
+        return self._log_console.print(
+            f"[bold red]fatal error:[/bold red] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
 
-    return LOG_CONSOLE.print(
-        f"[bold green]info:[/bold green] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
+    def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        if self._gm.is_porcelain:
+            return self._emit_porcelain_log("I", message, sep, *objects)
 
+        return self._log_console.print(
+            f"[bold green]info:[/bold green] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
 
-def W(
-    message: Renderable,
-    *objects: Any,
-    sep: str = " ",
-    end: str = "\n",
-) -> None:
-    if is_porcelain():
-        return _emit_porcelain_log("W", message, sep, *objects)
+    def W(
+        self,
+        message: RenderableType,
+        *objects: Any,
+        sep: str = " ",
+        end: str = "\n",
+    ) -> None:
+        if self._gm.is_porcelain:
+            return self._emit_porcelain_log("W", message, sep, *objects)
 
-    return LOG_CONSOLE.print(
-        f"[bold yellow]warn:[/bold yellow] {message}",
-        *objects,
-        sep=sep,
-        end=end,
-    )
+        return self._log_console.print(
+            f"[bold yellow]warn:[/bold yellow] {message}",
+            *objects,
+            sep=sep,
+            end=end,
+        )
 
 
 def humanize_list(

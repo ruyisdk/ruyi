@@ -3,6 +3,7 @@ from types import TracebackType
 
 import pytest
 
+from ruyi.log import RuyiLogger
 from ruyi.pluginhost import PluginHostContext
 
 from ..fixtures import RuyiFileFixtureFactory
@@ -10,6 +11,7 @@ from ..fixtures import RuyiFileFixtureFactory
 
 def test_api_with_(
     ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
 ) -> None:
     class MockContextManager(AbstractContextManager[int]):
         def __init__(self) -> None:
@@ -30,7 +32,7 @@ def test_api_with_(
             return None
 
     with ruyi_file.plugin_suite("with_") as plugin_root:
-        phctx = PluginHostContext.new(plugin_root)
+        phctx = PluginHostContext.new(ruyi_logger, plugin_root)
         ev = phctx.make_evaluator()
 
         fn1 = phctx.get_from_plugin("foo", "fn1")

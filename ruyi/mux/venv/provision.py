@@ -11,9 +11,12 @@ import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
-from ... import log, self_exe
+
+from ...config import GlobalConfig
+from ...log import RuyiLogger
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
+from ...utils.global_mode import ProvidesGlobalMode
 from . import ConfiguredTargetTuple
 from .data import TEMPLATES
 from .emulator_cfg import ResolvedEmulatorProg
@@ -52,21 +55,11 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
     return tmpl.render(data)
 
 
-def render_and_write(
-    dest: PathLike[Any],
-    template_name: str,
-    data: dict[str, Any],
-) -> None:
-    log.D(f"rendering template '{template_name}' with data {data}")
-    content = render_template_str(template_name, data).encode("utf-8")
-    log.D(f"writing {dest}")
-    with open(dest, "wb") as fp:
-        fp.write(content)
-
 
 class VenvMaker:
     def __init__(
         self,
+        gc: GlobalConfig,
         profile: ProfileProxy,
         targets: list[ConfiguredTargetTuple],
         dest: PathLike[Any],
@@ -74,6 +67,7 @@ class VenvMaker:
         emulator_root: PathLike[Any] | None,
         override_name: str | None = None,
     ) -> None:
+        self.gc = gc
         self.profile = profile
         self.targets = targets
         self.venv_root = pathlib.Path(dest)
@@ -82,6 +76,22 @@ class VenvMaker:
         self.override_name = override_name
 
         self.bindir = self.venv_root / "bin"
+
+    @property
+    def logger(self) -> RuyiLogger:
+        return self.gc.logger
+
+    def render_and_write(
+        self,
+        dest: PathLike[Any],
+        template_name: str,
+        data: dict[str, Any],
+    ) -> None:
+        self.logger.D(f"rendering template '{template_name}' with data {data}")
+        content = render_template_str(template_name, data).encode("utf-8")
+        self.logger.D(f"writing {dest}")
+        with open(dest, "wb") as fp:
+            fp.write(content)
 
     def sysroot_srcdir(self, target_tuple: str | None) -> pathlib.Path | None:
         if target_tuple is None:
@@ -120,7 +130,11 @@ class VenvMaker:
             "profile": self.profile.id,
             "sysroot": self.sysroot_destdir(None),
         }
-        render_and_write(venv_root / "ruyi-venv.toml", "ruyi-venv.toml", env_data)
+        self.render_and_write(
+            venv_root / "ruyi-venv.toml",
+            "ruyi-venv.toml",
+            env_data,
+        )
 
         for i, tgt in enumerate(self.targets):
             is_primary = i == 0
@@ -131,7 +145,7 @@ class VenvMaker:
             "RUYI_VENV_NAME": self.override_name,
         }
 
-        render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
+        self.render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
 
         qemu_bin: PathLike[Any] | None = None
         profile_emu_env: dict[str, str] | None = None
@@ -148,7 +162,7 @@ class VenvMaker:
             binfmt_data = {
                 "resolved_progs": resolved_emu_progs,
             }
-            render_and_write(
+            self.render_and_write(
                 venv_root / "binfmt.conf",
                 "binfmt.conf",
                 binfmt_data,
@@ -161,11 +175,11 @@ class VenvMaker:
                 qemu_bin = pathlib.Path(self.emulator_root) / p.relative_path
                 profile_emu_env = resolved_emu_progs[i].env
 
-                log.D("symlinking the ruyi-qemu wrapper")
-                os.symlink(self_exe(), bindir / "ruyi-qemu")
+                self.logger.D("symlinking the ruyi-qemu wrapper")
+                os.symlink(self.gc.self_exe, bindir / "ruyi-qemu")
 
         # provide initial cached configuration to venv
-        render_and_write(
+        self.render_and_write(
             venv_root / "ruyi-cache.v2.toml",
             "ruyi-cache.toml",
             self.make_venv_cache_data(
@@ -189,7 +203,7 @@ class VenvMaker:
             for tgt in self.targets
         }
 
-        cmd_metadata_map = make_cmd_metadata_map(self.targets)
+        cmd_metadata_map = make_cmd_metadata_map(self.logger, self.targets)
 
         return {
             "profile_emu_env": profile_emu_env,
@@ -213,7 +227,7 @@ class VenvMaker:
             sysroot_srcdir = tgt["toolchain_sysroot"]
             assert sysroot_srcdir is not None
 
-            log.D(f"copying sysroot for {target_tuple}")
+            self.logger.D(f"copying sysroot for {target_tuple}")
             shutil.copytree(
                 sysroot_srcdir,
                 sysroot_destdir,
@@ -222,16 +236,17 @@ class VenvMaker:
             )
 
             if is_primary:
-                log.D("symlinking primary sysroot into place")
+                self.logger.D("symlinking primary sysroot into place")
                 primary_sysroot_destdir = self.sysroot_destdir(None)
                 assert primary_sysroot_destdir is not None
                 os.symlink(sysroot_destdir.name, primary_sysroot_destdir)
 
-        log.D(f"symlinking {target_tuple} binaries into venv")
+        self.logger.D(f"symlinking {target_tuple} binaries into venv")
         toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
-        symlink_binaries(toolchain_bindir, bindir)
+        symlink_binaries(self.gc, self.logger, toolchain_bindir, bindir)
 
         make_llvm_tool_aliases(
+            self.logger,
             bindir,
             target_tuple,
             tgt["binutils_flavor"] == "llvm",
@@ -281,21 +296,21 @@ class VenvMaker:
             "cmake_toolchain_file": str(cmake_toolchain_file_path),
             "meson_additional_binaries": meson_additional_binaries,
         }
-        render_and_write(
+        self.render_and_write(
             cmake_toolchain_file_path,
             "toolchain.cmake",
             toolchain_file_data,
         )
 
         meson_cross_file_path = venv_root / f"meson-cross.{target_tuple}.ini"
-        render_and_write(
+        self.render_and_write(
             meson_cross_file_path,
             "meson-cross.ini",
             toolchain_file_data,
         )
 
         if is_primary:
-            log.D(
+            self.logger.D(
                 f"making cmake & meson file symlinks to primary target {target_tuple}"
             )
             primary_cmake_toolchain_file_path = venv_root / "toolchain.cmake"
@@ -307,15 +322,18 @@ class VenvMaker:
             os.symlink(meson_cross_file_path.name, primary_meson_cross_file_path)
 
 
-def iter_binaries_to_symlink(bindir: pathlib.Path) -> Iterator[pathlib.Path]:
+def iter_binaries_to_symlink(
+    logger: RuyiLogger,
+    bindir: pathlib.Path,
+) -> Iterator[pathlib.Path]:
     for filename in glob.iglob("*", root_dir=bindir):
         src_cmd_path = bindir / filename
         if not is_executable(src_cmd_path):
-            log.D(f"skipping non-executable {filename} in src bindir")
+            logger.D(f"skipping non-executable {filename} in src bindir")
             continue
 
         if should_ignore_symlinking(filename):
-            log.D(f"skipping command {filename} explicitly")
+            logger.D(f"skipping command {filename} explicitly")
             continue
 
         yield bindir / filename
@@ -327,13 +345,14 @@ class CmdMetadataEntry(TypedDict):
 
 
 def make_cmd_metadata_map(
+    logger: RuyiLogger,
     targets: list[ConfiguredTargetTuple],
 ) -> dict[str, CmdMetadataEntry]:
     result: dict[str, CmdMetadataEntry] = {}
     for tgt in targets:
         # TODO: dedup this and provision_target
         toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
-        for cmd in iter_binaries_to_symlink(toolchain_bindir):
+        for cmd in iter_binaries_to_symlink(logger, toolchain_bindir):
             result[cmd.name] = {
                 "dest": str(cmd),
                 "target_tuple": tgt["target"],
@@ -342,19 +361,21 @@ def make_cmd_metadata_map(
 
 
 def symlink_binaries(
+    gm: ProvidesGlobalMode,
+    logger: RuyiLogger,
     src_bindir: PathLike[Any],
     dest_bindir: PathLike[Any],
 ) -> None:
     src_binpath = pathlib.Path(src_bindir)
     dest_binpath = pathlib.Path(dest_bindir)
-    self_exe_path = self_exe()
+    self_exe_path = gm.self_exe
 
-    for src_cmd_path in iter_binaries_to_symlink(src_binpath):
+    for src_cmd_path in iter_binaries_to_symlink(logger, src_binpath):
         filename = src_cmd_path.name
 
         # symlink self to dest with the name of this command
         dest_path = dest_binpath / filename
-        log.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
+        logger.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
         os.symlink(self_exe_path, dest_path)
 
 
@@ -388,18 +409,20 @@ CLANG_GCC_ALIASES: Final = {
 
 
 def make_llvm_tool_aliases(
+    logger: RuyiLogger,
     dest_bindir: PathLike[Any],
     target_tuple: str,
     do_binutils: bool,
     do_clang: bool,
 ) -> None:
     if do_binutils:
-        make_compat_symlinks(dest_bindir, target_tuple, LLVM_BINUTILS_ALIASES)
+        make_compat_symlinks(logger, dest_bindir, target_tuple, LLVM_BINUTILS_ALIASES)
     if do_clang:
-        make_compat_symlinks(dest_bindir, target_tuple, CLANG_GCC_ALIASES)
+        make_compat_symlinks(logger, dest_bindir, target_tuple, CLANG_GCC_ALIASES)
 
 
 def make_compat_symlinks(
+    logger: RuyiLogger,
     dest_bindir: PathLike[Any],
     target_tuple: str,
     aliases: dict[str, str],
@@ -407,7 +430,7 @@ def make_compat_symlinks(
     destdir = pathlib.Path(dest_bindir)
     for compat_basename, symlink_target in aliases.items():
         compat_name = f"{target_tuple}-{compat_basename}"
-        log.D(f"making compat symlink: {compat_name} -> {symlink_target}")
+        logger.D(f"making compat symlink: {compat_name} -> {symlink_target}")
         os.symlink(symlink_target, destdir / compat_name)
 
 

@@ -3,9 +3,9 @@ from os import PathLike
 import pathlib
 from typing import Any
 
-from ... import log
 from ...cli.cmd import RootCommand
 from ...config import GlobalConfig
+from ...log import humanize_list
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.host import get_native_host
 from . import ConfiguredTargetTuple
@@ -18,7 +18,7 @@ class VenvCommand(
     help="Generate a virtual environment adapted to the chosen toolchain and profile",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument("profile", type=str, help="Profile to use for the environment")
         p.add_argument("dest", type=str, help="Path to the new virtual environment")
         p.add_argument(
@@ -66,6 +66,7 @@ class VenvCommand(
 
 
 def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
+    logger = config.logger
     profile_name: str = args.profile
     dest = pathlib.Path(args.dest)
     with_sysroot: bool = args.with_sysroot
@@ -78,7 +79,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache
     if tc_atoms_str is None:
-        log.F(
+        logger.F(
             "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
         )
         return 1
@@ -87,7 +88,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
     profile = mr.get_profile(profile_name)
     if profile is None:
-        log.F(f"profile '{profile_name}' not found")
+        logger.F(f"profile '{profile_name}' not found")
         return 1
 
     target_arch = ""
@@ -99,33 +100,33 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         tc_atom = Atom.parse(tc_atom_str)
         tc_pm = tc_atom.match_in_repo(mr, config.include_prereleases)
         if tc_pm is None:
-            log.F(
+            logger.F(
                 f"cannot match a toolchain package with [yellow]{tc_atom_str}[/yellow]"
             )
             return 1
 
         if tc_pm.toolchain_metadata is None:
-            log.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
+            logger.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
             return 1
 
         if not tc_pm.toolchain_metadata.satisfies_flavor_set(profile.need_flavor):
-            log.F(
+            logger.F(
                 f"the package [yellow]{tc_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
             )
-            log.I(
-                f"feature(s) needed by profile:   {log.humanize_list(profile.need_flavor, item_color='cyan')}"
+            logger.I(
+                f"feature(s) needed by profile:   {humanize_list(profile.need_flavor, item_color='cyan')}"
             )
-            log.I(
-                f"feature(s) provided by package: {log.humanize_list(tc_pm.toolchain_metadata.flavors, item_color='yellow')}"
+            logger.I(
+                f"feature(s) provided by package: {humanize_list(tc_pm.toolchain_metadata.flavors, item_color='yellow')}"
             )
             return 1
 
         target_tuple = tc_pm.toolchain_metadata.target
         if target_tuple in seen_target_tuples:
-            log.F(
+            logger.F(
                 f"the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
             )
-            log.I(
+            logger.I(
                 "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
             )
             return 1
@@ -135,7 +136,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             tc_pm.name_for_installation,
         )
         if toolchain_root is None:
-            log.F("cannot find the installed directory for the toolchain")
+            logger.F("cannot find the installed directory for the toolchain")
             return 1
 
         tc_sysroot_dir: PathLike[Any] | None = None
@@ -145,7 +146,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 tc_sysroot_dir = pathlib.Path(toolchain_root) / tc_sysroot_relpath
             else:
                 if sysroot_atom_str is None:
-                    log.F(
+                    logger.F(
                         f"sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/yellow] is not given"
                     )
                     return 1
@@ -156,13 +157,13 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 gcc_pkg_atom = Atom.parse(sysroot_atom_str)
                 gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
                 if gcc_pkg_pm is None:
-                    log.F(
+                    logger.F(
                         f"cannot match a toolchain package with [yellow]{sysroot_atom_str}[/yellow]"
                     )
                     return 1
 
                 if gcc_pkg_pm.toolchain_metadata is None:
-                    log.F(
+                    logger.F(
                         f"the package [yellow]{sysroot_atom_str}[/yellow] is not a toolchain"
                     )
                     return 1
@@ -172,12 +173,12 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                     gcc_pkg_pm.name_for_installation,
                 )
                 if gcc_pkg_root is None:
-                    log.F("cannot find the installed directory for the sysroot package")
+                    logger.F("cannot find the installed directory for the sysroot package")
                     return 1
 
                 tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
                 if tc_sysroot_relpath is None:
-                    log.F(
+                    logger.F(
                         f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/yellow] does not contain one"
                     )
                     return 1
@@ -195,7 +196,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
                 # for now, require this directory to be present (or clang would barely work)
                 if gcc_install_dir is None:
-                    log.F(
+                    logger.F(
                         "cannot find a GCC include & lib directory in the sysroot package"
                     )
                     return 1
@@ -218,7 +219,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             ),
             "gcc_install_dir": gcc_install_dir,
         }
-        log.D(f"configuration for {target_tuple}: {configured_target}")
+        logger.D(f"configuration for {target_tuple}: {configured_target}")
         targets.append(configured_target)
         seen_target_tuples.add(target_tuple)
 
@@ -230,8 +231,8 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             warn_differing_target_arch = True
 
     if warn_differing_target_arch:
-        log.W("multiple toolchains specified with differing target architecture")
-        log.I(
+        logger.W("multiple toolchains specified with differing target architecture")
+        logger.I(
             f"using the target architecture of the first toolchain: [yellow]{target_arch}[/]"
         )
 
@@ -242,18 +243,18 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         emu_atom = Atom.parse(emu_atom_str)
         emu_pm = emu_atom.match_in_repo(mr, config.include_prereleases)
         if emu_pm is None:
-            log.F(
+            logger.F(
                 f"cannot match an emulator package with [yellow]{emu_atom_str}[/yellow]"
             )
             return 1
 
         if emu_pm.emulator_metadata is None:
-            log.F(f"the package [yellow]{emu_atom_str}[/yellow] is not an emulator")
+            logger.F(f"the package [yellow]{emu_atom_str}[/yellow] is not an emulator")
             return 1
 
         emu_progs = list(emu_pm.emulator_metadata.list_for_arch(target_arch))
         if not emu_progs:
-            log.F(
+            logger.F(
                 f"the emulator package [yellow]{emu_atom_str}[/yellow] does not support the target architecture [yellow]{target_arch}[/yellow]"
             )
             return 1
@@ -263,14 +264,14 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 prog.flavor,
                 emu_pm.emulator_metadata.flavors,
             ):
-                log.F(
+                logger.F(
                     f"the package [yellow]{emu_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
                 )
-                log.I(
-                    f"feature(s) needed by profile:   {log.humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
+                logger.I(
+                    f"feature(s) needed by profile:   {humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
                 )
-                log.I(
-                    f"feature(s) provided by package: {log.humanize_list(emu_pm.emulator_metadata.flavors or [], item_color='yellow')}"
+                logger.I(
+                    f"feature(s) provided by package: {humanize_list(emu_pm.emulator_metadata.flavors or [], item_color='yellow')}"
                 )
                 return 1
 
@@ -279,17 +280,18 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             emu_pm.name_for_installation,
         )
         if emu_root is None:
-            log.F("cannot find the installed directory for the emulator")
+            logger.F("cannot find the installed directory for the emulator")
             return 1
 
     if override_name is not None:
-        log.I(
+        logger.I(
             f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/cyan] at [green]{dest}[/green]..."
         )
     else:
-        log.I(f"Creating a Ruyi virtual environment at [green]{dest}[/green]...")
+        logger.I(f"Creating a Ruyi virtual environment at [green]{dest}[/green]...")
 
     maker = VenvMaker(
+        config,
         profile,
         targets,
         dest.resolve(),
@@ -299,7 +301,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     )
     maker.provision()
 
-    log.I(
+    logger.I(
         render_template_str(
             "prompt.venv-created.txt",
             {
