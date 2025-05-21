@@ -3,7 +3,6 @@ from functools import cached_property
 import os
 import pathlib
 import re
-import sys
 from typing import (
     Any,
     BinaryIO,
@@ -16,11 +15,6 @@ from typing import (
     cast,
 )
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
@@ -32,6 +26,8 @@ else:
     except ModuleNotFoundError:
         # semver 2.x
         from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
+
+import tomlkit
 
 from .host import canonicalize_host_str, get_native_host
 from .msg import RepoMessageStore
@@ -466,16 +462,16 @@ class PackageServiceLevel:
 class PackageManifest:
     def __init__(
         self,
-        data: InputPackageManifestType,
+        doc: tomlkit.TOMLDocument | InputPackageManifestType,
     ) -> None:
-        self._data = _translate_to_manifest_v1(data)
+        self._raw_doc = doc if isinstance(doc, tomlkit.TOMLDocument) else None
+        self._data = _translate_to_manifest_v1(cast(InputPackageManifestType, doc))
         if "kind" not in self._data:
             self._data["kind"] = [k for k in ALL_PACKAGE_KINDS if k in self._data]
 
     @classmethod
     def load_toml(cls, stream: BinaryIO) -> "Self":
-        content = cast(InputPackageManifestType, tomllib.load(stream))
-        return cls(content)
+        return cls(tomlkit.load(stream))
 
     @classmethod
     def load_from_path(cls, p: pathlib.Path) -> "Self":
@@ -491,6 +487,10 @@ class PackageManifest:
 
     def to_raw(self) -> PackageManifestType:
         return deepcopy(self._data)
+
+    @property
+    def raw_doc(self) -> tomlkit.TOMLDocument | None:
+        return self._raw_doc
 
     @property
     def slug(self) -> str | None:
