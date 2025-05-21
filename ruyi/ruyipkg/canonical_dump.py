@@ -13,6 +13,7 @@ from .pkg_manifest import (
     PackageManifestType,
     PackageMetadataDeclType,
     ProvisionableDeclType,
+    ServiceLevelDeclType,
     SourceDeclType,
     ToolchainComponentDeclType,
     ToolchainDeclType,
@@ -40,12 +41,31 @@ def dump_canonical_package_manifest_toml(
     return y
 
 
+def dump_service_level_entry(x: ServiceLevelDeclType) -> Table:
+    y = table()
+    y.add("level", x["level"])
+    if msgid := x.get("msgid"):
+        y.add("msgid", string(msgid))
+    if params := x.get("params"):
+        y.add("params", sorted_table(params))
+    return y
+
+
+def dump_service_level_decls(x: list[ServiceLevelDeclType]) -> AoT:
+    return AoT([dump_service_level_entry(i) for i in x])
+
+
 def dump_metadata_decl(x: PackageMetadataDeclType) -> Table:
     y = table()
     y.add("desc", string(x["desc"]))
     y.add("vendor", dump_vendor_decl(x["vendor"]))
     if "slug" in x:
         y.add("slug", string(x["slug"]))
+    if uv := x.get("upstream_version"):
+        y.add("upstream_version", string(uv))
+    if sl := x.get("service_level"):
+        y.add(nl())
+        y.add("service_level", dump_service_level_decls(sl))
     return y
 
 
