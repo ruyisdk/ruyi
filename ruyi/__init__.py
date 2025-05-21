@@ -1,4 +1,3 @@
-import os
 import typing
 
 
@@ -27,13 +26,6 @@ def record_self_exe(argv0: str, main_file: str, x: str) -> None:
     _main_file = main_file
     _self_exe = x
 
-
-def is_running_as_root() -> bool:
-    # this is way too simplistic but works on *nix systems which is all we
-    # support currently
-    if hasattr(os, "getuid"):
-        return os.getuid() == 0
-    return False
 
 
 # This is true if we're packaged
