@@ -12,7 +12,7 @@ class VersionCommand(
     help="Print version information",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod

@@ -1,7 +1,6 @@
 import argparse
 from typing import Callable, IO, Protocol
 
-from .. import is_experimental
 from ..config import GlobalConfig
 from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
@@ -76,7 +75,7 @@ class BaseCommand:
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         """Configure arguments for this parser."""
         pass
 
@@ -94,16 +93,17 @@ class BaseCommand:
         return "<bare>" if cls._tele_key is None else cls._tele_key
 
     @classmethod
-    def build_argparse(cls) -> argparse.ArgumentParser:
+    def build_argparse(cls, gc: GlobalConfig) -> argparse.ArgumentParser:
         p = argparse.ArgumentParser(prog=cls.prog, description=cls.description)
-        cls.configure_args(p)
+        cls.configure_args(gc, p)
         cls._populate_defaults(p)
-        cls._maybe_build_subcommands(p)
+        cls._maybe_build_subcommands(gc, p)
         return p
 
     @classmethod
     def _maybe_build_subcommands(
         cls,
+        gc: GlobalConfig,
         p: argparse.ArgumentParser,
     ) -> None:
         if not cls.has_subcommands:
@@ -117,15 +117,16 @@ class BaseCommand:
             if subcmd_cls.mro()[1] is not cls:
                 # do not recurse onto self or non-direct subclasses
                 continue
-            if subcmd_cls.is_experimental and not is_experimental():
+            if subcmd_cls.is_experimental and not gc.is_experimental:
                 # skip configuring experimental commands if not enabled in
                 # the environment
                 continue
-            subcmd_cls._configure_subcommand(sp)
+            subcmd_cls._configure_subcommand(gc, sp)
 
     @classmethod
     def _configure_subcommand(
         cls,
+        gc: GlobalConfig,
         sp: "argparse._SubParsersAction[argparse.ArgumentParser]",
     ) -> argparse.ArgumentParser:
         assert cls.cmd is not None
@@ -134,9 +135,9 @@ class BaseCommand:
             aliases=cls.aliases,
             help=cls.help,
         )
-        cls.configure_args(p)
+        cls.configure_args(gc, p)
         cls._populate_defaults(p)
-        cls._maybe_build_subcommands(p)
+        cls._maybe_build_subcommands(gc, p)
         return p
 
     @classmethod
@@ -155,7 +156,7 @@ class RootCommand(
     description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         from .version_cli import cli_version
 
         p.add_argument(
@@ -183,5 +184,5 @@ class AdminCommand(
     help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         pass

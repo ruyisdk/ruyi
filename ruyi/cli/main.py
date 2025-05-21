@@ -5,6 +5,7 @@ from typing import Final
 
 from ..config import GlobalConfig
 from ..telemetry import TelemetryScope
+from ..utils.global_mode import GlobalModeProvider
 from . import RUYI_ENTRYPOINT_NAME
 
 ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
@@ -19,7 +20,7 @@ def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 
 
-def main(gc: GlobalConfig, argv: list[str]) -> int:
+def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     if gc.telemetry is not None:
         gc.telemetry.check_first_run_status()
         gc.telemetry.init_installation(False)
@@ -47,9 +48,9 @@ def main(gc: GlobalConfig, argv: list[str]) -> int:
     del builtin_commands
 
     logger = gc.logger
-    p = RootCommand.build_argparse()
+    p = RootCommand.build_argparse(gc)
     args = p.parse_args(argv[1:])
-    ruyi.set_porcelain(args.porcelain)
+    gm.is_porcelain = args.porcelain
 
     nuitka_info = "not compiled"
     if hasattr(ruyi, "__compiled__"):

@@ -2,10 +2,12 @@ from contextlib import AbstractContextManager
 from importlib import resources
 import pathlib
 import sys
+from typing import is_protocol
 
 import pytest
 
 from ruyi.log import RuyiConsoleLogger, RuyiLogger
+from ruyi.utils.global_mode import GlobalModeProvider
 
 
 class RuyiFileFixtureFactory:
@@ -32,12 +34,57 @@ class RuyiFileFixtureFactory:
         return resources.as_file(path)
 
 
+class MockGlobalModeProvider(GlobalModeProvider):
+    def __init__(
+        self,
+        is_debug: bool = False,
+        is_experimental: bool = False,
+        is_porcelain: bool = False,
+        is_telemetry_optout: bool = False,
+        venv_root: str | None = None,
+    ) -> None:
+        self._is_debug = is_debug
+        self._is_experimental = is_experimental
+        self._is_porcelain = is_porcelain
+        self._is_telemetry_optout = is_telemetry_optout
+        self._venv_root = venv_root
+
+    @property
+    def is_debug(self) -> bool:
+        return self._is_debug
+
+    @property
+    def is_experimental(self) -> bool:
+        return self._is_experimental
+
+    @property
+    def is_porcelain(self) -> bool:
+        return self._is_porcelain
+
+    @is_porcelain.setter
+    def is_porcelain(self, v: bool) -> None:
+        self._is_porcelain = v
+
+    @property
+    def is_telemetry_optout(self) -> bool:
+        return self._is_telemetry_optout
+
+    @property
+    def venv_root(self) -> str | None:
+        return self._venv_root
+
+
 @pytest.fixture
 def ruyi_file() -> RuyiFileFixtureFactory:
     return RuyiFileFixtureFactory(None if sys.version_info >= (3, 12) else __name__)
 
 
 @pytest.fixture
-def ruyi_logger() -> RuyiLogger:
+def mock_gm() -> MockGlobalModeProvider:
+    return MockGlobalModeProvider()
+
+
+@pytest.fixture
+def ruyi_logger(mock_gm: GlobalModeProvider) -> RuyiLogger:
     """Fixture for creating a RuyiLogger instance."""
-    return RuyiConsoleLogger()
+    return RuyiConsoleLogger(mock_gm)

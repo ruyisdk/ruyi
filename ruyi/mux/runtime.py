@@ -23,7 +23,7 @@ def mux_main(gc: GlobalConfig, argv: List[str]) -> int | NoReturn:
     logger = gc.logger
     logger.D(f"mux mode: argv = {argv}, basename = {basename}")
 
-    vcfg = RuyiVenvConfig.load_from_venv(logger)
+    vcfg = RuyiVenvConfig.load_from_venv(gc, logger)
     if vcfg is None:
         logger.F("the Ruyi toolchain mux is not configured")
         logger.I("check out `ruyi venv` for making a virtual environment")

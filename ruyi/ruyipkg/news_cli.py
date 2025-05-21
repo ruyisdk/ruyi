@@ -3,7 +3,6 @@ import argparse
 from rich import box
 from rich.table import Table
 
-from .. import is_porcelain
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..log import RuyiLogger
@@ -43,7 +42,7 @@ class NewsCommand(
     help="List and read news items from configured repository",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         pass
 
 
@@ -53,7 +52,7 @@ class NewsListCommand(
     help="List news items",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--new",
             action="store_true",
@@ -68,7 +67,7 @@ class NewsListCommand(
         store = cfg.repo.news_store()
         newsitems = store.list(only_unread)
 
-        if is_porcelain():
+        if cfg.is_porcelain:
             with PorcelainOutput() as po:
                 for ni in newsitems:
                     po.emit(ni.to_porcelain())
@@ -91,7 +90,7 @@ class NewsReadCommand(
     description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--quiet",
             "-q",
@@ -118,7 +117,7 @@ class NewsReadCommand(
         if items is None:
             return 1
 
-        if is_porcelain():
+        if cfg.is_porcelain:
             with PorcelainOutput() as po:
                 for ni in items:
                     po.emit(ni.to_porcelain())

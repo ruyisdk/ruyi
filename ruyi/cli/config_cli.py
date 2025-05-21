@@ -13,9 +13,7 @@ class ConfigCommand(
     has_subcommands=True,
     help="Manage Ruyi's config options",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class ConfigGetCommand(
@@ -24,7 +22,11 @@ class ConfigGetCommand(
     help="Query the value of a Ruyi config option",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "key",
             type=str,
@@ -49,7 +51,11 @@ class ConfigSetCommand(
     help="Set the value of a Ruyi config option",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "key",
             type=str,
@@ -80,7 +86,11 @@ class ConfigUnsetCommand(
     help="Unset a Ruyi config option",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "key",
             type=str,
@@ -104,7 +114,11 @@ class ConfigRemoveSectionCommand(
     help="Remove a section from the Ruyi config",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "section",
             type=str,

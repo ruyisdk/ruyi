@@ -8,7 +8,7 @@ from typing import Any, TextIO
 from rich.console import Console, RenderableType
 from rich.text import Text
 
-from .. import is_debug, is_porcelain
+from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
 
@@ -109,11 +109,13 @@ class RuyiLogger(metaclass=abc.ABCMeta):
 class RuyiConsoleLogger(RuyiLogger):
     def __init__(
         self,
+        gm: ProvidesGlobalMode,
         stdout: TextIO = sys.stdout,
         stderr: TextIO = sys.stderr,
     ) -> None:
         super().__init__()
 
+        self._gm = gm
         self._stdout_console = Console(
             file=stdout,
             highlight=False,
@@ -163,10 +165,10 @@ class RuyiConsoleLogger(RuyiLogger):
         end: str = "\n",
         _stack_offset_delta: int = 0,
     ) -> None:
-        if not is_debug():
+        if not self._gm.is_debug:
             return
 
-        if is_porcelain():
+        if self._gm.is_porcelain:
             return self._emit_porcelain_log("D", message, sep, *objects)
 
         return self._debug_console.log(
@@ -184,7 +186,7 @@ class RuyiConsoleLogger(RuyiLogger):
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        if is_porcelain():
+        if self._gm.is_porcelain:
             return self._emit_porcelain_log("F", message, sep, *objects)
 
         return self._log_console.print(
@@ -201,7 +203,7 @@ class RuyiConsoleLogger(RuyiLogger):
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        if is_porcelain():
+        if self._gm.is_porcelain:
             return self._emit_porcelain_log("I", message, sep, *objects)
 
         return self._log_console.print(
@@ -218,7 +220,7 @@ class RuyiConsoleLogger(RuyiLogger):
         sep: str = " ",
         end: str = "\n",
     ) -> None:
-        if is_porcelain():
+        if self._gm.is_porcelain:
             return self._emit_porcelain_log("W", message, sep, *objects)
 
         return self._log_console.print(

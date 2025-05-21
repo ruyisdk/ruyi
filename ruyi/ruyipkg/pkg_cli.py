@@ -15,7 +15,6 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .. import is_experimental, is_porcelain
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..log import RuyiLogger
@@ -39,7 +38,7 @@ class ListCommand(
     help="List available packages in configured repository",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -70,7 +69,7 @@ class ListCommand(
             help="Match packages whose names contain the given string",
         )
 
-        if is_experimental():
+        if gc.is_experimental:
             p.add_argument(
                 "--related-to-entity",
                 action=ListFilterAction,
@@ -86,7 +85,7 @@ class ListCommand(
         filters: ListFilter = args.filters
 
         if not filters:
-            if is_porcelain():
+            if cfg.is_porcelain:
                 # we don't want to print message for humans in case of porcelain
                 # mode, but we don't want to retain the old behavior of listing
                 # all packages either
@@ -100,7 +99,7 @@ class ListCommand(
 
         augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo, filters))
 
-        if is_porcelain():
+        if cfg.is_porcelain:
             return _do_list_porcelain(augmented_pkgs)
 
         if not verbose:
@@ -347,7 +346,7 @@ class ExtractCommand(
     help="Fetch package(s) then extract to current directory",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -438,7 +437,7 @@ class InstallCommand(
     help="Install package from configured repository",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,

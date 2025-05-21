@@ -17,10 +17,11 @@ if TYPE_CHECKING:
 
 import tomlkit
 
-from .. import argv0, is_env_var_truthy
+from .. import argv0
 from ..log import RuyiLogger
 from ..ruyipkg.repo import MetadataRepo
 from ..telemetry import TelemetryProvider
+from ..utils.global_mode import ProvidesGlobalMode, is_env_var_truthy
 from ..utils.xdg_basedir import XDGBaseDir
 from .news import NewsReadStatusStore
 from . import schema
@@ -39,9 +40,6 @@ else:
 DEFAULT_APP_NAME: Final = "ruyi"
 DEFAULT_REPO_URL: Final = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH: Final = "main"
-
-ENV_TELEMETRY_OPTOUT_KEY: Final = "RUYI_TELEMETRY_OPTOUT"
-ENV_VENV_ROOT_KEY: Final = "RUYI_VENV"
 
 
 def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:
@@ -89,7 +87,10 @@ class GlobalConfigRootType(TypedDict):
 
 
 class GlobalConfig:
-    def __init__(self, logger: RuyiLogger) -> None:
+    def __init__(self, gm: ProvidesGlobalMode, logger: RuyiLogger) -> None:
+        self._gm = gm
+        self.logger = logger
+
         # all defaults
         self.override_repo_dir: str | None = None
         self.override_repo_url: str | None = None
@@ -108,8 +109,6 @@ class GlobalConfig:
         self._telemetry_mode: str | None = None
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
-
-        self.logger = logger
 
     def apply_config(self, config_data: GlobalConfigRootType) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
@@ -204,6 +203,26 @@ class GlobalConfig:
             return self.telemetry_upload_consent_time
         else:
             return None
+
+    @property
+    def is_debug(self) -> bool:
+        return self._gm.is_debug
+
+    @property
+    def is_experimental(self) -> bool:
+        return self._gm.is_experimental
+
+    @property
+    def is_porcelain(self) -> bool:
+        return self._gm.is_porcelain
+
+    @property
+    def is_telemetry_optout(self) -> bool:
+        return self._gm.is_telemetry_optout
+
+    @property
+    def venv_root(self) -> str | None:
+        return self._gm.venv_root
 
     @property
     def lang_code(self) -> str:
@@ -348,8 +367,8 @@ class GlobalConfig:
         self.apply_config(data)
 
     @classmethod
-    def load_from_config(cls, logger: RuyiLogger) -> "Self":
-        obj = cls(logger)
+    def load_from_config(cls, gm: ProvidesGlobalMode, logger: RuyiLogger) -> "Self":
+        obj = cls(gm, logger)
 
         for config_path in obj.iter_preset_configs():
             obj.logger.D(f"trying config file from preset location: {config_path}")
@@ -360,7 +379,7 @@ class GlobalConfig:
             obj.try_apply_config_file(config_path)
 
         # let environment variable take precedence
-        if is_env_var_truthy(ENV_TELEMETRY_OPTOUT_KEY):
+        if gm.is_telemetry_optout:
             obj._telemetry_mode = "off"
 
         return obj
@@ -490,12 +509,12 @@ class RuyiVenvConfig:
         self._cached_cmd_targets_dir = self._ruyi_priv_dir / "cached-cmd-targets"
 
     @classmethod
-    def explicit_ruyi_venv_root(cls) -> str | None:
-        return os.environ.get(ENV_VENV_ROOT_KEY)
+    def explicit_ruyi_venv_root(cls, gm: ProvidesGlobalMode) -> str | None:
+        return gm.venv_root
 
     @classmethod
-    def probe_venv_root(cls) -> pathlib.Path | None:
-        if explicit_root := cls.explicit_ruyi_venv_root():
+    def probe_venv_root(cls, gm: ProvidesGlobalMode) -> pathlib.Path | None:
+        if explicit_root := cls.explicit_ruyi_venv_root(gm):
             return pathlib.Path(explicit_root)
 
         # check ../.. from argv[0]
@@ -513,12 +532,16 @@ class RuyiVenvConfig:
         return None
 
     @classmethod
-    def load_from_venv(cls, logger: RuyiLogger) -> "Self | None":
-        venv_root = cls.probe_venv_root()
+    def load_from_venv(
+        cls,
+        gm: ProvidesGlobalMode,
+        logger: RuyiLogger,
+    ) -> "Self | None":
+        venv_root = cls.probe_venv_root(gm)
         if venv_root is None:
             return None
 
-        if cls.explicit_ruyi_venv_root() is not None:
+        if cls.explicit_ruyi_venv_root(gm) is not None:
             logger.D(f"using explicit venv root {venv_root}")
         else:
             logger.D(f"detected implicit venv root {venv_root}")

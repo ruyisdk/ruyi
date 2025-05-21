@@ -5,13 +5,19 @@ import sys
 
 import ruyi
 from ruyi.utils.ci import is_running_in_ci
+from ruyi.utils.global_mode import (
+    EnvGlobalModeProvider,
+    ENV_FORCE_ALLOW_ROOT,
+    TRUTHY_ENV_VAR_VALUES,
+    is_env_var_truthy,
+)
 # NOTE: no imports that directly or indirectly pull in pygit2 should go here,
 # because import of pygit2 will fail if done before ssl_patch. Notably this
 # means no GlobalConfig here because it depends on ruyi.ruyipkg.repo.
 
 
 def is_allowed_to_run_as_root() -> bool:
-    if ruyi.is_env_var_truthy(ruyi.ENV_FORCE_ALLOW_ROOT):
+    if is_env_var_truthy(os.environ, ENV_FORCE_ALLOW_ROOT):
         return True
     if is_running_in_ci(os.environ):
         # CI environments are usually considered to be controlled, and safe
@@ -23,18 +29,17 @@ def is_allowed_to_run_as_root() -> bool:
 def entrypoint() -> None:
     from ruyi.log import RuyiConsoleLogger
 
-    logger = RuyiConsoleLogger()
+    gm = EnvGlobalModeProvider(os.environ)
+    logger = RuyiConsoleLogger(gm)
 
     if ruyi.is_running_as_root() and not is_allowed_to_run_as_root():
         logger.F("refusing to run as super user outside CI without explicit consent")
 
-        choices = ", ".join(f"'{x}'" for x in ruyi.TRUTHY_ENV_VAR_VALUES)
+        choices = ", ".join(f"'{x}'" for x in TRUTHY_ENV_VAR_VALUES)
         logger.I(
-            f"re-run with environment variable [yellow]{ruyi.ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
+            f"re-run with environment variable [yellow]{ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
         )
         sys.exit(1)
-
-    ruyi.init_debug_status()
 
     if not sys.argv:
         logger.F("no argv?")
@@ -71,8 +76,8 @@ def entrypoint() -> None:
     from ruyi.config import GlobalConfig
     from ruyi.cli.main import main
 
-    gc = GlobalConfig.load_from_config(logger)
-    sys.exit(main(gc, sys.argv))
+    gc = GlobalConfig.load_from_config(gm, logger)
+    sys.exit(main(gm, gc, sys.argv))
 
 
 if __name__ == "__main__":

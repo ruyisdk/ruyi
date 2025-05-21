@@ -13,9 +13,7 @@ class TelemetryCommand(
     has_subcommands=True,
     help="Manage your telemetry preferences",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class TelemetryConsentCommand(
@@ -25,7 +23,11 @@ class TelemetryConsentCommand(
     help="Give consent to telemetry data uploads",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -41,7 +43,11 @@ class TelemetryLocalCommand(
     help="Set telemetry mode to local collection only",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -57,7 +63,11 @@ class TelemetryOptoutCommand(
     help="Opt out of telemetry data collection",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod
@@ -72,7 +82,11 @@ class TelemetryStatusCommand(
     help="Print the current telemetry mode",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -103,7 +117,11 @@ class TelemetryUploadCommand(
     help="Upload collected telemetry data now",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         pass
 
     @classmethod

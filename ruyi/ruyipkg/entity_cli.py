@@ -11,9 +11,7 @@ class EntityCommand(
     is_experimental=True,
     help="Interact with entities defined in the repositories",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class EntityDescribeCommand(
@@ -22,7 +20,7 @@ class EntityDescribeCommand(
     help="Describe an entity",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "ref",
             help="Reference to the entity to describe in the form of '<type>:<name>'",
@@ -80,7 +78,7 @@ class EntityListCommand(
     help="List entities",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod

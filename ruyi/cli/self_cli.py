@@ -29,9 +29,7 @@ class SelfCommand(
     has_subcommands=True,
     help="Manage this Ruyi installation",
 ):
-    @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
-        pass
+    pass
 
 
 class SelfCleanCommand(
@@ -40,7 +38,11 @@ class SelfCleanCommand(
     help="Remove various Ruyi-managed data to reclaim storage",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--quiet",
             "-q",
@@ -139,7 +141,11 @@ class SelfUninstallCommand(
     help="Uninstall Ruyi",
 ):
     @classmethod
-    def configure_args(cls, p: argparse.ArgumentParser) -> None:
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
         p.add_argument(
             "--purge",
             action="store_true",
