@@ -1,9 +1,8 @@
 import argparse
 import os
 import pathlib
-import re
 import sys
-from typing import Any, Final, TypeGuard, cast
+from typing import Any, TypeGuard, cast
 
 from tomlkit import document, table
 from tomlkit.items import AoT, Table
@@ -13,7 +12,7 @@ from ..cli.cmd import AdminCommand
 from ..config import GlobalConfig
 from ..log import RuyiLogger
 from . import checksum
-from .canonical_dump import dump_canonical_package_manifest_toml
+from .canonical_dump import dumps_canonical_package_manifest_toml
 from .pkg_manifest import DistfileDeclType, PackageManifest, RestrictKind
 
 
@@ -67,16 +66,6 @@ class AdminChecksumCommand(
         raise RuntimeError("unrecognized output format; should never happen")
 
 
-RE_INDENT_FIX: Final = re.compile(r"(?m)^    ([\"'{\[])")
-
-
-# XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
-# post-process the output to have all leading 4-space indentation before
-# strings, lists or tables replaced by 2-space ones.
-def _fix_indent(s: str) -> str:
-    return RE_INDENT_FIX.sub(r"  \1", s)
-
-
 class AdminFormatManifestCommand(
     AdminCommand,
     cmd="format-manifest",
@@ -98,11 +87,11 @@ class AdminFormatManifestCommand(
         for f in files:
             p = pathlib.Path(f)
             pm = PackageManifest.load_from_path(p)
-            d = dump_canonical_package_manifest_toml(pm.to_raw())
+            d = dumps_canonical_package_manifest_toml(pm)
 
             dest_path = p.with_suffix(".toml")
             with open(dest_path, "w", encoding="utf-8") as fp:
-                fp.write(_fix_indent(d.as_string()))
+                fp.write(d)
 
         return 0
 

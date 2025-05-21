@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+format = "v1"
+[[distfiles]]
+name = "u-boot-with-spl-meles-16g.bin"
+size = 780496
+urls = [ "https://mirror.iscas.ac.cn/revyos/extra/images/meles/20250323/u-boot-with-spl-meles-16g.bin",]
+restrict = [ "mirror",]
+
+[distfiles.checksums]
+sha256 = "1551ae525700dc6352f42b7d5280f9bd9a383f2d2f9dae8b129388c784eed5e0"
+sha512 = "90d7413459d232c3321c9661b8b9d3201e6efc0ed9b681bb51ddf433addc3b784704bfa01f9c8e8f8b38cd4e031ebe7899d6d6c3c091e28d3998907ae2b19256"
+
+[metadata]
+desc = "U-Boot image for Milk-V Meles (16G RAM) and RevyOS 20250323"
+upstream_version = "20250323"
+[[metadata.service_level]]
+level = "good"
+
+[blob]
+distfiles = [ "u-boot-with-spl-meles-16g.bin",]
+
+[provisionable]
+strategy = "fastboot-v1"
+
+[metadata.vendor]
+name = "Milk-V"
+eula = ""
+
+[provisionable.partition_map]
+uboot = "u-boot-with-spl-meles-16g.bin"
+
+# This file is created by program Sync Package Index inside support-matrix
+# Run ID: 14662502620
+# Run URL: https://github.com/wychlw/support-matrix/actions/runs/14662502620

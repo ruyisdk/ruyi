@@ -1,4 +1,7 @@
-from tomlkit import document, nl, string, table
+import re
+from typing import Final
+
+from tomlkit import comment, document, nl, string, table, ws
 from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
 from tomlkit.toml_document import TOMLDocument
 
@@ -10,21 +13,60 @@ from .pkg_manifest import (
     EmulatorDeclType,
     EmulatorProgramDeclType,
     FetchRestrictionDeclType,
-    PackageManifestType,
+    PackageManifest,
     PackageMetadataDeclType,
     ProvisionableDeclType,
+    ServiceLevelDeclType,
     SourceDeclType,
     ToolchainComponentDeclType,
     ToolchainDeclType,
     VendorDeclType,
 )
-from ..utils.toml import inline_table_with_spaces, sorted_table, str_array
+from ..utils.toml import (
+    extract_footer_comments,
+    extract_header_comments,
+    inline_table_with_spaces,
+    sorted_table,
+    str_array,
+)
+
+RE_INDENT_FIX: Final = re.compile(r"(?m)^    ([\"'{\[])")
 
 
-def dump_canonical_package_manifest_toml(
-    x: PackageManifestType,
+# XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
+# post-process the output to have all leading 4-space indentation before
+# strings, lists or tables replaced by 2-space ones.
+def _fix_indent(s: str) -> str:
+    return RE_INDENT_FIX.sub(r"  \1", s)
+
+
+def dumps_canonical_package_manifest_toml(
+    pm: PackageManifest,
+) -> str:
+    return _fix_indent(_dump_canonical_package_manifest_toml(pm).as_string())
+
+
+def _dump_canonical_package_manifest_toml(
+    pm: PackageManifest,
 ) -> TOMLDocument:
+    x = pm.to_raw()
+    doc = pm.raw_doc
+
     y = document()
+
+    if doc is not None:
+        if header_comments := extract_header_comments(doc):
+            last_is_ws = False
+            for c in header_comments:
+                if c.startswith("#"):
+                    last_is_ws = False
+                    y.add(comment(c[1:].strip()))
+                else:
+                    last_is_ws = True
+                    y.add(ws(c))
+
+            if not last_is_ws:
+                y.add(nl())
 
     y.add("format", string(x["format"]))
 
@@ -37,7 +79,32 @@ def dump_canonical_package_manifest_toml(
     maybe_dump_source_decl_into(y, x.get("source"))
     maybe_dump_toolchain_decl_into(y, x.get("toolchain"))
 
+    if doc is not None:
+        if footer_comments := extract_footer_comments(doc):
+            if footer_comments[0].startswith("#"):
+                y.add(nl())
+
+            for c in footer_comments:
+                if c.startswith("#"):
+                    y.add(comment(c[1:].strip()))
+                else:
+                    y.add(ws(c))
+
     return y
+
+
+def dump_service_level_entry(x: ServiceLevelDeclType) -> Table:
+    y = table()
+    y.add("level", x["level"])
+    if msgid := x.get("msgid"):
+        y.add("msgid", string(msgid))
+    if params := x.get("params"):
+        y.add("params", sorted_table(params))
+    return y
+
+
+def dump_service_level_decls(x: list[ServiceLevelDeclType]) -> AoT:
+    return AoT([dump_service_level_entry(i) for i in x])
 
 
 def dump_metadata_decl(x: PackageMetadataDeclType) -> Table:
@@ -46,6 +113,11 @@ def dump_metadata_decl(x: PackageMetadataDeclType) -> Table:
     y.add("vendor", dump_vendor_decl(x["vendor"]))
     if "slug" in x:
         y.add("slug", string(x["slug"]))
+    if uv := x.get("upstream_version"):
+        y.add("upstream_version", string(uv))
+    if sl := x.get("service_level"):
+        y.add(nl())
+        y.add("service_level", dump_service_level_decls(sl))
     return y
 
 
@@ -83,9 +155,9 @@ def dump_distfile_entry(x: DistfileDeclType) -> Table:
     if "urls" in x:
         # XXX: https://github.com/python-poetry/tomlkit/issues/290 prevents us
         # from using 2-space indentation for the array items for now.
-        y.add("urls", str_array(x["urls"], multiline=True))
+        y.add("urls", str_array([str(i) for i in x["urls"]], multiline=True))
     if r := x.get("restrict"):
-        y.add("restrict", r)
+        y.add("restrict", [str(i) for i in r])
     if f := x.get("fetch_restriction"):
         y.add("fetch_restriction", dump_fetch_restriction(f))
     y.add("checksums", sorted_table(x["checksums"]))

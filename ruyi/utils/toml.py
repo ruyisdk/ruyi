@@ -4,7 +4,7 @@ from typing import Iterable
 
 import tomlkit
 from tomlkit.container import Container
-from tomlkit.items import Array, InlineTable, Item, Table, Trivia
+from tomlkit.items import Array, Comment, InlineTable, Item, Table, Trivia, Whitespace
 
 
 def with_indent(item: Item, spaces: int = 2) -> Item:
@@ -60,3 +60,56 @@ def sorted_table(x: dict[str, str]) -> Table:
     for k in sorted(x.keys()):
         y.add(k, x[k])
     return y
+
+
+def extract_header_comments(
+    doc: Container,
+) -> list[str]:
+    comments: list[str] = []
+
+    # ignore leading whitespaces
+    is_skipping_leading_ws = True
+    for _key, item in doc.body:
+        if isinstance(item, Whitespace):
+            if is_skipping_leading_ws:
+                continue
+            # this is part of the header comments
+            comments.append(item.as_string())
+        elif isinstance(item, Comment):
+            is_skipping_leading_ws = False
+            comments.append(item.as_string())
+        else:
+            # we reached the first non-comment item
+            break
+    return comments
+
+
+def extract_footer_comments(
+    doc: Container,
+) -> list[str]:
+    comments: list[str] = []
+
+    # ignore trailing whitespaces
+    is_skipping_trailing_ws = True
+    for _key, item in reversed(doc.body):
+        if isinstance(item, Whitespace):
+            if is_skipping_trailing_ws:
+                continue
+            # this is part of the footer comments
+            comments.append(item.as_string())
+        elif isinstance(item, Comment):
+            is_skipping_trailing_ws = False
+            comments.append(item.as_string())
+        else:
+            # we reached the first non-comment item
+            break
+
+    # if the footer comment was preceded by a table, then the comment would be
+    # nested inside the table and invisible in top-level doc.body, so we would
+    # have to check the last item as well
+    if not comments:
+        last_elem = doc.body[-1][1].value
+        if isinstance(last_elem, Container):
+            return extract_footer_comments(last_elem)
+
+    return list(reversed(comments))
