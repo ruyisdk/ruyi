@@ -27,12 +27,12 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         atexit.register(gc.telemetry.flush)
         gc.telemetry.maybe_prompt_for_first_run_upload()
 
-    if not is_called_as_ruyi(argv[0]):
+    if not is_called_as_ruyi(gm.argv0):
         from ..mux.runtime import mux_main
 
         # record an invocation and the command name being proxied to
         if gc.telemetry is not None:
-            target = os.path.basename(argv[0])
+            target = os.path.basename(gm.argv0)
             gc.telemetry.record(
                 TelemetryScope(None),
                 "cli:mux-invocation-v1",

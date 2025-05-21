@@ -24,7 +24,7 @@ def mux_main(
     gc: GlobalConfig,
     argv: List[str],
 ) -> int | NoReturn:
-    basename = os.path.basename(argv[0])
+    basename = os.path.basename(gm.argv0)
     logger = gc.logger
     logger.D(f"mux mode: argv = {argv}, basename = {basename}")
 
@@ -34,7 +34,7 @@ def mux_main(
         logger.I("check out `ruyi venv` for making a virtual environment")
         return 1
 
-    direct_symlink_target = resolve_direct_symlink_target(argv[0], vcfg)
+    direct_symlink_target = resolve_direct_symlink_target(gm.argv0, vcfg)
     if direct_symlink_target is not None:
         logger.D(
             f"detected direct symlink target: {direct_symlink_target}, overriding basename"
