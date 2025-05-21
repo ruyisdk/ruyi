@@ -16,7 +16,7 @@ from ruyi.utils.global_mode import (
 # means no GlobalConfig here because it depends on ruyi.ruyipkg.repo.
 
 
-def is_running_as_root() -> bool:
+def _is_running_as_root() -> bool:
     # this is way too simplistic but works on *nix systems which is all we
     # support currently
     if hasattr(os, "getuid"):
@@ -24,7 +24,7 @@ def is_running_as_root() -> bool:
     return False
 
 
-def is_allowed_to_run_as_root() -> bool:
+def _is_allowed_to_run_as_root() -> bool:
     if is_env_var_truthy(os.environ, ENV_FORCE_ALLOW_ROOT):
         return True
     if is_running_in_ci(os.environ):
@@ -40,7 +40,7 @@ def entrypoint() -> None:
     gm = EnvGlobalModeProvider(os.environ)
     logger = RuyiConsoleLogger(gm)
 
-    if is_running_as_root() and not is_allowed_to_run_as_root():
+    if _is_running_as_root() and not _is_allowed_to_run_as_root():
         logger.F("refusing to run as super user outside CI without explicit consent")
 
         choices = ", ".join(f"'{x}'" for x in TRUTHY_ENV_VAR_VALUES)
