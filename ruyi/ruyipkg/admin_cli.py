@@ -87,7 +87,7 @@ class AdminFormatManifestCommand(
         for f in files:
             p = pathlib.Path(f)
             pm = PackageManifest.load_from_path(p)
-            d = dumps_canonical_package_manifest_toml(pm.to_raw())
+            d = dumps_canonical_package_manifest_toml(pm)
 
             dest_path = p.with_suffix(".toml")
             with open(dest_path, "w", encoding="utf-8") as fp:

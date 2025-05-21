@@ -1,22 +1,11 @@
-import sys
-from typing import cast
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
-import pytest
+import tomlkit
 
 from ruyi.ruyipkg.canonical_dump import dumps_canonical_package_manifest_toml
-from ruyi.ruyipkg.pkg_manifest import PackageManifestType
+from ruyi.ruyipkg.pkg_manifest import PackageManifest
 
 from ..fixtures import RuyiFileFixtureFactory
 
 
-@pytest.mark.xfail(
-    reason="header/footer comments are not correctly preserved right now",
-)
 def test_format_manifest(ruyi_file: RuyiFileFixtureFactory) -> None:
     with ruyi_file.path("ruyipkg_suites", "format_manifest") as fixtures_dir:
         # Find pairs of before/after files
@@ -30,7 +19,7 @@ def test_format_manifest(ruyi_file: RuyiFileFixtureFactory) -> None:
             assert after_file.exists(), f"Expected file {after_file} does not exist"
 
             with open(before_file, "rb") as f:
-                data = cast(PackageManifestType, tomllib.load(f))
+                data = PackageManifest(tomlkit.load(f))
 
             # Process with the formatter
             result = dumps_canonical_package_manifest_toml(data)
