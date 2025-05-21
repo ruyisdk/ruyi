@@ -8,7 +8,7 @@ else:
 
 import pytest
 
-from ruyi.ruyipkg.canonical_dump import dump_canonical_package_manifest_toml
+from ruyi.ruyipkg.canonical_dump import dumps_canonical_package_manifest_toml
 from ruyi.ruyipkg.pkg_manifest import PackageManifestType
 
 from ..fixtures import RuyiFileFixtureFactory
@@ -33,14 +33,13 @@ def test_format_manifest(ruyi_file: RuyiFileFixtureFactory) -> None:
                 data = cast(PackageManifestType, tomllib.load(f))
 
             # Process with the formatter
-            result = dump_canonical_package_manifest_toml(data)
-            formatted_output = result.as_string()
+            result = dumps_canonical_package_manifest_toml(data)
 
             # Read the expected output
             with open(after_file, "r", encoding="utf-8") as g:
-                expected_output = g.read()
+                expected = g.read()
 
-            assert formatted_output == expected_output, (
+            assert result == expected, (
                 f"Formatted output for {before_file.name} doesn't match expected output. "
                 f"Check {after_file.name} for the expected formatting result."
             )

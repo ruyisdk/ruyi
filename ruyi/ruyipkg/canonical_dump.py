@@ -1,3 +1,6 @@
+import re
+from typing import Final
+
 from tomlkit import document, nl, string, table
 from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
 from tomlkit.toml_document import TOMLDocument
@@ -21,8 +24,23 @@ from .pkg_manifest import (
 )
 from ..utils.toml import inline_table_with_spaces, sorted_table, str_array
 
+RE_INDENT_FIX: Final = re.compile(r"(?m)^    ([\"'{\[])")
 
-def dump_canonical_package_manifest_toml(
+
+# XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
+# post-process the output to have all leading 4-space indentation before
+# strings, lists or tables replaced by 2-space ones.
+def _fix_indent(s: str) -> str:
+    return RE_INDENT_FIX.sub(r"  \1", s)
+
+
+def dumps_canonical_package_manifest_toml(
+    pm: PackageManifestType,
+) -> str:
+    return _fix_indent(_dump_canonical_package_manifest_toml(pm).as_string())
+
+
+def _dump_canonical_package_manifest_toml(
     x: PackageManifestType,
 ) -> TOMLDocument:
     y = document()
