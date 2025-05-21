@@ -5,7 +5,7 @@ import sys
 import time
 from typing import Any, TextIO
 
-from rich.console import Console, ConsoleRenderable
+from rich.console import Console, RenderableType
 from rich.text import Text
 
 from .. import is_debug, is_porcelain
@@ -27,13 +27,10 @@ def log_time_formatter(x: datetime.datetime) -> Text:
     return Text(f"debug: [{x.isoformat()}]")
 
 
-Renderable = str | ConsoleRenderable
-
-
 def _make_porcelain_log(
     t: int,
     lvl: str,
-    message: Renderable,
+    message: RenderableType,
     sep: str,
     *objects: Any,
 ) -> PorcelainLog:
@@ -60,7 +57,7 @@ class RuyiLogger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def stdout(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -70,7 +67,7 @@ class RuyiLogger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def D(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -81,7 +78,7 @@ class RuyiLogger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def F(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -91,19 +88,17 @@ class RuyiLogger(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
-        file: Optional[IO[str]] = None,
-        flush: bool = False,
     ) -> None:
         raise NotImplementedError
 
     @abc.abstractmethod
     def W(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -143,7 +138,7 @@ class RuyiConsoleLogger(RuyiLogger):
     def _emit_porcelain_log(
         self,
         lvl: str,
-        message: Renderable,
+        message: RenderableType,
         sep: str = " ",
         *objects: Any,
     ) -> None:
@@ -153,7 +148,7 @@ class RuyiConsoleLogger(RuyiLogger):
 
     def stdout(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -162,7 +157,7 @@ class RuyiConsoleLogger(RuyiLogger):
 
     def D(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -184,7 +179,7 @@ class RuyiConsoleLogger(RuyiLogger):
 
     def F(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -201,7 +196,7 @@ class RuyiConsoleLogger(RuyiLogger):
 
     def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
@@ -218,7 +213,7 @@ class RuyiConsoleLogger(RuyiLogger):
 
     def W(
         self,
-        message: Renderable,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",

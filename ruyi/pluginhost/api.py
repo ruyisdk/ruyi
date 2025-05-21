@@ -10,6 +10,8 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+from rich.console import Console, RenderableType
+
 from ..cli import user_input
 from ..log import RuyiLogger
 from ..version import RUYI_SEMVER
@@ -98,53 +100,70 @@ class RuyiHostAPI:
             return cast(U, self._ev.eval_function(fn, obj))
 
 
-class RuyiPluginLogger:
+def _ensure_str(message: RenderableType) -> None:
+    if not isinstance(message, str):
+        raise TypeError("message must be str in plugins")
+
+
+class RuyiPluginLogger(RuyiLogger):
     def __init__(self, host_logger: RuyiLogger) -> None:
         self._h = host_logger
 
+    @property
+    def log_console(self) -> Console:
+        return self._h.log_console
+
     def stdout(
         self,
-        message: str,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
     ) -> None:
+        _ensure_str(message)
         self._h.stdout(message, *objects, sep=sep, end=end)
 
     def D(
         self,
-        message: str,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
+        _stack_offset_delta: int = 0,
     ) -> None:
+        _ensure_str(message)
+        if _stack_offset_delta != 0:
+            raise ValueError("_stack_offset_delta is not supported in plugins")
         self._h.D(message, *objects, sep=sep, end=end, _stack_offset_delta=1)
 
     def W(
         self,
-        message: str,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
     ) -> None:
+        _ensure_str(message)
         self._h.W(message, *objects, sep=sep, end=end)
 
     def I(  # noqa: E743 # the name intentionally mimics Android logging for brevity
         self,
-        message: str,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
     ) -> None:
+        _ensure_str(message)
         self._h.I(message, *objects, sep=sep, end=end)
 
     def F(
         self,
-        message: str,
+        message: RenderableType,
         *objects: Any,
         sep: str = " ",
         end: str = "\n",
     ) -> None:
+        _ensure_str(message)
         self._h.F(message, *objects, sep=sep, end=end)
 
 
