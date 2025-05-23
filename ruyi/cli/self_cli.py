@@ -7,6 +7,7 @@ from typing import Final
 from .. import config
 from . import user_input
 from .cmd import RootCommand
+from .completion import SelfArgumentParser
 
 UNINSTALL_NOTICE: Final = """
 [bold]Thanks for hacking with [yellow]Ruyi[/]![/]
@@ -32,7 +33,7 @@ class SelfCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -46,7 +47,7 @@ class SelfCleanCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "--quiet",
@@ -149,7 +150,7 @@ class SelfUninstallCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "--purge",

@@ -9,6 +9,7 @@ from tomlkit.items import AoT, Table
 from tomlkit.toml_document import TOMLDocument
 
 from ..cli.cmd import AdminCommand
+from ..cli.completion import SelfArgumentParser
 from ..config import GlobalConfig
 from ..log import RuyiLogger
 from . import checksum
@@ -22,7 +23,7 @@ class AdminChecksumCommand(
     help="Generate a checksum section for a manifest file for the distfiles given",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         p.add_argument(
             "--format",
             "-f",
@@ -72,7 +73,7 @@ class AdminFormatManifestCommand(
     help="Format the given package manifests into canonical TOML representation",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         p.add_argument(
             "file",
             type=str,
