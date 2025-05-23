@@ -1,5 +1,6 @@
 import argparse
 from typing import Callable, IO, Protocol
+import argcomplete
 
 from ..config import GlobalConfig
 from ..version import RUYI_SEMVER
@@ -98,6 +99,7 @@ class BaseCommand:
         cls.configure_args(gc, p)
         cls._populate_defaults(p)
         cls._maybe_build_subcommands(gc, p)
+        argcomplete.autocomplete(p, always_complete_options=True)
         return p
 
     @classmethod
