@@ -2,6 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from .cmd import RootCommand
+from .completion import ArgumentParser
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
@@ -13,7 +14,7 @@ class VersionCommand(
     help="Print version information",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod

@@ -2,6 +2,7 @@ import argparse
 import enum
 from typing import Any, Callable, Iterable, NamedTuple, Sequence, TypeVar, TYPE_CHECKING
 
+from ..cli.completion import ArgcompleteAction
 from ..utils.global_mode import TRUTHY_ENV_VAR_VALUES
 
 if TYPE_CHECKING:
@@ -87,7 +88,7 @@ class ListFilter:
         return all(_execute_filter_op(op, ctx) for op in self.ops)
 
 
-class ListFilterAction(argparse.Action):
+class ListFilterAction(ArgcompleteAction):
     def __init__(
         self,
         option_strings: Sequence[str],

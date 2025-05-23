@@ -2,6 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
+from ..cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
@@ -13,7 +14,7 @@ class UpdateCommand(
     help="Update RuyiSDK repo and packages",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod
