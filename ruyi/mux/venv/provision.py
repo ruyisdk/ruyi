@@ -55,7 +55,6 @@ def render_template_str(template_name: str, data: dict[str, Any]) -> str:
     return tmpl.render(data)
 
 
-
 class VenvMaker:
     def __init__(
         self,
@@ -65,6 +64,7 @@ class VenvMaker:
         dest: PathLike[Any],
         emulator_progs: list[EmulatorProgDecl] | None,
         emulator_root: PathLike[Any] | None,
+        extra_cmds: dict[str, str] | None,
         override_name: str | None = None,
     ) -> None:
         self.gc = gc
@@ -73,6 +73,7 @@ class VenvMaker:
         self.venv_root = pathlib.Path(dest)
         self.emulator_progs = emulator_progs
         self.emulator_root = emulator_root
+        self.extra_cmds = extra_cmds or {}
         self.override_name = override_name
 
         self.bindir = self.venv_root / "bin"
@@ -140,12 +141,24 @@ class VenvMaker:
             is_primary = i == 0
             self.provision_target(tgt, is_primary)
 
+        if self.extra_cmds:
+            symlink_binaries(
+                self.gc,
+                self.logger,
+                bindir,
+                src_cmds_names=list(self.extra_cmds.keys()),
+            )
+
         template_data = {
             "RUYI_VENV": str(venv_root),
             "RUYI_VENV_NAME": self.override_name,
         }
 
-        self.render_and_write(bindir / "ruyi-activate", "ruyi-activate.bash", template_data)
+        self.render_and_write(
+            bindir / "ruyi-activate",
+            "ruyi-activate.bash",
+            template_data,
+        )
 
         qemu_bin: PathLike[Any] | None = None
         profile_emu_env: dict[str, str] | None = None
@@ -184,6 +197,7 @@ class VenvMaker:
             "ruyi-cache.toml",
             self.make_venv_cache_data(
                 qemu_bin,
+                self.extra_cmds,
                 profile_emu_env,
             ),
         )
@@ -191,6 +205,7 @@ class VenvMaker:
     def make_venv_cache_data(
         self,
         qemu_bin: PathLike[Any] | None,
+        extra_cmds: dict[str, str],
         profile_emu_env: dict[str, str] | None,
     ) -> dict[str, object]:
         targets_cache_data: dict[str, object] = {
@@ -204,6 +219,17 @@ class VenvMaker:
         }
 
         cmd_metadata_map = make_cmd_metadata_map(self.logger, self.targets)
+
+        # add extra cmds that are not associated with any target
+        for cmd, dest in extra_cmds.items():
+            if cmd in cmd_metadata_map:
+                self.logger.W(
+                    f"extra command {cmd} is already provided by another package, overriding it"
+                )
+            cmd_metadata_map[cmd] = {
+                "dest": dest,
+                "target_tuple": "",
+            }
 
         return {
             "profile_emu_env": profile_emu_env,
@@ -243,7 +269,7 @@ class VenvMaker:
 
         self.logger.D(f"symlinking {target_tuple} binaries into venv")
         toolchain_bindir = pathlib.Path(tgt["toolchain_root"]) / "bin"
-        symlink_binaries(self.gc, self.logger, toolchain_bindir, bindir)
+        symlink_binaries(self.gc, self.logger, bindir, src_bindir=toolchain_bindir)
 
         make_llvm_tool_aliases(
             self.logger,
@@ -363,20 +389,36 @@ def make_cmd_metadata_map(
 def symlink_binaries(
     gm: ProvidesGlobalMode,
     logger: RuyiLogger,
-    src_bindir: PathLike[Any],
     dest_bindir: PathLike[Any],
+    *,
+    src_bindir: PathLike[Any] | None = None,
+    src_cmds_names: list[str] | None = None,
 ) -> None:
-    src_binpath = pathlib.Path(src_bindir)
     dest_binpath = pathlib.Path(dest_bindir)
     self_exe_path = gm.self_exe
 
-    for src_cmd_path in iter_binaries_to_symlink(logger, src_binpath):
-        filename = src_cmd_path.name
+    if src_bindir is not None:
+        src_binpath = pathlib.Path(src_bindir)
+        for src_cmd_path in iter_binaries_to_symlink(logger, src_binpath):
+            filename = src_cmd_path.name
 
-        # symlink self to dest with the name of this command
-        dest_path = dest_binpath / filename
-        logger.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
-        os.symlink(self_exe_path, dest_path)
+            # symlink self to dest with the name of this command
+            dest_path = dest_binpath / filename
+            logger.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
+            os.symlink(self_exe_path, dest_path)
+        return
+
+    if src_cmds_names is not None:
+        for cmd in src_cmds_names:
+            # symlink self to dest with the name of this command
+            dest_path = dest_binpath / cmd
+            logger.D(f"making ruyi symlink to {self_exe_path} at {dest_path}")
+            os.symlink(self_exe_path, dest_path)
+        return
+
+    raise ValueError(
+        "internal error: either src_bindir or src_cmds_names must be provided"
+    )
 
 
 LLVM_BINUTILS_ALIASES: Final = {
