@@ -65,6 +65,7 @@ class DistfileDeclType(TypedDict):
 class BinaryFileDeclType(TypedDict):
     host: str
     distfiles: list[str]
+    commands: "NotRequired[dict[str, str]]"
 
 
 BinaryDeclType = list[BinaryFileDeclType]
