@@ -55,10 +55,16 @@ def mux_main(
     if md := vcfg.resolve_cmd_metadata_with_cache(basename):
         target_tuple = md["target_tuple"]
         binpath = md["dest"]
-        tgt_data = vcfg.targets[target_tuple]
-        toolchain_sysroot = tgt_data.get("toolchain_sysroot")
-        toolchain_flags = tgt_data.get("toolchain_flags")
-        gcc_install_dir = tgt_data.get("gcc_install_dir")
+        if target_tuple:
+            tgt_data = vcfg.targets.get(target_tuple)
+            if tgt_data is None:
+                logger.F(
+                    f"internal error: no target data for tuple [yellow]{target_tuple}[/]"
+                )
+                return 1
+            toolchain_sysroot = tgt_data.get("toolchain_sysroot")
+            toolchain_flags = tgt_data.get("toolchain_flags")
+            gcc_install_dir = tgt_data.get("gcc_install_dir")
     else:
         toolchain_bindir: str | None = None
         for tgt_tuple, tgt_data in vcfg.targets.items():
