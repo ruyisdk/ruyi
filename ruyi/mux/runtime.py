@@ -85,9 +85,6 @@ def mux_main(
     if target_tuple is None:
         logger.F(f"no configured target found for command [yellow]{basename}[/]")
         return 1
-    if toolchain_flags is None:
-        logger.F(f"no configured flags found for command [yellow]{basename}[/]")
-        return 1
 
     logger.D(f"binary to exec: {binpath}")
 
@@ -104,8 +101,9 @@ def mux_main(
                 logger.D(f"informing clang of GCC install dir: {gcc_install_dir}")
                 argv_to_insert.append(f"--gcc-install-dir={gcc_install_dir}")
 
-        argv_to_insert.extend(shlex.split(toolchain_flags))
-        logger.D(f"parsed toolchain flags: {argv_to_insert}")
+        if toolchain_flags is not None:
+            argv_to_insert.extend(shlex.split(toolchain_flags))
+            logger.D(f"parsed toolchain flags: {argv_to_insert}")
 
         if toolchain_sysroot is not None:
             logger.D(f"adding sysroot: {toolchain_sysroot}")
