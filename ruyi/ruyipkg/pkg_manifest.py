@@ -65,6 +65,7 @@ class DistfileDeclType(TypedDict):
 class BinaryFileDeclType(TypedDict):
     host: str
     distfiles: list[str]
+    commands: "NotRequired[dict[str, str]]"
 
 
 BinaryDeclType = list[BinaryFileDeclType]
@@ -247,18 +248,25 @@ class DistfileDecl:
 
 class BinaryDecl:
     def __init__(self, data: BinaryDeclType) -> None:
-        self._data = {canonicalize_host_str(d["host"]): d["distfiles"] for d in data}
+        self._data = {canonicalize_host_str(d["host"]): d for d in data}
 
     @property
-    def data(self) -> dict[str, list[str]]:
+    def data(self) -> dict[str, BinaryFileDeclType]:
         return self._data
 
     def get_distfile_names_for_host(self, host: str) -> list[str] | None:
-        return self._data.get(canonicalize_host_str(host))
+        if data := self._data.get(canonicalize_host_str(host)):
+            return data.get("distfiles")
+        return None
 
     @property
     def is_available_for_current_host(self) -> bool:
         return str(get_native_host()) in self._data
+
+    def get_commands_for_host(self, host: str) -> dict[str, str]:
+        if data := self._data.get(canonicalize_host_str(host)):
+            return data.get("commands", {})
+        return {}
 
 
 class BlobDecl:

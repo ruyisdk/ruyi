@@ -1,0 +1,51 @@
+format = "v1"
+
+[metadata]
+desc = "RuyiSDK wlink Build (Upstream snapshot, built by PLCT)"
+vendor = { name = "PLCT", eula = "" }
+
+[[distfiles]]
+name = "wlink-0.1.1-ruyi.20250524+git.217f0e51.aarch64.tar.gz"
+size = 902085
+strip_components = 2
+
+[distfiles.checksums]
+sha256 = "b78c1fa08142e657349d03f9bc2a90c49afc438eac47b17bcbbed1b2c190d13e"
+sha512 = "8f9e65effc56cfd12c67e18c7e431388f01b23b09cc6f33f815bc6a03457ea143ec463501f53fe8b1b72d0528261bbe5566ae43b111fc802c7c2142c0c5dbace"
+
+[[distfiles]]
+name = "wlink-0.1.1-ruyi.20250524+git.217f0e51.riscv64.tar.gz"
+size = 941960
+strip_components = 2
+
+[distfiles.checksums]
+sha256 = "d798618d4f947584443e5d7e1a5066458274cc80648ffdd66b176c2bd51c45e7"
+sha512 = "40b7913e551c952fa252c4b0cda4e071ab20f2b3325850460c2f45fa2c623ced33f9ec696556e3eb5594c4b60227d45b60c0dce1196d391e3935ba11d92b2683"
+
+[[distfiles]]
+name = "wlink-0.1.1-ruyi.20250524+git.217f0e51.x86_64.tar.gz"
+size = 916779
+strip_components = 2
+
+[distfiles.checksums]
+sha256 = "87ee5c301cf9b5df9b3b759fe77fc06d8225f3cb4a56d66f4c70753b800d8db1"
+sha512 = "110fa7816fb6318c3b10952f3f3c9efa8555018134029cdb98e9a2a25f7e76860d70fa0f7cc6dc93a32989909b750470e0de7f39d68af50431ba88b9a237fe51"
+
+[[binary]]
+host = "aarch64"
+distfiles = ["wlink-0.1.1-ruyi.20250524+git.217f0e51.aarch64.tar.gz"]
+
+[binary.commands]
+wlink = "bin/wlink"
+
+[[binary]]
+host = "riscv64"
+distfiles = ["wlink-0.1.1-ruyi.20250524+git.217f0e51.riscv64.tar.gz"]
+
+[[binary]]
+host = "x86_64"
+distfiles = ["wlink-0.1.1-ruyi.20250524+git.217f0e51.x86_64.tar.gz"]
+
+[binary.commands]
+bar = "bin/bar"
+foo = "bin/foo"

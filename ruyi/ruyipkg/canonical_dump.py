@@ -205,22 +205,25 @@ def maybe_dump_provisionable_decl_into(
     doc.add("provisionable", dump_provisionable_decl(x))
 
 
-def dump_binary_decl(x: BinaryFileDeclType) -> Table:
+def dump_binary_decl(x: BinaryFileDeclType, last: bool) -> Table:
     y = table()
     y.add("host", string(x["host"]))
     multiline_distfiles = len(x["distfiles"]) > 1
     y.add("distfiles", str_array(x["distfiles"], multiline=multiline_distfiles))
+    if cmds := x.get("commands", {}):
+        y.add("commands", sorted_table(cmds))
+        if not last:
+            y.add(nl())
     return y
 
 
 def dump_binary_decls(x: list[BinaryFileDeclType]) -> AoT:
-    return AoT([dump_binary_decl(i) for i in x])
+    return AoT([dump_binary_decl(elem, i == len(x) - 1) for i, elem in enumerate(x)])
 
 
 def maybe_dump_binary_decls_into(doc: TOMLDocument, x: BinaryDeclType | None) -> None:
     if x is None:
         return
-    doc.add(nl())
     doc.add("binary", dump_binary_decls(x))
 
 

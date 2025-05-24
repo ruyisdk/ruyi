@@ -246,6 +246,7 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
 * `binary` 仅在 `kind` 含有 `binary` 时有意义，表示适用于二进制包的额外信息。其类型为列表，每条记录：
     - `host` 代表该条记录所指的二进制包适用的宿主架构与操作系统，格式为 `os/arch` 或 `arch`；当 `os` 部分省略时，视作 `linux`。`arch` 部分的语义与 Python 的 `platform.machine()` 返回值相同。`os` 部分的语义与 Python 的 `sys.platform` 相同，但将 `win32` 变为 `windows`。
     - `distfiles` 是分发文件名的列表，每条分发文件的具体定义参照 `distfiles` 字段。要为此宿主安装该包，下载并解压所有这些分发文件到相同目标目录即可。
+    - `commands` 是可选的键值对，用来将该包所提供的一些命令暴露供用户或虚拟环境调用。其中每个键是需要暴露的命令名称，值为相应命令基于该包安装路径根的相对路径。
 * `blob` 仅在 `kind` 含有 `blob` 时有意义，表示适用于二进制数据包的额外信息。其中：
     - `distfiles` 是分发文件名的列表，每条分发文件的具体定义参照 `distfiles` 字段。此包不应被安装；对分发文件的引用应直接指向相应文件的下载目的地。
 * `source` 仅在 `kind` 含有 `source` 时有意义，表示适用于源码包的额外信息。其中：

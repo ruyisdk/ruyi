@@ -59,6 +59,12 @@ class VenvCommand(
             type=str,
             help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
         )
+        p.add_argument(
+            "--extra-commands-from",
+            type=str,
+            action="append",
+            help="Specifier(s) (atoms) of extra package(s) to add commands to the new virtual environment",
+        )
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
@@ -74,6 +80,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
     tc_atoms_str: list[str] | None = args.toolchain
     emu_atom_str: str | None = args.emulator
     sysroot_atom_str: str | None = args.sysroot_from
+    extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
     host = str(get_native_host())
 
     # TODO: support omitting this if user only has one toolchain installed
@@ -173,7 +180,9 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                     gcc_pkg_pm.name_for_installation,
                 )
                 if gcc_pkg_root is None:
-                    logger.F("cannot find the installed directory for the sysroot package")
+                    logger.F(
+                        "cannot find the installed directory for the sysroot package"
+                    )
                     return 1
 
                 tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
@@ -283,6 +292,60 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             logger.F("cannot find the installed directory for the emulator")
             return 1
 
+    # Now resolve extra commands to provide in the venv.
+    extra_cmds: dict[str, str] = {}
+    if extra_cmd_atoms_str:
+        for extra_cmd_atom_str in extra_cmd_atoms_str:
+            extra_cmd_atom = Atom.parse(extra_cmd_atom_str)
+            extra_cmd_pm = extra_cmd_atom.match_in_repo(
+                mr,
+                config.include_prereleases,
+            )
+            if extra_cmd_pm is None:
+                logger.F(
+                    f"cannot match an extra command package with [yellow]{extra_cmd_atom_str}[/]"
+                )
+                return 1
+
+            extra_cmd_bm = extra_cmd_pm.binary_metadata
+            if not extra_cmd_bm:
+                logger.F(
+                    f"the package [yellow]{extra_cmd_atom_str}[/] is not a binary-providing package"
+                )
+                return 1
+
+            extra_cmds_decl = extra_cmd_bm.get_commands_for_host(host)
+            if not extra_cmds_decl:
+                logger.W(
+                    f"the package [yellow]{extra_cmd_atom_str}[/] does not provide any command for host [yellow]{host}[/], ignoring"
+                )
+                continue
+
+            cmd_root = config.lookup_binary_install_dir(
+                host,
+                extra_cmd_pm.name_for_installation,
+            )
+            if cmd_root is None:
+                logger.F(
+                    f"cannot find the installed directory for the package [yellow]{extra_cmd_pm.name_for_installation}[/]"
+                )
+                return 1
+            cmd_root = pathlib.Path(cmd_root)
+
+            for cmd, cmd_rel_path in extra_cmds_decl.items():
+                # resolve the command path
+                cmd_path = (cmd_root / cmd_rel_path).resolve()
+                if not cmd_path.is_relative_to(cmd_root):
+                    # we don't allow commands to resolve outside of the
+                    # providing package's install root
+                    logger.F(
+                        "internal error: resolved command path is outside of the providing package"
+                    )
+                    return 1
+
+                # add the command to the list
+                extra_cmds[cmd] = str(cmd_path)
+
     if override_name is not None:
         logger.I(
             f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/cyan] at [green]{dest}[/green]..."
@@ -297,6 +360,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         dest.resolve(),
         emu_progs,
         emu_root,
+        extra_cmds,
         override_name,
     )
     maker.provision()
