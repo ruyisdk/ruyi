@@ -319,8 +319,13 @@ def _print_pkg_detail(
 
     if bm := pm.binary_metadata:
         logger.stdout("\n### Binary artifacts\n")
-        for host, distfile_names in bm.data.items():
-            logger.stdout(f"* Host [green]{host}[/green]: {distfile_names}")
+        for host, data in bm.data.items():
+            logger.stdout(f"* Host [green]{host}[/]:")
+            logger.stdout(f"    - Distfiles: {data['distfiles']}")
+            if cmds := data.get("commands"):
+                logger.stdout("    - Available command(s):")
+                for k in sorted(cmds.keys()):
+                    logger.stdout(f"        - [green]{k}[/]")
 
     if tm := pm.toolchain_metadata:
         logger.stdout("\n### Toolchain metadata\n")
