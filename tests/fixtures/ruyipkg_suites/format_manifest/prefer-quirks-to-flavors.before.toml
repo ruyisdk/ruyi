@@ -1,0 +1,53 @@
+format = "v1"
+
+[metadata]
+desc = "RuyiSDK RISC-V Linux GNU Toolchain 20240222 (T-Head 2.8.0 sources, built by PLCT)"
+vendor = { name = "PLCT", eula = "" }
+
+[[distfiles]]
+name = "RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-HOST-aarch64-linux-gnu-riscv64-plctxthead-linux-gnu.tar.xz"
+size = 303887180
+
+[distfiles.checksums]
+sha256 = "ad98f0a337fc79faa0e28c9d65c667192c787a7a12a34e326b4fc46dcfefc82e"
+sha512 = "fcb7e7e071ee421626189da67f9e4bbd0da16aed0f8f12646eac20583454689aa239277156118d484a89eb9e68f266dbb98885e6fb851fb934b6ab2a17ab57a5"
+
+[[distfiles]]
+name = "RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-HOST-riscv64-linux-gnu-riscv64-plctxthead-linux-gnu.tar.xz"
+size = 309153492
+
+[distfiles.checksums]
+sha256 = "81cfe107bf0121c94fe25db53ea9a7205ebeda686ae7ff60136d42637ccfa3ed"
+sha512 = "133a8dc2169549c18bfc98606fb39968eb437bb51724a2611950dcd4051942475d45df4a8b945e1846569b543d94a153337f5c48b1fd2d78c6bb9778c121a730"
+
+[[distfiles]]
+name = "RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-riscv64-plctxthead-linux-gnu.tar.xz"
+size = 323299980
+
+[distfiles.checksums]
+sha256 = "66af0f05f9f71849c909cbf071412501068e44a99cfcceb3fb07e686b2e8c898"
+sha512 = "7f20aa294ffb000cb52331bf8acab6086995ca2bbd8dd5ce569c7a85ef9b3516a8443080d54f21ae23ffa107456e9d22e7510daf3d64b9a81b75cdd1b578eb5d"
+
+[[binary]]
+host = "aarch64"
+distfiles = ["RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-HOST-aarch64-linux-gnu-riscv64-plctxthead-linux-gnu.tar.xz"]
+
+[[binary]]
+host = "riscv64"
+distfiles = ["RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-HOST-riscv64-linux-gnu-riscv64-plctxthead-linux-gnu.tar.xz"]
+
+[[binary]]
+host = "x86_64"
+distfiles = ["RuyiSDK-20240222-T-Head-Sources-T-Head-2.8.0-riscv64-plctxthead-linux-gnu.tar.xz"]
+
+[toolchain]
+target = "riscv64-plctxthead-linux-gnu"
+flavors = ["xthead"]
+components = [
+  { name = "binutils", version = "2.35" },
+  { name = "gcc", version = "10.2.0" },
+  { name = "gdb", version = "10.0" },
+  { name = "glibc", version = "2.33" },
+  { name = "linux-headers", version = "6.4" },
+]
+included_sysroot = "riscv64-plctxthead-linux-gnu/sysroot"

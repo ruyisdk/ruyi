@@ -187,7 +187,7 @@ distfiles = ["RuyiSDK-20231026-riscv64-plct-linux-gnu.tar.xz"]
 
 [toolchain]
 target = "riscv64-plct-linux-gnu"
-flavors = []
+quirks = []
 components = [
   {name = "binutils", version = "2.40"},
   {name = "gcc", version = "13.1.0"},
@@ -254,13 +254,15 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
     - `distfiles` 是分发文件名的列表，每条分发文件的具体定义参照 `distfiles` 字段。要向某目标目录解压该源码包，下载并解压所有这些分发文件到该目标目录即可。
 * `toolchain` 仅在 `kind` 含有 `toolchain` 时有意义，表示适用于工具链包的额外信息。
     - `target` 是工具链在运行时所预期的 target tuple 取值。
-    - `flavors` 是自由形态字符串的列表，用于表示工具链的特殊特征（如支持某厂商未上游的特性，或 `-mcpu` 逻辑与社区版本不同等等）。目前定义了：
+    - `quirks` 是自由形态字符串的列表，用于表示工具链的特殊特征（如支持某厂商未上游的特性，或 `-mcpu` 逻辑与社区版本不同等等）。目前定义了：
         - `xthead`：工具链是由 T-Head 源码构建而成，尤其其 `-mcpu` 取值方式与上游不同。
+    - `flavors` 是 `quirks` 的别名，为了兼容性而保留。
     - `components` 是该包所含的标准组件及相应（等价）版本的列表。目前暂时没有用上，后续可能会基于此提供展示、过滤、匹配等功能。
     - `included_sysroot` 是可选的字符串。如果该字段存在，则代表在解压该包后，此相对路径是指向目标目录下的一个可供直接复制而为虚拟环境所用的 sysroot 目录。
 * `emulator` 仅在 `kind` 含有 `emulator` 时有意义，表示适用于模拟器包的额外信息。其中：
-    - `flavors` 是自由形态字符串的列表，用于表示模拟器的特殊特征（如支持某厂商未上游的特性，或 `-cpu` 逻辑与社区版本不同等等）。目前定义了：
+    - `quirks` 是自由形态字符串的列表，用于表示模拟器的特殊特征（如支持某厂商未上游的特性，或 `-cpu` 逻辑与社区版本不同等等）。目前定义了：
         - `xthead`：模拟器是由 T-Head 源码构建而成，尤其其 `-cpu`/`QEMU_CPU` 取值方式与上游不同。
+    - `flavors` 是 `quirks` 的别名，为了兼容性而保留。
     - `programs` 是该包内可用的模拟器二进制的定义列表，每条记录：
         - `path` 是相对包安装根目录的，指向相应二进制的相对路径。
         - `flavor` 是该模拟器二进制的性质。可选的值有：

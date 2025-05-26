@@ -330,7 +330,7 @@ def _print_pkg_detail(
     if tm := pm.toolchain_metadata:
         logger.stdout("\n### Toolchain metadata\n")
         logger.stdout(f"* Target: [bold][green]{tm.target}[/green][/bold]")
-        logger.stdout(f"* Flavors: {tm.flavors}")
+        logger.stdout(f"* Quirks: {tm.quirks}")
         logger.stdout("* Components:")
         for tc in tm.components:
             logger.stdout(
