@@ -1,0 +1,31 @@
+format = "v1"
+
+[metadata]
+desc = "Official WCH MounRiver Studio GNU Toolchain (bare-metal, GCC 12.x, prebuilt by WCH)"
+vendor = { name = "WCH", eula = "" }
+
+[[distfiles]]
+name = "MRS_Toolchain_Linux_x64_V210.tar.xz"
+size = 548823504
+prefixes_to_unpack = ["RISC-V Embedded GCC12"]
+urls = [
+  "http://file-oss.mounriver.com/tools/MRS_Toolchain_Linux_x64_V210.tar.xz",
+]
+restrict = ["mirror"]
+
+[distfiles.checksums]
+sha256 = "5431c040cb67cf619fd18d003ed9497a1995f59329b7f51d985dcc8013eff236"
+sha512 = "9aa07d4b5e173ec5f661d851f60ec88085a458188afdf21e265e47f2ef9df5ff623d0158173a9fb1620a72945c7f3dfc6dfadfc3661dee5184ba9392a8ee90a4"
+
+[[binary]]
+host = "x86_64"
+distfiles = ["MRS_Toolchain_Linux_x64_V210.tar.xz"]
+
+[toolchain]
+target = "riscv32-wch-elf"
+quirks = ["wch"]
+components = [
+  { name = "binutils", version = "2.38" },
+  { name = "gcc", version = "12.2.0" },
+  { name = "gdb", version = "12.1" },
+]
