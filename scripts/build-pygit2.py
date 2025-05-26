@@ -20,7 +20,7 @@ PYGIT2_SETUPTOOLS_PATCH = """
      # Create a virtual environment
      $PYTHON -m venv $PREFIX
 +    # install setuptools in the venv for python3.12+
-+    $PREFIX/bin/pip install -U setuptools
++    $PREFIX/bin/pip install -U setuptools pycparser
      cd ci
  fi
  
