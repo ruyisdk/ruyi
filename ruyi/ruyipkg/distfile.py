@@ -51,6 +51,10 @@ class Distfile:
         return self._decl.checksums
 
     @property
+    def prefixes_to_unpack(self) -> list[str] | None:
+        return self._decl.prefixes_to_unpack
+
+    @property
     def strip_components(self) -> int:
         return self._decl.strip_components
 
@@ -174,6 +178,7 @@ class Distfile:
             root,
             self.strip_components,
             self.unpack_method,
+            prefixes_to_unpack=self.prefixes_to_unpack,
         )
 
     def unpack_or_symlink(self, root: str | None, logger: RuyiLogger) -> None:
@@ -183,4 +188,5 @@ class Distfile:
             root,
             self.strip_components,
             self.unpack_method,
+            prefixes_to_unpack=self.prefixes_to_unpack,
         )

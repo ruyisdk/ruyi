@@ -24,6 +24,7 @@ def do_unpack(
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: BinaryIO | SupportsRead | None = None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     match unpack_method:
         case UnpackMethod.AUTO:
@@ -46,6 +47,7 @@ def do_unpack(
                 strip_components,
                 unpack_method,
                 stream,
+                prefixes_to_unpack,
             )
         case UnpackMethod.ZIP:
             # TODO: handle strip_components somehow; the unzip(1) command currently
@@ -78,9 +80,19 @@ def do_unpack_or_symlink(
     dest: str | None,
     strip_components: int,
     unpack_method: UnpackMethod,
+    stream: BinaryIO | SupportsRead | None = None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     try:
-        return do_unpack(logger, filename, dest, strip_components, unpack_method)
+        return do_unpack(
+            logger,
+            filename,
+            dest,
+            strip_components,
+            unpack_method,
+            stream,
+            prefixes_to_unpack,
+        )
     except UnrecognizedPackFormatError:
         # just symlink into destination
         return do_symlink(filename, dest)
@@ -124,6 +136,7 @@ def do_unpack_tar(
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: SupportsRead | None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     argv = ["tar", "-x"]
 
@@ -153,6 +166,12 @@ def do_unpack_tar(
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
     if dest is not None:
         argv.extend(("-C", dest))
+    if prefixes_to_unpack:
+        if any(p.startswith("-") for p in prefixes_to_unpack):
+            raise ValueError(
+                "prefixes_to_unpack must not contain any item starting with '-'"
+            )
+        argv.extend(prefixes_to_unpack)
     logger.D(f"about to call tar: argv={argv}")
     p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
 
