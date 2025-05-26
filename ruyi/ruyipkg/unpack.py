@@ -30,7 +30,7 @@ def do_unpack(
         case UnpackMethod.AUTO:
             raise ValueError("the auto unpack method must be resolved prior to use")
         case UnpackMethod.RAW:
-            return do_copy_raw(filename, dest)
+            return _do_copy_raw(filename, dest)
         case (
             UnpackMethod.TAR_AUTO
             | UnpackMethod.TAR
@@ -40,7 +40,7 @@ def do_unpack(
             | UnpackMethod.TAR_XZ
             | UnpackMethod.TAR_ZST
         ):
-            return do_unpack_tar(
+            return _do_unpack_tar(
                 logger,
                 filename,
                 dest,
@@ -54,22 +54,22 @@ def do_unpack(
             # does not have such support.
             return _do_unpack_zip(logger, filename, dest)
         case UnpackMethod.DEB:
-            return do_unpack_deb(logger, filename, dest)
+            return _do_unpack_deb(logger, filename, dest)
         case UnpackMethod.GZ:
             # bare gzip file
-            return do_unpack_bare_gz(logger, filename, dest)
+            return _do_unpack_bare_gz(logger, filename, dest)
         case UnpackMethod.BZ2:
             # bare bzip2 file
-            return do_unpack_bare_bzip2(logger, filename, dest)
+            return _do_unpack_bare_bzip2(logger, filename, dest)
         case UnpackMethod.LZ4:
             # bare lz4 file
-            return do_unpack_bare_lz4(logger, filename, dest)
+            return _do_unpack_bare_lz4(logger, filename, dest)
         case UnpackMethod.XZ:
             # bare xz file
-            return do_unpack_bare_xz(logger, filename, dest)
+            return _do_unpack_bare_xz(logger, filename, dest)
         case UnpackMethod.ZST:
             # bare zstd file
-            return do_unpack_bare_zstd(logger, filename, dest)
+            return _do_unpack_bare_zstd(logger, filename, dest)
         case _:
             raise UnrecognizedPackFormatError(filename)
 
@@ -98,7 +98,7 @@ def do_unpack_or_symlink(
         return do_symlink(filename, dest)
 
 
-def do_copy_raw(
+def _do_copy_raw(
     src_path: str,
     destdir: str | None,
 ) -> None:
@@ -129,7 +129,7 @@ def do_symlink(
     os.symlink(symlink_target, dest)
 
 
-def do_unpack_tar(
+def _do_unpack_tar(
     logger: RuyiLogger,
     filename: str,
     dest: str | None,
@@ -211,7 +211,7 @@ def _do_unpack_zip(
         raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_bare_gz(
+def _do_unpack_bare_gz(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -232,7 +232,7 @@ def do_unpack_bare_gz(
             )
 
 
-def do_unpack_bare_bzip2(
+def _do_unpack_bare_bzip2(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -253,7 +253,7 @@ def do_unpack_bare_bzip2(
             )
 
 
-def do_unpack_bare_lz4(
+def _do_unpack_bare_lz4(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -268,7 +268,7 @@ def do_unpack_bare_lz4(
         raise RuntimeError(f"lz4 failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_bare_xz(
+def _do_unpack_bare_xz(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -289,7 +289,7 @@ def do_unpack_bare_xz(
             )
 
 
-def do_unpack_bare_zstd(
+def _do_unpack_bare_zstd(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -304,7 +304,7 @@ def do_unpack_bare_zstd(
         raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_deb(
+def _do_unpack_deb(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -314,7 +314,7 @@ def do_unpack_deb(
             name = f.name.decode("utf-8")
             if name.startswith("data.tar"):
                 inner_unpack_method = determine_unpack_method(name)
-                return do_unpack_tar(
+                return _do_unpack_tar(
                     logger,
                     name,
                     destdir,
