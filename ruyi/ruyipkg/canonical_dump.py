@@ -160,6 +160,10 @@ def dump_distfile_entry(x: DistfileDeclType) -> Table:
         # from using 2-space indentation for the array items for now.
         y.add("urls", str_array([str(i) for i in x["urls"]], multiline=True))
     if r := x.get("restrict"):
+        # If `restrict` is a string, convert it to a list, fixing a common
+        # oversight in package manifests.
+        if isinstance(r, str):
+            r = [r]
         y.add("restrict", [str(i) for i in r])
     if f := x.get("fetch_restriction"):
         y.add("fetch_restriction", dump_fetch_restriction(f))

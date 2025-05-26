@@ -219,6 +219,11 @@ class DistfileDecl:
 
     def is_restricted(self, kind: RestrictKind) -> bool:
         if restricts := self._data.get("restrict"):
+            # account for a common oversight in some existing manifests where
+            # the field was specified as a string instead of a list, in case the
+            # user has not yet synced their repo
+            if isinstance(restricts, str):
+                return kind == restricts
             return kind in restricts
         return False
 
