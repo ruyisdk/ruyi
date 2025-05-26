@@ -57,18 +57,23 @@ class PluginProfileProvider:
 
         return ret
 
-    def list_needed_flavors(self, profile_id: str) -> list[str] | None:
-        fn = self._must_get("list_needed_flavors_v1")
+    def list_needed_quirks(self, profile_id: str) -> list[str] | None:
+        # For backward compatibility, try "list_needed_quirks_v1" first, then
+        # fall back to "list_needed_flavors_v1" if the former is not available.
+        fn = self._phctx.get_from_plugin(self._plugin_id, "list_needed_quirks_v1")
+        if fn is None:
+            fn = self._must_get("list_needed_flavors_v1")
+
         ret = self._ev.eval_function(fn, profile_id)
         if not validate_list_str_or_none(ret):
             raise InvalidProfilePluginError(
-                "list_needed_flavors_v1 must return list[str] | None"
+                "list_needed_quirks_v1 must return list[str] | None"
             )
 
         return ret
 
-    def get_common_flags(self, profile_id: str, toolchain_flavors: list[str]) -> str:
-        result = self._maybe_get_common_flags_v2(profile_id, toolchain_flavors)
+    def get_common_flags(self, profile_id: str, toolchain_quirks: list[str]) -> str:
+        result = self._maybe_get_common_flags_v2(profile_id, toolchain_quirks)
         if result is not None:
             return result
         return self._get_common_flags_v1(profile_id)
@@ -173,8 +178,8 @@ class ProfileProxy:
         return self._id
 
     @property
-    def need_flavor(self) -> set[str]:
-        r = self._provider.list_needed_flavors(self._id)
+    def need_quirks(self) -> set[str]:
+        r = self._provider.list_needed_quirks(self._id)
         return set(r) if r else set()
 
     def get_common_flags(self, toolchain_flavors: list[str]) -> str:

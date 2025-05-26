@@ -116,15 +116,15 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             logger.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
             return 1
 
-        if not tc_pm.toolchain_metadata.satisfies_flavor_set(profile.need_flavor):
+        if not tc_pm.toolchain_metadata.satisfies_quirk_set(profile.need_quirks):
             logger.F(
                 f"the package [yellow]{tc_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
             )
             logger.I(
-                f"feature(s) needed by profile:   {humanize_list(profile.need_flavor, item_color='cyan')}"
+                f"quirks needed by profile:   {humanize_list(profile.need_quirks, item_color='cyan')}"
             )
             logger.I(
-                f"feature(s) provided by package: {humanize_list(tc_pm.toolchain_metadata.flavors, item_color='yellow')}"
+                f"quirks provided by package: {humanize_list(tc_pm.toolchain_metadata.quirks, item_color='yellow')}"
             )
             return 1
 
@@ -210,8 +210,8 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                     )
                     return 1
 
-        # derive flags for (the flavor(s) of) this toolchain
-        tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.flavors)
+        # derive flags for (the quirks of) this toolchain
+        tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.quirks)
 
         # record the target tuple info to configure in the venv
         configured_target: ConfiguredTargetTuple = {
@@ -271,16 +271,16 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         for prog in emu_progs:
             if not profile.check_emulator_flavor(
                 prog.flavor,
-                emu_pm.emulator_metadata.flavors,
+                emu_pm.emulator_metadata.quirks,
             ):
                 logger.F(
                     f"the package [yellow]{emu_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
                 )
                 logger.I(
-                    f"feature(s) needed by profile:   {humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
+                    f"quirks needed by profile:   {humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
                 )
                 logger.I(
-                    f"feature(s) provided by package: {humanize_list(emu_pm.emulator_metadata.flavors or [], item_color='yellow')}"
+                    f"quirks provided by package: {humanize_list(emu_pm.emulator_metadata.quirks or [], item_color='yellow')}"
                 )
                 return 1
 

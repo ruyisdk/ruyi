@@ -16,10 +16,10 @@ class ListProfilesCommand(
 
         for arch in mr.get_supported_arches():
             for p in mr.iter_profiles_for_arch(arch):
-                if not p.need_flavor:
+                if not p.need_quirks:
                     logger.stdout(p.id)
                     continue
 
-                logger.stdout(f"{p.id} (needs flavor(s): {p.need_flavor})")
+                logger.stdout(f"{p.id} (needs quirks: {p.need_quirks})")
 
         return 0

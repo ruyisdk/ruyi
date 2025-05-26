@@ -1,3 +1,4 @@
+from copy import deepcopy
 import re
 from typing import Final
 
@@ -241,7 +242,11 @@ def dump_emulator_program_decl(x: EmulatorProgramDeclType) -> Table:
 
 def dump_emulator_decl(x: EmulatorDeclType) -> Table:
     y = table()
-    y.add("flavors", str_array(x.get("flavors", [])))
+    # Prefer `quirks` to `flavors`
+    quirks = x.get("quirks")
+    if quirks is None:
+        quirks = x.get("flavors", [])
+    y.add("quirks", str_array(quirks))
     y.add("programs", AoT([dump_emulator_program_decl(i) for i in x["programs"]]))
     return y
 
@@ -278,7 +283,7 @@ def dump_toolchain_component_decl(x: ToolchainComponentDeclType) -> InlineTable:
 
 
 def dump_toolchain_component_decls(x: list[ToolchainComponentDeclType]) -> Array:
-    sorted_x = x[:]
+    sorted_x = deepcopy(x)
     sorted_x.sort(key=lambda i: i["name"])
     return Array(
         [dump_toolchain_component_decl(i) for i in sorted_x],
@@ -290,7 +295,11 @@ def dump_toolchain_component_decls(x: list[ToolchainComponentDeclType]) -> Array
 def dump_toolchain_decl(x: ToolchainDeclType) -> Table:
     y = table()
     y.add("target", string(x["target"]))
-    y.add("flavors", str_array(x["flavors"]))
+    # Prefer `quirks` to `flavors`
+    quirks = x.get("quirks")
+    if quirks is None:
+        quirks = x.get("flavors", [])
+    y.add("quirks", str_array(quirks))
     y.add("components", dump_toolchain_component_decls(x["components"]))
     if "included_sysroot" in x:
         y.add("included_sysroot", x["included_sysroot"])

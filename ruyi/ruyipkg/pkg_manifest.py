@@ -87,7 +87,8 @@ class ToolchainComponentDeclType(TypedDict):
 
 class ToolchainDeclType(TypedDict):
     target: str
-    flavors: list[str]
+    quirks: "NotRequired[list[str]]"
+    flavors: "NotRequired[list[str]]"  # Backward compatibility alias
     components: list[ToolchainComponentDeclType]
     included_sysroot: "NotRequired[str]"
 
@@ -103,7 +104,8 @@ class EmulatorProgramDeclType(TypedDict):
 
 
 class EmulatorDeclType(TypedDict):
-    flavors: "NotRequired[list[str]]"
+    quirks: "NotRequired[list[str]]"
+    flavors: "NotRequired[list[str]]"  # Backward compatibility alias
     programs: list[EmulatorProgramDeclType]
 
 
@@ -296,6 +298,11 @@ class ToolchainDecl:
         self._data = data
         self._component_vers_cache: dict[str, str] | None = None
 
+        # rename "flavors" to "quirks" for compatibility with old data
+        if "quirks" not in self._data and "flavors" in self._data:
+            self._data["quirks"] = self._data["flavors"]
+            del self._data["flavors"]
+
     @property
     def _component_vers(self) -> dict[str, str]:
         if self._component_vers_cache is None:
@@ -314,15 +321,15 @@ class ToolchainDecl:
         return self.target.split("-", 1)[0]
 
     @property
-    def flavors(self) -> list[str]:
-        return self._data["flavors"]
+    def quirks(self) -> list[str]:
+        return self._data.get("quirks", [])
 
-    def has_flavor(self, f: str) -> bool:
-        return f in self._data["flavors"]
+    def has_quirk(self, q: str) -> bool:
+        return q in self.quirks
 
-    def satisfies_flavor_set(self, req: set[str]) -> bool:
-        # req - my_flavors must be the empty set so that my_flavors >= req
-        return len(req.difference(self.flavors)) == 0
+    def satisfies_quirk_set(self, req: set[str]) -> bool:
+        # req - my_quirks must be the empty set so that my_quirks >= req
+        return len(req.difference(self.quirks)) == 0
 
     @property
     def components(self) -> Iterable[ToolchainComponentDeclType]:
@@ -376,9 +383,14 @@ class EmulatorDecl:
         self._data = data
         self.programs = [EmulatorProgDecl(x) for x in data["programs"]]
 
+        # rename "flavors" to "quirks" for compatibility with old data
+        if "quirks" not in self._data and "flavors" in self._data:
+            self._data["quirks"] = self._data["flavors"]
+            del self._data["flavors"]
+
     @property
-    def flavors(self) -> list[str] | None:
-        return self._data.get("flavors")
+    def quirks(self) -> list[str] | None:
+        return self._data.get("quirks")
 
     def list_for_arch(self, arch: str) -> Iterable[EmulatorProgDecl]:
         for p in self.programs:
