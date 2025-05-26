@@ -24,12 +24,13 @@ def do_unpack(
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: BinaryIO | SupportsRead | None = None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     match unpack_method:
         case UnpackMethod.AUTO:
             raise ValueError("the auto unpack method must be resolved prior to use")
         case UnpackMethod.RAW:
-            return do_copy_raw(filename, dest)
+            return _do_copy_raw(filename, dest)
         case (
             UnpackMethod.TAR_AUTO
             | UnpackMethod.TAR
@@ -39,35 +40,36 @@ def do_unpack(
             | UnpackMethod.TAR_XZ
             | UnpackMethod.TAR_ZST
         ):
-            return do_unpack_tar(
+            return _do_unpack_tar(
                 logger,
                 filename,
                 dest,
                 strip_components,
                 unpack_method,
                 stream,
+                prefixes_to_unpack,
             )
         case UnpackMethod.ZIP:
             # TODO: handle strip_components somehow; the unzip(1) command currently
             # does not have such support.
             return _do_unpack_zip(logger, filename, dest)
         case UnpackMethod.DEB:
-            return do_unpack_deb(logger, filename, dest)
+            return _do_unpack_deb(logger, filename, dest)
         case UnpackMethod.GZ:
             # bare gzip file
-            return do_unpack_bare_gz(logger, filename, dest)
+            return _do_unpack_bare_gz(logger, filename, dest)
         case UnpackMethod.BZ2:
             # bare bzip2 file
-            return do_unpack_bare_bzip2(logger, filename, dest)
+            return _do_unpack_bare_bzip2(logger, filename, dest)
         case UnpackMethod.LZ4:
             # bare lz4 file
-            return do_unpack_bare_lz4(logger, filename, dest)
+            return _do_unpack_bare_lz4(logger, filename, dest)
         case UnpackMethod.XZ:
             # bare xz file
-            return do_unpack_bare_xz(logger, filename, dest)
+            return _do_unpack_bare_xz(logger, filename, dest)
         case UnpackMethod.ZST:
             # bare zstd file
-            return do_unpack_bare_zstd(logger, filename, dest)
+            return _do_unpack_bare_zstd(logger, filename, dest)
         case _:
             raise UnrecognizedPackFormatError(filename)
 
@@ -78,15 +80,25 @@ def do_unpack_or_symlink(
     dest: str | None,
     strip_components: int,
     unpack_method: UnpackMethod,
+    stream: BinaryIO | SupportsRead | None = None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     try:
-        return do_unpack(logger, filename, dest, strip_components, unpack_method)
+        return do_unpack(
+            logger,
+            filename,
+            dest,
+            strip_components,
+            unpack_method,
+            stream,
+            prefixes_to_unpack,
+        )
     except UnrecognizedPackFormatError:
         # just symlink into destination
         return do_symlink(filename, dest)
 
 
-def do_copy_raw(
+def _do_copy_raw(
     src_path: str,
     destdir: str | None,
 ) -> None:
@@ -117,13 +129,14 @@ def do_symlink(
     os.symlink(symlink_target, dest)
 
 
-def do_unpack_tar(
+def _do_unpack_tar(
     logger: RuyiLogger,
     filename: str,
     dest: str | None,
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: SupportsRead | None,
+    prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     argv = ["tar", "-x"]
 
@@ -153,6 +166,12 @@ def do_unpack_tar(
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
     if dest is not None:
         argv.extend(("-C", dest))
+    if prefixes_to_unpack:
+        if any(p.startswith("-") for p in prefixes_to_unpack):
+            raise ValueError(
+                "prefixes_to_unpack must not contain any item starting with '-'"
+            )
+        argv.extend(prefixes_to_unpack)
     logger.D(f"about to call tar: argv={argv}")
     p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
 
@@ -192,7 +211,7 @@ def _do_unpack_zip(
         raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_bare_gz(
+def _do_unpack_bare_gz(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -213,7 +232,7 @@ def do_unpack_bare_gz(
             )
 
 
-def do_unpack_bare_bzip2(
+def _do_unpack_bare_bzip2(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -234,7 +253,7 @@ def do_unpack_bare_bzip2(
             )
 
 
-def do_unpack_bare_lz4(
+def _do_unpack_bare_lz4(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -249,7 +268,7 @@ def do_unpack_bare_lz4(
         raise RuntimeError(f"lz4 failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_bare_xz(
+def _do_unpack_bare_xz(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -270,7 +289,7 @@ def do_unpack_bare_xz(
             )
 
 
-def do_unpack_bare_zstd(
+def _do_unpack_bare_zstd(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -285,7 +304,7 @@ def do_unpack_bare_zstd(
         raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
 
 
-def do_unpack_deb(
+def _do_unpack_deb(
     logger: RuyiLogger,
     filename: str,
     destdir: str | None,
@@ -295,7 +314,7 @@ def do_unpack_deb(
             name = f.name.decode("utf-8")
             if name.startswith("data.tar"):
                 inner_unpack_method = determine_unpack_method(name)
-                return do_unpack_tar(
+                return _do_unpack_tar(
                     logger,
                     name,
                     destdir,

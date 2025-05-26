@@ -152,6 +152,8 @@ def dump_distfile_entry(x: DistfileDeclType) -> Table:
     if s := x.get("strip_components"):
         if s != 1:
             y.add("strip_components", s)
+    if p := x.get("prefixes_to_unpack"):
+        y.add("prefixes_to_unpack", str_array(p, multiline=len(p) > 1))
     if "urls" in x:
         # XXX: https://github.com/python-poetry/tomlkit/issues/290 prevents us
         # from using 2-space indentation for the array items for now.

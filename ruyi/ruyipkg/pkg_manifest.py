@@ -60,6 +60,7 @@ class DistfileDeclType(TypedDict):
     strip_components: "NotRequired[int]"
     unpack: "NotRequired[UnpackMethod]"
     fetch_restriction: "NotRequired[FetchRestrictionDeclType]"
+    prefixes_to_unpack: "NotRequired[list[str]]"
 
 
 class BinaryFileDeclType(TypedDict):
@@ -229,6 +230,10 @@ class DistfileDecl:
 
     def get_checksum(self, kind: str) -> str | None:
         return self._data["checksums"].get(kind)
+
+    @property
+    def prefixes_to_unpack(self) -> list[str] | None:
+        return self._data.get("prefixes_to_unpack")
 
     @property
     def strip_components(self) -> int:
