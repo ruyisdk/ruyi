@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
-FIRST_RUN_PROMPT = """
+FIRST_RUN_PROMPT = """\
 Welcome to RuyiSDK! This appears to be your first run of [yellow]ruyi[/].
 
 By default, the RuyiSDK team collects anonymous usage data to help us improve
