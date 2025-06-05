@@ -1,0 +1,627 @@
+# Bash/Zsh completion script for `ruyi`
+
+_ruyi_todo()
+{
+    return 0
+}
+
+_ruyi_completions_init()
+{
+    if [[ -n $ZSH_VERSION ]]; then
+        args=("${words[@]}")
+        shift args
+        pos=$(( $CURRENT - 1 ))
+        return 0
+    fi
+
+    if declare -F _init_completion >/dev/null 2>&1; then
+        _init_completion || return 1
+        args=("${COMP_WORDS[@]}")
+        pos=$COMP_CWORD
+        return 0
+    fi
+
+    # fallback manual init
+    args=("${COMP_WORDS[@]}")
+    pos=$COMP_CWORD
+    COMPREPLY=()
+    return 0
+}
+
+_ruyi_enter()
+{
+    if [[ $cur_pos -gt $pos ]]; then
+        return 1
+    fi
+    cur_pos=$(( $cur_pos + 1 ))
+    cur=${args[$cur_pos]}
+    return 0
+}
+
+# int _ruyi_completions_zsh_from_map(const char *arr_name, const char *order[] = NULL)
+_ruyi_completions_zsh_from_map()
+{
+    if [[ -z $ZSH_VERSION ]]; then
+        return 1
+    fi
+
+    local arr_name="$1"
+
+    local -a order
+    if [[ -n $2 ]]; then
+        shift
+        while [[ $# -gt 1 ]]; do
+            shift
+            order+=("$1")
+        done
+    else
+        order=("${(kO)${(P)${arr_name}}[@]}")
+        # sort order
+        order=(`echo ${order[@]} | tr ' ' '\012' | sort | tr '\012' ' '`)
+    fi
+
+    local -a cmds
+
+    # for k in ${(k)${(P)${arr_name}}[@]}; do
+    for k in ${order[@]}; do
+        local v=${${(P)${arr_name}}[$k]}
+        cmds+=( "$k:$v" )
+        # cmds+=( "${k}[\'$v\']" )
+    done
+
+    _describe 'subcommands' cmds && return 0
+}
+
+# int _ruyi_completions_from_map(const char *arr_name, const char *order[] = NULL)
+_ruyi_completions_from_map()
+{
+
+    if [[ $cur_pos -ne $pos ]]; then
+        return 0
+    fi
+
+    if [[ -n $ZSH_VERSION ]]; then
+        _ruyi_completions_zsh_from_map "$@"
+        return $?
+    fi
+
+    local arr_name="$1"
+    local -n arr="$arr_name"
+
+    local subcommands="${!arr[@]}"
+    COMPREPLY+=( $(compgen -W "$subcommands" -- "$cur") )
+}
+
+# int _ruyi_completions_from_att(const char *arr_name[])
+_ruyi_completions_from_arr()
+{
+
+    if [[ $cur_pos -ne $pos ]]; then
+        return 0
+    fi
+
+    local arr=("$@")
+
+    if [[ -n $ZSH_VERSION ]]; then
+        _alternative "packages:Software packages:(${arr[@]})"
+        return $?
+    fi
+
+    local all_commands="${arr[@]}"
+    COMPREPLY+=( $(compgen -W "$all_commands" -- "$cur") )
+}
+
+_ruyi_completions_files()
+{
+    if [[ $cur_pos -ne $pos ]]; then
+        return 0
+    fi
+
+    if [[ -n $ZSH_VERSION ]]; then
+        _arguments '*:arg: _default'
+        return $?
+    fi
+
+    COMPREPLY+=( $(compgen -f -- "$cur") )
+}
+
+# int _ruyi_skip_arg(const char *callback_name) # Skip for an argument
+_ruyi_skip_arg()
+{
+    _ruyi_enter || return 0
+
+    local callback_name="$1"
+
+    if [[ -n $cur ]]; then
+        ${callback_name}
+        return 0
+    fi
+
+}
+
+# int _ruyi_next_arg(const char* completion, const char *callback_name) # Next argument can use specific completion
+_ruyi_next_arg()
+{
+    _ruyi_enter || return 0
+
+    local completion="$1"
+    local callback_name="$2"
+
+    if [[ -n $cur ]]; then
+        ${callback_name}
+        return 0
+    fi
+
+    ${completion}
+}
+
+_ruyi_admin_checksum()
+{
+    _ruyi_enter || return 0
+    
+    declare -A subcommand_descs=(
+        ["--restrict"]="the 'restrict' field to use for all mentioned distfiles, separated with comma"
+        ["-f"]="Format of checksum section to generate in"
+        ["--format"]="Format of checksum section to generate in"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+    
+    _ruyi_completions_from_map subcommand_descs
+    _ruyi_completions_files
+
+    case $cur in
+        --restrict) _ruyi_skip_arg _ruyi_admin_checksum ;;
+        -f|--format) _ruyi_next_arg _ruyi_completions_files _ruyi_admin_checksum ;;
+        *) _ruyi_admin_checksum ;;
+    esac
+}
+
+_ruyi_admin_format_manifest()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+    _ruyi_completions_files
+
+    case $cur in
+        *) _ruyi_admin_format_manifest ;;
+    esac
+}
+
+_ruyi_admin()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        [run-plugin-cmd]="Run a plugin-defined command"
+        [checksum]="Generate a checksum section for a manifest file for the distfiles given"
+        [format-manifest]="Format the given package manifests into canonical TOML representation"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+    
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        checksum) _ruyi_admin_checksum ;;
+        format-manifest) _ruyi_admin_format_manifest ;;
+    esac
+}
+
+_ruyi_list_profiles()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--category-contains"]="[STR] Match packages from categories whose names contain the given string"
+        ["--category-is"]="[STR] Match packages from the given category"
+        ["--name-contains"]="[STR] Match packages whose names contain the given string"
+        ["-v"]="Also show details for every package"
+        ["--verbose"]="Also show details for every package"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        --category-contains) _ruyi_skip_arg _ruyi_list_profiles ;;
+        --category-is) _ruyi_skip_arg _ruyi_list_profiles ;;
+        --name-contains) _ruyi_skip_arg _ruyi_list_profiles ;;
+        -v|--verbose) _ruyi_list_profiles ;;
+    esac
+}
+
+_ruyi_list()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["profiles"]="List all available profiles"
+        ["--category-contains"]="[STR] Match packages from categories whose names contain the given string"
+        ["--category-is"]="[STR] Match packages from the given category"
+        ["--name-contains"]="[STR] Match packages whose names contain the given string"
+        ["-v"]="Also show details for every package"
+        ["--verbose"]="Also show details for every package"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        profiles) _ruyi_list_profiles ;;
+        --category-contains) _ruyi_skip_arg _ruyi_list ;;
+        --category-is) _ruyi_skip_arg _ruyi_list ;;
+        --name-contains) _ruyi_skip_arg _ruyi_list ;;
+        -v|--verbose) _ruyi_list ;;
+    esac
+}
+
+_ruyi_extract()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--host"]="Override the host architecture (normally not needed)"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    local -a packages
+    while read -r line; do
+        # eg: * analyzer/dynamorio-riscv
+        full_name=${line#* }
+        prefix=${full_name%%/*}
+        name=${full_name#*/}
+        if [[ "$prefix" == "source" ]]; then
+            packages+=("$name")
+        fi
+    done < <(ruyi list --name-contains '' 2>/dev/null | grep '\*')
+
+    _ruyi_completions_from_arr ${packages[@]}
+
+    case $cur in
+        --host) _ruyi_skip_arg _ruyi_extract ;;
+        *) _ruyi_extract ;;
+    esac
+}
+
+_ruyi_install()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["-f"]="Fetch distribution files only without installing"
+        ["--fetch-only"]="Fetch distribution files only without installing"
+        ["--reinstall"]="Force re-installation of already installed packages"
+        ["--host"]="Override the host architecture (normally not needed)"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    local -a packages
+    while read -r line; do
+        # eg: * analyzer/dynamorio-riscv
+        full_name=${line#* }
+        prefix=${full_name%%/*}
+        name=${full_name#*/}
+        if [[ "$prefix" == "board-image" ]]; then
+            continue
+        fi
+        if [[ "$prefix" == "source" ]]; then
+            continue
+        fi
+        packages+=("$name")
+    done < <(ruyi list --name-contains '' 2>/dev/null | grep '\*')
+
+    _ruyi_completions_from_arr ${packages[@]}
+
+    case $cur in
+        -f|--fetch-only) _ruyi_skip_arg _ruyi_install ;;
+        --reinstall) _ruyi_skip_arg _ruyi_install ;;
+        --host) _ruyi_skip_arg _ruyi_install ;;
+        *) _ruyi_install ;;
+    esac
+}
+
+_ruyi_device()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["provision"]="Interactively initialize a device for development"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+    esac
+}
+
+_ruyi_venv()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["-n"]="Override the venv's name"
+        ["--name"]="Override the venv's name"
+        ["-t"]="Specifier(s) of the toolchain package(s) to use"
+        ["--toolchain"]="Specifier(s) of the toolchain package(s) to use"
+        ["-e"]="Specifier of the emulator package to use"
+        ["--emulator"]="Specifier of the emulator package to use"
+        ["--with-sysroot"]="Provision a fresh sysroot (default)"
+        ["--without-sysroot"]="Do not include a sysroot in the virtual environment"
+        ["--sysroot-from"]="Use this sysroot package instead of the toolchain one"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        --name|-n) _ruyi_skip_arg _ruyi_venv ;;
+        --toolchain|-t) _ruyi_skip_arg _ruyi_venv ;;
+        --emulator|-e) _ruyi_skip_arg _ruyi_venv ;;
+        --sysroot-from) _ruyi_skip_arg _ruyi_venv ;;
+        --with-sysroot|--without-sysroot) _ruyi_venv ;;
+    esac
+}
+
+_ruyi_news_list()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--new"]="List unread news items only"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+    esac
+}
+
+_ruyi_news_read()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--quiet"]="Do not output anything and only mark as read"
+        ["-q"]="Do not output anything and only mark as read"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        --quiet|-q) _ruyi_news_read ;;
+        *) _ruyi_news_read ;;
+    esac
+}
+
+_ruyi_news()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["list"]="List news items"
+        ["read"]="Read news items"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        list) _ruyi_news_list ;;
+        read) _ruyi_news_read ;;
+    esac
+}
+
+_ruyi_telemetry_on_off()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["on"]="Enable"
+        ["off"]="Disable"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+    esac
+}
+
+_ruyi_telemetry_status()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["-v"]="Enable verbose output"
+        ["--verbose"]="Enable verbose output"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+    
+    case $cur in
+        -v|--verbose) _ruyi_telemetry_status ;;
+    esac
+}
+
+_ruyi_telemetry()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["consent"]="Give consent to telemetry data uploads"
+        ["local"]="Set telemetry mode to local collection only"
+        ["optout"]="Opt out of telemetry data collection"
+        ["status"]="Print the current telemetry mode"
+        ["upload"]="Upload collected telemetry data now"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        status) _ruyi_telemetry_status ;;
+        consent|optout) _ruyi_telemetry_on_off ;;
+    esac
+}
+
+_ruyi_self_clean()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--quiet"]="Do not print out the actions being performed"
+        ["-q"]="Do not print out the actions being performed"
+        ["--all"]="Remove all covered data"
+        ["--distfiles"]="Remove all downloaded distfiles if any"
+        ["--installed-pkgs"]="Remove all installed packages if any"
+        ["--news-read-status"]="Mark all news items as unread"
+        ["--progcache"]="Clear the Ruyi program cache"
+        ["--repo"]="Remove the Ruyi repo if located in managed cache directory"
+        ["--telemetry"]="Remove all telemetry data recorded if any"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        *) _ruyi_self_clean ;;
+    esac
+}
+
+_ruyi_self_uninstall()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["--purge"]="Remove all installed packages and Ruyi-managed remote repo data"
+        ["-y"]="Give consent for uninstallation; do not ask for confirmation"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        *) _ruyi_self_uninstall ;;
+    esac
+}
+
+_ruyi_self()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["clean"]="Remove various Ruyi-managed data to reclaim storage"
+        ["uninstall"]="Uninstall Ruyi"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        clean) _ruyi_self_clean ;;
+        uninstall) _ruyi_self_uninstall ;;
+    esac
+}
+
+_ruyi_config()
+{
+    _ruyi_enter || return 0
+
+    declare -A subcommand_descs=(
+        ["get"]="Query the value of a Ruyi config option"
+        ["set"]="Set the value of a Ruyi config option"
+        ["unset"]="Unset a Ruyi config option"
+        ["remove-section"]="Remove a section from the Ruyi config"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+    )
+
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in # Sorry, we don't know how to provide keys for the config options
+    esac
+}
+
+_ruyi_completions_main()
+{
+    local args pos cur cur_pos # args: current cmd line; pos: position of the cursor
+    _ruyi_completions_init || return 1
+    local state
+    cur_pos=0
+
+    # Top level command completion
+    _ruyi_enter || return 0
+    
+    declare -A subcommand_descs=(
+        [admin]="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos"
+        [list]="List available packages in configured repository"
+        [extract]="Fetch package(s) then extract to current directory"
+        [install]="Install package from configured repository"
+        [i]="Install package from configured repository"
+        [device]="Manage devices"
+        [venv]="Generate a virtual environment adapted to the chosen toolchain and profile"
+        [news]="List and read news items from configured repository"
+        [update]="Update RuyiSDK repo and packages"
+        [telemetry]="Manage your telemetry preferences"
+        [self]="Manage this Ruyi installation"
+        [config]="Manage Ruyi's config options"
+        [version]="Print version information"
+        ["-h"]="Show this help message and exit"
+        ["--help"]="Show this help message and exit"
+        ["-V"]="Print version information"
+        ["--version"]="Print version information"
+        ["--porcelain"]="Give the output in a machine-friendly format if applicable"
+    )
+    
+    _ruyi_completions_from_map subcommand_descs
+
+    case $cur in
+        admin) _ruyi_admin ;;
+        list) _ruyi_list ;;
+        extract) _ruyi_extract ;;
+        i|install) _ruyi_install ;;
+        device) _ruyi_device ;;
+        venv) _ruyi_venv ;;
+        news) _ruyi_news ;;
+        telemetry) _ruyi_telemetry ;;
+        self) _ruyi_self ;;
+        config) _ruyi_config ;;
+    esac
+}
+
+if [[ -n $ZSH_VERSION ]]; then
+    compdef _ruyi_completions_main ruyi
+    return 0
+fi
+
+complete -F _ruyi_completions_main ruyi
