@@ -10,7 +10,7 @@
 
 在为 RuyiSDK 做贡献时，请尊重并考虑他人。我们旨在为所有贡献者营造一个开放和友好的环境。
 
-请您遵守[《RuyiSDK 社区行为准则》](https://ruyisdk.org/en/code_of_conduct)。
+请您遵守[《RuyiSDK 社区行为准则》](https://ruyisdk.org/code_of_conduct)。
 
 ## 开发者原创声明（DCO）
 

@@ -22,7 +22,7 @@ put inside your `$PATH` and you're ready to go.
 You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
 (only available in Chinese right now).
 
-[docs]: https://ruyisdk.github.io/docs/zh/introduction/
+[docs]: https://ruyisdk.org/docs/intro
 
 ## Configuration
 
