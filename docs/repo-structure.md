@@ -62,7 +62,7 @@ doc_uri = "https://ruyisdk.github.io/docs/"
 ruyi-repo = "v1"
 
 [repo]
-doc_uri = "https://ruyisdk.github.io/docs/"
+doc_uri = "https://ruyisdk.org/docs/intro"
 
 [[mirror]]
 id = "ruyi-dist"
