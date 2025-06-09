@@ -48,6 +48,13 @@ class ListCommand(
 
         # filter expressions
         p.add_argument(
+            "--is-installed",
+            action=ListFilterAction,
+            nargs=1,
+            dest="filters",
+            help="Match packages that are installed (y/true/1) or not installed (n/false/0)",
+        )
+        p.add_argument(
             "--category-contains",
             action=ListFilterAction,
             nargs=1,
@@ -97,7 +104,7 @@ class ListCommand(
             )
             return 1
 
-        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo, filters))
+        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
 
         if cfg.is_porcelain:
             return _do_list_porcelain(augmented_pkgs)
@@ -195,11 +202,12 @@ class AugmentedPkg:
     @classmethod
     def yield_from_repo(
         cls,
+        cfg: GlobalConfig,
         mr: MetadataRepo,
         filters: ListFilter,
     ) -> "Iterable[Self]":
         for category, pkg_name, pkg_vers in mr.iter_pkgs():
-            if not filters.check_pkg_name(mr, category, pkg_name):
+            if not filters.check_pkg_name(cfg, mr, category, pkg_name):
                 continue
 
             pkg = cls()
