@@ -1,5 +1,6 @@
 import copy
 import datetime
+from functools import cached_property
 import locale
 import os.path
 from os import PathLike
@@ -19,6 +20,7 @@ import tomlkit
 
 from ..log import RuyiLogger
 from ..ruyipkg.repo import MetadataRepo
+from ..ruyipkg.state import RuyipkgGlobalStateStore
 from ..telemetry import TelemetryProvider
 from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.xdg_basedir import XDGBaseDir
@@ -327,6 +329,14 @@ class GlobalConfig:
             if p.exists():
                 return p
         return None
+
+    @property
+    def ruyipkg_state_root(self) -> os.PathLike[Any]:
+        return pathlib.Path(self.ensure_state_dir()) / "ruyipkg"
+
+    @cached_property
+    def ruyipkg_global_state(self) -> RuyipkgGlobalStateStore:
+        return RuyipkgGlobalStateStore(self.ruyipkg_state_root)
 
     def ensure_data_dir(self) -> os.PathLike[Any]:
         p = self._dirs.app_data

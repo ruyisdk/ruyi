@@ -565,13 +565,35 @@ def _do_install_binary_pkg(
 
     pkg_name = pm.name_for_installation
     install_root = config.global_binary_install_root(str(canonicalized_host), pkg_name)
-    if is_root_likely_populated(install_root):
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        str(canonicalized_host),
+    )
+
+    # Fallback to directory check if not tracked in state
+    if not is_installed and is_root_likely_populated(install_root):
+        is_installed = True
+
+    if is_installed:
         if not reinstall:
             logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
         logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        # Remove from state tracking before purging
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            str(canonicalized_host),
         )
         shutil.rmtree(install_root)
 
@@ -589,6 +611,16 @@ def _do_install_binary_pkg(
         if ret != 0:
             return ret
         os.rename(tmp_root, install_root)
+
+    if not fetch_only:
+        rgs.record_installation(
+            repo_id=pm.repo_id,
+            category=pm.category,
+            name=pm.name,
+            version=pm.ver,
+            host=str(canonicalized_host),
+            install_path=install_root,
+        )
 
     logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
@@ -653,13 +685,35 @@ def _do_install_blob_pkg(
 
     pkg_name = pm.name_for_installation
     install_root = config.global_blob_install_root(pkg_name)
-    if is_root_likely_populated(install_root):
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        "",  # host is "" for blob packages
+    )
+
+    # Fallback to directory check if not tracked in state
+    if not is_installed and is_root_likely_populated(install_root):
+        is_installed = True
+
+    if is_installed:
         if not reinstall:
             logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
         logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        # Remove from state tracking before purging
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            "",
         )
         shutil.rmtree(install_root)
 
@@ -676,6 +730,16 @@ def _do_install_blob_pkg(
         if ret != 0:
             return ret
         os.rename(tmp_root, install_root)
+
+    if not fetch_only:
+        rgs.record_installation(
+            repo_id=pm.repo_id,
+            category=pm.category,
+            name=pm.name,
+            version=pm.ver,
+            host="",  # Empty for blob packages
+            install_path=install_root,
+        )
 
     logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"

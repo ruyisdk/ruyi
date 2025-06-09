@@ -625,6 +625,10 @@ class BoundPackageManifest(PackageManifest):
         self.repo = repo
 
     @property
+    def repo_id(self) -> str:
+        return self.repo.repo_id
+
+    @property
     def semver(self) -> Version:
         return self._semver
 
