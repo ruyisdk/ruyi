@@ -2,7 +2,10 @@ import argparse
 import enum
 from typing import Any, Callable, Iterable, NamedTuple, Sequence, TypeVar, TYPE_CHECKING
 
+from ..utils.global_mode import TRUTHY_ENV_VAR_VALUES
+
 if TYPE_CHECKING:
+    from ..config import GlobalConfig
     from .repo import MetadataRepo
 
 _T = TypeVar("_T")
@@ -14,6 +17,7 @@ class ListFilterOpKind(enum.Enum):
     CATEGORY_IS = 2
     NAME_CONTAINS = 3
     RELATED_TO_ENTITY = 4
+    IS_INSTALLED = 5
 
 
 class ListFilterOp(NamedTuple):
@@ -22,6 +26,7 @@ class ListFilterOp(NamedTuple):
 
 
 class ListFilterExecCtx(NamedTuple):
+    cfg: "GlobalConfig"
     mr: "MetadataRepo"
     category: str
     pkg_name: str
@@ -43,6 +48,17 @@ def _execute_filter_op(op: ListFilterOp, ctx: ListFilterExecCtx) -> bool:
                 transitive=True,
                 unidirectional=False,
             )
+        case ListFilterOpKind.IS_INSTALLED:
+            asks_for_installed = op.arg.lower() in TRUTHY_ENV_VAR_VALUES
+
+            # We need to check all versions of this package to see if any are installed
+            # For now, we'll use a simple heuristic - check if ANY version is installed
+            installed_packages = ctx.cfg.ruyipkg_global_state.list_installed_packages()
+            is_installed = any(
+                pkg.category == ctx.category and pkg.name == ctx.pkg_name
+                for pkg in installed_packages
+            )
+            return not (is_installed ^ asks_for_installed)
         case _:
             return False
 
@@ -62,11 +78,12 @@ class ListFilter:
 
     def check_pkg_name(
         self,
+        cfg: "GlobalConfig",
         mr: "MetadataRepo",
         category: str,
         pkg_name: str,
     ) -> bool:
-        ctx = ListFilterExecCtx(mr, category, pkg_name)
+        ctx = ListFilterExecCtx(cfg, mr, category, pkg_name)
         return all(_execute_filter_op(op, ctx) for op in self.ops)
 
 
@@ -123,6 +140,8 @@ class ListFilterAction(argparse.Action):
                 self.filter_op_kind = ListFilterOpKind.NAME_CONTAINS
             case "related-to-entity":
                 self.filter_op_kind = ListFilterOpKind.RELATED_TO_ENTITY
+            case "is-installed":
+                self.filter_op_kind = ListFilterOpKind.IS_INSTALLED
             case _:
                 # should never happen
                 self.filter_op_kind = ListFilterOpKind.UNKNOWN

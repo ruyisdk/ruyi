@@ -48,6 +48,13 @@ class ListCommand(
 
         # filter expressions
         p.add_argument(
+            "--is-installed",
+            action=ListFilterAction,
+            nargs=1,
+            dest="filters",
+            help="Match packages that are installed (y/true/1) or not installed (n/false/0)",
+        )
+        p.add_argument(
             "--category-contains",
             action=ListFilterAction,
             nargs=1,
@@ -97,7 +104,7 @@ class ListCommand(
             )
             return 1
 
-        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg.repo, filters))
+        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
 
         if cfg.is_porcelain:
             return _do_list_porcelain(augmented_pkgs)
@@ -122,6 +129,7 @@ if sys.version_info >= (3, 11):
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Installed = "installed"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -135,6 +143,8 @@ if sys.version_info >= (3, 11):
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Installed:
+                    return "[green]installed[/]"
             return ""
 
 else:
@@ -145,6 +155,7 @@ else:
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Installed = "installed"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -158,19 +169,27 @@ else:
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Installed:
+                    return "[green]installed[/]"
             return ""
 
 
 class AugmentedPkgManifest:
-    def __init__(self, pm: BoundPackageManifest, remarks: list[PkgRemark]) -> None:
+    def __init__(
+        self,
+        pm: BoundPackageManifest,
+        remarks: list[PkgRemark],
+    ) -> None:
         self.pm = pm
         self.remarks = remarks
+        self._is_installed = PkgRemark.Installed in remarks
 
     def to_porcelain(self) -> "PorcelainPkgVersionV1":
         return {
             "semver": str(self.pm.semver),
             "pm": self.pm.to_raw(),
             "remarks": self.remarks,
+            "is_installed": self._is_installed,
         }
 
 
@@ -195,11 +214,15 @@ class AugmentedPkg:
     @classmethod
     def yield_from_repo(
         cls,
+        cfg: GlobalConfig,
         mr: MetadataRepo,
         filters: ListFilter,
     ) -> "Iterable[Self]":
+        rgs = cfg.ruyipkg_global_state
+        native_host = str(get_native_host())
+
         for category, pkg_name, pkg_vers in mr.iter_pkgs():
-            if not filters.check_pkg_name(mr, category, pkg_name):
+            if not filters.check_pkg_name(cfg, mr, category, pkg_name):
                 continue
 
             pkg = cls()
@@ -233,6 +256,17 @@ class AugmentedPkg:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
 
+                host = native_host if bm is not None else ""
+                is_installed = rgs.is_package_installed(
+                    pm.repo_id,
+                    pm.category,
+                    pm.name,
+                    str(sv),
+                    host,
+                )
+                if is_installed:
+                    remarks.append(PkgRemark.Installed)
+
                 pkg.add_version(AugmentedPkgManifest(pm, remarks))
 
             yield pkg
@@ -255,7 +289,12 @@ def _do_list_non_verbose(
     for ap in augmented_pkgs:
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
         for ver in ap.versions:
-            comments_str = f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
+            if ver.remarks:
+                comments_str = (
+                    f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
+                )
+            else:
+                comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/yellow]" if ver.pm.slug else ""
             logger.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
 
@@ -266,6 +305,7 @@ class PorcelainPkgVersionV1(TypedDict):
     semver: str
     pm: PackageManifestType
     remarks: list[PkgRemark]
+    is_installed: bool
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):
@@ -565,13 +605,35 @@ def _do_install_binary_pkg(
 
     pkg_name = pm.name_for_installation
     install_root = config.global_binary_install_root(str(canonicalized_host), pkg_name)
-    if is_root_likely_populated(install_root):
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        str(canonicalized_host),
+    )
+
+    # Fallback to directory check if not tracked in state
+    if not is_installed and is_root_likely_populated(install_root):
+        is_installed = True
+
+    if is_installed:
         if not reinstall:
             logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
         logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        # Remove from state tracking before purging
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            str(canonicalized_host),
         )
         shutil.rmtree(install_root)
 
@@ -589,6 +651,16 @@ def _do_install_binary_pkg(
         if ret != 0:
             return ret
         os.rename(tmp_root, install_root)
+
+    if not fetch_only:
+        rgs.record_installation(
+            repo_id=pm.repo_id,
+            category=pm.category,
+            name=pm.name,
+            version=pm.ver,
+            host=str(canonicalized_host),
+            install_path=install_root,
+        )
 
     logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
@@ -653,13 +725,35 @@ def _do_install_blob_pkg(
 
     pkg_name = pm.name_for_installation
     install_root = config.global_blob_install_root(pkg_name)
-    if is_root_likely_populated(install_root):
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        "",  # host is "" for blob packages
+    )
+
+    # Fallback to directory check if not tracked in state
+    if not is_installed and is_root_likely_populated(install_root):
+        is_installed = True
+
+    if is_installed:
         if not reinstall:
             logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
             return 0
 
         logger.W(
             f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+        )
+        # Remove from state tracking before purging
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            "",
         )
         shutil.rmtree(install_root)
 
@@ -676,6 +770,16 @@ def _do_install_blob_pkg(
         if ret != 0:
             return ret
         os.rename(tmp_root, install_root)
+
+    if not fetch_only:
+        rgs.record_installation(
+            repo_id=pm.repo_id,
+            category=pm.category,
+            name=pm.name,
+            version=pm.ver,
+            host="",  # Empty for blob packages
+            install_path=install_root,
+        )
 
     logger.I(
         f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
