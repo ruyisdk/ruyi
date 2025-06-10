@@ -289,7 +289,12 @@ def _do_list_non_verbose(
     for ap in augmented_pkgs:
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
         for ver in ap.versions:
-            comments_str = f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
+            if ver.remarks:
+                comments_str = (
+                    f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
+                )
+            else:
+                comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/yellow]" if ver.pm.slug else ""
             logger.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
 
