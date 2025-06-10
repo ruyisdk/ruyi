@@ -2,6 +2,7 @@ import argparse
 
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
+from ..utils.porcelain import PorcelainOutput
 
 
 class EntityCommand(
@@ -99,6 +100,15 @@ class EntityListCommand(
 
         logger = cfg.logger
         entity_store = cfg.repo.entity_store
+
+        # Check if porcelain output is requested
+        if cfg.is_porcelain:
+            with PorcelainOutput() as po:
+                for e in entity_store.iter_entities(entity_types):
+                    po.emit(e.to_porcelain())
+            return 0
+
+        # Human-readable output
         for e in entity_store.iter_entities(entity_types):
             logger.stdout(f"'{str(e)}':")
             logger.stdout(f"  display name: {e.display_name}")

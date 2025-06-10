@@ -319,3 +319,32 @@ def test_entity_store_is_entity_related_to(
             unidirectional=False,
             transitive=True,
         )
+
+
+def test_entity_porcelain_output(
+    ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
+) -> None:
+    """Test that entity porcelain output works correctly."""
+    with ruyi_file.path("ruyipkg_suites", "entities_v0_smoke") as entities_path:
+        store = EntityStore(ruyi_logger, FSEntityProvider(ruyi_logger, entities_path))
+
+        # Get a test entity
+        cpu = store.get_entity("cpu", "xiangshan-nanhu")
+        assert cpu is not None
+
+        # Test porcelain output
+        porcelain_output = cpu.to_porcelain()
+
+        # Verify the structure
+        assert porcelain_output["ty"] == "entitylistoutput-v1"
+        assert porcelain_output["entity_type"] == "cpu"
+        assert porcelain_output["entity_id"] == "xiangshan-nanhu"
+        assert porcelain_output["display_name"] is not None
+        assert "data" in porcelain_output
+        assert "related_refs" in porcelain_output
+        assert "reverse_refs" in porcelain_output
+
+        # Check that related_refs contains expected references
+        assert isinstance(porcelain_output["related_refs"], list)
+        assert "uarch:xiangshan-nanhu" in porcelain_output["related_refs"]

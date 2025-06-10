@@ -11,6 +11,16 @@ else:
     import tomli as tomllib
 
 from ..log import RuyiLogger
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
+
+
+class PorcelainEntityListOutputV1(PorcelainEntity):
+    entity_type: str
+    entity_id: str
+    display_name: str | None
+    data: Mapping[str, Any]
+    related_refs: list[str]
+    reverse_refs: list[str]
 
 
 class EntityError(Exception):
@@ -105,6 +115,19 @@ class BaseEntity:
 
     def _add_reverse_ref(self, ref: str) -> None:
         self._reverse_refs.add(ref)
+
+    def to_porcelain(self) -> PorcelainEntityListOutputV1:
+        """Convert this entity to porcelain output format."""
+
+        return {
+            "ty": PorcelainEntityType.EntityListOutputV1,
+            "entity_type": self.entity_type,
+            "entity_id": self.id,
+            "display_name": self.display_name,
+            "data": self._data,
+            "related_refs": self.related_refs,
+            "reverse_refs": self.reverse_refs,
+        }
 
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.id}"
