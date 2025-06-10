@@ -79,13 +79,25 @@ class EntityListCommand(
 ):
     @classmethod
     def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
-        pass
+        p.add_argument(
+            "-t",
+            "--entity-type",
+            action="append",
+            nargs=1,
+            dest="entity_type",
+            help="List entities of this type. Can be passed multiple times to list multiple types.",
+        )
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        entity_types_in: list[list[str]] | None = args.entity_type
+        entity_types: list[str] | None = None
+        if entity_types_in is not None:
+            entity_types = [x[0] for x in entity_types_in]
+
         logger = cfg.logger
         entity_store = cfg.repo.entity_store
-        for e in entity_store.iter_entities(None):
+        for e in entity_store.iter_entities(entity_types):
             logger.stdout(f"'{str(e)}':")
             logger.stdout(f"  display name: {e.display_name}")
             logger.stdout(f"  data: {e.data}")
