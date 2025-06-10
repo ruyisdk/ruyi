@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterator, Mapping
+from typing import Any, Callable, Iterable, Iterator, Mapping
 
 import fastjsonschema
 from fastjsonschema.exceptions import JsonSchemaException
@@ -140,12 +140,21 @@ class EntityStore:
         self.load_all()
         return self._entities.get(entity_type, {}).get(entity_id)
 
-    def iter_entities(self, entity_type: str | None) -> Iterator[BaseEntity]:
+    def iter_entities(
+        self,
+        entity_type: str | Iterable[str] | None,
+    ) -> Iterator[BaseEntity]:
         """Iterate over all entities of a specific type, or all entities."""
         self.load_all()
         if entity_type is not None:
-            yield from self._entities.get(entity_type, {}).values()
-            return
+            if isinstance(entity_type, str):
+                yield from self._entities.get(entity_type, {}).values()
+                return
+
+            # handle multiple entity types
+            for et in entity_type:
+                yield from self._entities.get(et, {}).values()
+                return
 
         for entities in self._entities.values():
             yield from entities.values()
