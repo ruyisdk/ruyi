@@ -129,6 +129,7 @@ if sys.version_info >= (3, 11):
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Installed = "installed"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -142,6 +143,8 @@ if sys.version_info >= (3, 11):
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Installed:
+                    return "[green]installed[/]"
             return ""
 
 else:
@@ -152,6 +155,7 @@ else:
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Installed = "installed"
 
         def as_rich_markup(self) -> str:
             match self:
@@ -165,19 +169,27 @@ else:
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Installed:
+                    return "[green]installed[/]"
             return ""
 
 
 class AugmentedPkgManifest:
-    def __init__(self, pm: BoundPackageManifest, remarks: list[PkgRemark]) -> None:
+    def __init__(
+        self,
+        pm: BoundPackageManifest,
+        remarks: list[PkgRemark],
+    ) -> None:
         self.pm = pm
         self.remarks = remarks
+        self._is_installed = PkgRemark.Installed in remarks
 
     def to_porcelain(self) -> "PorcelainPkgVersionV1":
         return {
             "semver": str(self.pm.semver),
             "pm": self.pm.to_raw(),
             "remarks": self.remarks,
+            "is_installed": self._is_installed,
         }
 
 
@@ -206,6 +218,9 @@ class AugmentedPkg:
         mr: MetadataRepo,
         filters: ListFilter,
     ) -> "Iterable[Self]":
+        rgs = cfg.ruyipkg_global_state
+        native_host = str(get_native_host())
+
         for category, pkg_name, pkg_vers in mr.iter_pkgs():
             if not filters.check_pkg_name(cfg, mr, category, pkg_name):
                 continue
@@ -241,6 +256,17 @@ class AugmentedPkg:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
 
+                host = native_host if bm is not None else ""
+                is_installed = rgs.is_package_installed(
+                    pm.repo_id,
+                    pm.category,
+                    pm.name,
+                    str(sv),
+                    host,
+                )
+                if is_installed:
+                    remarks.append(PkgRemark.Installed)
+
                 pkg.add_version(AugmentedPkgManifest(pm, remarks))
 
             yield pkg
@@ -274,6 +300,7 @@ class PorcelainPkgVersionV1(TypedDict):
     semver: str
     pm: PackageManifestType
     remarks: list[PkgRemark]
+    is_installed: bool
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):
