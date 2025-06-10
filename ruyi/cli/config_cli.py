@@ -13,7 +13,13 @@ class ConfigCommand(
     has_subcommands=True,
     help="Manage Ruyi's config options",
 ):
-    pass
+    @classmethod
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
+        pass
 
 
 class ConfigGetCommand(

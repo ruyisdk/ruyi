@@ -11,7 +11,9 @@ class EntityCommand(
     is_experimental=True,
     help="Interact with entities defined in the repositories",
 ):
-    pass
+    @classmethod
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+        pass
 
 
 class EntityDescribeCommand(
