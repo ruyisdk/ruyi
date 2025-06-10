@@ -14,6 +14,7 @@ if sys.version_info >= (3, 11):
         LogV1 = "log-v1"
         NewsItemV1 = "newsitem-v1"
         PkgListOutputV1 = "pkglistoutput-v1"
+        EntityListOutputV1 = "entitylistoutput-v1"
 
 else:
 
@@ -21,6 +22,7 @@ else:
         LogV1 = "log-v1"
         NewsItemV1 = "newsitem-v1"
         PkgListOutputV1 = "pkglistoutput-v1"
+        EntityListOutputV1 = "entitylistoutput-v1"
 
 
 class PorcelainEntity(TypedDict):

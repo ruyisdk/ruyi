@@ -13,7 +13,13 @@ class TelemetryCommand(
     has_subcommands=True,
     help="Manage your telemetry preferences",
 ):
-    pass
+    @classmethod
+    def configure_args(
+        cls,
+        gc: config.GlobalConfig,
+        p: argparse.ArgumentParser,
+    ) -> None:
+        pass
 
 
 class TelemetryConsentCommand(

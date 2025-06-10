@@ -56,6 +56,17 @@ class PorcelainPkgListOutputV1(PorcelainEntity):
     category: str
     name: str
     vers: list[PorcelainPkgVersionV1]
+
+
+# ty: "entitylistoutput-v1"
+# see ruyipkg/entity_provider.py
+class PorcelainEntityListOutputV1(PorcelainEntity):
+    entity_type: str
+    entity_id: str
+    display_name: str | None
+    data: Mapping[str, Any]
+    related_refs: list[str]
+    reverse_refs: list[str]
 ```
 
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
@@ -77,6 +88,21 @@ ruyi --porcelain list
 * stderr：无意义
 
 请注意：`-v` 选项在 porcelain 输出模式下会被无视。
+
+### `ruyi entity list`
+
+调用方式：
+
+```sh
+ruyi --porcelain entity list
+# 仅输出特定类型的实体
+ruyi --porcelain entity list -t cpu -t device
+```
+
+输出格式：
+
+* stdout：一行一个 `entitylistoutput-v1` 类型的对象
+* stderr：无意义
 
 ### `ruyi news list`
 
