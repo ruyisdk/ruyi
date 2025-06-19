@@ -21,22 +21,21 @@ def is_called_as_ruyi(argv0: str) -> bool:
 
 
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
-    if gc.telemetry is not None:
-        gc.telemetry.check_first_run_status()
-        gc.telemetry.init_installation(False)
-        atexit.register(gc.telemetry.flush)
-        gc.telemetry.maybe_prompt_for_first_run_upload()
+    if tm := gc.telemetry:
+        tm.check_first_run_status()
+        tm.init_installation(False)
+        atexit.register(tm.flush)
+        tm.maybe_prompt_for_first_run_upload()
 
     if not is_called_as_ruyi(gm.argv0):
         from ..mux.runtime import mux_main
 
         # record an invocation and the command name being proxied to
-        if gc.telemetry is not None:
-            target = os.path.basename(gm.argv0)
-            gc.telemetry.record(
+        if tm := gc.telemetry:
+            tm.record(
                 TelemetryScope(None),
                 "cli:mux-invocation-v1",
-                target=target,
+                target=os.path.basename(gm.argv0),
             )
 
         return mux_main(gm, gc, argv)
@@ -72,9 +71,9 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         logger.F("internal error: CLI entrypoint was added without a telemetry key")
         return 1
 
-    if gc.telemetry is not None:
-        gc.telemetry.print_telemetry_notice()
-        gc.telemetry.record(
+    if tm := gc.telemetry:
+        tm.print_telemetry_notice()
+        tm.record(
             TelemetryScope(None),
             "cli:invocation-v1",
             key=telemetry_key,
