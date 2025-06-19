@@ -886,21 +886,21 @@ def do_uninstall_atoms(
 
     bis = BoundInstallationStateStore(config.ruyipkg_global_state, mr)
 
-    pms_to_uninstall: list[BoundPackageManifest] = []
+    pms_to_uninstall: list[tuple[str, BoundPackageManifest]] = []
     for a_str in atom_strs:
         a = Atom.parse(a_str)
         pm = a.match_in_repo(bis, config.include_prereleases)
         if pm is None:
             logger.F(f"atom [yellow]{a_str}[/] is non-existent or not installed")
             return 1
-        pms_to_uninstall.append(pm)
+        pms_to_uninstall.append((a_str, pm))
 
     if not pms_to_uninstall:
         logger.I("no packages to uninstall")
         return 0
 
     logger.I("the following packages will be uninstalled:")
-    for pm in pms_to_uninstall:
+    for _, pm in pms_to_uninstall:
         logger.I(f"  - [green]{pm.name_for_installation}[/]")
 
     if not assume_yes:
@@ -908,8 +908,7 @@ def do_uninstall_atoms(
             logger.I("uninstallation aborted")
             return 0
 
-    for pm in pms_to_uninstall:
-        a_str = f"{pm.category}/{pm.name}=={pm.ver}"
+    for a_str, pm in pms_to_uninstall:
         pkg_name = pm.name_for_installation
 
         if tm := config.telemetry:
