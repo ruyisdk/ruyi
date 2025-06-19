@@ -489,6 +489,20 @@ class MetadataRepo(ProvidesPackageManifests):
             return self._categories[category][name].values()
         return self._pkgs[name].values()
 
+    def get_pkg(
+        self,
+        name: str,
+        category: str,
+        ver: str,
+    ) -> BoundPackageManifest | None:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        try:
+            return self._categories[category][name][ver]
+        except KeyError:
+            return None
+
     def get_pkg_latest_ver(
         self,
         name: str,

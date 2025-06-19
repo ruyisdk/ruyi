@@ -78,6 +78,16 @@ def test_bound_installation_state_store_with_installed_packages() -> None:
     # Create a mock MetadataRepo
     mock_mr = Mock()
 
+    def mock_get_pkg(
+        name: str, category: str, ver: str
+    ) -> "BoundPackageManifest | None":
+        if name == "gcc" and category == "toolchain":
+            if ver == "13.1.0":
+                return mock_manifest1
+            elif ver == "13.2.0":
+                return mock_manifest2
+        return None
+
     def mock_iter_pkg_vers(
         name: str, category: str | None = None
     ) -> "Iterable[BoundPackageManifest]":
@@ -85,6 +95,7 @@ def test_bound_installation_state_store_with_installed_packages() -> None:
             return [mock_manifest1, mock_manifest2]
         return []
 
+    mock_mr.get_pkg.side_effect = mock_get_pkg
     mock_mr.iter_pkg_vers.side_effect = mock_iter_pkg_vers
 
     # Create the BoundInstallationStateStore
@@ -120,3 +131,20 @@ def test_bound_installation_state_store_with_installed_packages() -> None:
     # Test get_pkg_by_slug
     result = store.get_pkg_by_slug("gcc-13-1-0")
     assert result == mock_manifest1
+
+    # Test get_pkg method
+    pkg = store.get_pkg("gcc", "toolchain", "13.1.0")
+    assert pkg == mock_manifest1
+
+    pkg = store.get_pkg("gcc", "toolchain", "13.2.0")
+    assert pkg == mock_manifest2
+
+    # Test get_pkg with non-existent package
+    result = store.get_pkg("nonexistent", "toolchain", "1.0.0")
+    assert result is None
+
+    result = store.get_pkg("gcc", "nonexistent", "13.1.0")
+    assert result is None
+
+    result = store.get_pkg("gcc", "toolchain", "99.0.0")
+    assert result is None

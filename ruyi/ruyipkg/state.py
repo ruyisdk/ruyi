@@ -224,23 +224,15 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
     ) -> BoundPackageManifest | None:
         """Get the bound manifest for an installed package, or None if not found in repo."""
 
-        try:
-            return next(
-                pm
-                for pm in self._mr.iter_pkg_vers(info.name, info.category)
-                if pm.ver == info.version
-            )
-        except (StopIteration, KeyError):
-            # Package is installed but not found in current repo
-            return None
+        return self._mr.get_pkg(info.name, info.category, info.version)
 
     def iter_pkg_manifests(self) -> Iterable[BoundPackageManifest]:
         """Iterate over all installed package manifests."""
 
         installed_pkgs = self._rgs.list_installed_packages()
         for info in installed_pkgs:
-            if manifest := self._get_installed_manifest(info):
-                yield manifest
+            if m := self._get_installed_manifest(info):
+                yield m
 
     def iter_pkgs(
         self,
@@ -273,8 +265,25 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
         installed_pkgs = self._rgs.list_installed_packages()
         for info in installed_pkgs:
             if info.name == name and (category is None or info.category == category):
-                if manifest := self._get_installed_manifest(info):
-                    yield manifest
+                if m := self._get_installed_manifest(info):
+                    yield m
+
+    def get_pkg(
+        self,
+        name: str,
+        category: str,
+        ver: str,
+    ) -> BoundPackageManifest | None:
+        """Returns the package manifest by exact match, or None if not found."""
+        installed_pkgs = self._rgs.list_installed_packages()
+        for info in installed_pkgs:
+            if info.name == name and info.category == category and info.version == ver:
+                if m := self._get_installed_manifest(info):
+                    return m
+                # Package is installed but not found in current repo
+                break
+
+        return None
 
     def get_pkg_latest_ver(
         self,
@@ -307,9 +316,9 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
     def get_pkg_by_slug(self, slug: str) -> BoundPackageManifest | None:
         """Get an installed package by its slug."""
 
-        installed_packages = self._rgs.list_installed_packages()
-        for info in installed_packages:
-            if manifest := self._get_installed_manifest(info):
-                if manifest.slug == slug:
-                    return manifest
+        installed_pkgs = self._rgs.list_installed_packages()
+        for info in installed_pkgs:
+            if m := self._get_installed_manifest(info):
+                if m.slug == slug:
+                    return m
         return None

@@ -6,6 +6,15 @@ from .pkg_manifest import BoundPackageManifest
 class ProvidesPackageManifests(Protocol):
     """A protocol that defines methods for providing package manifests."""
 
+    def get_pkg(
+        self,
+        name: str,
+        category: str,
+        ver: str,
+    ) -> BoundPackageManifest | None:
+        """Returns the package manifest by exact match, or None if not found."""
+        ...
+
     def iter_pkg_manifests(self) -> Iterable[BoundPackageManifest]:
         """Iterates over all package manifests provided by this store."""
         ...
