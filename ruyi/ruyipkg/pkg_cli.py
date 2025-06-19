@@ -901,7 +901,7 @@ def do_uninstall_atoms(
 
     logger.I("the following packages will be uninstalled:")
     for _, pm in pms_to_uninstall:
-        logger.I(f"  - [green]{pm.name_for_installation}[/]")
+        logger.I(f"  - [green]{pm.category}/{pm.name}[/] ({pm.ver})")
 
     if not assume_yes:
         if not ask_for_yesno_confirmation(logger, "Proceed?", default=False):
