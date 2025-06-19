@@ -46,7 +46,7 @@ def ensure_cmds(logger: RuyiLogger, *cmds: str) -> None | NoReturn:
 
     cmds_str = humanize_list(absent_cmds, item_color="yellow")
     logger.F(
-        f"The command(s) {cmds_str} cannot be found in PATH, which [yellow]ruyi[/yellow] requires"
+        f"The command(s) {cmds_str} cannot be found in PATH, which [yellow]ruyi[/] requires"
     )
     logger.I("please install and retry")
     sys.exit(1)

@@ -56,12 +56,12 @@ class ExtractCommand(
             bm = pm.binary_metadata
             sm = pm.source_metadata
             if bm is None and sm is None:
-                logger.F(f"don't know how to extract package [green]{pkg_name}[/green]")
+                logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
                 return 2
 
             if bm is not None and sm is not None:
                 logger.F(
-                    f"cannot handle package [green]{pkg_name}[/green]: package is both binary and source"
+                    f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
                 )
                 return 2
 
@@ -73,7 +73,7 @@ class ExtractCommand(
 
             if not distfiles_for_host:
                 logger.F(
-                    f"package [green]{pkg_name}[/green] declares no distfile for host {host}"
+                    f"package [green]{pkg_name}[/] declares no distfile for host {host}"
                 )
                 return 2
 
@@ -88,13 +88,13 @@ class ExtractCommand(
                 df.ensure(logger)
 
                 logger.I(
-                    f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
+                    f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]"
                 )
                 # unpack into CWD
                 df.unpack(None, logger)
 
             logger.I(
-                f"package [green]{pkg_name}[/green] extracted to current working directory"
+                f"package [green]{pkg_name}[/] extracted to current working directory"
             )
 
         return 0

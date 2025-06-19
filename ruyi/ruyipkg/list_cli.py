@@ -126,7 +126,7 @@ if sys.version_info >= (3, 11):
                 case self.LatestPreRelease:
                     return "latest-prerelease"
                 case self.NoBinaryForCurrentHost:
-                    return "[red]no binary for current host[/red]"
+                    return "[red]no binary for current host[/]"
                 case self.PreRelease:
                     return "prerelease"
                 case self.HasKnownIssue:
@@ -152,7 +152,7 @@ else:
                 case self.LatestPreRelease:
                     return "latest-prerelease"
                 case self.NoBinaryForCurrentHost:
-                    return "[red]no binary for current host[/red]"
+                    return "[red]no binary for current host[/]"
                 case self.PreRelease:
                     return "prerelease"
                 case self.HasKnownIssue:
@@ -275,7 +275,7 @@ def _do_list_non_verbose(
     logger.stdout("List of available packages:\n")
 
     for ap in augmented_pkgs:
-        logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/bold green]")
+        logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/]")
         for ver in ap.versions:
             if ver.remarks:
                 comments_str = (
@@ -283,8 +283,8 @@ def _do_list_non_verbose(
                 )
             else:
                 comments_str = ""
-            slug_str = f" slug: [yellow]{ver.pm.slug}[/yellow]" if ver.pm.slug else ""
-            logger.stdout(f"  - [blue]{ver.pm.semver}[/blue]{comments_str}{slug_str}")
+            slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
+            logger.stdout(f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}")
 
     return 0
 
@@ -315,12 +315,10 @@ def _print_pkg_detail(
     pm: BoundPackageManifest,
     lang_code: str,
 ) -> None:
-    logger.stdout(
-        f"[bold]## [green]{pm.category}/{pm.name}[/green] [blue]{pm.ver}[/blue][/bold]\n"
-    )
+    logger.stdout(f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/][/]\n")
 
     if pm.slug is not None:
-        logger.stdout(f"* Slug: [yellow]{pm.slug}[/yellow]")
+        logger.stdout(f"* Slug: [yellow]{pm.slug}[/]")
     else:
         logger.stdout("* Slug: (none)")
     logger.stdout(f"* Package kind: {sorted(pm.kind)}")
@@ -340,10 +338,10 @@ def _print_pkg_detail(
     df = pm.distfiles()
     logger.stdout(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
-        logger.stdout(f"* [green]{dd.name}[/green]")
-        logger.stdout(f"    - Size: [yellow]{dd.size}[/yellow] bytes")
+        logger.stdout(f"* [green]{dd.name}[/]")
+        logger.stdout(f"    - Size: [yellow]{dd.size}[/] bytes")
         for kind, csum in dd.checksums.items():
-            logger.stdout(f"    - {kind.upper()}: [yellow]{csum}[/yellow]")
+            logger.stdout(f"    - {kind.upper()}: [yellow]{csum}[/]")
 
     if bm := pm.binary_metadata:
         logger.stdout("\n### Binary artifacts\n")
@@ -357,10 +355,8 @@ def _print_pkg_detail(
 
     if tm := pm.toolchain_metadata:
         logger.stdout("\n### Toolchain metadata\n")
-        logger.stdout(f"* Target: [bold][green]{tm.target}[/green][/bold]")
+        logger.stdout(f"* Target: [bold green]{tm.target}[/]")
         logger.stdout(f"* Quirks: {tm.quirks}")
         logger.stdout("* Components:")
         for tc in tm.components:
-            logger.stdout(
-                f'    - {tc["name"]} [bold][green]{tc["version"]}[/green][/bold]'
-            )
+            logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')

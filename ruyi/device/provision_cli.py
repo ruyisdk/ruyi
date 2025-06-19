@@ -68,7 +68,7 @@ def do_provision_interactive(config: GlobalConfig) -> int:
 
     log.stdout(
         """
-[bold green]RuyiSDK Device Provisioning Wizard[/bold green]
+[bold green]RuyiSDK Device Provisioning Wizard[/]
 
 This is a wizard intended to help you install a system on your device for your
 development pleasure, all with ease.
@@ -78,9 +78,9 @@ your intended configuration, then packages will be downloaded and flashed onto
 the device's storage, that you should somehow make available on this host
 system beforehand.
 
-Note that, as Ruyi does not run as [yellow]root[/yellow], but raw disk access is most likely
-required to flash images, you should arrange to allow your user account [yellow]sudo[/yellow]
-access to necessary commands such as [yellow]dd[/yellow]. Flashing will fail if the [yellow]sudo[/yellow]
+Note that, as Ruyi does not run as [yellow]root[/], but raw disk access is most likely
+required to flash images, you should arrange to allow your user account [yellow]sudo[/]
+access to necessary commands such as [yellow]dd[/]. Flashing will fail if the [yellow]sudo[/]
 configuration does not allow so.
 """
     )
@@ -183,7 +183,7 @@ def do_provision_combo_interactive(
     else:
         pkg_atoms = new_pkg_atoms
 
-    pkg_names_for_display = "\n".join(f" * [green]{i}[/green]" for i in pkg_atoms)
+    pkg_names_for_display = "\n".join(f" * [green]{i}[/]" for i in pkg_atoms)
     logger.stdout(
         f"""
 We are about to download and install the following packages for your device:
@@ -234,7 +234,7 @@ For initializing this target device, you should plug into this host system the
 device's storage (e.g. SD card or NVMe SSD), or a removable disk to be
 reformatted as a live medium, and note down the corresponding device file
 path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY, /dev/nvmeXnYpZ
-for partitions. You may consult e.g. [yellow]sudo blkid[/yellow] output for the
+for partitions. You may consult e.g. [yellow]sudo blkid[/] output for the
 information you will need later.
 """
         )
@@ -285,7 +285,7 @@ We are about to:
             logger.stdout(
                 """
 Some flashing steps require the use of fastboot, in which case you should
-ensure the target device is showing up in [yellow]fastboot devices[/yellow] output.
+ensure the target device is showing up in [yellow]fastboot devices[/] output.
 Please confirm it yourself before the flashing begins.
 """
             )
@@ -294,7 +294,7 @@ Please confirm it yourself before the flashing begins.
                 "Is the device identified by fastboot now?",
             ):
                 logger.stdout(
-                    "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/yellow] is fixed for the device.",
+                    "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/] is fixed for the device.",
                     end="\n\n",
                 )
                 return 1
@@ -312,7 +312,7 @@ Please confirm it yourself before the flashing begins.
         """
 It seems the flashing has finished without errors.
 
-[bold green]Happy hacking![/bold green]
+[bold green]Happy hacking![/]
 """
     )
 

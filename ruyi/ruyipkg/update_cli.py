@@ -25,6 +25,6 @@ class UpdateCommand(
         if unread_newsitems:
             logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
             news_cli.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
-            logger.stdout("\nYou can read them with [yellow]ruyi news read[/yellow].")
+            logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
 
         return 0

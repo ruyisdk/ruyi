@@ -107,18 +107,16 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         tc_atom = Atom.parse(tc_atom_str)
         tc_pm = tc_atom.match_in_repo(mr, config.include_prereleases)
         if tc_pm is None:
-            logger.F(
-                f"cannot match a toolchain package with [yellow]{tc_atom_str}[/yellow]"
-            )
+            logger.F(f"cannot match a toolchain package with [yellow]{tc_atom_str}[/]")
             return 1
 
         if tc_pm.toolchain_metadata is None:
-            logger.F(f"the package [yellow]{tc_atom_str}[/yellow] is not a toolchain")
+            logger.F(f"the package [yellow]{tc_atom_str}[/] is not a toolchain")
             return 1
 
         if not tc_pm.toolchain_metadata.satisfies_quirk_set(profile.need_quirks):
             logger.F(
-                f"the package [yellow]{tc_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
+                f"the package [yellow]{tc_atom_str}[/] does not support all necessary features for the profile [yellow]{profile_name}[/]"
             )
             logger.I(
                 f"quirks needed by profile:   {humanize_list(profile.need_quirks, item_color='cyan')}"
@@ -154,7 +152,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
             else:
                 if sysroot_atom_str is None:
                     logger.F(
-                        f"sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/yellow] is not given"
+                        "sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given"
                     )
                     return 1
 
@@ -165,13 +163,13 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
                 if gcc_pkg_pm is None:
                     logger.F(
-                        f"cannot match a toolchain package with [yellow]{sysroot_atom_str}[/yellow]"
+                        f"cannot match a toolchain package with [yellow]{sysroot_atom_str}[/]"
                     )
                     return 1
 
                 if gcc_pkg_pm.toolchain_metadata is None:
                     logger.F(
-                        f"the package [yellow]{sysroot_atom_str}[/yellow] is not a toolchain"
+                        f"the package [yellow]{sysroot_atom_str}[/] is not a toolchain"
                     )
                     return 1
 
@@ -188,7 +186,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
                 if tc_sysroot_relpath is None:
                     logger.F(
-                        f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/yellow] does not contain one"
+                        f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/] does not contain one"
                     )
                     return 1
 
@@ -252,19 +250,17 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
         emu_atom = Atom.parse(emu_atom_str)
         emu_pm = emu_atom.match_in_repo(mr, config.include_prereleases)
         if emu_pm is None:
-            logger.F(
-                f"cannot match an emulator package with [yellow]{emu_atom_str}[/yellow]"
-            )
+            logger.F(f"cannot match an emulator package with [yellow]{emu_atom_str}[/]")
             return 1
 
         if emu_pm.emulator_metadata is None:
-            logger.F(f"the package [yellow]{emu_atom_str}[/yellow] is not an emulator")
+            logger.F(f"the package [yellow]{emu_atom_str}[/] is not an emulator")
             return 1
 
         emu_progs = list(emu_pm.emulator_metadata.list_for_arch(target_arch))
         if not emu_progs:
             logger.F(
-                f"the emulator package [yellow]{emu_atom_str}[/yellow] does not support the target architecture [yellow]{target_arch}[/yellow]"
+                f"the emulator package [yellow]{emu_atom_str}[/] does not support the target architecture [yellow]{target_arch}[/]"
             )
             return 1
 
@@ -274,7 +270,7 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
                 emu_pm.emulator_metadata.quirks,
             ):
                 logger.F(
-                    f"the package [yellow]{emu_atom_str}[/yellow] does not support all necessary features for the profile [yellow]{profile_name}[/yellow]"
+                    f"the package [yellow]{emu_atom_str}[/] does not support all necessary features for the profile [yellow]{profile_name}[/]"
                 )
                 logger.I(
                     f"quirks needed by profile:   {humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
@@ -348,10 +344,10 @@ def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
 
     if override_name is not None:
         logger.I(
-            f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/cyan] at [green]{dest}[/green]..."
+            f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/] at [green]{dest}[/]..."
         )
     else:
-        logger.I(f"Creating a Ruyi virtual environment at [green]{dest}[/green]...")
+        logger.I(f"Creating a Ruyi virtual environment at [green]{dest}[/]...")
 
     maker = VenvMaker(
         config,

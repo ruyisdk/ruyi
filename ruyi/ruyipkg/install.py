@@ -80,9 +80,7 @@ def do_install_atoms(
                 return ret
             continue
 
-        logger.F(
-            f"don't know how to handle non-binary package [green]{pkg_name}[/green]"
-        )
+        logger.F(f"don't know how to handle non-binary package [green]{pkg_name}[/]")
         return 2
 
     return 0
@@ -118,11 +116,11 @@ def _do_install_binary_pkg(
 
     if is_installed:
         if not reinstall:
-            logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            logger.I(f"skipping already installed package [green]{pkg_name}[/]")
             return 0
 
         logger.W(
-            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            f"package [green]{pkg_name}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
         )
         # Remove from state tracking before purging
         rgs.remove_installation(
@@ -159,9 +157,7 @@ def _do_install_binary_pkg(
             install_path=install_root,
         )
 
-    logger.I(
-        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
-    )
+    logger.I(f"package [green]{pkg_name}[/] installed to [yellow]{install_root}[/]")
     return 0
 
 
@@ -183,7 +179,7 @@ def _do_install_binary_pkg_to(
     distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
     if not distfiles_for_host:
         logger.F(
-            f"package [green]{pkg_name}[/green] declares no binary for host {canonicalized_host}"
+            f"package [green]{pkg_name}[/] declares no binary for host {canonicalized_host}"
         )
         return 2
 
@@ -196,14 +192,10 @@ def _do_install_binary_pkg_to(
         df.ensure(logger)
 
         if fetch_only:
-            logger.D(
-                "skipping installation because [yellow]--fetch-only[/yellow] is given"
-            )
+            logger.D("skipping installation because [yellow]--fetch-only[/] is given")
             continue
 
-        logger.I(
-            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
-        )
+        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
         df.unpack(install_root, logger)
 
     return 0
@@ -238,11 +230,11 @@ def _do_install_blob_pkg(
 
     if is_installed:
         if not reinstall:
-            logger.I(f"skipping already installed package [green]{pkg_name}[/green]")
+            logger.I(f"skipping already installed package [green]{pkg_name}[/]")
             return 0
 
         logger.W(
-            f"package [green]{pkg_name}[/green] seems already installed; purging and re-installing due to [yellow]--reinstall[/yellow]"
+            f"package [green]{pkg_name}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
         )
         # Remove from state tracking before purging
         rgs.remove_installation(
@@ -278,9 +270,7 @@ def _do_install_blob_pkg(
             install_path=install_root,
         )
 
-    logger.I(
-        f"package [green]{pkg_name}[/green] installed to [yellow]{install_root}[/yellow]"
-    )
+    logger.I(f"package [green]{pkg_name}[/] installed to [yellow]{install_root}[/]")
     return 0
 
 
@@ -299,7 +289,7 @@ def _do_install_blob_pkg_to(
     dfs = pm.distfiles()
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
-        logger.F(f"package [green]{pkg_name}[/green] declares no blob distfile")
+        logger.F(f"package [green]{pkg_name}[/] declares no blob distfile")
         return 2
 
     for df_name in distfile_names:
@@ -311,14 +301,10 @@ def _do_install_blob_pkg_to(
         df.ensure(logger)
 
         if fetch_only:
-            logger.D(
-                "skipping installation because [yellow]--fetch-only[/yellow] is given"
-            )
+            logger.D("skipping installation because [yellow]--fetch-only[/] is given")
             continue
 
-        logger.I(
-            f"extracting [green]{df_name}[/green] for package [green]{pkg_name}[/green]"
-        )
+        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
         df.unpack_or_symlink(install_root, logger)
 
     return 0

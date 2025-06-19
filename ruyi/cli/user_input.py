@@ -28,7 +28,7 @@ def ask_for_yesno_confirmation(
         if user_input in {"N", "n", "no"}:
             return False
         else:
-            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
+            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/].")
             logger.stdout("Accepted choices: Y/y/yes for YES, N/n/no for NO.")
 
 
@@ -85,7 +85,7 @@ def ask_for_choice(
         try:
             choice_int = int(user_input)
         except ValueError:
-            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/yellow].")
+            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/].")
             logger.stdout(
                 f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
             )
@@ -94,7 +94,7 @@ def ask_for_choice(
         if 1 <= choice_int <= nr_choices:
             return choice_int - 1
 
-        logger.stdout(f"Out-of-range input [yellow]'{user_input}'[/yellow].")
+        logger.stdout(f"Out-of-range input [yellow]'{user_input}'[/].")
         logger.stdout(
             f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
         )
@@ -113,6 +113,4 @@ def ask_for_file(
         if os.path.exists(user_input):
             return user_input
 
-        logger.stdout(
-            f"[yellow]'{user_input}'[/yellow] is not a path to an existing file."
-        )
+        logger.stdout(f"[yellow]'{user_input}'[/] is not a path to an existing file.")

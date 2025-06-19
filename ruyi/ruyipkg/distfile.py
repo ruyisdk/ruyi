@@ -13,19 +13,19 @@ from .unpack_method import UnpackMethod
 # https://github.com/ruyisdk/ruyi/issues/46
 HELP_ERROR_FETCHING: Final = """
 Downloads can fail for a multitude of reasons, most of which should not and
-cannot be handled by [yellow]Ruyi[/yellow]. For your convenience though, please check if any
+cannot be handled by [yellow]Ruyi[/]. For your convenience though, please check if any
 of the following common failure modes apply to you, and take actions
 accordingly if one of them turns out to be the case:
 
 * Basic connectivity problems
-    - is [yellow]the gateway[/yellow] reachable?
-    - is [yellow]common websites[/yellow] reachable?
-    - is there any [yellow]DNS pollution[/yellow]?
+    - is [yellow]the gateway[/] reachable?
+    - is [yellow]common websites[/] reachable?
+    - is there any [yellow]DNS pollution[/]?
 * Organizational and/or ISP restrictions
-    - is there a [yellow]firewall[/yellow] preventing Ruyi traffic?
-    - is your [yellow]ISP blocking access[/yellow] to the source website?
+    - is there a [yellow]firewall[/] preventing Ruyi traffic?
+    - is your [yellow]ISP blocking access[/] to the source website?
 * Volatile upstream
-    - is the recorded [yellow]link dead[/yellow]? (Please raise a Ruyi issue for a fix!)
+    - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)
 """
 
 
