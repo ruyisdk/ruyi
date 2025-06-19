@@ -35,6 +35,7 @@ from .pkg_manifest import (
     is_prerelease,
 )
 from .profile import PluginProfileProvider, ProfileProxy
+from .protocols import ProvidesPackageManifests
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -212,7 +213,7 @@ class ArchProfileStore:
         return self._profiles_cache.values()
 
 
-class MetadataRepo:
+class MetadataRepo(ProvidesPackageManifests):
     def __init__(self, gc: "GlobalConfig") -> None:
         self._gc = gc
         self.root = gc.get_repo_dir()
