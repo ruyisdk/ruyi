@@ -94,6 +94,16 @@ class Distfile:
 
         return self._mr.messages.render_message(fr["msgid"], lang_code, params)
 
+    def is_downloaded(self) -> bool:
+        """Check if the distfile has been downloaded. A return value of True
+        does NOT guarantee integrity."""
+
+        try:
+            st = os.stat(self.dest)
+            return st.st_size == self.size
+        except FileNotFoundError:
+            return False
+
     def ensure(self, logger: RuyiLogger) -> None:
         logger.D(f"checking {self.dest}")
         try:
