@@ -2,8 +2,15 @@ import datetime
 import json
 import os
 import pathlib
-from typing import Any, TypedDict
+from typing import Any, Iterable, TypedDict, TYPE_CHECKING
 from dataclasses import dataclass
+
+from .pkg_manifest import BoundPackageManifest
+from .protocols import ProvidesPackageManifests
+
+if TYPE_CHECKING:
+    # for avoiding heavy import
+    from .repo import MetadataRepo
 
 
 class PackageInstallationRecord(TypedDict):
@@ -204,3 +211,105 @@ class RuyipkgGlobalStateStore:
         """List all installed packages."""
         installs = self._load_installs()
         return list(installs.values())
+
+
+class BoundInstallationStateStore(ProvidesPackageManifests):
+    def __init__(self, rgs: RuyipkgGlobalStateStore, mr: "MetadataRepo") -> None:
+        self._rgs = rgs
+        self._mr = mr
+
+    def _get_installed_manifest(
+        self,
+        info: PackageInstallationInfo,
+    ) -> BoundPackageManifest | None:
+        """Get the bound manifest for an installed package, or None if not found in repo."""
+
+        try:
+            return next(
+                pm
+                for pm in self._mr.iter_pkg_vers(info.name, info.category)
+                if pm.ver == info.version
+            )
+        except (StopIteration, KeyError):
+            # Package is installed but not found in current repo
+            return None
+
+    def iter_pkg_manifests(self) -> Iterable[BoundPackageManifest]:
+        """Iterate over all installed package manifests."""
+
+        installed_pkgs = self._rgs.list_installed_packages()
+        for info in installed_pkgs:
+            if manifest := self._get_installed_manifest(info):
+                yield manifest
+
+    def iter_pkgs(
+        self,
+    ) -> Iterable[tuple[str, str, dict[str, BoundPackageManifest]]]:
+        """Iterate over installed packages grouped by category and name."""
+
+        installed_pkgs = self._rgs.list_installed_packages()
+
+        # Group by category and name
+        result: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
+        for info in installed_pkgs:
+            if m := self._get_installed_manifest(info):
+                if info.category not in result:
+                    result[info.category] = {}
+                if info.name not in result[info.category]:
+                    result[info.category][info.name] = {}
+                result[info.category][info.name][info.version] = m
+
+        for category, cat_pkgs in result.items():
+            for pkg_name, pkg_vers in cat_pkgs.items():
+                yield (category, pkg_name, pkg_vers)
+
+    def iter_pkg_vers(
+        self,
+        name: str,
+        category: str | None = None,
+    ) -> Iterable[BoundPackageManifest]:
+        """Iterate over installed versions of a specific package."""
+
+        installed_pkgs = self._rgs.list_installed_packages()
+        for info in installed_pkgs:
+            if info.name == name and (category is None or info.category == category):
+                if manifest := self._get_installed_manifest(info):
+                    yield manifest
+
+    def get_pkg_latest_ver(
+        self,
+        name: str,
+        category: str | None = None,
+        include_prerelease_vers: bool = False,
+    ) -> BoundPackageManifest:
+        """Get the latest installed version of a package."""
+
+        from .pkg_manifest import is_prerelease
+
+        installed_vers = list(self.iter_pkg_vers(name, category))
+        if not installed_vers:
+            raise KeyError(f"No installed versions found for package '{name}'")
+
+        if not include_prerelease_vers:
+            installed_vers = [
+                pm for pm in installed_vers if not is_prerelease(pm.semver)
+            ]
+            if not installed_vers:
+                raise KeyError(
+                    f"No non-prerelease installed versions found for package '{name}'"
+                )
+
+        # Find the latest version
+        latest = max(installed_vers, key=lambda pm: pm.semver)
+        return latest
+
+    # To be removed later along with slug support
+    def get_pkg_by_slug(self, slug: str) -> BoundPackageManifest | None:
+        """Get an installed package by its slug."""
+
+        installed_packages = self._rgs.list_installed_packages()
+        for info in installed_packages:
+            if manifest := self._get_installed_manifest(info):
+                if manifest.slug == slug:
+                    return manifest
+        return None
