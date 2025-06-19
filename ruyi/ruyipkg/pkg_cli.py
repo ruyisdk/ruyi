@@ -833,6 +833,7 @@ def _do_install_blob_pkg_to(
 class UninstallCommand(
     RootCommand,
     cmd="uninstall",
+    aliases=["remove", "rm"],
     help="Uninstall installed packages",
 ):
     @classmethod
