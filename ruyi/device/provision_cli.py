@@ -10,7 +10,7 @@ from ..log import RuyiLogger
 from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
 from ..ruyipkg.entity_provider import BaseEntity
 from ..ruyipkg.host import get_native_host
-from ..ruyipkg.pkg_cli import do_install_atoms
+from ..ruyipkg.install import do_install_atoms
 from ..ruyipkg.pkg_manifest import (
     KNOWN_PARTITION_KINDS,
     PartitionKind,

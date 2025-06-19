@@ -3,8 +3,9 @@ from ..mux.venv import venv_cli as venv_cli
 from ..pluginhost import plugin_cli as plugin_cli
 from ..ruyipkg import admin_cli as admin_cli
 from ..ruyipkg import entity_cli as entity_cli
+from ..ruyipkg import install_cli as install_cli
+from ..ruyipkg import list_cli as list_cli
 from ..ruyipkg import news_cli as news_cli
-from ..ruyipkg import pkg_cli as pkg_cli
 from ..ruyipkg import profile_cli as profile_cli
 from ..ruyipkg import update_cli as update_cli
 from ..telemetry import telemetry_cli as telemetry_cli
