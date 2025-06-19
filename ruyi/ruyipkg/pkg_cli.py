@@ -12,6 +12,8 @@ from typing import (
     TYPE_CHECKING,
 )
 
+from ruyi.ruyipkg.state import BoundInstallationStateStore
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -881,13 +883,14 @@ def do_uninstall_atoms(
     logger = config.logger
     logger.D(f"about to uninstall for host {canonicalized_host}: {atom_strs}")
 
-    # TODO: consider the PM global state only
+    bis = BoundInstallationStateStore(config.ruyipkg_global_state, mr)
+
     pms_to_uninstall: list[BoundPackageManifest] = []
     for a_str in atom_strs:
         a = Atom.parse(a_str)
-        pm = a.match_in_repo(mr, config.include_prereleases)
+        pm = a.match_in_repo(bis, config.include_prereleases)
         if pm is None:
-            logger.F(f"atom [yellow]{a_str}[/] matches no package in the repository")
+            logger.F(f"atom [yellow]{a_str}[/] is non-existent or not installed")
             return 1
         pms_to_uninstall.append(pm)
 
