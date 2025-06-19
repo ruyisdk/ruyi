@@ -1,3 +1,4 @@
+from functools import cached_property
 import os
 from typing import Final
 
@@ -32,12 +33,10 @@ accordingly if one of them turns out to be the case:
 class Distfile:
     def __init__(
         self,
-        urls: list[str],
         dest: str,
         decl: DistfileDecl,
         mr: MetadataRepo,
     ) -> None:
-        self.urls = urls
         self.dest = dest
         self._decl = decl
         self._mr = mr
@@ -65,6 +64,10 @@ class Distfile:
     @property
     def is_fetch_restricted(self) -> bool:
         return self._decl.is_restricted("fetch")
+
+    @cached_property
+    def urls(self) -> list[str]:
+        return self._mr.get_distfile_urls(self._decl)
 
     def render_fetch_instructions(self, logger: RuyiLogger, lang_code: str) -> str:
         fr = self._decl.fetch_restriction

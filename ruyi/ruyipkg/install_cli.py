@@ -81,10 +81,9 @@ class ExtractCommand(
 
             for df_name in distfiles_for_host:
                 df_decl = dfs[df_name]
-                urls = mr.get_distfile_urls(df_decl)
                 dest = os.path.join(cfg.ensure_distfiles_dir(), df_name)
                 ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-                df = Distfile(urls, dest, df_decl, mr)
+                df = Distfile(dest, df_decl, mr)
                 df.ensure(logger)
 
                 logger.I(
