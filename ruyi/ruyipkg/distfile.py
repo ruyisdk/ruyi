@@ -33,13 +33,16 @@ accordingly if one of them turns out to be the case:
 class Distfile:
     def __init__(
         self,
-        dest: str,
         decl: DistfileDecl,
         mr: MetadataRepo,
     ) -> None:
-        self.dest = dest
         self._decl = decl
         self._mr = mr
+
+    @cached_property
+    def dest(self) -> str:
+        destdir = self._mr.global_config.ensure_distfiles_dir()
+        return os.path.join(destdir, self._decl.name)
 
     @property
     def size(self) -> int:
