@@ -1,3 +1,4 @@
+from functools import cached_property
 import os
 from typing import Final
 
@@ -32,15 +33,16 @@ accordingly if one of them turns out to be the case:
 class Distfile:
     def __init__(
         self,
-        urls: list[str],
-        dest: str,
         decl: DistfileDecl,
         mr: MetadataRepo,
     ) -> None:
-        self.urls = urls
-        self.dest = dest
         self._decl = decl
         self._mr = mr
+
+    @cached_property
+    def dest(self) -> str:
+        destdir = self._mr.global_config.ensure_distfiles_dir()
+        return os.path.join(destdir, self._decl.name)
 
     @property
     def size(self) -> int:
@@ -66,6 +68,10 @@ class Distfile:
     def is_fetch_restricted(self) -> bool:
         return self._decl.is_restricted("fetch")
 
+    @cached_property
+    def urls(self) -> list[str]:
+        return self._mr.get_distfile_urls(self._decl)
+
     def render_fetch_instructions(self, logger: RuyiLogger, lang_code: str) -> str:
         fr = self._decl.fetch_restriction
         if fr is None:
@@ -87,6 +93,16 @@ class Distfile:
             params.update(fr["params"])
 
         return self._mr.messages.render_message(fr["msgid"], lang_code, params)
+
+    def is_downloaded(self) -> bool:
+        """Check if the distfile has been downloaded. A return value of True
+        does NOT guarantee integrity."""
+
+        try:
+            st = os.stat(self.dest)
+            return st.st_size == self.size
+        except FileNotFoundError:
+            return False
 
     def ensure(self, logger: RuyiLogger) -> None:
         logger.D(f"checking {self.dest}")

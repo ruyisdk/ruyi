@@ -555,6 +555,7 @@ class PackageManifest:
     def service_level(self) -> PackageServiceLevel:
         return PackageServiceLevel(self._data["metadata"].get("service_level", []))
 
+    @cached_property
     def distfiles(self) -> dict[str, DistfileDecl]:
         return {x["name"]: DistfileDecl(x) for x in self._data["distfiles"]}
 

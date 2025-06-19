@@ -173,7 +173,7 @@ def _do_install_binary_pkg_to(
     bm = pm.binary_metadata
     assert bm is not None
 
-    dfs = pm.distfiles()
+    dfs = pm.distfiles
 
     pkg_name = pm.name_for_installation
     distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
@@ -185,10 +185,8 @@ def _do_install_binary_pkg_to(
 
     for df_name in distfiles_for_host:
         df_decl = dfs[df_name]
-        urls = mr.get_distfile_urls(df_decl)
-        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-        df = Distfile(urls, dest, df_decl, mr)
+        df = Distfile(df_decl, mr)
         df.ensure(logger)
 
         if fetch_only:
@@ -286,7 +284,7 @@ def _do_install_blob_pkg_to(
     assert bm is not None
 
     pkg_name = pm.name_for_installation
-    dfs = pm.distfiles()
+    dfs = pm.distfiles
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
         logger.F(f"package [green]{pkg_name}[/] declares no blob distfile")
@@ -294,10 +292,8 @@ def _do_install_blob_pkg_to(
 
     for df_name in distfile_names:
         df_decl = dfs[df_name]
-        urls = mr.get_distfile_urls(df_decl)
-        dest = os.path.join(config.ensure_distfiles_dir(), df_name)
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-        df = Distfile(urls, dest, df_decl, mr)
+        df = Distfile(df_decl, mr)
         df.ensure(logger)
 
         if fetch_only:

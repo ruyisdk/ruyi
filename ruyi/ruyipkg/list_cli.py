@@ -11,6 +11,7 @@ from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
 from ..log import RuyiLogger
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
+from .distfile import Distfile
 from .host import get_native_host
 from .list_filter import ListFilter, ListFilterAction
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
@@ -117,6 +118,7 @@ if sys.version_info >= (3, 11):
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Downloaded = "downloaded"
         Installed = "installed"
 
         def as_rich_markup(self) -> str:
@@ -131,6 +133,8 @@ if sys.version_info >= (3, 11):
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Downloaded:
+                    return "[green]downloaded[/]"
                 case self.Installed:
                     return "[green]installed[/]"
             return ""
@@ -143,6 +147,7 @@ else:
         NoBinaryForCurrentHost = "no-binary-for-current-host"
         PreRelease = "prerelease"
         HasKnownIssue = "known-issue"
+        Downloaded = "downloaded"
         Installed = "installed"
 
         def as_rich_markup(self) -> str:
@@ -157,6 +162,8 @@ else:
                     return "prerelease"
                 case self.HasKnownIssue:
                     return "[yellow]has known issue[/]"
+                case self.Downloaded:
+                    return "[green]downloaded[/]"
                 case self.Installed:
                     return "[green]installed[/]"
             return ""
@@ -170,6 +177,7 @@ class AugmentedPkgManifest:
     ) -> None:
         self.pm = pm
         self.remarks = remarks
+        self._is_downloaded = PkgRemark.Downloaded in remarks
         self._is_installed = PkgRemark.Installed in remarks
 
     def to_porcelain(self) -> "PorcelainPkgVersionV1":
@@ -177,6 +185,7 @@ class AugmentedPkgManifest:
             "semver": str(self.pm.semver),
             "pm": self.pm.to_raw(),
             "remarks": self.remarks,
+            "is_downloaded": self._is_downloaded,
             "is_installed": self._is_installed,
         }
 
@@ -243,6 +252,8 @@ class AugmentedPkg:
                 if bm := pm.binary_metadata:
                     if not bm.is_available_for_current_host:
                         remarks.append(PkgRemark.NoBinaryForCurrentHost)
+                if _is_pkg_fully_downloaded(pm):
+                    remarks.append(PkgRemark.Downloaded)
 
                 host = native_host if bm is not None else ""
                 is_installed = rgs.is_package_installed(
@@ -293,6 +304,7 @@ class PorcelainPkgVersionV1(TypedDict):
     semver: str
     pm: PackageManifestType
     remarks: list[PkgRemark]
+    is_downloaded: bool
     is_installed: bool
 
 
@@ -335,7 +347,7 @@ def _print_pkg_detail(
         for x in sv.render_known_issues(pm.repo.messages, lang_code):
             logger.stdout(x, end="\n\n")
 
-    df = pm.distfiles()
+    df = pm.distfiles
     logger.stdout(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
         logger.stdout(f"* [green]{dd.name}[/]")
@@ -360,3 +372,16 @@ def _print_pkg_detail(
         logger.stdout("* Components:")
         for tc in tm.components:
             logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
+
+
+def _is_pkg_fully_downloaded(pm: BoundPackageManifest) -> bool:
+    dfs = pm.distfiles
+    if not dfs:
+        return True
+
+    for df_decl in dfs.values():
+        df = Distfile(df_decl, pm.repo)
+        if not df.is_downloaded():
+            return False
+
+    return True
