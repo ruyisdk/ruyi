@@ -5,7 +5,7 @@ from typing import Final, Iterator, Literal, Tuple
 import semver
 
 from .pkg_manifest import BoundPackageManifest, is_prerelease
-from .repo import MetadataRepo
+from .protocols import ProvidesPackageManifests
 
 
 AtomKind = Literal["name"] | Literal["expr"] | Literal["slug"]
@@ -47,7 +47,7 @@ class Atom(abc.ABC):
     @abc.abstractmethod
     def match_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> BoundPackageManifest | None:
         raise NotImplementedError
@@ -55,7 +55,7 @@ class Atom(abc.ABC):
     @abc.abstractmethod
     def iter_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> Iterator[BoundPackageManifest]:
         raise NotImplementedError
@@ -76,7 +76,7 @@ class NameAtom(Atom):
 
     def match_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> BoundPackageManifest | None:
         # return the latest version of the package named self.name in the given repo
@@ -91,7 +91,7 @@ class NameAtom(Atom):
 
     def iter_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> Iterator[BoundPackageManifest]:
         # return all versions of the package named self.name in the given repo
@@ -126,7 +126,7 @@ class ExprAtom(Atom):
 
     def match_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> BoundPackageManifest | None:
         matching_pms = {
@@ -147,7 +147,7 @@ class ExprAtom(Atom):
 
     def iter_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> Iterator[BoundPackageManifest]:
         for pm in repo.iter_pkg_vers(self.name, self.category):
@@ -163,7 +163,7 @@ class SlugAtom(Atom):
 
     def match_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> BoundPackageManifest | None:
         pm = repo.get_pkg_by_slug(self.slug)
@@ -173,7 +173,7 @@ class SlugAtom(Atom):
 
     def iter_in_repo(
         self,
-        repo: MetadataRepo,
+        repo: ProvidesPackageManifests,
         include_prerelease_vers: bool,
     ) -> Iterator[BoundPackageManifest]:
         pm = repo.get_pkg_by_slug(self.slug)

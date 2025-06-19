@@ -9,7 +9,6 @@ from typing import (
     Iterable,
     Mapping,
     Sequence,
-    Tuple,
     TypedDict,
     TypeGuard,
     TYPE_CHECKING,
@@ -36,6 +35,7 @@ from .pkg_manifest import (
     is_prerelease,
 )
 from .profile import PluginProfileProvider, ProfileProxy
+from .protocols import ProvidesPackageManifests
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -213,7 +213,7 @@ class ArchProfileStore:
         return self._profiles_cache.values()
 
 
-class MetadataRepo:
+class MetadataRepo(ProvidesPackageManifests):
     def __init__(self, gc: "GlobalConfig") -> None:
         self._gc = gc
         self.root = gc.get_repo_dir()
@@ -463,7 +463,7 @@ class MetadataRepo:
         self._categories = cache_by_category
         self._slug_cache = slug_cache
 
-    def iter_pkgs(self) -> Iterable[Tuple[str, str, dict[str, BoundPackageManifest]]]:
+    def iter_pkgs(self) -> Iterable[tuple[str, str, dict[str, BoundPackageManifest]]]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
@@ -488,6 +488,20 @@ class MetadataRepo:
         if category is not None:
             return self._categories[category][name].values()
         return self._pkgs[name].values()
+
+    def get_pkg(
+        self,
+        name: str,
+        category: str,
+        ver: str,
+    ) -> BoundPackageManifest | None:
+        if not self._pkgs:
+            self.ensure_pkg_cache()
+
+        try:
+            return self._categories[category][name][ver]
+        except KeyError:
+            return None
 
     def get_pkg_latest_ver(
         self,

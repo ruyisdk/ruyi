@@ -12,10 +12,13 @@ from typing import (
     TYPE_CHECKING,
 )
 
+from ruyi.ruyipkg.state import BoundInstallationStateStore
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 
 from ..cli.cmd import RootCommand
+from ..cli.user_input import ask_for_yesno_confirmation
 from ..config import GlobalConfig
 from ..log import RuyiLogger
 from ..telemetry.scope import TelemetryScope
@@ -824,4 +827,228 @@ def _do_install_blob_pkg_to(
         )
         df.unpack_or_symlink(install_root, logger)
 
+    return 0
+
+
+class UninstallCommand(
+    RootCommand,
+    cmd="uninstall",
+    aliases=["remove", "rm"],
+    help="Uninstall installed packages",
+):
+    @classmethod
+    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "atom",
+            type=str,
+            nargs="+",
+            help="Specifier (atom) of the package to uninstall",
+        )
+        p.add_argument(
+            "--host",
+            type=str,
+            default=get_native_host(),
+            help="Override the host architecture (normally not needed)",
+        )
+        p.add_argument(
+            "-y",
+            "--yes",
+            action="store_true",
+            dest="assume_yes",
+            help="Assume yes to all prompts",
+        )
+
+    @classmethod
+    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+        host: str = args.host
+        atom_strs: set[str] = set(args.atom)
+        assume_yes: bool = args.assume_yes
+
+        return do_uninstall_atoms(
+            cfg,
+            cfg.repo,
+            atom_strs,
+            canonicalized_host=canonicalize_host_str(host),
+            assume_yes=assume_yes,
+        )
+
+
+def do_uninstall_atoms(
+    config: GlobalConfig,
+    mr: MetadataRepo,
+    atom_strs: set[str],
+    *,
+    canonicalized_host: str | RuyiHost,
+    assume_yes: bool,
+) -> int:
+    logger = config.logger
+    logger.D(f"about to uninstall for host {canonicalized_host}: {atom_strs}")
+
+    bis = BoundInstallationStateStore(config.ruyipkg_global_state, mr)
+
+    pms_to_uninstall: list[tuple[str, BoundPackageManifest]] = []
+    for a_str in atom_strs:
+        a = Atom.parse(a_str)
+        pm = a.match_in_repo(bis, config.include_prereleases)
+        if pm is None:
+            logger.F(f"atom [yellow]{a_str}[/] is non-existent or not installed")
+            return 1
+        pms_to_uninstall.append((a_str, pm))
+
+    if not pms_to_uninstall:
+        logger.I("no packages to uninstall")
+        return 0
+
+    logger.I("the following packages will be uninstalled:")
+    for _, pm in pms_to_uninstall:
+        logger.I(f"  - [green]{pm.category}/{pm.name}[/] ({pm.ver})")
+
+    if not assume_yes:
+        if not ask_for_yesno_confirmation(logger, "Proceed?", default=False):
+            logger.I("uninstallation aborted")
+            return 0
+
+    for a_str, pm in pms_to_uninstall:
+        pkg_name = pm.name_for_installation
+
+        if tm := config.telemetry:
+            tm.record(
+                TelemetryScope(mr.repo_id),
+                "repo:package-uninstall-v1",
+                atom=a_str,
+                host=canonicalized_host,
+                pkg_category=pm.category,
+                pkg_kinds=pm.kind,
+                pkg_name=pm.name,
+                pkg_version=pm.ver,
+            )
+
+        if pm.binary_metadata is not None:
+            ret = _do_uninstall_binary_pkg(
+                config,
+                pm,
+                canonicalized_host,
+            )
+            if ret != 0:
+                return ret
+            continue
+
+        if pm.blob_metadata is not None:
+            ret = _do_uninstall_blob_pkg(config, pm)
+            if ret != 0:
+                return ret
+            continue
+
+        logger.F(f"don't know how to handle non-binary package [green]{pkg_name}[/]")
+        return 2
+
+    return 0
+
+
+def _do_uninstall_binary_pkg(
+    config: GlobalConfig,
+    pm: BoundPackageManifest,
+    canonicalized_host: str | RuyiHost,
+) -> int:
+    logger = config.logger
+    bm = pm.binary_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_binary_install_root(str(canonicalized_host), pkg_name)
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        str(canonicalized_host),
+    )
+
+    # Check directory existence if the PM state says the package is not installed
+    if not is_installed:
+        if not os.path.exists(install_root):
+            logger.I(f"skipping not-installed package [green]{pkg_name}[/]")
+            return 0
+
+        # There may be potentially user-generated data in the directory,
+        # let's be safe and fail the process.
+        logger.F(
+            f"package [green]{pkg_name}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+        )
+        logger.I("Please remove it manually if you are sure it's safe to do so.")
+        logger.I(
+            "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+        )
+        return 1
+
+    logger.I(f"uninstalling package [green]{pkg_name}[/]")
+    if is_installed:
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            str(canonicalized_host),
+        )
+
+    if os.path.exists(install_root):
+        shutil.rmtree(install_root)
+
+    logger.I(f"package [green]{pkg_name}[/] uninstalled")
+    return 0
+
+
+def _do_uninstall_blob_pkg(
+    config: GlobalConfig,
+    pm: BoundPackageManifest,
+) -> int:
+    logger = config.logger
+    bm = pm.blob_metadata
+    assert bm is not None
+
+    pkg_name = pm.name_for_installation
+    install_root = config.global_blob_install_root(pkg_name)
+
+    rgs = config.ruyipkg_global_state
+    is_installed = rgs.is_package_installed(
+        pm.repo_id,
+        pm.category,
+        pm.name,
+        pm.ver,
+        "",  # host is "" for blob packages
+    )
+
+    # Check directory existence if the PM state says the package is not installed
+    if not is_installed:
+        if not os.path.exists(install_root):
+            logger.I(f"skipping not-installed package [green]{pkg_name}[/]")
+            return 0
+
+        # There may be potentially user-generated data in the directory,
+        # let's be safe and fail the process.
+        logger.F(
+            f"package [green]{pkg_name}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+        )
+        logger.I("Please remove it manually if you are sure it's safe to do so.")
+        logger.I(
+            "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+        )
+        return 1
+
+    logger.I(f"uninstalling package [green]{pkg_name}[/]")
+    if is_installed:
+        rgs.remove_installation(
+            pm.repo_id,
+            pm.category,
+            pm.name,
+            pm.ver,
+            "",
+        )
+
+    if os.path.exists(install_root):
+        shutil.rmtree(install_root)
+
+    logger.I(f"package [green]{pkg_name}[/] uninstalled")
     return 0
