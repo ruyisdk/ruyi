@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import pathlib
-from typing import Any, Iterable, TypedDict, TYPE_CHECKING
+from typing import Any, Iterable, Iterator, TypedDict, TYPE_CHECKING
 from dataclasses import dataclass
 
 from .pkg_manifest import BoundPackageManifest
@@ -322,3 +322,24 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
                 if m.slug == slug:
                     return m
         return None
+
+    # Useful helpers
+
+    def iter_upgradable_pkgs(
+        self,
+        include_prereleases: bool = False,
+    ) -> Iterator[tuple[BoundPackageManifest, str]]:
+        for installed_pm in self.iter_pkg_manifests():
+            latest_pm: BoundPackageManifest
+            try:
+                latest_pm = self._mr.get_pkg_latest_ver(
+                    installed_pm.name,
+                    installed_pm.category,
+                    include_prereleases,
+                )
+            except KeyError:
+                # package not found in the repo, skip it
+                continue
+
+            if latest_pm.semver > installed_pm.semver:
+                yield (installed_pm, str(latest_pm.semver))

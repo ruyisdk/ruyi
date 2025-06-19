@@ -1,7 +1,7 @@
 import argparse
 
 from ..config import GlobalConfig
-from .pkg_cli import ListCommand
+from .list_cli import ListCommand
 
 
 class ListProfilesCommand(

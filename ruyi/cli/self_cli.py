@@ -9,14 +9,14 @@ from . import user_input
 from .cmd import RootCommand
 
 UNINSTALL_NOTICE: Final = """
-[bold]Thanks for hacking with [yellow]Ruyi[/yellow]![/bold]
+[bold]Thanks for hacking with [yellow]Ruyi[/]![/]
 
-This will uninstall [yellow]Ruyi[/yellow] from your system, and optionally remove
-all installed packages and [yellow]Ruyi[/yellow]-managed repository data if the
-[green]--purge[/green] switch is given on the command line.
+This will uninstall [yellow]Ruyi[/] from your system, and optionally remove
+all installed packages and [yellow]Ruyi[/]-managed repository data if the
+[green]--purge[/] switch is given on the command line.
 
-Note that your [yellow]Ruyi[/yellow] virtual environments [bold]will become unusable[/bold] after
-[yellow]Ruyi[/yellow] is uninstalled. You should take care of migrating or cleaning
+Note that your [yellow]Ruyi[/] virtual environments [bold]will become unusable[/] after
+[yellow]Ruyi[/] is uninstalled. You should take care of migrating or cleaning
 them yourselves afterwards.
 """
 
@@ -179,7 +179,7 @@ class SelfUninstallCommand(
 
         if not cfg.is_packaged:
             logger.F(
-                "this [yellow]ruyi[/yellow] is not in standalone form, and cannot be uninstalled this way"
+                "this [yellow]ruyi[/] is not in standalone form, and cannot be uninstalled this way"
             )
             return 1
 
@@ -200,7 +200,7 @@ class SelfUninstallCommand(
             self_binary=True,
         )
 
-        logger.I("[yellow]ruyi[/yellow] is uninstalled")
+        logger.I("[yellow]ruyi[/] is uninstalled")
 
         return 0
 
