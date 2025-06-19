@@ -9,7 +9,6 @@ from typing import (
     Iterable,
     Mapping,
     Sequence,
-    Tuple,
     TypedDict,
     TypeGuard,
     TYPE_CHECKING,
@@ -463,7 +462,7 @@ class MetadataRepo:
         self._categories = cache_by_category
         self._slug_cache = slug_cache
 
-    def iter_pkgs(self) -> Iterable[Tuple[str, str, dict[str, BoundPackageManifest]]]:
+    def iter_pkgs(self) -> Iterable[tuple[str, str, dict[str, BoundPackageManifest]]]:
         if not self._pkgs:
             self.ensure_pkg_cache()
 
