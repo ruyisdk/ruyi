@@ -77,7 +77,7 @@ class ExtractCommand(
                 )
                 return 2
 
-            dfs = pm.distfiles()
+            dfs = pm.distfiles
 
             for df_name in distfiles_for_host:
                 df_decl = dfs[df_name]

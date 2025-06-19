@@ -173,7 +173,7 @@ def _do_install_binary_pkg_to(
     bm = pm.binary_metadata
     assert bm is not None
 
-    dfs = pm.distfiles()
+    dfs = pm.distfiles
 
     pkg_name = pm.name_for_installation
     distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
@@ -286,7 +286,7 @@ def _do_install_blob_pkg_to(
     assert bm is not None
 
     pkg_name = pm.name_for_installation
-    dfs = pm.distfiles()
+    dfs = pm.distfiles
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
         logger.F(f"package [green]{pkg_name}[/] declares no blob distfile")

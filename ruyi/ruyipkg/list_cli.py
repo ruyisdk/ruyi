@@ -335,7 +335,7 @@ def _print_pkg_detail(
         for x in sv.render_known_issues(pm.repo.messages, lang_code):
             logger.stdout(x, end="\n\n")
 
-    df = pm.distfiles()
+    df = pm.distfiles
     logger.stdout(f"Package declares {len(df)} distfile(s):\n")
     for dd in df.values():
         logger.stdout(f"* [green]{dd.name}[/]")
