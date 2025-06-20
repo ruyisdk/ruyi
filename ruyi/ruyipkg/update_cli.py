@@ -2,7 +2,7 @@ import argparse
 
 from ..config import GlobalConfig
 from ..cli.cmd import RootCommand
-from . import news_cli
+from . import news
 from .state import BoundInstallationStateStore
 
 
@@ -43,7 +43,7 @@ virtual environments."""
         unread_newsitems = mr.news_store().list(True)
         if unread_newsitems:
             logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
-            news_cli.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
+            news.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
             logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
 
         return 0
