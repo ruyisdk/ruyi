@@ -190,7 +190,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("F", message, sep, *objects)
 
         return self._log_console.print(
-            f"[bold red]fatal error:[/bold red] {message}",
+            f"[bold red]fatal error:[/] {message}",
             *objects,
             sep=sep,
             end=end,
@@ -207,7 +207,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("I", message, sep, *objects)
 
         return self._log_console.print(
-            f"[bold green]info:[/bold green] {message}",
+            f"[bold green]info:[/] {message}",
             *objects,
             sep=sep,
             end=end,
@@ -224,7 +224,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("W", message, sep, *objects)
 
         return self._log_console.print(
-            f"[bold yellow]warn:[/bold yellow] {message}",
+            f"[bold yellow]warn:[/] {message}",
             *objects,
             sep=sep,
             end=end,
@@ -242,4 +242,4 @@ def humanize_list(
         return empty_prompt
     if item_color is None:
         return sep.join(obj)
-    return sep.join(f"[{item_color}]{x}[/{item_color}]" for x in obj)
+    return sep.join(f"[{item_color}]{x}[/]" for x in obj)

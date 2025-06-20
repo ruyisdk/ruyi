@@ -23,8 +23,8 @@ def print_news_item_titles(
 
     for ni in newsitems:
         unread = not ni.is_read
-        ord = f"[bold green]{ni.ordinal}[/bold green]" if unread else f"{ni.ordinal}"
-        id = f"[bold green]{ni.id}[/bold green]" if unread else ni.id
+        ord = f"[bold green]{ni.ordinal}[/]" if unread else f"{ni.ordinal}"
+        id = f"[bold green]{ni.id}[/]" if unread else ni.id
 
         tbl.add_row(
             ord,
@@ -82,7 +82,7 @@ def do_news_list(
                 po.emit(ni.to_porcelain())
         return 0
 
-    logger.stdout("[bold green]News items:[/bold green]\n")
+    logger.stdout("[bold green]News items:[/]\n")
     if not newsitems:
         logger.stdout("  (no unread item)" if only_unread else "  (no item)")
         return 0
