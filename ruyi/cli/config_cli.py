@@ -1,9 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
-from .. import config
-from ..config.schema import decode_value, encode_value
-from ..config.editor import ConfigEditor
 from .cmd import RootCommand
+
+if TYPE_CHECKING:
+    from .. import config
 
 
 # Config management commands
@@ -16,7 +17,7 @@ class ConfigCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         pass
@@ -30,7 +31,7 @@ class ConfigGetCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -40,7 +41,9 @@ class ConfigGetCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.schema import encode_value
+
         key: str = args.key
 
         val = cfg.get_by_key(key)
@@ -59,7 +62,7 @@ class ConfigSetCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -74,7 +77,10 @@ class ConfigSetCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+        from ..config.schema import decode_value
+
         key: str = args.key
         val: str = args.value
 
@@ -94,7 +100,7 @@ class ConfigUnsetCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -104,7 +110,9 @@ class ConfigUnsetCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+
         key: str = args.key
 
         with ConfigEditor.work_on_user_local_config(cfg) as ed:
@@ -122,7 +130,7 @@ class ConfigRemoveSectionCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -132,7 +140,9 @@ class ConfigRemoveSectionCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+
         section: str = args.section
 
         with ConfigEditor.work_on_user_local_config(cfg) as ed:
