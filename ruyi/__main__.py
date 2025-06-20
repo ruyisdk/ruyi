@@ -11,6 +11,7 @@ from ruyi.utils.global_mode import (
     TRUTHY_ENV_VAR_VALUES,
     is_env_var_truthy,
 )
+
 # NOTE: no imports that directly or indirectly pull in pygit2 should go here,
 # because import of pygit2 will fail if done before ssl_patch. Notably this
 # means no GlobalConfig here because it depends on ruyi.ruyipkg.repo.
@@ -37,7 +38,7 @@ def _is_allowed_to_run_as_root() -> bool:
 def entrypoint() -> None:
     from ruyi.log import RuyiConsoleLogger
 
-    gm = EnvGlobalModeProvider(os.environ)
+    gm = EnvGlobalModeProvider(os.environ, sys.argv)
     logger = RuyiConsoleLogger(gm)
 
     if _is_running_as_root() and not _is_allowed_to_run_as_root():
