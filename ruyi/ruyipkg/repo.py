@@ -27,7 +27,7 @@ from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
 from .entity_provider import BaseEntityProvider, FSEntityProvider
 from .msg import RepoMessageStore
-from .news import NewsItemStore
+from .news_store import NewsItemStore
 from .pkg_manifest import (
     BoundPackageManifest,
     DistfileDecl,

@@ -8,7 +8,7 @@ from ..config import GlobalConfig
 from ..log import RuyiLogger
 from ..utils.markdown import RuyiStyledMarkdown
 from ..utils.porcelain import PorcelainOutput
-from .news import NewsItem, NewsItemContent, NewsItemStore
+from .news_store import NewsItem, NewsItemContent, NewsItemStore
 
 
 def print_news_item_titles(
