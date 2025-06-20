@@ -68,38 +68,51 @@ class ListCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        logger = cfg.logger
-        verbose = args.verbose
+        verbose: bool = args.verbose
         filters: ListFilter = args.filters
 
-        if not filters:
-            if cfg.is_porcelain:
-                # we don't want to print message for humans in case of porcelain
-                # mode, but we don't want to retain the old behavior of listing
-                # all packages either
-                return 1
+        return do_list(
+            cfg,
+            filters=filters,
+            verbose=verbose,
+        )
 
-            logger.F("no filter specified for list operation")
-            logger.I(
-                "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
-            )
+
+def do_list(
+    cfg: GlobalConfig,
+    filters: ListFilter,
+    verbose: bool,
+) -> int:
+    logger = cfg.logger
+
+    if not filters:
+        if cfg.is_porcelain:
+            # we don't want to print message for humans in case of porcelain
+            # mode, but we don't want to retain the old behavior of listing
+            # all packages either
             return 1
 
-        augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
+        logger.F("no filter specified for list operation")
+        logger.I(
+            "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+        )
+        return 1
 
-        if cfg.is_porcelain:
-            return _do_list_porcelain(augmented_pkgs)
+    augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
 
-        if not verbose:
-            return _do_list_non_verbose(logger, augmented_pkgs)
+    if cfg.is_porcelain:
+        return _do_list_porcelain(augmented_pkgs)
 
-        for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
-            if i > 0:
-                logger.stdout("\n")
+    if not verbose:
+        return _do_list_non_verbose(logger, augmented_pkgs)
 
-            _print_pkg_detail(logger, ver.pm, cfg.lang_code)
+    for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
+        if i > 0:
+            logger.stdout("\n")
 
-        return 0
+        _print_pkg_detail(logger, ver.pm, cfg.lang_code)
+
+    return 0
 
 
 def _do_list_non_verbose(
