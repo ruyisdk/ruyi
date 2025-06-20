@@ -4,6 +4,7 @@ from .. import config
 from ..config.schema import decode_value, encode_value
 from ..config.editor import ConfigEditor
 from .cmd import RootCommand
+from .completion import SelfArgumentParser
 
 
 # Config management commands
@@ -17,7 +18,7 @@ class ConfigCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -31,7 +32,7 @@ class ConfigGetCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "key",
@@ -60,7 +61,7 @@ class ConfigSetCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "key",
@@ -95,7 +96,7 @@ class ConfigUnsetCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "key",
@@ -123,7 +124,7 @@ class ConfigRemoveSectionCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "section",

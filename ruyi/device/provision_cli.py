@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, TypedDict, TypeGuard, cast
 
 from ..cli import user_input
 from ..cli.cmd import RootCommand
+from ..cli.completion import SelfArgumentParser
 from ..config import GlobalConfig
 from ..log import RuyiLogger
 from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
@@ -30,7 +31,7 @@ class DeviceCommand(
     help="Manage devices",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         pass
 
 
@@ -40,7 +41,7 @@ class DeviceProvisionCommand(
     help="Interactively initialize a device for development",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         pass
 
     @classmethod

@@ -4,6 +4,7 @@ import ruyi
 from ..config import GlobalConfig
 from ..version import COPYRIGHT_NOTICE, MPL_REDIST_NOTICE, RUYI_SEMVER
 from .cmd import RootCommand
+from .completion import SelfArgumentParser
 
 
 class VersionCommand(
@@ -12,7 +13,7 @@ class VersionCommand(
     help="Print version information",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         pass
 
     @classmethod

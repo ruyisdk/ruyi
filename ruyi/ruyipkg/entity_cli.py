@@ -1,6 +1,7 @@
 import argparse
 
 from ..cli.cmd import RootCommand
+from ..cli.completion import SelfArgumentParser
 from ..config import GlobalConfig
 from ..utils.porcelain import PorcelainOutput
 
@@ -13,7 +14,7 @@ class EntityCommand(
     help="Interact with entities defined in the repositories",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         pass
 
 
@@ -23,7 +24,7 @@ class EntityDescribeCommand(
     help="Describe an entity",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         p.add_argument(
             "ref",
             help="Reference to the entity to describe in the form of '<type>:<name>'",
@@ -81,7 +82,7 @@ class EntityListCommand(
     help="List entities",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         p.add_argument(
             "-t",
             "--entity-type",

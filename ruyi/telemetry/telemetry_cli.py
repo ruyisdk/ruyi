@@ -3,6 +3,7 @@ import datetime
 
 from .. import config
 from ..cli.cmd import RootCommand
+from ..cli.completion import SelfArgumentParser
 from .provider import set_telemetry_mode
 
 
@@ -17,7 +18,7 @@ class TelemetryCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -32,7 +33,7 @@ class TelemetryConsentCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -52,7 +53,7 @@ class TelemetryLocalCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -72,7 +73,7 @@ class TelemetryOptoutCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 
@@ -91,7 +92,7 @@ class TelemetryStatusCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         p.add_argument(
             "--verbose",
@@ -126,7 +127,7 @@ class TelemetryUploadCommand(
     def configure_args(
         cls,
         gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
+        p: SelfArgumentParser,
     ) -> None:
         pass
 

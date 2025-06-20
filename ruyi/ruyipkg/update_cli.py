@@ -2,6 +2,7 @@ import argparse
 
 from ..config import GlobalConfig
 from ..cli.cmd import RootCommand
+from ..cli.completion import SelfArgumentParser
 from . import news_cli
 from .state import BoundInstallationStateStore
 
@@ -12,7 +13,7 @@ class UpdateCommand(
     help="Update RuyiSDK repo and packages",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: GlobalConfig, p: SelfArgumentParser) -> None:
         pass
 
     @classmethod
