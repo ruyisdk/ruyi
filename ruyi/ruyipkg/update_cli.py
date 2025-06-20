@@ -1,9 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
-from ..config import GlobalConfig
 from ..cli.cmd import RootCommand
-from . import news
-from .state import BoundInstallationStateStore
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class UpdateCommand(
@@ -12,11 +13,14 @@ class UpdateCommand(
     help="Update RuyiSDK repo and packages",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from . import news
+        from .state import BoundInstallationStateStore
+
         logger = cfg.logger
         mr = cfg.repo
         mr.sync()
