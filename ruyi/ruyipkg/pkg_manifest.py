@@ -29,7 +29,7 @@ else:
 
 import tomlkit
 
-from .host import canonicalize_host_str, get_native_host
+from .host import RuyiHost, canonicalize_host_str, get_native_host
 from .msg import RepoMessageStore
 from .unpack_method import UnpackMethod, determine_unpack_method
 
@@ -266,7 +266,7 @@ class BinaryDecl:
     def data(self) -> dict[str, BinaryFileDeclType]:
         return self._data
 
-    def get_distfile_names_for_host(self, host: str) -> list[str] | None:
+    def get_distfile_names_for_host(self, host: str | RuyiHost) -> list[str] | None:
         if data := self._data.get(canonicalize_host_str(host)):
             return data.get("distfiles")
         return None
@@ -293,7 +293,7 @@ class SourceDecl:
     def __init__(self, data: SourceDeclType) -> None:
         self._data = data
 
-    def get_distfile_names_for_host(self, host: str) -> list[str] | None:
+    def get_distfile_names_for_host(self, host: str | RuyiHost) -> list[str] | None:
         # currently the host parameter is ignored
         return self._data["distfiles"]
 
