@@ -1,12 +1,11 @@
 import argparse
 import pathlib
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from ..cli.cmd import AdminCommand
-from ..config import GlobalConfig
-from .admin_checksum import do_admin_checksum
-from .canonical_dump import dumps_canonical_package_manifest_toml
-from .pkg_manifest import PackageManifest
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class AdminChecksumCommand(
@@ -15,7 +14,7 @@ class AdminChecksumCommand(
     help="Generate a checksum section for a manifest file for the distfiles given",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--format",
             "-f",
@@ -38,7 +37,9 @@ class AdminChecksumCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .admin_checksum import do_admin_checksum
+
         logger = cfg.logger
         files = args.file
         format = args.format
@@ -54,7 +55,7 @@ class AdminFormatManifestCommand(
     help="Format the given package manifests into canonical TOML representation",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "file",
             type=str,
@@ -63,7 +64,10 @@ class AdminFormatManifestCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .canonical_dump import dumps_canonical_package_manifest_toml
+        from .pkg_manifest import PackageManifest
+
         files = args.file
 
         for f in files:
