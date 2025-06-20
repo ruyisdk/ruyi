@@ -19,23 +19,6 @@ def is_env_var_truthy(env: Mapping[str, str], var: str) -> bool:
     return False
 
 
-_argv0: str = ""
-_main_file: str = ""
-_self_exe: str = ""
-
-
-def argv0() -> str:
-    return _argv0
-
-
-def main_file() -> str:
-    return _main_file
-
-
-def self_exe() -> str:
-    return _self_exe
-
-
 @runtime_checkable
 class ProvidesGlobalMode(Protocol):
     @property
@@ -125,10 +108,28 @@ class GlobalModeProvider(metaclass=abc.ABCMeta):
         return None
 
 
+def _guess_porcelain_from_argv(argv: list[str]) -> bool:
+    """
+    Guess if the current invocation is a "porcelain" command based on the
+    arguments passed, without requiring the ``argparse`` machinery to be
+    completely initialized.
+    """
+    # If the first argument is `--porcelain`, we assume it's a porcelain command.
+    # This is currently accurate as the porcelain flag is only possible at this
+    # position right now.
+    return len(argv) > 1 and argv[1] == "--porcelain"
+
+
 class EnvGlobalModeProvider(GlobalModeProvider):
-    def __init__(self, env: Mapping[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        env: Mapping[str, str] | None = None,
+        argv: list[str] | None = None,
+    ) -> None:
         if env is None:
             env = os.environ
+        if argv is None:
+            argv = []
 
         self._argv0 = ""
         self._main_file = ""
@@ -136,7 +137,7 @@ class EnvGlobalModeProvider(GlobalModeProvider):
 
         self._is_debug = is_env_var_truthy(env, ENV_DEBUG)
         self._is_experimental = is_env_var_truthy(env, ENV_EXPERIMENTAL)
-        self._is_porcelain = False  # this has to be initialized later
+        self._is_porcelain = _guess_porcelain_from_argv(argv)
         self._is_telemetry_optout = is_env_var_truthy(env, ENV_TELEMETRY_OPTOUT_KEY)
         self._venv_root = env.get(ENV_VENV_ROOT_KEY)
 
