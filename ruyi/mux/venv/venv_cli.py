@@ -1,10 +1,11 @@
 import argparse
 import pathlib
+from typing import TYPE_CHECKING
 
 from ...cli.cmd import RootCommand
-from ...config import GlobalConfig
-from ...ruyipkg.host import get_native_host
-from .maker import do_make_venv
+
+if TYPE_CHECKING:
+    from ...config import GlobalConfig
 
 
 class VenvCommand(
@@ -13,7 +14,7 @@ class VenvCommand(
     help="Generate a virtual environment adapted to the chosen toolchain and profile",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument("profile", type=str, help="Profile to use for the environment")
         p.add_argument("dest", type=str, help="Path to the new virtual environment")
         p.add_argument(
@@ -62,7 +63,10 @@ class VenvCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from ...ruyipkg.host import get_native_host
+        from .maker import do_make_venv
+
         profile_name: str = args.profile
         dest = pathlib.Path(args.dest)
         with_sysroot: bool = args.with_sysroot
