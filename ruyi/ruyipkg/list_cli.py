@@ -1,9 +1,11 @@
 import argparse
+from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..config import GlobalConfig
-from .list import do_list
 from .list_filter import ListFilter, ListFilterAction
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class ListCommand(
@@ -15,7 +17,7 @@ class ListCommand(
     help="List available packages in configured repository",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -63,7 +65,9 @@ class ListCommand(
             )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .list import do_list
+
         verbose: bool = args.verbose
         filters: ListFilter = args.filters
 
