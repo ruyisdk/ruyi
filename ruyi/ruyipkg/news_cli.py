@@ -61,26 +61,35 @@ class NewsListCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        logger = cfg.logger
-        only_unread = args.new
+        only_unread: bool = args.new
+        return do_news_list(
+            cfg,
+            only_unread,
+        )
 
-        store = cfg.repo.news_store()
-        newsitems = store.list(only_unread)
 
-        if cfg.is_porcelain:
-            with PorcelainOutput() as po:
-                for ni in newsitems:
-                    po.emit(ni.to_porcelain())
-            return 0
+def do_news_list(
+    cfg: GlobalConfig,
+    only_unread: bool,
+) -> int:
+    logger = cfg.logger
+    store = cfg.repo.news_store()
+    newsitems = store.list(only_unread)
 
-        logger.stdout("[bold green]News items:[/bold green]\n")
-        if not newsitems:
-            logger.stdout("  (no unread item)" if only_unread else "  (no item)")
-            return 0
-
-        print_news_item_titles(logger, newsitems, cfg.lang_code)
-
+    if cfg.is_porcelain:
+        with PorcelainOutput() as po:
+            for ni in newsitems:
+                po.emit(ni.to_porcelain())
         return 0
+
+    logger.stdout("[bold green]News items:[/bold green]\n")
+    if not newsitems:
+        logger.stdout("  (no unread item)" if only_unread else "  (no item)")
+        return 0
+
+    print_news_item_titles(logger, newsitems, cfg.lang_code)
+
+    return 0
 
 
 class NewsReadCommand(
@@ -106,33 +115,45 @@ class NewsReadCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        logger = cfg.logger
-        quiet = args.quiet
-        items_strs = args.item
+        quiet: bool = args.quiet
+        items_strs: list[str] = args.item
 
-        store = cfg.repo.news_store()
+        return do_news_read(
+            cfg,
+            quiet,
+            items_strs,
+        )
 
-        # filter out requested news items
-        items = filter_news_items_by_specs(logger, store, items_strs)
-        if items is None:
-            return 1
 
-        if cfg.is_porcelain:
-            with PorcelainOutput() as po:
-                for ni in items:
-                    po.emit(ni.to_porcelain())
-        elif not quiet:
-            # render the items
-            if items:
-                for ni in items:
-                    print_news(logger, ni.get_content_for_lang(cfg.lang_code))
-            else:
-                logger.stdout("No news to display.")
+def do_news_read(
+    cfg: GlobalConfig,
+    quiet: bool,
+    items_strs: list[str],
+) -> int:
+    logger = cfg.logger
+    store = cfg.repo.news_store()
 
-        # record read statuses
-        store.mark_as_read(*(ni.id for ni in items))
+    # filter out requested news items
+    items = filter_news_items_by_specs(logger, store, items_strs)
+    if items is None:
+        return 1
 
-        return 0
+    if cfg.is_porcelain:
+        with PorcelainOutput() as po:
+            for ni in items:
+                po.emit(ni.to_porcelain())
+    elif not quiet:
+        # render the items
+        if items:
+            for ni in items:
+                print_news(logger, ni.get_content_for_lang(cfg.lang_code))
+        else:
+            logger.stdout("No news to display.")
+
+    # record read statuses
+    store.mark_as_read(*(ni.id for ni in items))
+
+    return 0
 
 
 def filter_news_items_by_specs(
