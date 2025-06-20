@@ -1,9 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
-import ruyi
-from ..config import GlobalConfig
-from ..version import COPYRIGHT_NOTICE, MPL_REDIST_NOTICE, RUYI_SEMVER
 from .cmd import RootCommand
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class VersionCommand(
@@ -12,16 +13,18 @@ class VersionCommand(
     help="Print version information",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         return cli_version(cfg, args)
 
 
-def cli_version(cfg: GlobalConfig, args: argparse.Namespace) -> int:
+def cli_version(cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+    import ruyi
     from ..ruyipkg.host import get_native_host
+    from ..version import COPYRIGHT_NOTICE, MPL_REDIST_NOTICE, RUYI_SEMVER
 
     print(f"Ruyi {RUYI_SEMVER}\n\nRunning on {get_native_host()}.")
 
