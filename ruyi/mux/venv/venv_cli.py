@@ -69,20 +69,43 @@ class VenvCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        return cli_venv(cfg, args)
+        profile_name: str = args.profile
+        dest = pathlib.Path(args.dest)
+        with_sysroot: bool = args.with_sysroot
+        override_name: str | None = args.name
+        tc_atoms_str: list[str] | None = args.toolchain
+        emu_atom_str: str | None = args.emulator
+        sysroot_atom_str: str | None = args.sysroot_from
+        extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
+        host = str(get_native_host())
+
+        return do_make_venv(
+            cfg,
+            host,
+            profile_name,
+            dest,
+            with_sysroot,
+            override_name,
+            tc_atoms_str,
+            emu_atom_str,
+            sysroot_atom_str,
+            extra_cmd_atoms_str,
+        )
 
 
-def cli_venv(config: GlobalConfig, args: argparse.Namespace) -> int:
+def do_make_venv(
+    config: GlobalConfig,
+    host: str,
+    profile_name: str,
+    dest: pathlib.Path,
+    with_sysroot: bool,
+    override_name: str | None = None,
+    tc_atoms_str: list[str] | None = None,
+    emu_atom_str: str | None = None,
+    sysroot_atom_str: str | None = None,
+    extra_cmd_atoms_str: list[str] | None = None,
+) -> int:
     logger = config.logger
-    profile_name: str = args.profile
-    dest = pathlib.Path(args.dest)
-    with_sysroot: bool = args.with_sysroot
-    override_name: str | None = args.name
-    tc_atoms_str: list[str] | None = args.toolchain
-    emu_atom_str: str | None = args.emulator
-    sysroot_atom_str: str | None = args.sysroot_from
-    extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
-    host = str(get_native_host())
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache

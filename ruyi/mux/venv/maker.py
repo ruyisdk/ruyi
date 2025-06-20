@@ -17,6 +17,8 @@ from .templating import render_template_str
 
 
 class VenvMaker:
+    """Performs the actual creation of a Ruyi virtual environment."""
+
     def __init__(
         self,
         gc: GlobalConfig,
