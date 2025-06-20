@@ -1,9 +1,11 @@
 import argparse
 import datetime
+from typing import TYPE_CHECKING
 
-from .. import config
 from ..cli.cmd import RootCommand
-from .provider import set_telemetry_mode
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 # Telemetry preference commands
@@ -14,11 +16,7 @@ class TelemetryCommand(
     help="Manage your telemetry preferences",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
 
@@ -29,15 +27,13 @@ class TelemetryConsentCommand(
     help="Give consent to telemetry data uploads",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .provider import set_telemetry_mode
+
         now = datetime.datetime.now().astimezone()
         set_telemetry_mode(cfg, "on", now)
         return 0
@@ -49,15 +45,13 @@ class TelemetryLocalCommand(
     help="Set telemetry mode to local collection only",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .provider import set_telemetry_mode
+
         set_telemetry_mode(cfg, "local")
         return 0
 
@@ -69,15 +63,13 @@ class TelemetryOptoutCommand(
     help="Opt out of telemetry data collection",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .provider import set_telemetry_mode
+
         set_telemetry_mode(cfg, "off")
         return 0
 
@@ -88,11 +80,7 @@ class TelemetryStatusCommand(
     help="Print the current telemetry mode",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -101,7 +89,7 @@ class TelemetryStatusCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         verbose: bool = args.verbose
         if not verbose:
             cfg.logger.stdout(cfg.telemetry_mode)
@@ -123,15 +111,11 @@ class TelemetryUploadCommand(
     help="Upload collected telemetry data now",
 ):
     @classmethod
-    def configure_args(
-        cls,
-        gc: config.GlobalConfig,
-        p: argparse.ArgumentParser,
-    ) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         if cfg.telemetry is None:
             cfg.logger.W("telemetry is disabled, nothing to upload")
             return 0
