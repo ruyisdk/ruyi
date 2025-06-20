@@ -19,23 +19,6 @@ def is_env_var_truthy(env: Mapping[str, str], var: str) -> bool:
     return False
 
 
-_argv0: str = ""
-_main_file: str = ""
-_self_exe: str = ""
-
-
-def argv0() -> str:
-    return _argv0
-
-
-def main_file() -> str:
-    return _main_file
-
-
-def self_exe() -> str:
-    return _self_exe
-
-
 @runtime_checkable
 class ProvidesGlobalMode(Protocol):
     @property
