@@ -1,8 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..config import GlobalConfig
-from ..utils.porcelain import PorcelainOutput
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class EntityCommand(
@@ -13,7 +15,7 @@ class EntityCommand(
     help="Interact with entities defined in the repositories",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
 
@@ -23,14 +25,14 @@ class EntityDescribeCommand(
     help="Describe an entity",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "ref",
             help="Reference to the entity to describe in the form of '<type>:<name>'",
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         logger = cfg.logger
         ref = args.ref
 
@@ -81,7 +83,7 @@ class EntityListCommand(
     help="List entities",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "-t",
             "--entity-type",
@@ -92,7 +94,9 @@ class EntityListCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from ..utils.porcelain import PorcelainOutput
+
         entity_types_in: list[list[str]] | None = args.entity_type
         entity_types: list[str] | None = None
         if entity_types_in is not None:
