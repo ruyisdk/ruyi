@@ -2,11 +2,8 @@ import argparse
 
 from ..cli.cmd import RootCommand
 from ..config import GlobalConfig
-from .atom import Atom
-from .distfile import Distfile
 from .host import canonicalize_host_str, get_native_host
-from .install import do_install_atoms, do_uninstall_atoms
-from .unpack import ensure_unpack_cmd_for_method
+from .install import do_extract_atoms, do_install_atoms, do_uninstall_atoms
 
 
 class ExtractCommand(
@@ -31,70 +28,15 @@ class ExtractCommand(
 
     @classmethod
     def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        logger = cfg.logger
-        host = args.host
+        host: str = args.host
         atom_strs: set[str] = set(args.atom)
-        logger.D(f"about to extract for host {host}: {atom_strs}")
 
-        mr = cfg.repo
-
-        for a_str in atom_strs:
-            a = Atom.parse(a_str)
-            pm = a.match_in_repo(mr, cfg.include_prereleases)
-            if pm is None:
-                logger.F(f"atom {a_str} matches no package in the repository")
-                return 1
-            pkg_name = pm.name_for_installation
-
-            sv = pm.service_level
-            if sv.has_known_issues:
-                logger.W("package has known issue(s)")
-                for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
-                    logger.I(s)
-
-            bm = pm.binary_metadata
-            sm = pm.source_metadata
-            if bm is None and sm is None:
-                logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
-                return 2
-
-            if bm is not None and sm is not None:
-                logger.F(
-                    f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
-                )
-                return 2
-
-            distfiles_for_host: list[str] | None = None
-            if bm is not None:
-                distfiles_for_host = bm.get_distfile_names_for_host(host)
-            elif sm is not None:
-                distfiles_for_host = sm.get_distfile_names_for_host(host)
-
-            if not distfiles_for_host:
-                logger.F(
-                    f"package [green]{pkg_name}[/] declares no distfile for host {host}"
-                )
-                return 2
-
-            dfs = pm.distfiles
-
-            for df_name in distfiles_for_host:
-                df_decl = dfs[df_name]
-                ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-                df = Distfile(df_decl, mr)
-                df.ensure(logger)
-
-                logger.I(
-                    f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]"
-                )
-                # unpack into CWD
-                df.unpack(None, logger)
-
-            logger.I(
-                f"package [green]{pkg_name}[/] extracted to current working directory"
-            )
-
-        return 0
+        return do_extract_atoms(
+            cfg,
+            cfg.repo,
+            atom_strs,
+            canonicalized_host=canonicalize_host_str(host),
+        )
 
 
 class InstallCommand(
