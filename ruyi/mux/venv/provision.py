@@ -1,16 +1,10 @@
-import base64
 import glob
 import os
 from os import PathLike
 import pathlib
 import re
-import shlex
 import shutil
-from typing import Any, Final, Callable, Iterator, Tuple, TypedDict
-import zlib
-
-from jinja2 import BaseLoader, Environment, TemplateNotFound
-
+from typing import Any, Final, Iterator, TypedDict
 
 from ...config import GlobalConfig
 from ...log import RuyiLogger
@@ -18,41 +12,8 @@ from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
 from ...utils.global_mode import ProvidesGlobalMode
 from . import ConfiguredTargetTuple
-from .data import TEMPLATES
 from .emulator_cfg import ResolvedEmulatorProg
-
-
-def unpack_payload(x: bytes) -> str:
-    return zlib.decompress(base64.b64decode(x)).decode("utf-8")
-
-
-class EmbeddedLoader(BaseLoader):
-    def __init__(self, payloads: dict[str, bytes]) -> None:
-        self._payloads = payloads
-
-    def get_source(
-        self,
-        environment: Environment,
-        template: str,
-    ) -> Tuple[str, str | None, Callable[[], bool] | None]:
-        payload = self._payloads.get(template)
-        if payload is None:
-            raise TemplateNotFound(template)
-        return unpack_payload(payload), None, None
-
-
-JINJA_ENV: Final = Environment(
-    loader=EmbeddedLoader(TEMPLATES),
-    autoescape=False,  # we're not producing HTML
-    auto_reload=False,  # we're serving statically embedded assets
-    keep_trailing_newline=True,  # to make shells happy
-)
-JINJA_ENV.filters["sh"] = shlex.quote
-
-
-def render_template_str(template_name: str, data: dict[str, Any]) -> str:
-    tmpl = JINJA_ENV.get_template(template_name)
-    return tmpl.render(data)
+from .templating import render_template_str
 
 
 class VenvMaker:

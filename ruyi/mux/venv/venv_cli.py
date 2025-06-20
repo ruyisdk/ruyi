@@ -9,7 +9,8 @@ from ...log import humanize_list
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.host import get_native_host
 from . import ConfiguredTargetTuple
-from .provision import render_template_str, VenvMaker
+from .provision import VenvMaker
+from .templating import render_template_str
 
 
 class VenvCommand(
