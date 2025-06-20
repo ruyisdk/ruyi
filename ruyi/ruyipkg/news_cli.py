@@ -1,8 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..config import GlobalConfig
-from .news import do_news_list, do_news_read
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class NewsCommand(
@@ -12,7 +14,7 @@ class NewsCommand(
     help="List and read news items from configured repository",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
 
@@ -22,7 +24,7 @@ class NewsListCommand(
     help="List news items",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--new",
             action="store_true",
@@ -30,7 +32,9 @@ class NewsListCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .news import do_news_list
+
         only_unread: bool = args.new
         return do_news_list(
             cfg,
@@ -45,7 +49,7 @@ class NewsReadCommand(
     description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--quiet",
             "-q",
@@ -60,7 +64,9 @@ class NewsReadCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .news import do_news_read
+
         quiet: bool = args.quiet
         items_strs: list[str] = args.item
 
