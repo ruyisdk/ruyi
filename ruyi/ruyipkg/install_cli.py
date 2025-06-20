@@ -1,9 +1,11 @@
 import argparse
+from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..config import GlobalConfig
-from .host import canonicalize_host_str, get_native_host
-from .install import do_extract_atoms, do_install_atoms, do_uninstall_atoms
+from .host import get_native_host
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class ExtractCommand(
@@ -12,7 +14,7 @@ class ExtractCommand(
     help="Fetch package(s) then extract to current directory",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -27,7 +29,10 @@ class ExtractCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .host import canonicalize_host_str
+        from .install import do_extract_atoms
+
         host: str = args.host
         atom_strs: set[str] = set(args.atom)
 
@@ -46,7 +51,7 @@ class InstallCommand(
     help="Install package from configured repository",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -72,17 +77,18 @@ class InstallCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
-        host = args.host
-        atom_strs: set[str] = set(args.atom)
-        fetch_only = args.fetch_only
-        reinstall = args.reinstall
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .host import canonicalize_host_str
+        from .install import do_install_atoms
 
-        mr = cfg.repo
+        host: str = args.host
+        atom_strs: set[str] = set(args.atom)
+        fetch_only: bool = args.fetch_only
+        reinstall: bool = args.reinstall
 
         return do_install_atoms(
             cfg,
-            mr,
+            cfg.repo,
             atom_strs,
             canonicalized_host=canonicalize_host_str(host),
             fetch_only=fetch_only,
@@ -97,7 +103,7 @@ class UninstallCommand(
     help="Uninstall installed packages",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -119,7 +125,10 @@ class UninstallCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .host import canonicalize_host_str
+        from .install import do_uninstall_atoms
+
         host: str = args.host
         atom_strs: set[str] = set(args.atom)
         assume_yes: bool = args.assume_yes
