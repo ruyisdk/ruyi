@@ -2,11 +2,12 @@ import argparse
 import os
 import pathlib
 import shutil
-from typing import Final
+from typing import Final, TYPE_CHECKING
 
-from .. import config
-from . import user_input
 from .cmd import RootCommand
+
+if TYPE_CHECKING:
+    from .. import config
 
 UNINSTALL_NOTICE: Final = """
 [bold]Thanks for hacking with [yellow]Ruyi[/]![/]
@@ -31,7 +32,7 @@ class SelfCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         pass
@@ -45,7 +46,7 @@ class SelfCleanCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -91,7 +92,7 @@ class SelfCleanCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
         logger = cfg.logger
         quiet: bool = args.quiet
         all: bool = args.all
@@ -148,7 +149,7 @@ class SelfUninstallCommand(
     @classmethod
     def configure_args(
         cls,
-        gc: config.GlobalConfig,
+        gc: "config.GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         p.add_argument(
@@ -164,7 +165,9 @@ class SelfUninstallCommand(
         )
 
     @classmethod
-    def main(cls, cfg: config.GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from . import user_input
+
         logger = cfg.logger
         purge: bool = args.purge
         consent: bool = args.consent
@@ -206,7 +209,7 @@ class SelfUninstallCommand(
 
 
 def _do_reset(
-    cfg: config.GlobalConfig,
+    cfg: "config.GlobalConfig",
     quiet: bool = False,
     *,
     installed_pkgs: bool = False,
