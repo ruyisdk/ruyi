@@ -1,7 +1,6 @@
 import argparse
 from typing import Callable, IO, Protocol, TYPE_CHECKING
 
-from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
 
 if TYPE_CHECKING:
@@ -155,7 +154,7 @@ class RootCommand(
     cmd=None,
     has_subcommands=True,
     prog=RUYI_ENTRYPOINT_NAME,
-    description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
+    description="RuyiSDK Package Manager",
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
