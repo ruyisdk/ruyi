@@ -18,7 +18,7 @@ else:
 # requires version info to be ready) that the porcelain status is not yet
 # available.
 
-PYPI_PRERELEASE_KINDS_MAP: Final = {
+_PYPI_PRERELEASE_KINDS_MAP: Final = {
     "a": "alpha",
     "b": "beta",
     "rc": "rc",
@@ -26,7 +26,7 @@ PYPI_PRERELEASE_KINDS_MAP: Final = {
 
 
 # based on https://python-semver.readthedocs.io/en/3.0.2/advanced/convert-pypi-to-semver.html
-def convert2semver(ver: packaging.version.Version) -> Version:
+def _convert2semver(ver: packaging.version.Version) -> Version:
     if ver.epoch:
         raise ValueError("Can't convert an epoch to semver")
     if ver.post:
@@ -35,19 +35,19 @@ def convert2semver(ver: packaging.version.Version) -> Version:
     pre: str | None = None
     if ver.pre:
         kind, val = ver.pre
-        pre = f"{PYPI_PRERELEASE_KINDS_MAP.get(kind, kind)}.{val}"
+        pre = f"{_PYPI_PRERELEASE_KINDS_MAP.get(kind, kind)}.{val}"
 
     maj, min, pat = ver.release[:3]
     return Version(maj, min, pat, prerelease=pre, build=ver.dev)
 
 
-def init_pkg_semver() -> Version:
+def _init_pkg_semver() -> Version:
     pkg_pypi_ver = packaging.version.Version(importlib.metadata.version("ruyi"))
     # log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
-    return convert2semver(pkg_pypi_ver)
+    return _convert2semver(pkg_pypi_ver)
 
 
-RUYI_SEMVER: Final = init_pkg_semver()
+RUYI_SEMVER: Final = _init_pkg_semver()
 RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE: Final = """\
