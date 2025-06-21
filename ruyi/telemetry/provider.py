@@ -1,10 +1,11 @@
 import calendar
 import datetime
+import functools
 import json
 import pathlib
 import sys
 import time
-from typing import TYPE_CHECKING, cast
+from typing import Callable, TYPE_CHECKING, cast
 import uuid
 
 from ..log import RuyiLogger
@@ -136,17 +137,27 @@ class TelemetryProvider:
 
     def init_store(self, scope: TelemetryScope) -> None:
         store_root = self.state_root
-        api_url = None
+        api_url_fn: Callable[[], str | None] | None = None
         if repo_name := scope.repo_name:
             if repo_name != "ruyisdk":
                 raise NotImplementedError("multi-repo support not implemented yet")
             store_root = store_root / "repos" / repo_name
-            api_url = self._gc.repo.get_telemetry_api_url("repo")
+
+            def _f() -> str | None:
+                # access the repo attribute lazily to speed up CLI startup
+                return self._gc.repo.get_telemetry_api_url("repo")
+
+            api_url_fn = _f
         else:
             # configure the PM telemetry endpoint
-            api_url = self._detect_pm_api_url(self._gc)
+            api_url_fn = functools.partial(self._detect_pm_api_url, self._gc)
 
-        store = TelemetryStore(self.logger, scope, store_root, api_url)
+        store = TelemetryStore(
+            self.logger,
+            scope,
+            store_root,
+            api_url_factory=api_url_fn,
+        )
         self._stores[scope] = store
 
     def _detect_pm_api_url(self, gc: "GlobalConfig") -> str | None:

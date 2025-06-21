@@ -1,7 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
-from ..config import GlobalConfig
 from .list_cli import ListCommand
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class ListProfilesCommand(
@@ -10,7 +13,11 @@ class ListProfilesCommand(
     help="List all available profiles",
 ):
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+        pass
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         logger = cfg.logger
         mr = cfg.repo
 

@@ -1,7 +1,7 @@
 from os import PathLike
 from typing import Any, Iterable, TypeGuard, cast
 
-from ..pluginhost import PluginHostContext, SupportsEvalFunction
+from ..pluginhost.ctx import PluginHostContext, SupportsEvalFunction
 from .pkg_manifest import EmulatorFlavor
 
 

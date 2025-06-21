@@ -92,6 +92,10 @@ jobs:
           pip install -e .
           pytest
 
+      - name: Check for import side effects during CLI startup
+        if: success() && !matrix.baseline
+        run: poetry run ./scripts/lint-cli-startup-flow.py
+
   pylic:
     name: license compatibility
     runs-on: ubuntu-latest

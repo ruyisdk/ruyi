@@ -20,14 +20,14 @@ from pygit2 import clone_repository
 from pygit2.repository import Repository
 
 from ..log import RuyiLogger
-from ..pluginhost import PluginHostContext
+from ..pluginhost.ctx import PluginHostContext
 from ..telemetry.scope import TelemetryScopeConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
 from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
 from .entity_provider import BaseEntityProvider, FSEntityProvider
 from .msg import RepoMessageStore
-from .news import NewsItemStore
+from .news_store import NewsItemStore
 from .pkg_manifest import (
     BoundPackageManifest,
     DistfileDecl,

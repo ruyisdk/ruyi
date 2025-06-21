@@ -1,16 +1,14 @@
+from functools import cached_property
 import json
 import os
 import pathlib
 import re
 import time
-from typing import Final, Iterable
+from typing import Callable, Final, Iterable
 import uuid
-
-import requests
 
 from ..log import RuyiLogger
 from ..utils.url import urljoin_for_sure
-from ..version import RUYI_SEMVER, RUYI_USER_AGENT
 from .aggregate import UploadPayload, aggregate_events
 from .event import TelemetryEvent, is_telemetry_event
 from .node_info import NodeInfo
@@ -43,13 +41,23 @@ class TelemetryStore:
         scope: TelemetryScope,
         store_root: pathlib.Path,
         api_url: str | None = None,
+        api_url_factory: Callable[[], str | None] | None = None,
     ) -> None:
         self._logger = logger
         self.scope = scope
         self.store_root = store_root
-        self.api_url = api_url
+        self._api_url = api_url
+        self._api_url_factory = api_url_factory
 
         self._events: list[TelemetryEvent] = []
+
+    @cached_property
+    def api_url(self) -> str | None:
+        if u := self._api_url:
+            return u
+        if f := self._api_url_factory:
+            return f()
+        return None
 
     @property
     def raw_events_dir(self) -> pathlib.Path:
@@ -147,6 +155,10 @@ class TelemetryStore:
         return self.upload_stage_dir / f"staged.{nonce}.json"
 
     def prepare_data_for_upload(self, installation_data: NodeInfo | None) -> None:
+        # import ruyi.version here because this package is on the CLI startup
+        # critical path, and version probing is costly there
+        from ..version import RUYI_SEMVER
+
         aggregate_data = list(aggregate_events(self.read_back_raw_events()))
 
         payload_nonce = uuid.uuid4().hex  # for server-side dedup purposes
@@ -189,8 +201,14 @@ class TelemetryStore:
         f: pathlib.Path,
         endpoint: str,
     ) -> None:
+        # import ruyi.version here because this package is on the CLI startup
+        # critical path, and version probing is costly there
+        from ..version import RUYI_USER_AGENT
+
         api_path = urljoin_for_sure(endpoint, "upload-v1")
         self._logger.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
+
+        import requests
 
         resp = requests.post(
             api_path,

@@ -36,12 +36,16 @@ def _is_allowed_to_run_as_root() -> bool:
 
 
 def entrypoint() -> None:
-    from ruyi.log import RuyiConsoleLogger
-
     gm = EnvGlobalModeProvider(os.environ, sys.argv)
-    logger = RuyiConsoleLogger(gm)
+
+    # NOTE: import of `ruyi.log` takes ~90ms on my machine, so initialization
+    # of logging is deferred as late as possible
 
     if _is_running_as_root() and not _is_allowed_to_run_as_root():
+        from ruyi.log import RuyiConsoleLogger
+
+        logger = RuyiConsoleLogger(gm)
+
         logger.F("refusing to run as super user outside CI without explicit consent")
 
         choices = ", ".join(f"'{x}'" for x in TRUTHY_ENV_VAR_VALUES)
@@ -51,6 +55,10 @@ def entrypoint() -> None:
         sys.exit(1)
 
     if not sys.argv:
+        from ruyi.log import RuyiConsoleLogger
+
+        logger = RuyiConsoleLogger(gm)
+
         logger.F("no argv?")
         sys.exit(1)
 
@@ -79,7 +87,9 @@ def entrypoint() -> None:
 
     from ruyi.config import GlobalConfig
     from ruyi.cli.main import main
+    from ruyi.log import RuyiConsoleLogger
 
+    logger = RuyiConsoleLogger(gm)
     gc = GlobalConfig.load_from_config(gm, logger)
     sys.exit(main(gm, gc, sys.argv))
 

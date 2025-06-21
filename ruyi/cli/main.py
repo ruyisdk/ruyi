@@ -1,10 +1,10 @@
 import atexit
 import os
 import sys
-from typing import Final
+from typing import Final, TYPE_CHECKING
 
 from ..config import GlobalConfig
-from ..telemetry import TelemetryScope
+from ..telemetry.scope import TelemetryScope
 from ..utils.global_mode import GlobalModeProvider
 from . import RUYI_ENTRYPOINT_NAME
 
@@ -41,10 +41,13 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         return mux_main(gm, gc, argv)
 
     import ruyi
-    from .cmd import CLIEntrypoint, RootCommand
+    from .cmd import RootCommand
     from . import builtin_commands
 
     del builtin_commands
+
+    if TYPE_CHECKING:
+        from .cmd import CLIEntrypoint
 
     logger = gc.logger
     p = RootCommand.build_argparse(gc)
@@ -61,7 +64,7 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     logger.D(f"argv[0] = {gm.argv0}, self_exe = {gm.self_exe}")
     logger.D(f"args={args}")
 
-    func: CLIEntrypoint = args.func
+    func: "CLIEntrypoint" = args.func
 
     # record every invocation's subcommand for better insight into usage
     # frequencies

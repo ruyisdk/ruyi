@@ -1,7 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
 from ..cli.cmd import AdminCommand
-from ..config import GlobalConfig
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class AdminRunPluginCommand(
@@ -10,7 +13,7 @@ class AdminRunPluginCommand(
     help="Run a plugin-defined command",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "cmd_name",
             type=str,
@@ -26,7 +29,7 @@ class AdminRunPluginCommand(
         )
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         cmd_name = args.cmd_name
         cmd_args = args.cmd_args
 

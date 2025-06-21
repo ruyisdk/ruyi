@@ -1,9 +1,10 @@
 import argparse
+from typing import TYPE_CHECKING
 
-from ..config import GlobalConfig
 from ..cli.cmd import RootCommand
-from . import news_cli
-from .state import BoundInstallationStateStore
+
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
 
 
 class UpdateCommand(
@@ -12,11 +13,14 @@ class UpdateCommand(
     help="Update RuyiSDK repo and packages",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from . import news
+        from .state import BoundInstallationStateStore
+
         logger = cfg.logger
         mr = cfg.repo
         mr.sync()
@@ -43,7 +47,7 @@ virtual environments."""
         unread_newsitems = mr.news_store().list(True)
         if unread_newsitems:
             logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
-            news_cli.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
+            news.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
             logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
 
         return 0

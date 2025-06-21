@@ -23,6 +23,73 @@ def is_root_likely_populated(root: str) -> bool:
         return False
 
 
+def do_extract_atoms(
+    cfg: GlobalConfig,
+    mr: MetadataRepo,
+    atom_strs: set[str],
+    *,
+    canonicalized_host: str | RuyiHost,
+) -> int:
+    logger = cfg.logger
+    logger.D(f"about to extract for host {canonicalized_host}: {atom_strs}")
+
+    mr = cfg.repo
+
+    for a_str in atom_strs:
+        a = Atom.parse(a_str)
+        pm = a.match_in_repo(mr, cfg.include_prereleases)
+        if pm is None:
+            logger.F(f"atom {a_str} matches no package in the repository")
+            return 1
+        pkg_name = pm.name_for_installation
+
+        sv = pm.service_level
+        if sv.has_known_issues:
+            logger.W("package has known issue(s)")
+            for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
+                logger.I(s)
+
+        bm = pm.binary_metadata
+        sm = pm.source_metadata
+        if bm is None and sm is None:
+            logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
+            return 2
+
+        if bm is not None and sm is not None:
+            logger.F(
+                f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
+            )
+            return 2
+
+        distfiles_for_host: list[str] | None = None
+        if bm is not None:
+            distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
+        elif sm is not None:
+            distfiles_for_host = sm.get_distfile_names_for_host(canonicalized_host)
+
+        if not distfiles_for_host:
+            logger.F(
+                f"package [green]{pkg_name}[/] declares no distfile for host {canonicalized_host}"
+            )
+            return 2
+
+        dfs = pm.distfiles
+
+        for df_name in distfiles_for_host:
+            df_decl = dfs[df_name]
+            ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
+            df = Distfile(df_decl, mr)
+            df.ensure(logger)
+
+            logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
+            # unpack into CWD
+            df.unpack(None, logger)
+
+        logger.I(f"package [green]{pkg_name}[/] extracted to current working directory")
+
+    return 0
+
+
 def do_install_atoms(
     config: GlobalConfig,
     mr: MetadataRepo,

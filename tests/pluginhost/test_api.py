@@ -4,7 +4,7 @@ from types import TracebackType
 import pytest
 
 from ruyi.log import RuyiLogger
-from ruyi.pluginhost import PluginHostContext
+from ruyi.pluginhost.ctx import PluginHostContext
 
 from ..fixtures import RuyiFileFixtureFactory
 

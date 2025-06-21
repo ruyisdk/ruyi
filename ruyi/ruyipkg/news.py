@@ -1,183 +1,123 @@
-import functools
-import re
-from typing import Any, Final, TypedDict
+from rich import box
+from rich.table import Table
 
-from ..config.news import NewsReadStatusStore
-from ..utils import frontmatter
-from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
-from ..utils.l10n import match_lang_code
-
-NEWS_FILENAME_RE: Final = re.compile(r"^(\d+-\d{2}-\d{2}-.*?)(\.[0-9A-Za-z_-]+)?\.md$")
+from ..config import GlobalConfig
+from ..log import RuyiLogger
+from ..utils.markdown import RuyiStyledMarkdown
+from ..utils.porcelain import PorcelainOutput
+from .news_store import NewsItem, NewsItemContent, NewsItemStore
 
 
-@functools.total_ordering
-class NewsItemNameMetadata:
-    def __init__(self, id: str, lang: str) -> None:
-        self.id = id
-        self.lang = lang
+def print_news_item_titles(
+    logger: RuyiLogger,
+    newsitems: list[NewsItem],
+    lang: str,
+) -> None:
+    tbl = Table(box=box.SIMPLE, show_edge=False)
+    tbl.add_column("No.")
+    tbl.add_column("ID")
+    tbl.add_column("Title")
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, NewsItemNameMetadata):
-            return NotImplemented
-        return self.id == other.id
+    for ni in newsitems:
+        unread = not ni.is_read
+        ord = f"[bold green]{ni.ordinal}[/]" if unread else f"{ni.ordinal}"
+        id = f"[bold green]{ni.id}[/]" if unread else ni.id
 
-    def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, NewsItemNameMetadata):
-            return NotImplemented
+        tbl.add_row(
+            ord,
+            id,
+            ni.get_content_for_lang(lang).display_title,
+        )
 
-        # order by id in lexical order
-        return self.id < other.id
-
-
-def parse_news_filename(filename: str) -> NewsItemNameMetadata | None:
-    m = NEWS_FILENAME_RE.match(filename)
-    if m is None:
-        return None
-
-    id = m.group(1)
-    lang = m.group(2)
-    if not lang:
-        lang = "zh_CN"  # TODO: kill after l10n work is complete
-    else:
-        lang = lang[1:]  # strip the dot prefix
-
-    return NewsItemNameMetadata(id, lang)
+    logger.stdout(tbl)
 
 
-class NewsItemStore:
-    def __init__(self, rs_store: NewsReadStatusStore) -> None:
-        self._buf_news_by_ids: dict[str, NewsItem] = {}
-        self._newsitems: list[NewsItem]
-        self._rs_store = rs_store
+def do_news_list(
+    cfg: GlobalConfig,
+    only_unread: bool,
+) -> int:
+    logger = cfg.logger
+    store = cfg.repo.news_store()
+    newsitems = store.list(only_unread)
 
-    def add(self, filename: str, contents: str) -> None:
-        md = parse_news_filename(filename)
-        if md is None:
-            return None
+    if cfg.is_porcelain:
+        with PorcelainOutput() as po:
+            for ni in newsitems:
+                po.emit(ni.to_porcelain())
+        return 0
 
-        post = frontmatter.loads(contents)
+    logger.stdout("[bold green]News items:[/]\n")
+    if not newsitems:
+        logger.stdout("  (no unread item)" if only_unread else "  (no item)")
+        return 0
 
-        if ni := self._buf_news_by_ids.get(md.id):
-            ni.add_lang(md, post)
+    print_news_item_titles(logger, newsitems, cfg.lang_code)
+
+    return 0
+
+
+def do_news_read(
+    cfg: GlobalConfig,
+    quiet: bool,
+    items_strs: list[str],
+) -> int:
+    logger = cfg.logger
+    store = cfg.repo.news_store()
+
+    # filter out requested news items
+    items = filter_news_items_by_specs(logger, store, items_strs)
+    if items is None:
+        return 1
+
+    if cfg.is_porcelain:
+        with PorcelainOutput() as po:
+            for ni in items:
+                po.emit(ni.to_porcelain())
+    elif not quiet:
+        # render the items
+        if items:
+            for ni in items:
+                print_news(logger, ni.get_content_for_lang(cfg.lang_code))
         else:
-            ni = NewsItem(md.id)
-            ni.add_lang(md, post)
-            self._buf_news_by_ids[md.id] = ni
+            logger.stdout("No news to display.")
 
-    def finalize(self) -> None:
-        self._newsitems = list(self._buf_news_by_ids.values())
-        # sort in intended display order
-        self._newsitems.sort()
+    # record read statuses
+    store.mark_as_read(*(ni.id for ni in items))
 
-        # mark the news item instances with ordinals
-        for i, ni in enumerate(self._newsitems):
-            ni.ordinal = i + 1
-
-        # also read statuses
-        for ni in self._newsitems:
-            ni.is_read = ni.id in self._rs_store
-
-    def list(self, only_unread: bool) -> list["NewsItem"]:
-        if not only_unread:
-            return self._newsitems
-        return [x for x in self._newsitems if not x.is_read]
-
-    def mark_as_read(self, *ids: str) -> None:
-        if not ids:
-            return
-        for id in ids:
-            self._rs_store.add(id)
-        self._rs_store.save()
+    return 0
 
 
-@functools.total_ordering
-class NewsItem:
-    def __init__(self, id: str) -> None:
-        self._id = id
-        self._content_by_lang: dict[str, NewsItemContent] = {}
+def filter_news_items_by_specs(
+    logger: RuyiLogger,
+    store: NewsItemStore,
+    specs: list[str],
+) -> list[NewsItem] | None:
+    if not specs:
+        # all unread items
+        return store.list(True)
 
-        # these fields are updated later in store initialization code
-        self.ordinal = 0
-        self.is_read = False
+    all_ni = store.list(False)
+    items: list[NewsItem] = []
+    ni_by_ord = {ni.ordinal: ni for ni in all_ni}
+    ni_by_id = {ni.id: ni for ni in all_ni}
+    for i in specs:
+        try:
+            ni_ord = int(i)
+            if ni_ord not in ni_by_ord:
+                logger.F(f"there is no news item with ordinal {ni_ord}")
+                return None
+            items.append(ni_by_ord[ni_ord])
+        except ValueError:
+            # treat i as id
+            if i not in ni_by_id:
+                logger.F(f"there is no news item with ID '{i}'")
+                return None
+            items.append(ni_by_id[i])
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, NewsItem):
-            return NotImplemented
-        return self._id == other._id and self.ordinal == other.ordinal
-
-    def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, NewsItem):
-            return NotImplemented
-        return self._id < other._id or self.ordinal < other.ordinal
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    def __contains__(self, lang: str) -> bool:
-        return lang in self._content_by_lang
-
-    def __getitem__(self, lang: str) -> "NewsItemContent":
-        return self._content_by_lang[lang]
-
-    def add_lang(self, md: NewsItemNameMetadata, post: frontmatter.Post) -> None:
-        self._content_by_lang[md.lang] = NewsItemContent(md, post)
-
-    def __delitem__(self, lang: str) -> None:
-        del self._content_by_lang[lang]
-
-    def get_content_for_lang(self, lang: str) -> "NewsItemContent":
-        resolved_lang_code = match_lang_code(lang, self._content_by_lang.keys())
-        return self[resolved_lang_code]
-
-    def to_porcelain(self) -> "PorcelainNewsItemV1":
-        return {
-            "ty": PorcelainEntityType.NewsItemV1,
-            "id": self.id,
-            "ord": self.ordinal,
-            "is_read": self.is_read,
-            "langs": [x.to_porcelain() for x in self._content_by_lang.values()],
-        }
+    return items
 
 
-class NewsItemContent:
-    def __init__(
-        self,
-        md: NewsItemNameMetadata,
-        post: frontmatter.Post,
-    ) -> None:
-        self._md = md
-        self._post = post
-
-    @property
-    def lang(self) -> str:
-        return self._md.lang
-
-    @property
-    def display_title(self) -> str:
-        metadata_title = self._post.get("title")
-        return metadata_title if isinstance(metadata_title, str) else self._md.id
-
-    @property
-    def content(self) -> str:
-        return self._post.content
-
-    def to_porcelain(self) -> "PorcelainNewsItemContentV1":
-        return {
-            "lang": self.lang,
-            "display_title": self.display_title,
-            "content": self.content,
-        }
-
-
-class PorcelainNewsItemContentV1(TypedDict):
-    lang: str
-    display_title: str
-    content: str
-
-
-class PorcelainNewsItemV1(PorcelainEntity):
-    id: str
-    ord: int
-    is_read: bool
-    langs: list[PorcelainNewsItemContentV1]
+def print_news(logger: RuyiLogger, nic: NewsItemContent) -> None:
+    md = RuyiStyledMarkdown(nic.content)
+    logger.stdout(md)
+    logger.stdout("")
