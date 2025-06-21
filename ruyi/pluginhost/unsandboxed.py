@@ -10,8 +10,8 @@ from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cas
 if TYPE_CHECKING:
     from typing_extensions import Buffer
 
-from . import PluginHostContext, BasePluginLoader
 from .api import RuyiHostAPI
+from .ctx import PluginHostContext, BasePluginLoader
 
 
 class UnsandboxedModuleDict(dict[str, object]):
