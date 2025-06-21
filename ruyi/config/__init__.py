@@ -10,15 +10,13 @@ from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
-import tomlkit
+    from ..log import RuyiLogger
+    from ..ruyipkg.repo import MetadataRepo
+    from ..ruyipkg.state import RuyipkgGlobalStateStore
+    from ..telemetry import TelemetryProvider
+    from ..utils.global_mode import ProvidesGlobalMode
+    from .news import NewsReadStatusStore
 
-from ..log import RuyiLogger
-from ..ruyipkg.repo import MetadataRepo
-from ..ruyipkg.state import RuyipkgGlobalStateStore
-from ..telemetry import TelemetryProvider
-from ..utils.global_mode import ProvidesGlobalMode
-from ..utils.xdg_basedir import XDGBaseDir
-from .news import NewsReadStatusStore
 from . import schema
 
 
@@ -82,7 +80,9 @@ class GlobalConfigRootType(TypedDict):
 
 
 class GlobalConfig:
-    def __init__(self, gm: ProvidesGlobalMode, logger: RuyiLogger) -> None:
+    def __init__(self, gm: "ProvidesGlobalMode", logger: "RuyiLogger") -> None:
+        from ..utils.xdg_basedir import XDGBaseDir
+
         self._gm = gm
         self.logger = logger
 
@@ -92,10 +92,6 @@ class GlobalConfig:
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
         self.is_installation_externally_managed = False
-
-        self._metadata_repo: MetadataRepo | None = None
-        self._news_read_status_store: NewsReadStatusStore | None = None
-        self._telemetry_provider: TelemetryProvider | None = None
 
         self._lang_code = _get_lang_code()
 
@@ -251,28 +247,22 @@ class GlobalConfig:
     def state_root(self) -> os.PathLike[Any]:
         return self._dirs.app_state
 
-    @property
-    def news_read_status(self) -> NewsReadStatusStore:
-        if self._news_read_status_store is not None:
-            return self._news_read_status_store
+    @cached_property
+    def news_read_status(self) -> "NewsReadStatusStore":
+        from .news import NewsReadStatusStore
 
         filename = os.path.join(self.ensure_state_dir(), "news.read.txt")
-        self._news_read_status_store = NewsReadStatusStore(filename)
-        return self._news_read_status_store
+        return NewsReadStatusStore(filename)
 
     @property
     def telemetry_root(self) -> os.PathLike[Any]:
         return pathlib.Path(self.ensure_state_dir()) / "telemetry"
 
-    @property
-    def telemetry(self) -> TelemetryProvider | None:
-        if self.telemetry_mode == "off":
-            return None
-        if self._telemetry_provider is not None:
-            return self._telemetry_provider
+    @cached_property
+    def telemetry(self) -> "TelemetryProvider | None":
+        from ..telemetry import TelemetryProvider
 
-        self._telemetry_provider = TelemetryProvider(self)
-        return self._telemetry_provider
+        return None if self.telemetry_mode == "off" else TelemetryProvider(self)
 
     @property
     def telemetry_mode(self) -> str:
@@ -295,12 +285,11 @@ class GlobalConfig:
     def get_repo_branch(self) -> str:
         return self.override_repo_branch or DEFAULT_REPO_BRANCH
 
-    @property
-    def repo(self) -> MetadataRepo:
-        if self._metadata_repo is not None:
-            return self._metadata_repo
-        self._metadata_repo = MetadataRepo(self)
-        return self._metadata_repo
+    @cached_property
+    def repo(self) -> "MetadataRepo":
+        from ..ruyipkg.repo import MetadataRepo
+
+        return MetadataRepo(self)
 
     def ensure_distfiles_dir(self) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"
@@ -329,7 +318,9 @@ class GlobalConfig:
         return pathlib.Path(self.ensure_state_dir()) / "ruyipkg"
 
     @cached_property
-    def ruyipkg_global_state(self) -> RuyipkgGlobalStateStore:
+    def ruyipkg_global_state(self) -> "RuyipkgGlobalStateStore":
+        from ..ruyipkg.state import RuyipkgGlobalStateStore
+
         return RuyipkgGlobalStateStore(self.ruyipkg_state_root)
 
     def ensure_data_dir(self) -> os.PathLike[Any]:
@@ -376,6 +367,8 @@ class GlobalConfig:
         return self._dirs.app_config / "config.toml"
 
     def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
+        import tomlkit
+
         try:
             with open(path, "rb") as fp:
                 data: Any = tomlkit.load(fp)
@@ -386,7 +379,7 @@ class GlobalConfig:
         self.apply_config(data)
 
     @classmethod
-    def load_from_config(cls, gm: ProvidesGlobalMode, logger: RuyiLogger) -> "Self":
+    def load_from_config(cls, gm: "ProvidesGlobalMode", logger: "RuyiLogger") -> "Self":
         obj = cls(gm, logger)
 
         for config_path in obj.iter_preset_configs():
