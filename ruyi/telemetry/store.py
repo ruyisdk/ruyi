@@ -9,7 +9,6 @@ import uuid
 
 from ..log import RuyiLogger
 from ..utils.url import urljoin_for_sure
-from ..version import RUYI_SEMVER, RUYI_USER_AGENT
 from .aggregate import UploadPayload, aggregate_events
 from .event import TelemetryEvent, is_telemetry_event
 from .node_info import NodeInfo
@@ -156,6 +155,10 @@ class TelemetryStore:
         return self.upload_stage_dir / f"staged.{nonce}.json"
 
     def prepare_data_for_upload(self, installation_data: NodeInfo | None) -> None:
+        # import ruyi.version here because this package is on the CLI startup
+        # critical path, and version probing is costly there
+        from ..version import RUYI_SEMVER
+
         aggregate_data = list(aggregate_events(self.read_back_raw_events()))
 
         payload_nonce = uuid.uuid4().hex  # for server-side dedup purposes
@@ -198,6 +201,10 @@ class TelemetryStore:
         f: pathlib.Path,
         endpoint: str,
     ) -> None:
+        # import ruyi.version here because this package is on the CLI startup
+        # critical path, and version probing is costly there
+        from ..version import RUYI_USER_AGENT
+
         api_path = urljoin_for_sure(endpoint, "upload-v1")
         self._logger.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
 
