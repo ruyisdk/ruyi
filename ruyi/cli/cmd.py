@@ -1,19 +1,21 @@
 import argparse
-from typing import Callable, IO, Protocol
+from typing import Callable, IO, Protocol, TYPE_CHECKING
 
-from ..config import GlobalConfig
 from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
 
-CLIEntrypoint = Callable[[GlobalConfig, argparse.Namespace], int]
+if TYPE_CHECKING:
+    from ..config import GlobalConfig
+
+    CLIEntrypoint = Callable[["GlobalConfig", argparse.Namespace], int]
 
 
 class _PrintHelp(Protocol):
     def print_help(self, file: IO[str] | None = None) -> None: ...
 
 
-def _wrap_help(x: _PrintHelp) -> CLIEntrypoint:
-    def _wrapped_(gc: GlobalConfig, args: argparse.Namespace) -> int:
+def _wrap_help(x: _PrintHelp) -> "CLIEntrypoint":
+    def _wrapped_(gc: "GlobalConfig", args: argparse.Namespace) -> int:
         x.print_help()
         return 0
 
@@ -75,12 +77,12 @@ class BaseCommand:
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         """Configure arguments for this parser."""
         pass
 
     @classmethod
-    def main(cls, cfg: GlobalConfig, args: argparse.Namespace) -> int:
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         """Entrypoint of this command."""
         raise NotImplementedError
 
@@ -93,7 +95,7 @@ class BaseCommand:
         return "<bare>" if cls._tele_key is None else cls._tele_key
 
     @classmethod
-    def build_argparse(cls, gc: GlobalConfig) -> argparse.ArgumentParser:
+    def build_argparse(cls, gc: "GlobalConfig") -> argparse.ArgumentParser:
         p = argparse.ArgumentParser(prog=cls.prog, description=cls.description)
         cls.configure_args(gc, p)
         cls._populate_defaults(p)
@@ -103,7 +105,7 @@ class BaseCommand:
     @classmethod
     def _maybe_build_subcommands(
         cls,
-        gc: GlobalConfig,
+        gc: "GlobalConfig",
         p: argparse.ArgumentParser,
     ) -> None:
         if not cls.has_subcommands:
@@ -126,7 +128,7 @@ class BaseCommand:
     @classmethod
     def _configure_subcommand(
         cls,
-        gc: GlobalConfig,
+        gc: "GlobalConfig",
         sp: "argparse._SubParsersAction[argparse.ArgumentParser]",
     ) -> argparse.ArgumentParser:
         assert cls.cmd is not None
@@ -156,7 +158,7 @@ class RootCommand(
     description=f"RuyiSDK Package Manager {RUYI_SEMVER}",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         from .version_cli import cli_version
 
         p.add_argument(
@@ -184,5 +186,5 @@ class AdminCommand(
     help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
 ):
     @classmethod
-    def configure_args(cls, gc: GlobalConfig, p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
         pass
