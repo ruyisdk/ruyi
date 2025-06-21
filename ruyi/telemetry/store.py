@@ -1,9 +1,10 @@
+from functools import cached_property
 import json
 import os
 import pathlib
 import re
 import time
-from typing import Final, Iterable
+from typing import Callable, Final, Iterable
 import uuid
 
 from ..log import RuyiLogger
@@ -41,13 +42,23 @@ class TelemetryStore:
         scope: TelemetryScope,
         store_root: pathlib.Path,
         api_url: str | None = None,
+        api_url_factory: Callable[[], str | None] | None = None,
     ) -> None:
         self._logger = logger
         self.scope = scope
         self.store_root = store_root
-        self.api_url = api_url
+        self._api_url = api_url
+        self._api_url_factory = api_url_factory
 
         self._events: list[TelemetryEvent] = []
+
+    @cached_property
+    def api_url(self) -> str | None:
+        if u := self._api_url:
+            return u
+        if f := self._api_url_factory:
+            return f()
+        return None
 
     @property
     def raw_events_dir(self) -> pathlib.Path:
