@@ -4,8 +4,9 @@ import re
 import shlex
 from typing import Final, List, NoReturn
 
-from ..config import GlobalConfig, RuyiVenvConfig
+from ..config import GlobalConfig
 from ..utils.global_mode import ProvidesGlobalMode
+from .venv_cfg import RuyiVenvConfig
 
 
 def _run_exit_handlers_and_execv(
