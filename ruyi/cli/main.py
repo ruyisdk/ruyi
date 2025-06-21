@@ -4,7 +4,7 @@ import sys
 from typing import Final
 
 from ..config import GlobalConfig
-from ..telemetry import TelemetryScope
+from ..telemetry.scope import TelemetryScope
 from ..utils.global_mode import GlobalModeProvider
 from . import RUYI_ENTRYPOINT_NAME
 

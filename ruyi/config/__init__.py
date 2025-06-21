@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..log import RuyiLogger
     from ..ruyipkg.repo import MetadataRepo
     from ..ruyipkg.state import RuyipkgGlobalStateStore
-    from ..telemetry import TelemetryProvider
+    from ..telemetry.provider import TelemetryProvider
     from ..utils.global_mode import ProvidesGlobalMode
     from .news import NewsReadStatusStore
 
@@ -260,7 +260,7 @@ class GlobalConfig:
 
     @cached_property
     def telemetry(self) -> "TelemetryProvider | None":
-        from ..telemetry import TelemetryProvider
+        from ..telemetry.provider import TelemetryProvider
 
         return None if self.telemetry_mode == "off" else TelemetryProvider(self)
 
