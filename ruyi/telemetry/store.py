@@ -6,8 +6,6 @@ import time
 from typing import Final, Iterable
 import uuid
 
-import requests
-
 from ..log import RuyiLogger
 from ..utils.url import urljoin_for_sure
 from ..version import RUYI_SEMVER, RUYI_USER_AGENT
@@ -191,6 +189,8 @@ class TelemetryStore:
     ) -> None:
         api_path = urljoin_for_sure(endpoint, "upload-v1")
         self._logger.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
+
+        import requests
 
         resp = requests.post(
             api_path,
