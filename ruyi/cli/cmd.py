@@ -1,7 +1,10 @@
 import argparse
 from typing import Callable, IO, Protocol, TYPE_CHECKING
 
+import argcomplete
+
 from . import RUYI_ENTRYPOINT_NAME
+from .completion import ArgumentParser, NoneCompleter
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
@@ -76,7 +79,7 @@ class BaseCommand:
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         """Configure arguments for this parser."""
         pass
 
@@ -94,18 +97,23 @@ class BaseCommand:
         return "<bare>" if cls._tele_key is None else cls._tele_key
 
     @classmethod
-    def build_argparse(cls, gc: "GlobalConfig") -> argparse.ArgumentParser:
-        p = argparse.ArgumentParser(prog=cls.prog, description=cls.description)
+    def build_argparse(cls, gc: "GlobalConfig") -> ArgumentParser:
+        p = ArgumentParser(prog=cls.prog, description=cls.description)
         cls.configure_args(gc, p)
         cls._populate_defaults(p)
         cls._maybe_build_subcommands(gc, p)
+        argcomplete.autocomplete(
+            p,
+            always_complete_options=True,
+            default_completer=NoneCompleter()
+        )
         return p
 
     @classmethod
     def _maybe_build_subcommands(
         cls,
         gc: "GlobalConfig",
-        p: argparse.ArgumentParser,
+        p: ArgumentParser,
     ) -> None:
         if not cls.has_subcommands:
             return
@@ -128,7 +136,7 @@ class BaseCommand:
     def _configure_subcommand(
         cls,
         gc: "GlobalConfig",
-        sp: "argparse._SubParsersAction[argparse.ArgumentParser]",
+        sp: "argparse._SubParsersAction[ArgumentParser]",
     ) -> argparse.ArgumentParser:
         assert cls.cmd is not None
         p = sp.add_parser(
@@ -142,7 +150,7 @@ class BaseCommand:
         return p
 
     @classmethod
-    def _populate_defaults(cls, p: argparse.ArgumentParser) -> None:
+    def _populate_defaults(cls, p: ArgumentParser) -> None:
         if cls.has_main:
             p.set_defaults(func=cls.main, tele_key=cls._build_tele_key())
         else:
@@ -157,7 +165,7 @@ class RootCommand(
     description="RuyiSDK Package Manager",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         from .version_cli import cli_version
 
         p.add_argument(
@@ -185,5 +193,5 @@ class AdminCommand(
     help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass

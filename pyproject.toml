@@ -41,6 +41,7 @@ dependencies = [
   "tomlkit>=0.9",
   "tomli>=1.2; python_version<'3.11'",
   "tzdata; sys_platform=='win32'",
+  "argcomplete (>=2.0.0,<4.0.0)",
 ]
 
 [project.scripts]

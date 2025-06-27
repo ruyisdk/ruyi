@@ -3,6 +3,7 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from ...cli.cmd import RootCommand
+from ...cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
     from ...config import GlobalConfig
@@ -14,7 +15,7 @@ class VenvCommand(
     help="Generate a virtual environment adapted to the chosen toolchain and profile",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         p.add_argument("profile", type=str, help="Profile to use for the environment")
         p.add_argument("dest", type=str, help="Path to the new virtual environment")
         p.add_argument(

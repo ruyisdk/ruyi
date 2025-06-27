@@ -3,6 +3,7 @@ import datetime
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
+from ..cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
@@ -16,7 +17,7 @@ class TelemetryCommand(
     help="Manage your telemetry preferences",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
 
@@ -27,7 +28,7 @@ class TelemetryConsentCommand(
     help="Give consent to telemetry data uploads",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod
@@ -45,7 +46,7 @@ class TelemetryLocalCommand(
     help="Set telemetry mode to local collection only",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod
@@ -63,7 +64,7 @@ class TelemetryOptoutCommand(
     help="Opt out of telemetry data collection",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod
@@ -80,7 +81,7 @@ class TelemetryStatusCommand(
     help="Print the current telemetry mode",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         p.add_argument(
             "--verbose",
             "-v",
@@ -111,7 +112,7 @@ class TelemetryUploadCommand(
     help="Upload collected telemetry data now",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
         pass
 
     @classmethod

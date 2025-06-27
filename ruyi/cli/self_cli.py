@@ -5,6 +5,7 @@ import shutil
 from typing import Final, TYPE_CHECKING
 
 from .cmd import RootCommand
+from .completion import ArgumentParser
 
 if TYPE_CHECKING:
     from .. import config
@@ -33,7 +34,7 @@ class SelfCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: argparse.ArgumentParser,
+        p: ArgumentParser,
     ) -> None:
         pass
 
@@ -47,7 +48,7 @@ class SelfCleanCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: argparse.ArgumentParser,
+        p: ArgumentParser,
     ) -> None:
         p.add_argument(
             "--quiet",
@@ -150,7 +151,7 @@ class SelfUninstallCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: argparse.ArgumentParser,
+        p: ArgumentParser,
     ) -> None:
         p.add_argument(
             "--purge",
