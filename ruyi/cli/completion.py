@@ -22,10 +22,12 @@ else:
                 prefix: str,
                 action: argparse.Action,
                 parser: argparse.ArgumentParser,
-                parsed_args: argparse.Namespace
+                parsed_args: argparse.Namespace,
             ) -> None:
                 raise NotImplementedError(
-                    "This method should be implemented by a subclass.")
+                    "This method should be implemented by a subclass."
+                )
+
 
 if TYPE_CHECKING:
     from .. import config
@@ -42,7 +44,7 @@ class ArgcompleteAction(argparse.Action):
         values: str | Sequence[Any] | None,
         option_string: str | None = None,
     ) -> None:
-        raise NotImplementedError('.__call__() not defined')
+        raise NotImplementedError(".__call__() not defined")
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -51,45 +53,47 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
 class NoneCompleter(BaseCompleter):
-    def __call__(self,
-                 *,
-                 prefix: str,
-                 action: argparse.Action,
-                 parser: argparse.ArgumentParser,
-                 parsed_args: argparse.Namespace) -> None:
+    def __call__(
+        self,
+        *,
+        prefix: str,
+        action: argparse.Action,
+        parser: argparse.ArgumentParser,
+        parsed_args: argparse.Namespace,
+    ) -> None:
         return None
 
 
 class DynamicCompleter(Protocol):
-    def __call__(self, prefix: str, parsed_args: object,
-                 **kwargs: Any) -> list[str]: ...
+    def __call__(
+        self,
+        prefix: str,
+        parsed_args: object,
+        **kwargs: Any,
+    ) -> list[str]: ...
 
 
 def package_completer_builder(
     cfg: "config.GlobalConfig",
-    filters: list[Callable[[str], bool]] | None = None
+    filters: list[Callable[[str], bool]] | None = None,
 ) -> DynamicCompleter:
     # Lazy import to avoid circular dependency
     from ..ruyipkg.augmented_pkg import AugmentedPkg  # pylint: disable=import-outside-toplevel
-    from ..ruyipkg.list_filter import ListFilter    # pylint: disable=import-outside-toplevel
+    from ..ruyipkg.list_filter import ListFilter  # pylint: disable=import-outside-toplevel
 
     all_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, ListFilter()))
     if filters is not None:
         all_pkgs = [
-            pkg for pkg in all_pkgs
-            if pkg.name is not None and
-            all(f(pkg.name) for f in filters)
+            pkg
+            for pkg in all_pkgs
+            if pkg.name is not None and all(f(pkg.name) for f in filters)
         ]
 
-    def f(
-        prefix: str,
-        parsed_args: object,
-        **kwargs: Any
-    ) -> list[str]:
+    def f(prefix: str, parsed_args: object, **kwargs: Any) -> list[str]:
         return [
-            pkg.name for pkg in all_pkgs
-            if pkg.name is not None and
-            pkg.name.startswith(prefix)
+            pkg.name
+            for pkg in all_pkgs
+            if pkg.name is not None and pkg.name.startswith(prefix)
         ]
 
     return f

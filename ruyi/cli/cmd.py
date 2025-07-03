@@ -105,7 +105,7 @@ class BaseCommand:
         argcomplete.autocomplete(
             p,
             always_complete_options=True,
-            default_completer=NoneCompleter()
+            default_completer=NoneCompleter(),
         )
         return p
 

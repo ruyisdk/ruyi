@@ -15,9 +15,9 @@ STDLIBS_TO_PRELOAD = [
     "lzma",
     "pathlib",
     "platform",
-    "shlex", # deps for argcomplete to parse shell commands
+    "shlex",  # deps for argcomplete to parse shell commands
     "shutil",
-    "subprocess", # deps for argcomplete to allow separate process get file completions
+    "subprocess",  # deps for argcomplete to allow separate process get file completions
     "typing",
     "os",
     "zlib",
