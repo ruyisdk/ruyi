@@ -3,9 +3,9 @@ import pathlib
 from typing import TYPE_CHECKING, cast
 
 from ..cli.cmd import AdminCommand
-from ..cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
+    from ..cli.completion import ArgumentParser
     from ..config import GlobalConfig
 
 
@@ -15,7 +15,7 @@ class AdminChecksumCommand(
     help="Generate a checksum section for a manifest file for the distfiles given",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "--format",
             "-f",
@@ -56,7 +56,7 @@ class AdminFormatManifestCommand(
     help="Format the given package manifests into canonical TOML representation",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "file",
             type=str,

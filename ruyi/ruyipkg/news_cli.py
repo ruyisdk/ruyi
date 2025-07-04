@@ -2,9 +2,9 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
+    from ..cli.completion import ArgumentParser
     from ..config import GlobalConfig
 
 
@@ -15,7 +15,7 @@ class NewsCommand(
     help="List and read news items from configured repository",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         pass
 
 
@@ -25,7 +25,7 @@ class NewsListCommand(
     help="List news items",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "--new",
             action="store_true",
@@ -50,7 +50,7 @@ class NewsReadCommand(
     description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "--quiet",
             "-q",

@@ -2,9 +2,9 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..cli.completion import ArgumentParser
 
 if TYPE_CHECKING:
+    from ..cli.completion import ArgumentParser
     from ..config import GlobalConfig
 
 
@@ -15,7 +15,7 @@ class DeviceCommand(
     help="Manage devices",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         pass
 
 
@@ -25,7 +25,7 @@ class DeviceProvisionCommand(
     help="Interactively initialize a device for development",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         pass
 
     @classmethod
