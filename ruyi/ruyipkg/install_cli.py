@@ -2,7 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..cli.completion import package_completer_builder
+from .cli_completion import package_completer_builder
 from .host import get_native_host
 
 if TYPE_CHECKING:
