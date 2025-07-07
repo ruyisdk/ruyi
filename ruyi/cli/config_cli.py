@@ -2,9 +2,9 @@ import argparse
 from typing import TYPE_CHECKING
 
 from .cmd import RootCommand
-from .completion import ArgumentParser
 
 if TYPE_CHECKING:
+    from .completion import ArgumentParser
     from .. import config
 
 
@@ -19,7 +19,7 @@ class ConfigCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: ArgumentParser,
+        p: "ArgumentParser",
     ) -> None:
         pass
 
@@ -33,7 +33,7 @@ class ConfigGetCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: ArgumentParser,
+        p: "ArgumentParser",
     ) -> None:
         p.add_argument(
             "key",
@@ -64,7 +64,7 @@ class ConfigSetCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: ArgumentParser,
+        p: "ArgumentParser",
     ) -> None:
         p.add_argument(
             "key",
@@ -102,7 +102,7 @@ class ConfigUnsetCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: ArgumentParser,
+        p: "ArgumentParser",
     ) -> None:
         p.add_argument(
             "key",
@@ -132,7 +132,7 @@ class ConfigRemoveSectionCommand(
     def configure_args(
         cls,
         gc: "config.GlobalConfig",
-        p: ArgumentParser,
+        p: "ArgumentParser",
     ) -> None:
         p.add_argument(
             "section",

@@ -51,6 +51,19 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
 
     logger = gc.logger
     p = RootCommand.build_argparse(gc)
+
+    # We have to lift this piece of implementation detail out of argcomplete,
+    # as the argcomplete import is very costly in terms of startup time.
+    if "_ARGCOMPLETE" in os.environ:
+        import argcomplete
+        from .completer import NoneCompleter
+
+        argcomplete.autocomplete(
+            p,
+            always_complete_options=True,
+            default_completer=NoneCompleter(),
+        )
+
     args = p.parse_args(argv[1:])
     gm.is_porcelain = args.porcelain
 

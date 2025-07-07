@@ -15,25 +15,13 @@ STDLIBS_TO_PRELOAD = [
     "lzma",
     "pathlib",
     "platform",
-    "shlex", # deps for argcomplete to parse shell commands
     "shutil",
-    "subprocess", # deps for argcomplete to allow separate process get file completions
     "typing",
     "os",
     "zlib",
 ]
 
 CURRENT_ALLOWLIST = {
-    "argcomplete",
-    "argcomplete.completers",
-    "argcomplete.exceptions",
-    "argcomplete.finders",
-    "argcomplete.io",
-    "argcomplete.lexers",
-    "argcomplete.packages",
-    "argcomplete.packages._argparse",
-    "argcomplete.packages._shlex",
-    "argcomplete.shell_integration",
     "ruyi",
     "ruyi.cli",
     "ruyi.cli.builtin_commands",
@@ -51,6 +39,7 @@ CURRENT_ALLOWLIST = {
     "ruyi.pluginhost.plugin_cli",
     "ruyi.ruyipkg",
     "ruyi.ruyipkg.admin_cli",
+    "ruyi.ruyipkg.cli_completion",  # part of the argparse machinery
     "ruyi.ruyipkg.entity_cli",
     "ruyi.ruyipkg.host",  # light-weight enough
     "ruyi.ruyipkg.install_cli",

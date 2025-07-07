@@ -2,10 +2,11 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
-from ..cli.completion import ArgumentParser, package_completer_builder
+from .cli_completion import package_completer_builder
 from .host import get_native_host
 
 if TYPE_CHECKING:
+    from ..cli.completion import ArgumentParser
     from ..config import GlobalConfig
 
 
@@ -15,7 +16,7 @@ class ExtractCommand(
     help="Fetch package(s) then extract to current directory",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "atom",
             type=str,
@@ -52,7 +53,7 @@ class InstallCommand(
     help="Install package from configured repository",
 ):
     @classmethod
-    def configure_args(cls, gc: "GlobalConfig", p: ArgumentParser) -> None:
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "atom",
             type=str,
