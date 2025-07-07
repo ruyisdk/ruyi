@@ -65,6 +65,9 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         )
 
     args = p.parse_args(argv[1:])
+    # for getting access to the argparse parser in the CLI entrypoint
+    args._parser = p  # pylint: disable=protected-access
+
     gm.is_porcelain = args.porcelain
 
     nuitka_info = "not compiled"
@@ -82,10 +85,18 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     # record every invocation's subcommand for better insight into usage
     # frequencies
     try:
-        telemetry_key = args.tele_key
+        telemetry_key: str = args.tele_key
     except AttributeError:
         logger.F("internal error: CLI entrypoint was added without a telemetry key")
         return 1
+
+    # Special-case the `--output-completion-script` argument; treat it as if
+    # "ruyi completion-script" were called.
+    try:
+        if args.completion_script:
+            telemetry_key = "completion-script"
+    except AttributeError:
+        pass
 
     if tm := gc.telemetry:
         tm.print_telemetry_notice()
