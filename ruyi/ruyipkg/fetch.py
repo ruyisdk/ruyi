@@ -181,7 +181,11 @@ class WgetFetcher(BaseFetcher):
         argv = ["wget"]
         if resume:
             argv.append("-c")
-        argv.extend(("-T", "60", "--passive-ftp", "-O", dest, url))
+        # wget does not suffer from the same bug as curl, but to be safe, we
+        # also enable the passive FTP mode only if the URL is an FTP one.
+        if _is_url_ftp(url):
+            argv.append("--passive-ftp")
+        argv.extend(("-T", "60", "-O", dest, url))
 
         retcode = subprocess.call(argv)
         if retcode != 0:
