@@ -96,6 +96,10 @@ jobs:
         if: success() && !matrix.baseline
         run: poetry run ./scripts/lint-cli-startup-flow.py
 
+      - name: Ensure bundled resources are synced with the codebase
+        if: success() && !matrix.baseline
+        run: ./scripts/lint-bundled-resources.sh
+
   pylic:
     name: license compatibility
     runs-on: ubuntu-latest
