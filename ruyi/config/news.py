@@ -32,4 +32,8 @@ class NewsReadStatusStore:
             fp.write(content)
 
     def remove(self) -> None:
-        os.unlink(self._path)
+        try:
+            os.unlink(self._path)
+        except FileNotFoundError:
+            # nothing to remove, that's fine
+            pass
