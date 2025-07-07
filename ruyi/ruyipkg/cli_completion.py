@@ -1,7 +1,7 @@
 from typing import Any, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..cli.completion import DynamicCompleter
+    from ..cli.completer import DynamicCompleter
     from ..config import GlobalConfig
 
 

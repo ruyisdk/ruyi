@@ -56,7 +56,7 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     # as the argcomplete import is very costly in terms of startup time.
     if "_ARGCOMPLETE" in os.environ:
         import argcomplete
-        from .completion import NoneCompleter
+        from .completer import NoneCompleter
 
         argcomplete.autocomplete(
             p,
