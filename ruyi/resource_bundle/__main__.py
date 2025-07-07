@@ -31,7 +31,7 @@ def main() -> None:
         p("from typing import Final\n\n")
 
         p("TEMPLATES: Final = {")
-        for filename, payload in payloads.items():
+        for filename, payload in sorted(payloads.items()):
             p(f'    "{filename}": b"{payload}",  # fmt: skip')
         p("}")
 
