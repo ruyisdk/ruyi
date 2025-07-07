@@ -12,6 +12,10 @@ from ..log import RuyiLogger
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
 
 
+def _is_url_ftp(url: str) -> bool:
+    return url.lower().startswith("ftp://")
+
+
 class BaseFetcher:
     def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
         self._logger = logger
@@ -120,12 +124,25 @@ class CurlFetcher(BaseFetcher):
         argv = ["curl"]
         if resume:
             argv.extend(("-C", "-"))
+
+        # A bug in curl 8.14.1 (and only that version) broke the recognition of
+        # the `--ftp-pasv`` flag, and unfortunately this version is currently
+        # provided by some popular distros so far.
+        #
+        # So, for the vast majority of non-FTP downloads to work even with
+        # this buggy version, we simply do not pass the flag if the URL is
+        # not an FTP one.
+        #
+        # See: https://github.com/curl/curl/issues/17545
+        # See: https://github.com/ruyisdk/ruyi/issues/316
+        if _is_url_ftp(url):
+            argv.append("--ftp-pasv")
+
         argv.extend(
             (
                 "-L",
                 "--connect-timeout",
                 "60",
-                "--ftp-pasv",
                 "-o",
                 dest,
                 url,
