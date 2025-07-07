@@ -156,6 +156,7 @@ class RootCommand(
     BaseCommand,
     cmd=None,
     has_subcommands=True,
+    has_main=True,
     prog=RUYI_ENTRYPOINT_NAME,
     description="RuyiSDK Package Manager",
 ):
@@ -176,6 +177,37 @@ class RootCommand(
             action="store_true",
             help="Give the output in a machine-friendly format if applicable",
         )
+
+        # https://github.com/python/cpython/issues/67037 prevents the registration
+        # of undocumented subcommands, so a preferred usage of
+        # "ruyi completion-script --shell=bash" is not possible right now.
+        p.add_argument(
+            "--output-completion-script",
+            action="store",
+            type=str,
+            dest="completion_script",
+            default=None,
+            help=argparse.SUPPRESS,
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        sh: str | None = args.completion_script
+        if not sh:
+            args._parser.print_help()  # pylint: disable=protected-access
+            return 0
+        # the rest are implementation of "--output-completion-script"
+
+        if sh not in {"bash", "zsh"}:
+            raise ValueError(f"Unsupported shell: {sh}")
+
+        import sys
+        from ..resource_bundle import get_resource_str
+
+        script = get_resource_str("_ruyi_completion")
+        assert script is not None, "should never happen; completion script not found"
+        sys.stdout.write(script)
+        return 0
 
 
 # Repo admin commands

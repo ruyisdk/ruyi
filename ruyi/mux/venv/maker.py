@@ -12,9 +12,9 @@ from ...ruyipkg.atom import Atom
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
 from ...utils.global_mode import ProvidesGlobalMode
+from ...utils.templating import render_template_str
 from . import ConfiguredTargetTuple
 from .emulator_cfg import ResolvedEmulatorProg
-from .templating import render_template_str
 
 
 def do_make_venv(
