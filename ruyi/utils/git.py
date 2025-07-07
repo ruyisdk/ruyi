@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Any, TYPE_CHECKING
 
-from pygit2 import Oid
+from pygit2 import GitError, Oid
 from pygit2.callbacks import RemoteCallbacks
 from pygit2.repository import Repository
 
@@ -105,8 +105,12 @@ def pull_ff_or_die(
         repo.remotes.set_url("origin", remote_url)
 
     logger.D("fetching")
-    with RemoteGitProgressIndicator() as pr:
-        remote.fetch(callbacks=pr)
+    try:
+        with RemoteGitProgressIndicator() as pr:
+            remote.fetch(callbacks=pr)
+    except GitError as e:
+        logger.F(f"failed to fetch from remote URL {remote_url}: {e}")
+        raise SystemExit(1) from e
 
     remote_head_ref = repo.lookup_reference(f"refs/remotes/{remote_name}/{branch_name}")
     remote_head: Oid
