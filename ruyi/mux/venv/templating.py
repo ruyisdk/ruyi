@@ -5,7 +5,7 @@ import zlib
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
-from .data import TEMPLATES
+from ...resource_bundle.data import TEMPLATES
 
 
 def _unpack_payload(x: bytes) -> str:
