@@ -61,7 +61,7 @@ _python_argcomplete_ruyi() {
             _ARGCOMPLETE=1 \
             _ARGCOMPLETE_SHELL="bash" \
             _ARGCOMPLETE_SUPPRESS_SPACE=$SUPPRESS_SPACE \
-            __python_argcomplete_run ${script:-$1}))
+            __python_argcomplete_ruyi_run ${script:-$1}))
         if [[ $? != 0 ]]; then
             unset COMPREPLY
         elif [[ $SUPPRESS_SPACE == 1 ]] && [[ "${COMPREPLY-}" =~ [=/:]$ ]]; then
