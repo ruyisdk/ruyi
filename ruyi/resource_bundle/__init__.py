@@ -1,7 +1,7 @@
 import base64
 import zlib
 
-from .data import RESOURCES
+from .data import TEMPLATES
 
 
 def _unpack_payload(x: bytes) -> str:
@@ -9,6 +9,6 @@ def _unpack_payload(x: bytes) -> str:
 
 
 def get_resource_str(template_name: str) -> str | None:
-    if t := RESOURCES.get(template_name):
+    if t := TEMPLATES.get(template_name):
         return _unpack_payload(t)
     return None
