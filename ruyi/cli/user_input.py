@@ -3,6 +3,17 @@ import os.path
 from ..log import RuyiLogger
 
 
+def pause_before_continuing(
+    logger: RuyiLogger,
+) -> None:
+    """Pause and wait for the user to press Enter before continuing.
+
+    EOFError should be handled by the caller."""
+
+    logger.stdout("Press [green]<ENTER>[/] to continue: ", end="")
+    input()
+
+
 def ask_for_yesno_confirmation(
     logger: RuyiLogger,
     prompt: str,
