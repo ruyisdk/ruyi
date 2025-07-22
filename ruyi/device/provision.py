@@ -246,7 +246,7 @@ We are about to:
     # ensure commands
     all_needed_cmds = set(itertools.chain(*(strat.need_cmd for _, strat in strategies)))
     if all_needed_cmds:
-        prereqs.ensure_cmds(logger, *all_needed_cmds)
+        prereqs.ensure_cmds(logger, all_needed_cmds)
 
         if "fastboot" in all_needed_cmds:
             # ask the user to ensure the device shows up

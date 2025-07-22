@@ -1,6 +1,6 @@
 import shutil
 import sys
-from typing import Final, NoReturn
+from typing import Final, Iterable, NoReturn
 
 from ..log import RuyiLogger, humanize_list
 
@@ -31,7 +31,10 @@ def init_cmd_presence_map() -> None:
         _CMD_PRESENCE_MAP[cmd] = has_cmd_in_path(cmd)
 
 
-def ensure_cmds(logger: RuyiLogger, *cmds: str) -> None | NoReturn:
+def ensure_cmds(
+    logger: RuyiLogger,
+    cmds: Iterable[str],
+) -> None | NoReturn:
     if not _CMD_PRESENCE_MAP:
         init_cmd_presence_map()
 
