@@ -30,6 +30,7 @@ def get_variant_display_name(dev: BaseEntity, variant: BaseEntity) -> str:
 
 def do_provision_interactive(config: GlobalConfig) -> int:
     log = config.logger
+    prereqs.ensure_cmds(log, ["foobar"], interactive_retry=True)
 
     # ensure ruyi repo is present, for good out-of-the-box experience
     mr = config.repo
@@ -246,7 +247,7 @@ We are about to:
     # ensure commands
     all_needed_cmds = set(itertools.chain(*(strat.need_cmd for _, strat in strategies)))
     if all_needed_cmds:
-        prereqs.ensure_cmds(logger, all_needed_cmds)
+        prereqs.ensure_cmds(logger, all_needed_cmds, interactive_retry=True)
 
         if "fastboot" in all_needed_cmds:
             # ask the user to ensure the device shows up

@@ -366,4 +366,4 @@ def ensure_unpack_cmd_for_method(
     if not required_cmds:
         return None
 
-    return prereqs.ensure_cmds(logger, required_cmds)
+    return prereqs.ensure_cmds(logger, required_cmds, interactive_retry=True)
