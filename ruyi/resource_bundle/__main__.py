@@ -29,6 +29,8 @@ def main() -> None:
         if f.suffix.lower() == ".jinja":
             # strip the .jinja suffix for the template name
             template_names[f.stem] = f.name
+        else:
+            template_names[f.name] = f.name
 
     with open(self_path / "data.py", "w", encoding="utf-8") as fp:
 

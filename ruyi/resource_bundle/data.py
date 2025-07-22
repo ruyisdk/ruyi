@@ -16,6 +16,7 @@ RESOURCES: Final = {
 }
 
 TEMPLATES: Final = {
+    "_ruyi_completion": RESOURCES["_ruyi_completion"],
     "binfmt.conf": RESOURCES["binfmt.conf.jinja"],
     "meson-cross.ini": RESOURCES["meson-cross.ini.jinja"],
     "prompt.venv-created.txt": RESOURCES["prompt.venv-created.txt.jinja"],
