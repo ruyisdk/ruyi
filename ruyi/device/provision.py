@@ -30,7 +30,6 @@ def get_variant_display_name(dev: BaseEntity, variant: BaseEntity) -> str:
 
 def do_provision_interactive(config: GlobalConfig) -> int:
     log = config.logger
-    prereqs.ensure_cmds(log, ["foobar"], interactive_retry=True)
 
     # ensure ruyi repo is present, for good out-of-the-box experience
     mr = config.repo
