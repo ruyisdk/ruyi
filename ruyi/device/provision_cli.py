@@ -22,6 +22,7 @@ class DeviceCommand(
 class DeviceProvisionCommand(
     DeviceCommand,
     cmd="provision",
+    aliases=["flash"],
     help="Interactively initialize a device for development",
 ):
     @classmethod
