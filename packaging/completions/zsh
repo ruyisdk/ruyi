@@ -1,0 +1,2 @@
+#compdef ruyi
+eval "$(ruyi --output-completion-script=zsh)"
