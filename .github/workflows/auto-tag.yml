@@ -4,8 +4,7 @@ on:
   push:
     paths:
       - pyproject.toml
-  merge_group:
-    types: [checks_requested]
+  workflow_dispatch:
 
 jobs:
   auto-tag:
