@@ -49,9 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
 
       - name: Install integration test deps
+        if: success() && !matrix.baseline
         run: |
           sudo apt-get update
           sudo apt-get install -y jq llvm-15-tools pipx schroot wget
@@ -117,7 +118,7 @@ jobs:
         run: ./scripts/lint-bundled-resources.sh
 
       - name: Run integration tests
-        if: success()
+        if: success() && !matrix.baseline
         run: |
           sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           export PIPX_BIN_DIR=/usr/local/bin
