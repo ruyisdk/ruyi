@@ -1,0 +1,35 @@
+name: Auto-tag releases
+
+on:
+  push:
+    paths:
+      - pyproject.toml
+  merge_group:
+    types: [checks_requested]
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      # NOTE: the Poetry venv is created during this step
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          cache: poetry
+
+      - name: Install deps in the venv
+        run: poetry install --with=dev
+
+      - name: Create the tag and push
+        run: |
+          # Note: the following account information will not work on GHES
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ./scripts/make-release-tag.py && git push
