@@ -48,6 +48,23 @@ jobs:
             runs_on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
+
+      - name: Install integration test deps
+        if: success() && !matrix.baseline
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq llvm-15-tools pipx schroot wget
+          sudo apt-get clean
+          sudo ln -s /usr/bin/FileCheck-15 /usr/local/bin/FileCheck
+
+          # Ubuntu 22.04 does not have yq in archive
+          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+
+          export PIPX_BIN_DIR=/usr/local/bin
+          sudo PIPX_BIN_DIR=/usr/local/bin pipx install lit
 
       - name: Install baseline deps system-wide
         if: success() && matrix.baseline
@@ -99,6 +116,14 @@ jobs:
       - name: Ensure bundled resources are synced with the codebase
         if: success() && !matrix.baseline
         run: ./scripts/lint-bundled-resources.sh
+
+      - name: Run integration tests
+        if: success() && !matrix.baseline
+        run: |
+          sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
+          export PIPX_BIN_DIR=/usr/local/bin
+          export RUYI_VERSION=0.38.1
+          ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha
 
   pylic:
     name: license compatibility

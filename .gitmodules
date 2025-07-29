@@ -1,0 +1,3 @@
+[submodule "tests/ruyi-litester"]
+	path = tests/ruyi-litester
+	url = https://github.com/weilinfox/ruyi-litester.git

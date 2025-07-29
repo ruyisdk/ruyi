@@ -1,0 +1,59 @@
+# NOTE: This file is adapted from ruyi-litester/suites/ruyi.yaml, to account
+# for the unique needs of GitHub Actions and PR checks.
+#
+# Main change points:
+#
+# * The default (first) test suite name is renamed to "ruyi-gha" from "ruyi".
+# * Removed `ruyi/ruyi-bin-{install,remove}` pre- and post-actions because
+#   we are the upstream.
+# * Removed the `ruyi-bin` variant, same reason as above.
+#
+# Please keep the changes in sync when you bump the ruyi-litester submodule.
+
+ruyi-gha:  # originally "ruyi"
+  cases:
+    # testcases list
+    - ruyi-help
+    - ruyi-basic
+    - ruyi-advance
+    - ruyi-mugen
+  pre:
+    # each pre script should have a corresponding post script
+    # or set it to _
+    - ["ruyi/ruyi-src-install", ]  # "ruyi/ruyi-bin-install" removed
+  post:
+    - ["ruyi/ruyi-src-remove", ]  # "ruyi/ruyi-bin-remove" removed
+
+ruyi-local:
+  cases:
+    - ruyi-help
+    - ruyi-basic
+    - ruyi-advance
+    - ruyi-mugen
+  pre:
+    - ["_", ]
+  post:
+    - ["_", ]
+
+ruyi-src:
+  cases:
+    - ruyi-help
+    - ruyi-basic
+    - ruyi-advance
+    - ruyi-mugen
+  pre:
+    - ["ruyi/ruyi-src-install", ]
+  post:
+    - ["ruyi/ruyi-src-remove", ]
+
+# ruyi-bin: removed for upstream
+
+ruyi-i18n:
+  cases:
+    - ruyi-i18n
+  pre:
+    - ["i18n/setup-zh-locale", "i18n/setup-en-locale",]
+    - ["ruyi/ruyi-src-install", ]
+  post:
+    - ["i18n/setup-en-locale", _]
+    - ["ruyi/ruyi-src-remove", ]

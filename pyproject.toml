@@ -77,6 +77,9 @@ nuitka = "^2.0"
 
 [tool.mypy]
 files = ["ruyi", "scripts", "tests"]
+exclude = [
+  "tests/ruyi-litester",
+]
 show_error_codes = true
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -111,10 +114,16 @@ safe_licenses = [
 
 [tool.pyright]
 include = ["ruyi", "scripts", "tests"]
-exclude = ["**/__pycache__", "tmp"]
+exclude = ["**/__pycache__", "tests/ruyi-litester", "tmp"]
 stubPath = "./stubs"
 pythonPlatform = "Linux"
 
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+
+[tool.ruff]
+extend-exclude = [
+  "tests/ruyi-litester",
+]
