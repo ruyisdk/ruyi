@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "ruyi"
-version = "0.39.0-alpha.20250722"
+version = "0.39.0-alpha.20250729"
 description = "Package manager for RuyiSDK"
 keywords = ["ruyi", "ruyisdk"]
 license = { file = "LICENSE-Apache.txt" }
@@ -63,6 +63,7 @@ mypy = "^1.9.0"
 pyright = "^1.1.389"
 pytest = "^8.2.2"
 ruff = "^0.8.1"
+tomlkit-extras = "^0.2.0"
 typing-extensions = ">=3.10.0.2"
 
 types-cffi = "^1.16.0.20240106"
