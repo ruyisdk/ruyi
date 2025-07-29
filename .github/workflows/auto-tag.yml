@@ -33,4 +33,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # No signing secret key for this identity on runners
           export RUYI_NO_GPG_SIGN=x
-          poetry run ./scripts/make-release-tag.py && git push
+          poetry run ./scripts/make-release-tag.py && git push --tags
