@@ -37,11 +37,10 @@ jobs:
         baseline: [false]
         runs_on: ['ubuntu-latest']
         include:
-          # not yet available
-          #- python: '3.14'
-          #  baseline: false
-          #  experimental: true
-          #  runs_on: ubuntu-latest
+          - python: '3.14'
+            baseline: false
+            experimental: true
+            runs_on: ubuntu-latest
           - python: '3.10'
             baseline: true
             experimental: false
@@ -62,6 +61,7 @@ jobs:
         if: success() && !matrix.baseline
         with:
           python-version: ${{ matrix.python }}
+          allow-prereleases: true  # for the experimental check
           cache: poetry
 
       - name: Install deps in the venv
