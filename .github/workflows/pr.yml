@@ -156,6 +156,9 @@ jobs:
   dco:
     name: DCO compliance
     runs-on: ubuntu-latest
+    # do not run on tags, because our tag description is just "Ruyi 0.x.y"
+    # which causes this check to fail (and possibly among other reasons)
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Run dco-check
         uses: christophebedard/dco-check@0.5.0
