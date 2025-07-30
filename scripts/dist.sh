@@ -77,9 +77,30 @@ do_inner() {
     [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd "$REPO_ROOT"
 
     # build dep(s) with extension(s) if no prebuilt artifact is available on PyPI
+    # for now this is / these are:
+    #
+    # - pygit2
     case "$arch" in
-    amd64|arm64|ppc64el) ;;  # current as of 1.17.0
-    *) ./scripts/build-pygit2.py ;;
+    amd64|arm64|ppc64el) ;;  # current as of pygit2 1.18.1
+    *)
+        if [[ -n $RUYI_DIST_ADDITIONAL_INDEX_URL ]]; then
+            poetry source add -p supplemental ruyi-dist "$RUYI_DIST_ADDITIONAL_INDEX_URL"
+
+            # override pygit2 source manually, so we don't have to parse out
+            # its version specifier in order to re-add after removing
+            cat >> pyproject.toml <<EOF
+[tool.poetry.dependencies]
+pygit2 = {source = "ruyi-dist"}
+EOF
+            poetry lock
+
+            # it seems this has to be duplicated in the dep list to take effect
+            # cffi is not in the dep list, so we just add it with poetry CLI
+            poetry add --lock --source ruyi-dist cffi
+        else
+            ./scripts/build-pygit2.py
+        fi
+        ;;
     esac
 
     green "installing deps" group
@@ -126,6 +147,12 @@ do_docker_build() {
         -e RUYI_DIST_BUILD_DIR=/build
         -e RUYI_DIST_CACHE_DIR=/ruyi-dist-cache
     )
+
+    if [[ -n $RUYI_DIST_ADDITIONAL_INDEX_URL ]]; then
+        docker_args+=(
+            -e RUYI_DIST_ADDITIONAL_INDEX_URL="${RUYI_DIST_ADDITIONAL_INDEX_URL}"
+        )
+    fi
 
     # only allocate pty if currently running interactively
     # check if stdout is a tty
