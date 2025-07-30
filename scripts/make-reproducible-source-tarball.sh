@@ -48,10 +48,10 @@ main() {
     TMPDIR="$(mktemp -d)"
     trap _cleanup EXIT
 
-    git clone "$REPO_ROOT" "$TMPDIR/$staging_dirname"
+    git clone --recurse-submodules "$REPO_ROOT" "$TMPDIR/$staging_dirname"
     pushd "$TMPDIR/$staging_dirname" > /dev/null
     # remove Git metadata
-    rm -rf .git
+    find . -name .git -exec rm -rf '{}' '+'
     # set all file timestamps to $SOURCE_EPOCH
     find . -exec touch -md "$source_epoch" '{}' '+'
     popd > /dev/null
