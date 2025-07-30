@@ -9,6 +9,7 @@ export RUYI_DIST_BUILD_DIR=/github/workspace/build
 export RUYI_DIST_CACHE_DIR=/github/workspace/build-cache/ruyi-dist-cache
 export RUYI_DIST_INNER_CONTAINERIZED=x
 export RUYI_DIST_INNER=x
+export RUYI_DIST_ADDITIONAL_INDEX_URL=https://mirror.iscas.ac.cn/ruyisdk/dist/python-wheels/simple/
 "$MY_DIR"/dist.sh "$@"
 ret=$?
 
