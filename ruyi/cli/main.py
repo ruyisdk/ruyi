@@ -52,9 +52,11 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     logger = gc.logger
     p = RootCommand.build_argparse(gc)
 
-    # We have to lift this piece of implementation detail out of argcomplete,
-    # as the argcomplete import is very costly in terms of startup time.
-    if "_ARGCOMPLETE" in os.environ:
+    # We have to ensure argcomplete is only requested when it's supposed to,
+    # as the argcomplete import is very costly in terms of startup time, and
+    # that the package name completer requires the whole repo to be synced
+    # (which may not be the case for an out-of-the-box experience).
+    if gm.is_cli_autocomplete:
         import argcomplete
         from .completer import NoneCompleter
 
