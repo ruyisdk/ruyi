@@ -35,6 +35,8 @@ jobs:
   pypi-publish:
     name: upload release to PyPI
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    needs:
+      - pypi-build
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
     environment: pypi
@@ -46,6 +48,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pypi-dist
+          path: ${{ github.workspace }}/dist
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.4
