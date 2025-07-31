@@ -17,12 +17,15 @@ class ExtractCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument(
+        a = p.add_argument(
             "atom",
             type=str,
             nargs="+",
             help="Specifier (atom) of the package(s) to extract",
-        ).completer = package_completer_builder(gc)
+        )
+        if gc.is_cli_autocomplete:
+            a.completer = package_completer_builder(gc)
+
         p.add_argument(
             "--host",
             type=str,
@@ -54,12 +57,15 @@ class InstallCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument(
+        a = p.add_argument(
             "atom",
             type=str,
             nargs="+",
             help="Specifier (atom) of the package to install",
-        ).completer = package_completer_builder(gc)
+        )
+        if gc.is_cli_autocomplete:
+            a.completer = package_completer_builder(gc)
+
         p.add_argument(
             "-f",
             "--fetch-only",
