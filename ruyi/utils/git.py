@@ -1,4 +1,5 @@
 from contextlib import AbstractContextManager
+import pathlib
 from typing import Any, TYPE_CHECKING
 
 from pygit2 import GitError, Oid
@@ -30,6 +31,15 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from ..log import RuyiLogger
+
+
+def human_readable_path_of_repo(repo: Repository) -> pathlib.Path:
+    """
+    Returns a human-readable path of the repository.
+    If the repository is a submodule, returns the path to the parent module.
+    """
+    repo_path = pathlib.Path(repo.path)
+    return repo_path.parent if repo_path.name == ".git" else repo_path
 
 
 class RemoteGitProgressIndicator(
@@ -96,9 +106,22 @@ def pull_ff_or_die(
     remote_name: str,
     remote_url: str,
     branch_name: str,
+    *,
+    allow_auto_management: bool,
 ) -> None:
     remote = repo.remotes[remote_name]
     if remote.url != remote_url:
+        if not allow_auto_management:
+            logger.F(
+                f"URL of remote '[yellow]{remote_name}[/]' does not match expected URL"
+            )
+            repo_path = human_readable_path_of_repo(repo)
+            logger.I(f"repository:          [yellow]{repo_path}[/]")
+            logger.I(f"expected remote URL: [yellow]{remote_url}[/]")
+            logger.I(f"actual remote URL:   [yellow]{remote.url}[/]")
+            logger.I("please fix the repo settings manually")
+            raise SystemExit(1)
+
         logger.D(
             f"updating url of remote {remote_name} from {remote.url} to {remote_url}"
         )
