@@ -22,15 +22,15 @@ main() {
 
         # for installing ourselves
         python3-pip
+
+        # for running the test suite with purely system deps
+        python3-pytest  # 6.2.5
     )
 
     export DEBIAN_FRONTEND=noninteractive
     export DEBCONF_NONINTERACTIVE_SEEN=true
     sudo apt-get update -qqy
     sudo apt-get install -y "${pkglist[@]}"
-
-    # we need a recent pytest for running the tests though
-    pipx install --system-site-packages pytest
 }
 
 main "$@"

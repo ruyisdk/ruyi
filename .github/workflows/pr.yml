@@ -107,7 +107,13 @@ jobs:
         if: success() && matrix.baseline
         run: |
           pip install -e .
-          pytest
+          if command -v pytest-3 > /dev/null; then
+            # this is the case for Ubuntu python3-pytest
+            pytest-3
+          elif command -v pytest > /dev/null; then
+            # fallback
+            pytest
+          fi
 
       - name: Check for import side effects during CLI startup
         if: success() && !matrix.baseline
