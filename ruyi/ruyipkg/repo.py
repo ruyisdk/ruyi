@@ -307,7 +307,19 @@ class MetadataRepo(ProvidesPackageManifests):
 
     def sync(self) -> None:
         repo = self.ensure_git_repo()
-        return pull_ff_or_die(self.logger, repo, "origin", self.remote, self.branch)
+
+        # only manage the repo settings on the user's behalf if the user
+        # has not overridden the repo directory themselves
+        allow_auto_management = self._gc.override_repo_dir is None
+
+        return pull_ff_or_die(
+            self.logger,
+            repo,
+            "origin",
+            self.remote,
+            self.branch,
+            allow_auto_management=allow_auto_management,
+        )
 
     @property
     def global_config(self) -> "GlobalConfig":
