@@ -46,6 +46,9 @@ class ProvidesGlobalMode(Protocol):
     def is_telemetry_optout(self) -> bool: ...
 
     @property
+    def is_cli_autocomplete(self) -> bool: ...
+
+    @property
     def venv_root(self) -> str | None: ...
 
 
@@ -104,6 +107,11 @@ class GlobalModeProvider(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def is_cli_autocomplete(self) -> bool:
+        return False
+
+    @property
+    @abc.abstractmethod
     def venv_root(self) -> str | None:
         return None
 
@@ -139,6 +147,11 @@ class EnvGlobalModeProvider(GlobalModeProvider):
         self._is_experimental = is_env_var_truthy(env, ENV_EXPERIMENTAL)
         self._is_porcelain = _guess_porcelain_from_argv(argv)
         self._is_telemetry_optout = is_env_var_truthy(env, ENV_TELEMETRY_OPTOUT_KEY)
+
+        # We have to lift this piece of implementation detail out of argcomplete,
+        # as the argcomplete import is very costly in terms of startup time.
+        self._is_cli_autocomplete = "_ARGCOMPLETE" in os.environ
+
         self._venv_root = env.get(ENV_VENV_ROOT_KEY)
 
     @property
@@ -181,6 +194,10 @@ class EnvGlobalModeProvider(GlobalModeProvider):
     @property
     def is_telemetry_optout(self) -> bool:
         return self._is_telemetry_optout
+
+    @property
+    def is_cli_autocomplete(self) -> bool:
+        return self._is_cli_autocomplete
 
     @property
     def venv_root(self) -> str | None:

@@ -40,12 +40,14 @@ class MockGlobalModeProvider(GlobalModeProvider):
         is_experimental: bool = False,
         is_porcelain: bool = False,
         is_telemetry_optout: bool = False,
+        is_cli_autocomplete: bool = False,
         venv_root: str | None = None,
     ) -> None:
         self._is_debug = is_debug
         self._is_experimental = is_experimental
         self._is_porcelain = is_porcelain
         self._is_telemetry_optout = is_telemetry_optout
+        self._is_cli_autocomplete = is_cli_autocomplete
         self._venv_root = venv_root
 
     @property
@@ -83,6 +85,10 @@ class MockGlobalModeProvider(GlobalModeProvider):
     @property
     def is_telemetry_optout(self) -> bool:
         return self._is_telemetry_optout
+
+    @property
+    def is_cli_autocomplete(self) -> bool:
+        return self._is_cli_autocomplete
 
     @property
     def venv_root(self) -> str | None:

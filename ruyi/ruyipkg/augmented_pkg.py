@@ -118,11 +118,13 @@ class AugmentedPkg:
         cfg: GlobalConfig,
         mr: MetadataRepo,
         filters: ListFilter,
+        *,
+        ensure_repo: bool = True,
     ) -> "Iterable[Self]":
         rgs = cfg.ruyipkg_global_state
         native_host = str(get_native_host())
 
-        for category, pkg_name, pkg_vers in mr.iter_pkgs():
+        for category, pkg_name, pkg_vers in mr.iter_pkgs(ensure_repo=ensure_repo):
             if not filters.check_pkg_name(cfg, mr, category, pkg_name):
                 continue
 

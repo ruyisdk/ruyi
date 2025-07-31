@@ -17,7 +17,14 @@ def package_completer_builder(
         ListFilter,
     )  # pylint: disable=import-outside-toplevel
 
-    all_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, ListFilter()))
+    all_pkgs = list(
+        AugmentedPkg.yield_from_repo(
+            cfg,
+            cfg.repo,
+            ListFilter(),
+            ensure_repo=False,
+        )
+    )
     if filters is not None:
         all_pkgs = [
             pkg

@@ -228,6 +228,10 @@ class GlobalConfig:
         return self._gm.is_telemetry_optout
 
     @property
+    def is_cli_autocomplete(self) -> bool:
+        return self._gm.is_cli_autocomplete
+
+    @property
     def venv_root(self) -> str | None:
         return self._gm.venv_root
 

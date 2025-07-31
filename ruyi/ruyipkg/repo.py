@@ -369,14 +369,21 @@ class MetadataRepo(ProvidesPackageManifests):
         self._messages = RepoMessageStore.from_object(obj)
         return self._messages
 
-    def iter_pkg_manifests(self) -> Iterable[BoundPackageManifest]:
-        self.ensure_git_repo()
+    def iter_pkg_manifests(
+        self,
+        ensure_repo: bool = True,
+    ) -> Iterable[BoundPackageManifest]:
+        if ensure_repo:
+            self.ensure_git_repo()
 
         manifests_dir = os.path.join(self.root, "manifests")
-        for f in os.scandir(manifests_dir):
-            if not f.is_dir():
-                continue
-            yield from self._iter_pkg_manifests_from_category(f.path)
+        try:
+            for f in os.scandir(manifests_dir):
+                if not f.is_dir():
+                    continue
+                yield from self._iter_pkg_manifests_from_category(f.path)
+        except FileNotFoundError:
+            return
 
     def _iter_pkg_manifests_from_category(
         self,
@@ -436,16 +443,20 @@ class MetadataRepo(ProvidesPackageManifests):
         self._arch_profile_stores[arch] = store
         return store
 
-    def ensure_pkg_cache(self) -> None:
+    def ensure_pkg_cache(
+        self,
+        ensure_repo: bool = True,
+    ) -> None:
         if self._pkgs:
             return
 
-        self.ensure_git_repo()
+        if ensure_repo:
+            self.ensure_git_repo()
 
         cache_by_name: dict[str, dict[str, BoundPackageManifest]] = {}
         cache_by_category: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
         slug_cache: dict[str, BoundPackageManifest] = {}
-        for pm in self.iter_pkg_manifests():
+        for pm in self.iter_pkg_manifests(ensure_repo=ensure_repo):
             if pm.name not in cache_by_name:
                 cache_by_name[pm.name] = {}
             cache_by_name[pm.name][pm.ver] = pm
@@ -463,17 +474,24 @@ class MetadataRepo(ProvidesPackageManifests):
         self._categories = cache_by_category
         self._slug_cache = slug_cache
 
-    def iter_pkgs(self) -> Iterable[tuple[str, str, dict[str, BoundPackageManifest]]]:
+    def iter_pkgs(
+        self,
+        ensure_repo: bool = True,
+    ) -> Iterable[tuple[str, str, dict[str, BoundPackageManifest]]]:
         if not self._pkgs:
-            self.ensure_pkg_cache()
+            self.ensure_pkg_cache(ensure_repo=ensure_repo)
 
         for cat, cat_pkgs in self._categories.items():
             for pkg_name, pkg_vers in cat_pkgs.items():
                 yield (cat, pkg_name, pkg_vers)
 
-    def get_pkg_by_slug(self, slug: str) -> BoundPackageManifest | None:
+    def get_pkg_by_slug(
+        self,
+        slug: str,
+        ensure_repo: bool = True,
+    ) -> BoundPackageManifest | None:
         if not self._pkgs:
-            self.ensure_pkg_cache()
+            self.ensure_pkg_cache(ensure_repo=ensure_repo)
 
         return self._slug_cache.get(slug)
 
@@ -481,9 +499,10 @@ class MetadataRepo(ProvidesPackageManifests):
         self,
         name: str,
         category: str | None = None,
+        ensure_repo: bool = True,
     ) -> Iterable[BoundPackageManifest]:
         if not self._pkgs:
-            self.ensure_pkg_cache()
+            self.ensure_pkg_cache(ensure_repo=ensure_repo)
 
         if category is not None:
             return self._categories[category][name].values()
@@ -494,9 +513,11 @@ class MetadataRepo(ProvidesPackageManifests):
         name: str,
         category: str,
         ver: str,
+        *,
+        ensure_repo: bool = True,
     ) -> BoundPackageManifest | None:
         if not self._pkgs:
-            self.ensure_pkg_cache()
+            self.ensure_pkg_cache(ensure_repo=ensure_repo)
 
         try:
             return self._categories[category][name][ver]
@@ -508,9 +529,10 @@ class MetadataRepo(ProvidesPackageManifests):
         name: str,
         category: str | None = None,
         include_prerelease_vers: bool = False,
+        ensure_repo: bool = True,
     ) -> BoundPackageManifest:
         if not self._pkgs:
-            self.ensure_pkg_cache()
+            self.ensure_pkg_cache(ensure_repo=ensure_repo)
 
         if category is not None:
             pkgset = self._categories[category]
@@ -541,32 +563,44 @@ class MetadataRepo(ProvidesPackageManifests):
             )
         )
 
-    def ensure_news_cache(self) -> None:
+    def ensure_news_cache(
+        self,
+        ensure_repo: bool = True,
+    ) -> None:
         if self._news_cache is not None:
             return
 
-        self.ensure_git_repo()
+        if ensure_repo:
+            self.ensure_git_repo()
         news_dir = os.path.join(self.root, "news")
 
         rs_store = self._gc.news_read_status
         rs_store.load()
 
         cache = NewsItemStore(rs_store)
-        for f in glob.iglob("*.md", root_dir=news_dir):
-            with open(os.path.join(news_dir, f), "r", encoding="utf-8") as fp:
-                try:
-                    contents = fp.read()
-                except UnicodeDecodeError:
-                    self.logger.W(f"UnicodeDecodeError: {os.path.join(news_dir, f)}")
-                    continue
-                cache.add(f, contents)  # may fail but failures are harmless
+        try:
+            for f in glob.iglob("*.md", root_dir=news_dir):
+                with open(os.path.join(news_dir, f), "r", encoding="utf-8") as fp:
+                    try:
+                        contents = fp.read()
+                    except UnicodeDecodeError:
+                        self.logger.W(
+                            f"UnicodeDecodeError: {os.path.join(news_dir, f)}"
+                        )
+                        continue
+                    cache.add(f, contents)  # may fail but failures are harmless
+        except FileNotFoundError:
+            pass
 
         cache.finalize()
         self._news_cache = cache
 
-    def news_store(self) -> NewsItemStore:
+    def news_store(
+        self,
+        ensure_repo: bool = True,
+    ) -> NewsItemStore:
         if self._news_cache is None:
-            self.ensure_news_cache()
+            self.ensure_news_cache(ensure_repo=ensure_repo)
         assert self._news_cache is not None
         return self._news_cache
 
