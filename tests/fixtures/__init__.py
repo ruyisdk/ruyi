@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
+from contextlib import contextmanager
 from importlib import resources
 import pathlib
 import sys
+from typing import Generator
 
 import pytest
 
@@ -11,26 +12,74 @@ from ruyi.utils.global_mode import GlobalModeProvider
 
 class RuyiFileFixtureFactory:
     def __init__(self, module: resources.Package | None = None) -> None:
+        self._fixtures_dir: pathlib.Path | None = None
+
         if sys.version_info < (3, 12):
             assert module is not None
-        self.module = module
+        # Figure out the fixtures path in a compatible way
+        if module is None:
+            # Python 3.12+ fallback - get the directory of this file
+            self._fixtures_dir = pathlib.Path(__file__).parent
+        elif isinstance(module, str):
+            # Import the module and get its path
+            import importlib
 
-    def path(self, *frags: str) -> AbstractContextManager[pathlib.Path]:
-        if sys.version_info < (3, 12):
-            assert self.module is not None
-        return resources.as_file(resources.files(self.module).joinpath(*frags))
-
-    def plugin_suite(self, suite_name: str) -> AbstractContextManager[pathlib.Path]:
-        if sys.version_info < (3, 12):
-            assert self.module is not None
-        path = resources.files(self.module)
-        if sys.version_info >= (3, 11):
-            path = path.joinpath("plugins_suites", suite_name)
+            mod = importlib.import_module(module)
+            if mod.__file__ is not None:
+                self._fixtures_dir = pathlib.Path(mod.__file__).parent
+            else:
+                self._fixtures_dir = pathlib.Path(__file__).parent
         else:
-            path = path.joinpath("plugins_suites")
-            path = path.joinpath(suite_name)
+            self.module = module
 
-        return resources.as_file(path)
+    @contextmanager
+    def path(self, *frags: str) -> Generator[pathlib.Path, None, None]:
+        if self._fixtures_dir is not None:
+            # directly derive the file path for better compatibility
+            result_path = self._fixtures_dir
+            for frag in frags:
+                result_path = result_path / frag
+            yield result_path
+            return
+
+        # fallback to importlib.resources
+        try:
+            path = resources.files(self.module)
+            for frag in frags:
+                path = path.joinpath(frag)
+            with resources.as_file(path) as p:
+                yield p
+                return
+        except (TypeError, FileNotFoundError):
+            pass
+
+        # final fallback - use the directory of this file
+        result_path = pathlib.Path(__file__).parent
+        for frag in frags:
+            result_path = result_path / frag
+        yield result_path
+
+    @contextmanager
+    def plugin_suite(self, suite_name: str) -> Generator[pathlib.Path, None, None]:
+        if self._fixtures_dir is not None:
+            # directly derive the file path for better compatibility
+            result_path = self._fixtures_dir / "plugins_suites" / suite_name
+            yield result_path
+            return
+
+        # fallback to importlib.resources
+        try:
+            path = resources.files(self.module)
+            path = path.joinpath("plugins_suites").joinpath(suite_name)
+            with resources.as_file(path) as p:
+                yield p
+                return
+        except (TypeError, FileNotFoundError):
+            pass
+
+        # final fallback - use the directory of this file
+        result_path = pathlib.Path(__file__).parent / "plugins_suites" / suite_name
+        yield result_path
 
 
 class MockGlobalModeProvider(GlobalModeProvider):
