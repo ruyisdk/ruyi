@@ -1,0 +1,511 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - pyproject.toml
+      - poetry.lock
+      - "**.py"
+      - ".github/**"
+      - "resources/**"
+      - "scripts/**"
+    tags:
+      - "*"
+  pull_request:
+    paths:
+      - pyproject.toml
+      - poetry.lock
+      - "**.py"
+      - ".github/**"
+      - "resources/**"
+      - "scripts/**"
+  merge_group:
+    types: [checks_requested]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} # for each workflow & branch/PR/tag
+  cancel-in-progress: true
+
+# Overall calling sequence:
+#
+# 1. Compliance checks
+# 2. Lints and tests
+# 3. Dist builds
+# 4. Release & PyPI publish (in case of a tag push)
+#
+# Stages 1 to 3 results are summarized by dedicated jobs respectively to
+# simplify dependency declaration for the later stages.
+#
+# PyPI builds are gated by lints passing, but are independent of dist builds
+# because the wheels are built differently from the dist artifacts.
+jobs:
+  dco:
+    name: DCO compliance
+    runs-on: ubuntu-latest
+    steps:
+      # do not run on tags, because our tag description is just "Ruyi 0.x.y"
+      # which causes this check to fail (and possibly among other reasons)
+      - name: Skip for tags
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: exit 0
+
+      - name: Run dco-check
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: christophebedard/dco-check@0.5.0
+        with:
+          python-version: "3.12"
+          args: "--verbose"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pylic:
+    name: license compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+          cache: poetry
+      - name: Install runtime deps
+        run: poetry install --only=main,dev
+      - name: Install pylic
+        run: poetry run pip install pylic
+      - name: List all licenses involved
+        run: poetry run pylic list
+      - name: Check license compatibility with pylic
+        run: poetry run pylic check --allow-extra-safe-licenses
+
+  compliance-result:
+    name: compliance check result
+    runs-on: ubuntu-latest
+    needs:
+      - dco
+      - pylic
+    steps:
+      - name: Summarize compliance check results
+        run: |
+          echo "DCO compliance check: ${{ needs.dco.result }}"
+          echo "License compatibility check: ${{ needs.pylic.result }}"
+          if [ "${{ needs.dco.result }}" != "success" ] || [ "${{ needs.pylic.result }}" != "success" ]; then
+            echo "One or more compliance checks failed."
+            exit 1
+          fi
+          echo "All compliance checks passed."
+
+  lint:
+    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
+    runs-on: ${{ matrix.runs_on }}
+    needs:
+      - compliance-result
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: true
+      matrix:
+        python:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+        experimental: [false]
+        baseline: [false]
+        runs_on: ["ubuntu-latest"]
+        include:
+          # not yet available
+          #- python: '3.14'
+          #  baseline: false
+          #  experimental: true
+          #  runs_on: ubuntu-latest
+          - python: "3.10"
+            baseline: true
+            experimental: false
+            runs_on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
+
+      - name: Install integration test deps
+        if: success() && !matrix.baseline
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq llvm-15-tools pipx schroot wget
+          sudo apt-get clean
+          sudo ln -s /usr/bin/FileCheck-15 /usr/local/bin/FileCheck
+
+          # Ubuntu 22.04 does not have yq in archive
+          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+
+          export PIPX_BIN_DIR=/usr/local/bin
+          sudo PIPX_BIN_DIR=/usr/local/bin pipx install lit
+
+      - name: Install baseline deps system-wide
+        if: success() && matrix.baseline
+        run: ./scripts/install-baseline-deps.sh
+
+      - name: Install Poetry
+        if: success() && !matrix.baseline
+        run: pipx install poetry
+
+      # NOTE: the Poetry venv is created during this step
+      - uses: actions/setup-python@v5
+        if: success() && !matrix.baseline
+        with:
+          python-version: ${{ matrix.python }}
+          cache: poetry
+
+      - name: Install deps in the venv
+        if: success() && !matrix.baseline
+        run: poetry install --with=dev
+
+      # it seems hard for Poetry to only install the dev tools but not break
+      # referencing system-wide deps, in addition to the trouble of
+      # type-checking with ancient versions of deps that lack type
+      # annotations, so just rely on the CI job running with non-baseline deps
+      # for the various lints (but not tests).
+      - name: Lint with ruff
+        if: success() && !matrix.baseline
+        run: poetry run ruff check
+      - name: Type-check with mypy
+        if: success() && !matrix.baseline
+        run: poetry run mypy
+      - name: Type-check with pyright
+        if: success() && !matrix.baseline
+        run: poetry run -- pyright --pythonversion ${{ matrix.python }}
+
+      - name: Test with pytest (in venv)
+        if: success() && !matrix.baseline
+        run: poetry run pytest
+      - name: Test with pytest (system-wide)
+        if: success() && matrix.baseline
+        run: |
+          pip install -e .
+          if command -v pytest-3 > /dev/null; then
+            # this is the case for Ubuntu python3-pytest
+            pytest-3
+          elif command -v pytest > /dev/null; then
+            # fallback
+            pytest
+          fi
+
+      - name: Check for import side effects during CLI startup
+        if: success() && !matrix.baseline
+        run: poetry run ./scripts/lint-cli-startup-flow.py
+
+      - name: Ensure bundled resources are synced with the codebase
+        if: success() && !matrix.baseline
+        run: ./scripts/lint-bundled-resources.sh
+
+      - name: Run integration tests
+        if: success() && !matrix.baseline
+        run: |
+          sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
+          export PIPX_BIN_DIR=/usr/local/bin
+          export RUYI_VERSION=0.38.1
+          ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha
+
+  shellcheck:
+    name: lint shell scripts
+    runs-on: ubuntu-latest
+    needs:
+      - compliance-result
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint with shellcheck
+        run: ./scripts/lint-shell-scripts.sh
+
+  lints-result:
+    name: lints result
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - shellcheck
+    steps:
+      - name: Summarize lints results
+        run: |
+          echo "Lint & typecheck & test: ${{ needs.lint.result }}"
+          echo "Shell script lint: ${{ needs.shellcheck.result }}"
+          if [ "${{ needs.lint.result }}" != "success" ] || [ "${{ needs.shellcheck.result }}" != "success" ]; then
+            echo "One or more lint jobs failed."
+            exit 1
+          fi
+          echo "All lint jobs passed."
+
+  # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+  prepare_matrix_linux:
+    name: "prepare matrix for dist builds (Linux)"
+    runs-on: ubuntu-latest
+    needs:
+      - lints-result
+    outputs:
+      matrix: ${{ steps.gen_matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate the matrix
+        id: gen_matrix
+        run: scripts/gen_matrix.py linux
+        env:
+          RUYI_PR_TITLE: ${{ github.event.pull_request.title }}
+
+  prepare_matrix_windows:
+    name: "prepare matrix for dist builds (Windows)"
+    runs-on: ubuntu-latest
+    needs:
+      - lints-result
+    outputs:
+      matrix: ${{ steps.gen_matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate the matrix
+        id: gen_matrix
+        run: scripts/gen_matrix.py windows
+        env:
+          RUYI_PR_TITLE: ${{ github.event.pull_request.title }}
+
+  dist:
+    needs:
+      - prepare_matrix_linux
+    strategy:
+      # arch: str
+      # build_output_name: str
+      # is_windows: bool
+      # job_name: str
+      # runs_on: RunsOn
+      # skip: bool
+      # upload_artifact_name: str
+      # needs_qemu: bool
+      matrix: ${{ fromJson(needs.prepare_matrix_linux.outputs.matrix) }}
+    name: ${{ matrix.job_name }}
+    runs-on: ${{ matrix.runs_on }}
+    outputs:
+      run_id: ${{ github.run_id }}
+      release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: success() && !matrix.skip && matrix.needs_qemu
+        uses: docker/setup-qemu-action@v3
+
+      - name: Cache deps and Nuitka output
+        if: success() && !matrix.skip
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
+          path: |
+            build-cache
+
+      - name: Record various build info in GHA output
+        if: success() && !matrix.skip
+        id: set_env
+        run: scripts/set-gha-env.py
+
+      - name: Run dist
+        if: success() && !matrix.skip
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ghcr.io
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20250406
+          options: |
+            --user root
+            --platform linux/${{ matrix.arch }}
+            -v ${{ github.workspace }}:/github/workspace
+            -e CI=true
+            -e GITHUB_ACTIONS=true
+          run: /github/workspace/scripts/dist-gha.sh ${{ matrix.arch }}
+
+      - name: Upload artifact
+        if: success() && !matrix.skip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.upload_artifact_name }}
+          path: build/${{ matrix.build_output_name }}
+          compression-level: 0 # the Nuitka onefile payload is already compressed
+
+  dist-windows:
+    needs:
+      - prepare_matrix_windows
+    strategy:
+      # arch: str
+      # build_output_name: str
+      # is_windows: bool
+      # job_name: str
+      # runs_on: RunsOn
+      # skip: bool
+      # upload_artifact_name: str
+      matrix: ${{ fromJson(needs.prepare_matrix_windows.outputs.matrix) }}
+
+    name: ${{ matrix.job_name }}
+    runs-on: ${{ matrix.runs_on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        if: success() && !matrix.skip
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v5
+        if: success() && !matrix.skip
+        with:
+          # don't let the ">=" directive bump the Python version without letting
+          # us know
+          # python-version-file: pyproject.toml
+          python-version: "3.13"
+          cache: poetry
+
+      - name: Cache/restore Nuitka clcache contents
+        if: success() && !matrix.skip
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-tgt-${{ matrix.arch }}
+          path: |
+            /clcache
+
+      - name: Install deps
+        if: success() && !matrix.skip
+        run: poetry install && mkdir /build
+
+      - name: Run dist
+        if: success() && !matrix.skip
+        run: "scripts\\dist.ps1"
+
+      - name: Upload artifact
+        if: success() && !matrix.skip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.upload_artifact_name }}
+          path: /build/${{ matrix.build_output_name }}
+          compression-level: 0 # the Nuitka onefile payload is already compressed
+
+  dist-src:
+    name: "dist build: source archive"
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    needs:
+      - lints-result
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
+          # fetch-tags: true
+          fetch-depth: 0
+          # to include ruyi-litester
+          submodules: recursive
+      - name: Fetch Git tags
+        run: git fetch --tags --force
+      - name: Reproducibly pack the sources
+        id: pack_sources
+        run: ./scripts/make-reproducible-source-tarball.sh /tmp
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pack_sources.outputs.artifact_name }}
+          path: /tmp/${{ steps.pack_sources.outputs.artifact_name }}
+          compression-level: 0 # the archive is already compressed
+
+  dist-result:
+    name: dist builds result
+    runs-on: ubuntu-latest
+    needs:
+      - dist
+      - dist-src
+      - dist-windows
+    outputs:
+      run_id: ${{ github.run_id }}
+      release_mirror_url: ${{ needs.dist.outputs.release_mirror_url }}
+    steps:
+      - name: Summarize dist build results
+        run: |
+          echo "Linux dist build: ${{ needs.dist.result }}"
+          echo "Windows dist build: ${{ needs.dist-windows.result }}"
+          echo "Source archive build: ${{ needs.dist-src.result }}"
+          if [ "${{ needs.dist.result }}" != "success" ] || [ "${{ needs.dist-windows.result }}" != "success" ] || [ "${{ needs.dist-src.result }}" != "success" ]; then
+            echo "One or more dist jobs failed."
+            exit 1
+          fi
+          echo "All dist jobs passed."
+
+  release:
+    name: make a GitHub Release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    needs:
+      - dist-result
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+      - name: Download dist build artifacts for release
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ needs.dist-result.outputs.run_id }}
+          path: tmp/release
+      - name: Organize release artifacts
+        run: scripts/organize-release-artifacts.py tmp/release
+      - name: Render the release notes header
+        run: |
+          sed \
+            "s!@RELEASE_MIRROR_URL@!${{ needs.dist-result.outputs.release_mirror_url }}!g" \
+            < resources/release-notes-header-template.md \
+            > tmp/release-notes-header.md
+      - name: Make the release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: tmp/release-notes-header.md
+          files: tmp/release/ruyi-*
+          generate_release_notes: true
+          prerelease: ${{ contains(needs.dist-result.outputs.release_mirror_url, 'testing') }}
+
+  pypi-build:
+    name: build artifacts for PyPI
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    needs:
+      - lints-result
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      # NOTE: the Poetry venv is created during this step
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          cache: poetry
+
+      - name: Build wheels and sdist with Poetry
+        run: poetry build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pypi-dist
+          path: dist
+          compression-level: 0 # all dist files are already compressed
+
+  pypi-publish:
+    name: upload release to PyPI
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    needs:
+      - pypi-build
+    runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
+    steps:
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pypi-dist
+          path: ${{ github.workspace }}/dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.4

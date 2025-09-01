@@ -84,7 +84,7 @@ def to_matrix_entry(c: Combo, should_run: bool) -> MatrixEntry:
         "arch": c.arch,
         "build_output_name": build_output_name(c),
         "is_windows": c.os == "windows",
-        "job_name": f"{c.os.title()} {c.arch}",
+        "job_name": f"dist build: {c.os.title()} {c.arch}",
         "runs_on": runs_on(c),
         "skip": not should_run,
         "upload_artifact_name": upload_artifact_name(c),
