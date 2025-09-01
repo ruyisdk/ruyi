@@ -4,23 +4,66 @@
 <p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
 </div>
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/dist.yml)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/ci.yml)
 ![GitHub License](https://img.shields.io/github/license/ruyisdk/ruyi)
 ![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-blue)
 ![GitHub Tag](https://img.shields.io/github/v/tag/ruyisdk/ruyi?label=latest%20tag)
+![PyPI - Version](https://img.shields.io/pypi/v/ruyi)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ruyisdk/ruyi/total?label=all%20github%20dl)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/ruyi?label=pypi%20dl)
 
-## Installation and usage
+## Installation
+
+`ruyi` is available in two forms: the PyPI package or the one-file binary
+distribution. Performance of various `ruyi` operations will be better with the
+PyPI installation, but the one-file distribution is a bit easier to set up
+because one doesn't have to first configure a Python environment. Either way,
+the feature set should be the same.
+
+### Recommended: Install from PyPI
+
+This is the recommended way to install `ruyi` on your machine. In any Python
+virtual environment, simply type:
+
+```sh
+pip install ruyi
+```
+
+Or the equivalent with any other Python package manager you prefer. After the
+installation completes, the `ruyi` command will then show up in the Python
+virtual environment's `bin` directory; if you have already activated the
+environment, you may now start using `ruyi`.
+
+### Alternative: Use the one-file distribution
 
 You can get pre-built binaries of `ruyi` from [GitHub Releases][ghr] or
-[the RuyiSDK mirror][mirror-testing] for easier testing.
+[the RuyiSDK mirror][mirror-iscas] for easier testing.
 Rename the downloaded file to `ruyi`, make it executable,
 put inside your `$PATH` and you're ready to go.
 
 [ghr]: https://github.com/ruyisdk/ruyi/releases
-[mirror-testing]: https://mirror.iscas.ac.cn/ruyisdk/ruyi/testing/
+[mirror-iscas]: https://mirror.iscas.ac.cn/ruyisdk/ruyi/tags/
+
+### Platform compatibility notes
+
+Because `ruyi` is written in platform-independent Python, you may be able to
+install `ruyi` on any system with a Python package manager. However, you may
+not be able to install binary packages from the official RuyiSDK Software Repository
+if you are on a system not listed on
+[RuyiSDK's platform support documentation][ruyisdk-plat-support-en]
+([中文][ruyisdk-plat-support-zh]), due to the packages being only built for the
+officially supported systems. You may be able to obtain community-provided
+support from [the RuyiSDK developer community][ruyisdk-community] in such cases.
+
+[ruyisdk-plat-support-en]: https://ruyisdk.org/en/docs/Other/platform-support/
+[ruyisdk-plat-support-zh]: https://ruyisdk.org/docs/Other/platform-support/
+[ruyisdk-community]: https://ruyisdk.cn/
+
+## Usage
 
 You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
-(only available in Chinese right now).
+(only available in Chinese right now). In case you need any assistance, feel
+free to search and post on [our community forum][ruyisdk-community].
 
 [docs]: https://ruyisdk.org/docs/intro
 
@@ -144,7 +187,7 @@ We welcome contributions to Ruyi! Please see our [contribution guidelines](./CON
 
 ## License
 
-Copyright &copy; 2023-2024 Institute of Software, Chinese Academy of Sciences (ISCAS).
+Copyright &copy; Institute of Software, Chinese Academy of Sciences (ISCAS).
 All rights reserved.
 
 `ruyi` is licensed under the [Apache 2.0 license](./LICENSE-Apache.txt).

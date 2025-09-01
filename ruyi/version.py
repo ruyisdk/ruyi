@@ -51,7 +51,7 @@ RUYI_SEMVER: Final = _init_pkg_semver()
 RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE: Final = """\
-Copyright (C) 2023 Institute of Software, Chinese Academy of Sciences (ISCAS).
+Copyright (C) Institute of Software, Chinese Academy of Sciences (ISCAS).
 All rights reserved.
 License: Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0>
 \
