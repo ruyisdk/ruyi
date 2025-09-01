@@ -22,6 +22,10 @@ on:
   merge_group:
     types: [checks_requested]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} # for each workflow & branch/PR/tag
+  cancel-in-progress: true
+
 # Overall calling sequence:
 #
 # 1. Compliance checks
