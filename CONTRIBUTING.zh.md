@@ -20,7 +20,7 @@
 
 DCO 是您通过签署（sign-off）提交的方式而作出的声明。其全文非常简短，转载如下：
 
-```
+```plain
 Developer Certificate of Origin
 Version 1.1
 
@@ -61,26 +61,27 @@ By making a contribution to this project, I certify that:
 
 您需要在每个提交的说明中添加一行 `Signed-off-by`，证明您同意 DCO：
 
-```
+```plain
 Signed-off-by: 您的姓名 <your.email@example.com>
 ```
 
 您可以通过在提交时使用 `-s` 或 `--signoff` 参数自动添加此行：
 
-```
+```sh
 git commit -s -m "您的提交说明"
 ```
 
 确保签名中的姓名和电子邮件与您的 Git 配置匹配。您可以使用以下命令设置您的 Git 姓名和电子邮件：
 
-```
+```sh
 git config --global user.name "您的姓名"
 git config --global user.email "your.email@example.com"
 ```
 
 ### CI 中的 DCO 验证
 
-所有拉取请求（PR）都会在我们的持续集成 (CI) 流程中接受自动化 DCO 检查。此检查会验证您的拉取请求中的所有提交是否都有适当的 DCO 签名。如果任何提交缺少签名，CI 检查将失败，在解决问题之前，您的拉取请求将无法被合并。
+所有拉取请求（PR）都会在我们的持续集成 (CI) 流程中接受自动化 DCO 检查。此检查会验证您的拉取请求中的所有提交是否都有适当的
+DCO 签名。如果任何提交缺少签名，CI 检查将失败，在解决问题之前，您的拉取请求将无法被合并。
 
 ## 拉取请求流程
 

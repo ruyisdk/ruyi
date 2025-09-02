@@ -1,0 +1,10 @@
+# It's fine to switch to different ul style for better readability
+MD004: false
+
+# Use 4 spaces for nested list items for (1) better visual separation and
+# (2) consistency with Python
+MD007:
+  indent: 4
+
+# No impact on readability
+MD034: false

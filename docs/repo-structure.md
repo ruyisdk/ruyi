@@ -11,7 +11,7 @@ Ruyi 软件源承担两种职能，从而也由两部分构成：
 
 参考了 Rust 生态系统的经验，目前的 Ruyi 软件源元数据部分是一个 Git 储存库。其结构类似如下：
 
-```
+```plain
 packages-index
 ├── config.toml
 ├── manifests
@@ -220,7 +220,8 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `untested`：测试状态未知：可能稳定可用，也可能存在问题。
     - `msgid`：当 `level` 为 `known_issue` 时，用来描述问题的文案字符串在 `messages.toml` 中的消息 ID。
     - `params`：键、值类型均为字符串的键值对，是渲染上述消息时要传入的参数。
-* `upstream_version` 是可选的字符串，用来记录该包在上游所用的版本号。这可以让 RuyiSDK 软件源的管理工具在一定程度上感知、处理那些不遵循 SemVer 规范的上游版本号。
+* `upstream_version` 是可选的字符串，用来记录该包在上游所用的版本号。这可以让 RuyiSDK
+  软件源的管理工具在一定程度上感知、处理那些不遵循 SemVer 规范的上游版本号。
 * `distfiles` 内含包的相关分发文件（distfile）声明。其中每条记录：
     - `name` 是文件名。当 `urls` 字段不存在时，表示此文件可从 `${config.dist}/dist/${name}` 这样的路径获取到。
     - `urls` 是可选的 URL 字符串列表，表示此文件可额外从这些 URL 中的任意一个获取到。下载到本地的文件仍应被保存为 `name` 所指的文件名。
@@ -231,13 +232,17 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
     - `checksums` 是文件内容校验和的 K-V 映射，每条记录的 key 为所用的算法，value 为按照该算法得到的该文件预期的校验和。目前接受以下几种算法：
         - `sha256`：值为文件 SHA256 校验和的十六进制表示。
         - `sha512`：值为文件 SHA512 校验和的十六进制表示。
-    - `strip_components` 是可选的整数，表示解压此文件内容时，对每个成员文件名需要忽略的路径前缀段数，遵循 GNU tar 的 `--strip-components` 参数的语义。如不存在，则视作 1。
-    - `prefixes_to_unpack` 是可选的字符串列表，表示仅解压归档中以指定路径前缀开头的文件。目前该字段仅对 tar 格式的归档文件有效，会作为路径参数传递给 `tar` 命令。如果不指定或指定了空列表，则解压归档中的所有文件。出于信息安全考虑，列表中的路径前缀不能以 `-` 字符开头。
+    - `strip_components` 是可选的整数，表示解压此文件内容时，对每个成员文件名需要忽略的路径前缀段数，遵循
+      GNU tar 的 `--strip-components` 参数的语义。如不存在，则视作 1。
+    - `prefixes_to_unpack` 是可选的字符串列表，表示仅解压归档中以指定路径前缀开头的文件。目前该字段仅对
+      tar 格式的归档文件有效，会作为路径参数传递给 `tar` 命令。如果不指定或指定了空列表，则解压归档中的所有文件。出于信息安全考虑，列表中的路径前缀不能以
+      `-` 字符开头。
     - `unpack` 是可选的字符串枚举，表示应如何解包此文件。如不存在此字段，视为 `auto`。如存在此字段，则应无视 `name` 字段所示的文件扩展名，而一定按此字段指定的语义处理。
         - `auto`：按 `name` 字段所示的文件扩展名，自动处理。如遇到不知道如何处理的扩展名则应当报错。
         - `tar.auto`：视作 tarball，但交由 `tar` 命令检查、处理具体的压缩格式。
         - `raw`：不解包。解包动作等价于复制。
-        - `tar` `tar.gz` `tar.bz2` `tar.lz4` `tar.xz` `tar.zst`：视作相应压缩算法（或未压缩）的 tarball 处理。
+        - `tar` `tar.gz` `tar.bz2` `tar.lz4` `tar.xz` `tar.zst`：视作相应压缩算法（或未压缩）的
+          tarball 处理。
         - `gz` `bz2` `lz4` `xz` `zst`：视作相应压缩算法的字节流处理，解包后的文件名为 `name` 所示文件名去除最后一层后缀后的结果。
         - `zip` ：视作 Zip 归档文件处理。
         - `deb`：视作 Debian 软件包文件处理。
@@ -245,7 +250,9 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `msgid`：该文件的下载步骤说明文案，在 `messages.toml` 中的消息 ID。
         - `params`：键、值类型均为字符串的键值对，是渲染该消息时要传入的参数。
 * `binary` 仅在 `kind` 含有 `binary` 时有意义，表示适用于二进制包的额外信息。其类型为列表，每条记录：
-    - `host` 代表该条记录所指的二进制包适用的宿主架构与操作系统，格式为 `os/arch` 或 `arch`；当 `os` 部分省略时，视作 `linux`。`arch` 部分的语义与 Python 的 `platform.machine()` 返回值相同。`os` 部分的语义与 Python 的 `sys.platform` 相同，但将 `win32` 变为 `windows`。
+    - `host` 代表该条记录所指的二进制包适用的宿主架构与操作系统，格式为 `os/arch` 或 `arch`；当
+      `os` 部分省略时，视作 `linux`。`arch` 部分的语义与 Python 的 `platform.machine()`
+      返回值相同。`os` 部分的语义与 Python 的 `sys.platform` 相同，但将 `win32` 变为 `windows`。
     - `distfiles` 是分发文件名的列表，每条分发文件的具体定义参照 `distfiles` 字段。要为此宿主安装该包，下载并解压所有这些分发文件到相同目标目录即可。
     - `commands` 是可选的键值对，用来将该包所提供的一些命令暴露供用户或虚拟环境调用。其中每个键是需要暴露的命令名称，值为相应命令基于该包安装路径根的相对路径。
 * `blob` 仅在 `kind` 含有 `blob` 时有意义，表示适用于二进制数据包的额外信息。其中：
@@ -258,7 +265,8 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
         - `xthead`：工具链是由 T-Head 源码构建而成，尤其其 `-mcpu` 取值方式与上游不同。
     - `flavors` 是 `quirks` 的别名，为了兼容性而保留。
     - `components` 是该包所含的标准组件及相应（等价）版本的列表。目前暂时没有用上，后续可能会基于此提供展示、过滤、匹配等功能。
-    - `included_sysroot` 是可选的字符串。如果该字段存在，则代表在解压该包后，此相对路径是指向目标目录下的一个可供直接复制而为虚拟环境所用的 sysroot 目录。
+    - `included_sysroot` 是可选的字符串。如果该字段存在，则代表在解压该包后，此相对路径是指向目标目录下的一个可供直接复制而为虚拟环境所用的
+      sysroot 目录。
 * `emulator` 仅在 `kind` 含有 `emulator` 时有意义，表示适用于模拟器包的额外信息。其中：
     - `quirks` 是自由形态字符串的列表，用于表示模拟器的特殊特征（如支持某厂商未上游的特性，或 `-cpu` 逻辑与社区版本不同等等）。目前定义了：
         - `xthead`：模拟器是由 T-Head 源码构建而成，尤其其 `-cpu`/`QEMU_CPU` 取值方式与上游不同。
@@ -280,12 +288,14 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
     - `strategy` 是 Ruyi 设备安装器在安装该包时所应采取的策略，可选的值有：
         - `dd-v1`：对 `partition_map` 中声明的每个分区，询问用户相应的设备文件路径，然后分别以 `sudo dd` 方式刷写目标设备。
         - `fastboot-v1`：按照 `partition_map` 的定义，以 `sudo fastboot` 方式刷写目标设备。
-        - `fastboot-v1(lpi4a-uboot)`：以 LicheePi 4A 文档推荐的方式，按照 `partition_map` 中 `uboot` 分区的定义刷写目标设备。
+        - `fastboot-v1(lpi4a-uboot)`：以 LicheePi 4A 文档推荐的方式，按照 `partition_map`
+          中 `uboot` 分区的定义刷写目标设备。
 
 同时请注意，目前 `ruyi` 的参考实现存在如下的特殊情况：
 
 * 目前未实现分发文件的 `restrict: fetch` 功能。其具体实现细节仍待进一步细化。
-* 目前 Zip 压缩包的解压工作由系统的 `unzip` 命令提供。由于该命令不支持类似 `tar` 的 `--strip-components` 选项，因此 Zip 格式的分发文件的 `strip_components` 配置目前不会被尊重。
+* 目前 Zip 压缩包的解压工作由系统的 `unzip` 命令提供。由于该命令不支持类似 `tar` 的
+  `--strip-components` 选项，因此 Zip 格式的分发文件的 `strip_components` 配置目前不会被尊重。
 
 ### `news`
 

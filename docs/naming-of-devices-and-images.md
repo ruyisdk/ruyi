@@ -26,7 +26,7 @@ RuyiSDK 体系内的命名作出一些约定。
 |-----------|------------|
 | `awol` | Allwinner |
 | `canaan` | Canaan |
-| `milkv` | Milk-V
+| `milkv` | Milk-V |
 | `pine64` | Pine64 |
 | `sifive` | SiFive |
 | `sipeed` | Sipeed |
@@ -45,7 +45,9 @@ RuyiSDK 体系内的命名作出一些约定。
     * LicheePi 4A = `lpi4a`
     * Meles = `meles`
     * Pioneer Box = `pioneer`
-* 如相应厂商没有对某型板卡使用完善、一致的 codename，但在自然语言中，该板卡一般被称作“芯片型号 (chip model) + 产品形态 (form factor)”的形式，则使用 `$chip_model-$form_factor` 的全小写形式。例如：
+* 如相应厂商没有对某型板卡使用完善、一致的 codename，但在自然语言中，该板卡一般被称作“芯片型号
+  (chip model) + 产品形态 (form factor)”的形式，则使用 `$chip_model-$form_factor`
+  的全小写形式。例如：
     * CH32V203 EVB = `ch32v203-evb`
 * 如果上述两条都不能很好满足，则使用产品市场名称的全小写形式。例如：
     * Tang Mega 138K Pro = `tangmega138kpro`
@@ -75,9 +77,12 @@ RuyiSDK 设备安装器中，我们不在“设备”一级区分这些 SKU，�
 
 ## 系统镜像包名
 
-应为 `board-image/$os-$device_id` 或 `board-image/$os-$device_id-$variant` (当 variant 不为 `generic` 且区分 variant 很重要时) 的形式。
+应为 `board-image/$os-$device_id` 或 `board-image/$os-$device_id-$variant` (当
+variant 不为 `generic` 且区分 variant 很重要时) 的形式。
 
 例如：
 
-* `board-image/revyos-milkv-meles`: 虽然 `milkv-meles` 有 `4g` 与 `8g` 两种变体，但 RevyOS 对此无感，故不在命名上体现变体。
-* `board-image/uboot-revyos-milkv-meles-4g`: 由于 U-Boot 对板载 RAM 容量敏感，故需要在名称上区分不同变体。
+* `board-image/revyos-milkv-meles`: 虽然 `milkv-meles` 有 `4g` 与 `8g` 两种变体，但
+  RevyOS 对此无感，故不在命名上体现变体。
+* `board-image/uboot-revyos-milkv-meles-4g`: 由于 U-Boot 对板载 RAM
+  容量敏感，故需要在名称上区分不同变体。
