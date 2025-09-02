@@ -1,8 +1,14 @@
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable MD033 MD041 -->
 <div align="center">
 <img alt="RuyiSDK Logo" src="resources/ruyi-logo-256.png" height="128" />
 <h3>Ruyi</h3>
-<p>The package manager for <a href="https://github.com/ruyisdk">RuyiSDK</a>.</p>
+<p>The package manager for <a href="https://ruyisdk.org/en/">RuyiSDK</a>.</p>
+<p><a href="https://ruyisdk.org/en/">Official website</a> |
+<a href="https://ruyisdk.cn">Developer community</a> |
+<a href="https://github.com/ruyisdk">Open-source</a></p>
 </div>
+<!-- markdownlint-restore -->
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/ci.yml)
 ![GitHub License](https://img.shields.io/github/license/ruyisdk/ruyi)
@@ -192,7 +198,8 @@ on the RuyiSDK website.
 
 ## 🙋 Contributing
 
-We welcome contributions to RuyiSDK! Please see our [contribution guidelines](./CONTRIBUTING.md) ([中文](./CONTRIBUTING.zh.md)) for details on how to get started.
+We welcome contributions to RuyiSDK! Please see our [contribution guidelines](./CONTRIBUTING.md)
+([中文](./CONTRIBUTING.zh.md)) for details on how to get started.
 
 ## ⚖️ License
 

@@ -3,9 +3,13 @@
 为降低发行版打包的工作量，以及保证非单文件形式分发的 `ruyi` 能与发行版在系统级提供的各种依赖组件正常交互，有必要认真对待
 `ruyi` 的各种依赖的版本。在实现或修复某些功能的时候，如果涉及新增依赖或变更依赖版本，需要谨慎行事。
 
-本文档是对 RuyiSDK 文档站[《RuyiSDK 的平台支持情况》](https://ruyisdk.org/docs/Other/platform-support/)一文，从开发角度进行的补充：为了实现 RuyiSDK 所承诺的平台兼容性，在代码层面需要考虑的各项依赖的最低版本。
+本文档是对 RuyiSDK 文档站[《RuyiSDK 的平台支持情况》](https://ruyisdk.org/docs/Other/platform-support/)一文，从开发角度进行的补充：为了实现
+RuyiSDK 所承诺的平台兼容性，在代码层面需要考虑的各项依赖的最低版本。
 
 以下是 `ruyi` 重点依赖的 **架构相关** 软件包在一些发行版的提供情况：
+
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable MD013 -->
 
 | 发行版版本              | Python | pygit2 | pyyaml                 |
 |-------------------------|--------|--------|------------------------|
@@ -23,10 +27,15 @@
 | Ubuntu 22.04 LTS        | 3.10   | 1.6.1  | 5.4.1 [^debian-pyyaml] |
 | Ubuntu 24.04 LTS        | 3.12   | 1.14.1 | 6.0.1 [^debian-pyyaml] |
 
+<!-- markdownlint-restore -->
+
 [^deb13]: 尚未正式发布，但软件包版本已在一定程度上冻结
 [^debian-pyyaml]: 包名为 `python3-yaml`
 
 以下是 `ruyi` 依赖的 **架构无关** 软件包在一些发行版的提供情况：
+
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable MD013 -->
 
 | 发行版版本              | argcomplete | arpy  | certifi    | fastjsonschema | jinja2 | packaging | requests | rich   | semver | tomlkit | typing\_extensions |
 | ----------------------- | ----------- | ----- | ---------- | -------------- | ------ | --------- | -------- | ------ | ------ | ------- | ------------------ |
@@ -43,3 +52,5 @@
 | openKylin 2.0           | 1.8.1       | 1.1.1 | 2023.11.17 | :x:            | 3.1.2  | 24.0      | 2.31.0   | :x:    | 2.0.1  | :x:     | 4.10.0             |
 | Ubuntu 22.04 LTS        | 3.1.4       | 1.1.1 | 2020.6.20  | 2.15.1         | 3.0.3  | 21.3      | 2.25.1   | 11.2.0 | 2.10.2 | 0.9.2   | 3.10.0.2           |
 | Ubuntu 24.04 LTS        | 3.1.4       | 1.1.1 | 2023.11.17 | 2.19.0         | 3.1.2  | 24.0      | 2.31.0   | 13.7.1 | 2.10.2 | 0.12.4  | 4.10.0             |
+
+<!-- markdownlint-restore -->

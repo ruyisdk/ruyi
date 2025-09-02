@@ -1,8 +1,14 @@
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable MD033 MD041 -->
 <div align="center">
 <img alt="RuyiSDK Logo" src="resources/ruyi-logo-256.png" height="128" />
 <h3>Ruyi</h3>
-<p><a href="https://github.com/ruyisdk">RuyiSDK</a> 的包管理器。</p>
+<p><a href="https://ruyisdk.org">RuyiSDK</a> 的包管理器。</p>
+<p><a href="https://ruyisdk.org">官网</a> |
+<a href="https://ruyisdk.cn">开发者社区</a> |
+<a href="https://github.com/ruyisdk">开放源代码</a></p>
 </div>
+<!-- markdownlint-restore -->
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ruyisdk/ruyi/ci.yml)
 ![GitHub License](https://img.shields.io/github/license/ruyisdk/ruyi)
@@ -13,6 +19,10 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/ruyi?label=pypi%20dl)
 
 🌍 [English](./README.md) | 简体中文
+
+<!-- disable line length lint to avoid unwanted word breaks in Chinese
+     paragraph flow -->
+<!-- markdownlint-disable MD013 -->
 
 ## ⬇️ 安装
 
