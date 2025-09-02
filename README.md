@@ -12,9 +12,9 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ruyisdk/ruyi/total?label=all%20github%20dl)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/ruyi?label=pypi%20dl)
 
-English | [简体中文](./README.zh.md)
+🌍 English | [简体中文](./README.zh.md)
 
-## Installation
+## ⬇️ Installation
 
 `ruyi` is available in two forms: the PyPI package or the one-file binary
 distribution. Performance of various `ruyi` operations will be better with the
@@ -22,7 +22,7 @@ PyPI installation, but the one-file distribution is a bit easier to set up
 because one doesn't have to first configure a Python environment. Either way,
 the feature set should be the same.
 
-### Recommended: Install from PyPI
+### ✅ Recommended: Install from PyPI
 
 This is the recommended way to install `ruyi` on your machine. In any Python
 virtual environment, simply type:
@@ -61,15 +61,16 @@ support from [the RuyiSDK developer community][ruyisdk-community] in such cases.
 [ruyisdk-plat-support-zh]: https://ruyisdk.org/docs/Other/platform-support/
 [ruyisdk-community]: https://ruyisdk.cn/
 
-## Usage
+## 🖥️ Usage
 
-You can browse the documentation at [the dedicated RuyiSDK docs site][docs]
-(only available in Chinese right now). In case you need any assistance, feel
+You can browse our documentation at [the dedicated RuyiSDK docs site][docs-en]
+([中文][docs-zh]). In case you need any assistance, feel
 free to search and post on [our community forum][ruyisdk-community].
 
-[docs]: https://ruyisdk.org/docs/intro
+[docs-en]: https://ruyisdk.org/en/docs/intro/
+[docs-zh]: https://ruyisdk.org/docs/intro/
 
-## Configuration
+## ⚙️ Configuration
 
 Various aspects of `ruyi` can be configured with files or environment variables.
 
@@ -139,7 +140,7 @@ Currently the following environment variables are supported by `ruyi`:
 For boolean variables, the values `1`, `true`, `x`, `y` or `yes` (all case-insensitive)
 are all treated as "true".
 
-### Telemetry
+## 📞 Telemetry
 
 The Ruyi package manager collects usage data in order to help us improve your
 experience. It is collected by the RuyiSDK team and shared with the community.
@@ -162,8 +163,8 @@ The upload will happen on a random weekday which is determined by the
 installation's anonymous ID alone.
 
 You can change the telemetry mode by editing `ruyi`'s config file, or simply
-by setting the `RUYI_TELEMETRY_OPTOUT` environment variable to any of the
-values accepted as truthy.
+disable telemetry altogether by setting the `RUYI_TELEMETRY_OPTOUT` environment
+variable to any of the values accepted as truthy.
 
 We collect the following information with `ruyi`:
 
@@ -183,11 +184,17 @@ We collect the following information with `ruyi`:
 
 You can see our Privacy Policy on the RuyiSDK website.
 
-## Contributing
+You can see [our Privacy Policy][privacy-policy-en] ([中文][privacy-policy-zh])
+on the RuyiSDK website.
 
-We welcome contributions to Ruyi! Please see our [contribution guidelines](./CONTRIBUTING.md) ([中文](./CONTRIBUTING.zh.md)) for details on how to get started.
+[privacy-policy-en]: https://ruyisdk.org/en/docs/legal/privacyPolicy/
+[privacy-policy-zh]: https://ruyisdk.org/docs/legal/privacyPolicy/
 
-## License
+## 🙋 Contributing
+
+We welcome contributions to RuyiSDK! Please see our [contribution guidelines](./CONTRIBUTING.md) ([中文](./CONTRIBUTING.zh.md)) for details on how to get started.
+
+## ⚖️ License
 
 Copyright &copy; Institute of Software, Chinese Academy of Sciences (ISCAS).
 All rights reserved.

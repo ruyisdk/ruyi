@@ -12,13 +12,13 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ruyisdk/ruyi/total?label=all%20github%20dl)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/ruyi?label=pypi%20dl)
 
-[English](./README.md) | 简体中文
+🌍 [English](./README.md) | 简体中文
 
-## 安装
+## ⬇️ 安装
 
 `ruyi` 以两种形式分发：PyPI 软件包、单二进制文件。通过 PyPI 安装时，`ruyi` 的各项操作通常性能更好；而单文件形式更容易上手，因为无需事先配置 Python 环境。无论您使用哪种方式安装，`ruyi` 支持的功能都应当一致。
 
-### 推荐：通过 PyPI 安装
+### ✅ 推荐：通过 PyPI 安装
 
 我们推荐在您的机器上如此安装 `ruyi`。在任意 Python 虚拟环境中，执行：
 
@@ -43,13 +43,14 @@ pip install ruyi
 [ruyisdk-plat-support-zh]: https://ruyisdk.org/docs/Other/platform-support/
 [ruyisdk-community]: https://ruyisdk.cn/
 
-## 使用
+## 🖥️ 使用
 
-您可以在 [RuyiSDK 文档站][docs]查阅文档（目前仅提供中文版）。如需帮助，欢迎在[我们的社区论坛][ruyisdk-community]搜索或发贴。
+您可以在我们专门设立的 RuyiSDK 文档站查阅[文档][docs-zh]（[English][docs-en]）。如需帮助，欢迎在[我们的社区论坛][ruyisdk-community]搜索或发贴。
 
-[docs]: https://ruyisdk.org/docs/intro
+[docs-en]: https://ruyisdk.org/en/docs/intro/
+[docs-zh]: https://ruyisdk.org/docs/intro/
 
-## 配置
+## ⚙️ 配置
 
 `ruyi` 的各项行为可以通过配置文件或环境变量进行配置。
 
@@ -106,7 +107,7 @@ upload_consent = ""
 
 对于布尔值，`1`、`true`、`x`、`y` 或 `yes`（不区分大小写）均视为“真”。
 
-### 遥测
+## 📞 遥测
 
 Ruyi 包管理器会收集使用数据，以帮助我们改进您的使用体验。数据由 RuyiSDK 团队收集，并与社区共享。您可以通过在常用的 Shell 中将环境变量 `RUYI_TELEMETRY_OPTOUT` 设为 `1`、`true`、`x`、`y` 或 `yes` 中的任意一个，来选择退出遥测。退出遥测等效于下述的 `off` 模式。
 
@@ -136,13 +137,16 @@ Ruyi 包管理器会收集使用数据，以帮助我们改进您的使用体验
     * 不暴露任何参数
     * 调用时间以 1 分钟为粒度记录
 
-你可以在 RuyiSDK 网站上查看我们的隐私政策。
+你可以在 [RuyiSDK 网站][privacy-policy-zh]上查看我们的隐私政策（[English][privacy-policy-en]）。
 
-## 贡献
+[privacy-policy-en]: https://ruyisdk.org/en/docs/legal/privacyPolicy/
+[privacy-policy-zh]: https://ruyisdk.org/docs/legal/privacyPolicy/
 
-欢迎您为 Ruyi 做贡献！请参阅我们的[贡献指南](./CONTRIBUTING.zh.md)（[English](./CONTRIBUTING.md)）以了解如何开始。
+## 🙋 贡献
 
-## 许可
+欢迎您为 RuyiSDK 做贡献！请参阅我们的[贡献指南](./CONTRIBUTING.zh.md)（[English](./CONTRIBUTING.md)）以了解如何开始。
+
+## ⚖️ 许可
 
 版权所有 © 中国科学院软件研究所（ISCAS）。保留所有权利。
 
