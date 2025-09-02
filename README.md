@@ -12,6 +12,8 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ruyisdk/ruyi/total?label=all%20github%20dl)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/ruyi?label=pypi%20dl)
 
+English | [简体中文](./README.zh.md)
+
 ## Installation
 
 `ruyi` is available in two forms: the PyPI package or the one-file binary
