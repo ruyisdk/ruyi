@@ -22,7 +22,12 @@ def main(argv: list[str]) -> int:
     with open(project_root / "pyproject.toml", "rb") as fp:
         pyproject = tomllib.load(fp)
 
-    version = pyproject["project"]["version"]
+    try:
+        version = pyproject["project"]["version"]
+    except KeyError:
+        # In case the packaging environment has Poetry 1.x metadata switched
+        # in
+        version = pyproject["tool"]["poetry"]["version"]
 
     # layout of release-artifacts-dir just after the download-artifacts@v4
     # action:
