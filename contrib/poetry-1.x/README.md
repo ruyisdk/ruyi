@@ -11,3 +11,6 @@ mv contrib/poetry-1.x/{pyproject.toml,poetry.lock} .
 ```
 
 Then you should be able to continue building with Poetry 1.x.
+
+The metadata provided here is generated with Poetry 1.0.7, which is what
+Ubuntu 22.04 provides.
