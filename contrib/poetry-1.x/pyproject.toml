@@ -1,0 +1,128 @@
+[build-system]
+requires = ["poetry-core<2"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "ruyi"
+version = "0.41.0-alpha.20250902"
+description = "Package manager for RuyiSDK"
+keywords = ["ruyi", "ruyisdk"]
+license = "Apache-2.0"
+readme = "README.md"
+authors = [
+  "WANG Xuerui <wangxuerui@iscas.ac.cn>",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Embedded Systems",
+  "Topic :: System :: Software Distribution",
+  "Typing :: Typed",
+]
+include = ["ruyi/py.typed"]
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+arpy = "*"
+fastjsonschema = ">=2.15.1"
+jinja2 = "^3"
+packaging = ">=21"
+pygit2 = ">=1.6"
+pyyaml = ">=5.4"
+requests = "^2"
+rich = ">=11.2.0"
+semver = ">=2.10"
+tomlkit = ">=0.9"
+tomli = { version = ">=1.2", python = "<3.11" }
+tzdata = { version = "*", platform = "win32" }
+argcomplete = ">=2.0.0,<4.0.0"
+
+[tool.poetry.scripts]
+ruyi = "ruyi.__main__:entrypoint"
+
+[project.urls]
+homepage = "https://ruyisdk.org"
+documentation = "https://ruyisdk.org/docs/intro"
+download = "https://ruyisdk.org/download"
+github = "https://github.com/ruyisdk/ruyi"
+issues = "https://github.com/ruyisdk/ruyi/issues"
+repository = "https://github.com/ruyisdk/ruyi.git"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.9.0"
+pyright = "^1.1.389"
+pytest = ">=6.2.5"
+ruff = "^0.8.1"
+tomlkit-extras = "^0.2.0"
+typing-extensions = ">=3.10.0.2"
+
+types-cffi = "^1.16.0.20240106"
+types-pygit2 = "^1.14.0.20240317"
+types-PyYAML = "^6.0.12.20240311"
+types-requests = "^2.31.0.20240311"
+
+[tool.poetry.group.dist.dependencies]
+certifi = "*"
+nuitka = "^2.0"
+
+
+[tool.mypy]
+files = ["ruyi", "scripts", "tests"]
+exclude = [
+  "tests/ruyi-litester",
+]
+show_error_codes = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+# https://github.com/eyeseast/python-frontmatter/issues/112
+# https://github.com/python/mypy/issues/8545
+# have to supply the typing info until upstream releases a new version with
+# the py.typed marker included
+mypy_path = "./stubs"
+
+
+[tool.pylic]
+safe_licenses = [
+  "Apache Software License",
+  "BSD License",
+  "GPLv2 with linking exception",
+  "MIT",  # pyright spells "MIT License" differently
+  "MIT License",
+  "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
+  "PSF-2.0",  # typing_extensions 4.13
+
+  # not ruyi deps, but brought in by pylic which unfortunately cannot live
+  # outside of the project venv in order to work.
+  # Fortunately though, they are all permissive licenses, so inclusion of
+  # them would not accidentally allow unsafe licenses into the project.
+  "ISC License (ISCL)",  # shellingham
+  "BSD-2-Clause",  # boolean.py
+  "BSD-3-Clause",  # click
+  "Apache-2.0",  # license-expression
+]
+
+
+[tool.pyright]
+include = ["ruyi", "scripts", "tests"]
+exclude = ["**/__pycache__", "tests/ruyi-litester", "tmp"]
+stubPath = "./stubs"
+pythonPlatform = "Linux"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
+[tool.ruff]
+extend-exclude = [
+  "tests/ruyi-litester",
+]

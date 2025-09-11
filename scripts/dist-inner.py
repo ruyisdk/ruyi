@@ -219,7 +219,12 @@ def get_versions() -> dict[str, str]:
     with open("pyproject.toml", "rb") as fp:
         pyproject = tomllib.load(fp)
 
-    version = pyproject["project"]["version"]
+    try:
+        version = pyproject["project"]["version"]
+    except KeyError:
+        # In case the packaging environment has Poetry 1.x metadata switched
+        # in
+        version = pyproject["tool"]["poetry"]["version"]
 
     return {
         "git_commit": get_git_commit(),
