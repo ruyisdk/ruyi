@@ -5,7 +5,9 @@ see https://github.com/kislyuk/argcomplete/issues/443 for why this is needed
 """
 
 import argparse
-from typing import Any, Callable, Optional, Sequence, cast
+from typing import Any, Callable, Final, Optional, Sequence, cast
+
+SUPPORTED_SHELLS: Final[set[str]] = {"bash", "zsh"}
 
 
 class ArgcompleteAction(argparse.Action):

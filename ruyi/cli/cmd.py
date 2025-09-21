@@ -198,7 +198,9 @@ class RootCommand(
             return 0
         # the rest are implementation of "--output-completion-script"
 
-        if sh not in {"bash", "zsh"}:
+        from .completion import SUPPORTED_SHELLS
+
+        if sh not in SUPPORTED_SHELLS:
             raise ValueError(f"Unsupported shell: {sh}")
 
         import sys
