@@ -28,6 +28,8 @@
 
 `ruyi` 以两种形式分发：PyPI 软件包、单二进制文件。通过 PyPI 安装时，`ruyi` 的各项操作通常性能更好；而单文件形式更容易上手，因为无需事先配置 Python 环境。无论您使用哪种方式安装，`ruyi` 支持的功能都应当一致。
 
+您也可以[在我们的文档站](https://ruyisdk.org/docs/Package-Manager/installation)查阅详细的安装步骤说明。
+
 ### ✅ 推荐：通过 PyPI 安装
 
 我们推荐在您的机器上如此安装 `ruyi`。在任意 Python 虚拟环境中，执行：
