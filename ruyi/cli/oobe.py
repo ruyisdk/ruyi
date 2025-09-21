@@ -62,6 +62,11 @@ class OOBE:
         from ..telemetry.node_info import probe_for_shell
         from .completion import SUPPORTED_SHELLS
 
+        # Only show the tip if we're not externally managed by a package manager,
+        # because we expect proper shell integration to be done by distro packagers
+        if self._gc.is_installation_externally_managed:
+            return
+
         shell = probe_for_shell(os.environ)
         if shell not in SUPPORTED_SHELLS:
             return
