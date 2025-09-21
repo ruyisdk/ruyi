@@ -1,5 +1,6 @@
 """First-run (Out-of-the-box) experience for ``ruyi``."""
 
+import os
 import sys
 from typing import Callable, TYPE_CHECKING
 
@@ -7,12 +8,26 @@ if TYPE_CHECKING:
     from ..config import GlobalConfig
 
 
+SHELL_AUTO_COMPLETION_TIP = """
+[bold green]tip[/]: you can enable shell auto-completion for [yellow]ruyi[/] by adding the
+following line to your [green]{shrc}[/], if you have not done so already:
+
+    [green]eval "$(ruyi --output-completion-script={shell})"[/]
+
+You can do so by running the following command later:
+
+    [green]echo 'eval "$(ruyi --output-completion-script={shell})"' >> {shrc}[/]
+"""
+
+
 class OOBE:
     """Out-of-the-box experience (OOBE) handler for RuyiSDK CLI."""
 
     def __init__(self, gc: "GlobalConfig") -> None:
         self._gc = gc
-        self.handlers: list[Callable[[], None]] = []
+        self.handlers: list[Callable[[], None]] = [
+            self._builtin_shell_completion_tip,
+        ]
 
     def is_first_run(self) -> bool:
         if tm := self._gc.telemetry:
@@ -37,3 +52,18 @@ class OOBE:
 
         for handler in self.handlers:
             handler()
+
+    def _builtin_shell_completion_tip(self) -> None:
+        from ..telemetry.node_info import probe_for_shell
+        from .completion import SUPPORTED_SHELLS
+
+        shell = probe_for_shell(os.environ)
+        if shell not in SUPPORTED_SHELLS:
+            return
+
+        self._gc.logger.stdout(
+            SHELL_AUTO_COMPLETION_TIP.format(
+                shell=shell,
+                shrc=f"~/.{shell}rc",
+            )
+        )
