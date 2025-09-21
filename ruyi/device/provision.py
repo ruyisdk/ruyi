@@ -15,7 +15,7 @@ from ..ruyipkg.pkg_manifest import (
     PartitionMapDecl,
 )
 from ..ruyipkg.repo import MetadataRepo
-from ..utils import prereqs
+from ..utils import mounts, prereqs
 
 if TYPE_CHECKING:
     from ..ruyipkg.pkg_manifest import BoundPackageManifest
@@ -209,10 +209,31 @@ information you will need later.
         )
         for part in requested_host_blkdevs:
             part_desc = get_part_desc(part)
-            path = user_input.ask_for_file(
-                logger,
-                f"Please give the path for the {part_desc}:",
-            )
+
+            while True:
+                path = user_input.ask_for_file(
+                    logger,
+                    f"Please give the path for the {part_desc}:",
+                )
+
+                # Retrieve the latest mount info in case the user un-mounts
+                # on seeing the prompt
+                all_mounts = mounts.parse_mounts()
+                blkdev_mounts = [m for m in all_mounts if m.source_is_blkdev]
+                path_valid = True
+                for m in blkdev_mounts:
+                    if m.source_path.samefile(path):
+                        logger.W(
+                            f"path [cyan]'{path}'[/] is currently mounted at [yellow]'{m.target}'[/]"
+                        )
+                        logger.I(
+                            "rejecting the path for safety; please double-check and retry"
+                        )
+                        path_valid = False
+                        break
+                if path_valid:
+                    break
+
             host_blkdev_map[part] = path
 
     # final confirmation
