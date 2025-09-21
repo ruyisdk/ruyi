@@ -39,6 +39,11 @@ class OOBE:
         return False
 
     def should_prompt(self) -> bool:
+        from ..utils.global_mode import is_env_var_truthy
+
+        if is_env_var_truthy(os.environ, "RUYI_DEBUG_FORCE_FIRST_RUN"):
+            return True
+
         return self.is_first_run() and sys.stdin.isatty()
 
     def maybe_prompt(self) -> None:
