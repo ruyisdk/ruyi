@@ -3,7 +3,6 @@ import datetime
 import functools
 import json
 import pathlib
-import sys
 import time
 from typing import Callable, TYPE_CHECKING, cast
 import uuid
@@ -19,9 +18,7 @@ if TYPE_CHECKING:
 
 FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
-FIRST_RUN_PROMPT = """\
-Welcome to RuyiSDK! This appears to be your first run of [yellow]ruyi[/].
-
+TELEMETRY_INITIAL_UPLOAD_PROMPT = """
 By default, the RuyiSDK team collects anonymous usage data to help us improve
 the product. No personal information or detail about your project is ever
 collected. The data will be uploaded to RuyiSDK team-managed servers located
@@ -388,19 +385,12 @@ class TelemetryProvider:
 
         return store.upload_staged_payloads()
 
-    def maybe_prompt_for_first_run_upload(self) -> None:
-        """
-        Ask whether the user consents to a first-run telemetry upload when
-        running for the first time (OOBE) and with an interactive stdin.
-        """
-
-        # Only prompt if this is first run and stdin is a TTY
-        if not (self.is_first_run and sys.stdin.isatty()):
-            return
+    def oobe_prompt(self) -> None:
+        """Ask whether the user consents to a first-run telemetry upload."""
 
         from ..cli import user_input
 
-        self.logger.I(FIRST_RUN_PROMPT)
+        self.logger.stdout(TELEMETRY_INITIAL_UPLOAD_PROMPT)
         if not user_input.ask_for_yesno_confirmation(
             self.logger,
             "Do you agree?",

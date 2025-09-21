@@ -7,6 +7,7 @@ from ..config import GlobalConfig
 from ..telemetry.scope import TelemetryScope
 from ..utils.global_mode import GlobalModeProvider
 from . import RUYI_ENTRYPOINT_NAME
+from .oobe import OOBE
 
 ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
     RUYI_ENTRYPOINT_NAME,
@@ -21,11 +22,15 @@ def is_called_as_ruyi(argv0: str) -> bool:
 
 
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
+    oobe = OOBE(gc)
+
     if tm := gc.telemetry:
         tm.check_first_run_status()
         tm.init_installation(False)
         atexit.register(tm.flush)
-        tm.maybe_prompt_for_first_run_upload()
+        oobe.handlers.append(tm.oobe_prompt)
+
+    oobe.maybe_prompt()
 
     if not is_called_as_ruyi(gm.argv0):
         from ..mux.runtime import mux_main
