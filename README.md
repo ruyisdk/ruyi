@@ -188,8 +188,6 @@ We collect the following information with `ruyi`:
     * without exposing any parameters
     * invocation time is recorded with a granularity of 1 minute
 
-You can see our Privacy Policy on the RuyiSDK website.
-
 You can see [our Privacy Policy][privacy-policy-en] ([中文][privacy-policy-zh])
 on the RuyiSDK website.
 
