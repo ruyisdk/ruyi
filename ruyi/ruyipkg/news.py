@@ -32,6 +32,25 @@ def print_news_item_titles(
     logger.stdout(tbl)
 
 
+def maybe_notify_unread_news(
+    gc: GlobalConfig,
+    prompt_no_unread: bool = True,
+) -> None:
+    """Check if there are new newsitems, notify the user if so."""
+
+    unread_newsitems = gc.repo.news_store().list(True)
+    if unread_newsitems:
+        gc.logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
+        print_news_item_titles(gc.logger, unread_newsitems, gc.lang_code)
+        gc.logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
+        return
+
+    if prompt_no_unread:
+        gc.logger.stdout(
+            "\nAll news items have been read. To see a list of them, run [yellow]ruyi news list[/].\n"
+        )
+
+
 def do_news_list(
     cfg: GlobalConfig,
     only_unread: bool,

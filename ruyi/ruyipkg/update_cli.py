@@ -44,11 +44,6 @@ Re-run [yellow]ruyi install[/] to upgrade, and don't forget to re-create any aff
 virtual environments."""
             )
 
-        # check if there are new newsitems
-        unread_newsitems = mr.news_store().list(True)
-        if unread_newsitems:
-            logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
-            news.print_news_item_titles(logger, unread_newsitems, cfg.lang_code)
-            logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
+        news.maybe_notify_unread_news(cfg, False)
 
         return 0

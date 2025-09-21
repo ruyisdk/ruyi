@@ -12,11 +12,25 @@ class NewsCommand(
     RootCommand,
     cmd="news",
     has_subcommands=True,
+    is_subcommand_required=False,
+    has_main=True,
     help="List and read news items from configured repository",
 ):
+    _my_parser: "ArgumentParser | None" = None
+
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        pass
+        cls._my_parser = p
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .news import maybe_notify_unread_news
+
+        assert cls._my_parser is not None
+        cls._my_parser.print_help()
+        maybe_notify_unread_news(cfg, True)
+
+        return 0
 
 
 class NewsListCommand(
