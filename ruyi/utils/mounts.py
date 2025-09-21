@@ -1,5 +1,6 @@
 """Utilities for parsing mount information from /proc/self/mounts."""
 
+import pathlib
 import re
 from typing import NamedTuple
 
@@ -9,6 +10,14 @@ class MountInfo(NamedTuple):
     target: str
     fstype: str
     options: list[str]
+
+    @property
+    def source_path(self) -> pathlib.Path:
+        return pathlib.Path(self.source)
+
+    @property
+    def source_is_blkdev(self) -> bool:
+        return self.source_path.is_block_device()
 
 
 def parse_mounts(contents: str | None = None) -> list[MountInfo]:
