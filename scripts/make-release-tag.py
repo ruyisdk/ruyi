@@ -55,7 +55,8 @@ def main() -> None:
 
     if tag_ref is not None:
         print(f"info: tag {version} already exists")
-        sys.exit(1)
+        # idempotence: don't fail the workflow with non-zero status code
+        sys.exit(0)
 
     # Blame pyproject.toml to find the commit bumping the version
     blame = repo.blame("pyproject.toml")
