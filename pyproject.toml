@@ -57,6 +57,7 @@ repository = "https://github.com/ruyisdk/ruyi.git"
 
 [tool.poetry]
 include = ["ruyi/py.typed"]
+exclude = ["**/.gitignore"]
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"
