@@ -12,7 +12,7 @@ jobs:
       - name: Dispatch ruyi-package-ci
         uses: benc-uk/workflow-dispatch@v1
         with:
-          token: ${{ secrets.PAT_RUYI_PACKAGE_CI }}
+          token: ${{ secrets.GHA_PAT_RUYI_PACKAGE_CI_RW }}
           repo: ruyisdk/ruyi-package-ci
           ref: master
           workflow: deb.yml
