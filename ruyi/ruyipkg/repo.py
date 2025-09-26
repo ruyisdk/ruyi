@@ -284,7 +284,9 @@ class MetadataRepo(ProvidesPackageManifests):
             self.repo = Repository(self.root)
             return self.repo
 
-        self.logger.I(f"the package repository does not exist at [yellow]{self.root}[/]")
+        self.logger.I(
+            f"the package repository does not exist at [yellow]{self.root}[/]"
+        )
         self.logger.I(f"cloning from [cyan link={self.remote}]{self.remote}[/]")
 
         with RemoteGitProgressIndicator() as pr:
