@@ -96,7 +96,7 @@ jobs:
           echo "All compliance checks passed."
 
   lint:
-    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
+    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.poetry == 1 && ', Poetry 1.0.7' || '' }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
     runs-on: ${{ matrix.runs_on }}
     needs:
       - compliance-result
@@ -112,6 +112,7 @@ jobs:
         experimental: [false]
         baseline: [false]
         runs_on: ["ubuntu-latest"]
+        poetry: [2]
         include:
           # not yet available
           #- python: '3.14'
@@ -122,6 +123,15 @@ jobs:
             baseline: true
             experimental: false
             runs_on: ubuntu-22.04
+            poetry: 2
+          # Poetry 1.x
+          # run on baseline versions for mimicking the packaging environment
+          - python: "3.10"
+            experimental: false
+            baseline: false
+            runs_on: ubuntu-22.04
+            poetry: 1
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,9 +156,17 @@ jobs:
         if: success() && matrix.baseline
         run: ./scripts/install-baseline-deps.sh
 
+      - name: Ensure metadata consistency for Poetry 1.x
+        if: success() && !matrix.baseline && matrix.poetry == 1
+        run: ./scripts/lint-poetry-1-metadata.py
+
       - name: Install Poetry
         if: success() && !matrix.baseline
-        run: pipx install poetry
+        run: pipx install ${{ matrix.poetry == 2 && 'poetry' || '"poetry==1.0.7"' }}
+
+      - name: Swap in Poetry 1.x metadata
+        if: success() && !matrix.baseline && matrix.poetry == 1
+        run: cp contrib/poetry-1.x/pyproject.toml contrib/poetry-1.x/poetry.lock .
 
       # NOTE: the Poetry venv is created during this step
       - uses: actions/setup-python@v5
@@ -159,28 +177,34 @@ jobs:
 
       - name: Install deps in the venv
         if: success() && !matrix.baseline
-        run: poetry install --with=dev
+        # Poetry 1.0.x does not support group deps
+        run: poetry install ${{ matrix.poetry == 2 && '--with=dev' || '' }}
 
       # it seems hard for Poetry to only install the dev tools but not break
       # referencing system-wide deps, in addition to the trouble of
       # type-checking with ancient versions of deps that lack type
       # annotations, so just rely on the CI job running with non-baseline deps
       # for the various lints (but not tests).
+      #
+      # Also, due to lack of support for group deps, and the Poetry 1.x
+      # metadata provided only for distro packaging, we have no dev deps
+      # available if running with Poetry 1.x, so the remaining tests are all
+      # gated on matrix.poetry == 2.
       - name: Lint with ruff
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run ruff check
       - name: Type-check with mypy
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run mypy
       - name: Type-check with pyright
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run -- pyright --pythonversion ${{ matrix.python }}
 
       - name: Test with pytest (in venv)
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run pytest
       - name: Test with pytest (system-wide)
-        if: success() && matrix.baseline
+        if: success() && matrix.baseline && matrix.poetry == 2
         run: |
           pip install -e .
           if command -v pytest-3 > /dev/null; then
@@ -192,15 +216,15 @@ jobs:
           fi
 
       - name: Check for import side effects during CLI startup
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run ./scripts/lint-cli-startup-flow.py
 
       - name: Ensure bundled resources are synced with the codebase
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: ./scripts/lint-bundled-resources.sh
 
       - name: Run integration tests
-        if: success() && !matrix.baseline
+        if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
           sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           export PIPX_BIN_DIR=/usr/local/bin
