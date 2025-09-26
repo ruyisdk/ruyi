@@ -21,7 +21,12 @@ def is_called_as_ruyi(argv0: str) -> bool:
     return os.path.basename(argv0).lower() in ALLOWED_RUYI_ENTRYPOINT_NAMES
 
 
+def should_prompt_for_renaming(argv0: str) -> bool:
+    return os.path.basename(argv0).lower().startswith(f"{RUYI_ENTRYPOINT_NAME}-")
+
+
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
+    logger = gc.logger
     oobe = OOBE(gc)
 
     if tm := gc.telemetry:
@@ -33,6 +38,14 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     oobe.maybe_prompt()
 
     if not is_called_as_ruyi(gm.argv0):
+        if should_prompt_for_renaming(gm.argv0):
+            logger.F(
+                f"the {RUYI_ENTRYPOINT_NAME} executable must be named [green]'{RUYI_ENTRYPOINT_NAME}'[/] to work"
+            )
+            logger.I(f"it is now [yellow]'{gm.argv0}'[/]")
+            logger.I("please rename the command file and retry")
+            return 1
+
         from ..mux.runtime import mux_main
 
         # record an invocation and the command name being proxied to
@@ -54,7 +67,6 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     if TYPE_CHECKING:
         from .cmd import CLIEntrypoint
 
-    logger = gc.logger
     p = RootCommand.build_argparse(gc)
 
     # We have to ensure argcomplete is only requested when it's supposed to,
