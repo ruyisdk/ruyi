@@ -88,6 +88,10 @@ Various aspects of `ruyi` can be configured with files or environment variables.
 look up its config accordingly. If these are not explicitly set though, as in
 typical use cases, the default config directory is most likely `~/.config/ruyi`.
 
+GNU/Linux distribution packagers and system administrators will find that the
+directories `/usr/share/ruyi` and `/usr/local/share/ruyi` are searched for the
+config file on such systems.
+
 ### Config file
 
 Currently `ruyi` will look for an optional `config.toml` in its XDG config
