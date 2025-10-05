@@ -23,7 +23,7 @@ description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
 python-versions = ">=3.7"
-version = "2025.8.3"
+version = "2025.10.5"
 
 [[package]]
 category = "main"
@@ -245,7 +245,7 @@ socks = ["pysocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [metadata]
-content-hash = "88c4c265b32dc24f38203b8a0c51928441202787a714da6f69958919483ffb5a"
+content-hash = "a638b7ef4d9b7b2e855f452f63a4bad14a3efbb696c765e4ffebe440c618797a"
 python-versions = ">=3.10"
 
 [metadata.files]
