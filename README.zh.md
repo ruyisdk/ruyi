@@ -70,6 +70,9 @@ pip install ruyi
 
 `ruyi` 会尊重 `$XDG_CONFIG_HOME` 与 `$XDG_CONFIG_DIRS`，并据此搜索配置文件。如果您未显式设置这些环境变量（这是通常情况），默认的配置目录通常为 `~/.config/ruyi`。
 
+GNU/Linux 发行版打包人员和系统管理员们还会注意到：`/usr/share/ruyi` 与
+`/usr/local/share/ruyi` 也会被搜索。
+
 ### 配置文件
 
 目前 `ruyi` 会在其 XDG 配置目录中搜索一个可选的 `config.toml`。若该文件存在，其内容应该类似如下所示，如果一个值没有被指定那么此处展示的是它将取到的默认值：
