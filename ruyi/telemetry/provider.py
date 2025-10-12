@@ -18,19 +18,23 @@ if TYPE_CHECKING:
 
 FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
-TELEMETRY_INITIAL_UPLOAD_PROMPT = """
-By default, the RuyiSDK team collects anonymous usage data to help us improve
-the product. No personal information or detail about your project is ever
-collected. The data will be uploaded to RuyiSDK team-managed servers located
-in the Chinese mainland if you agree to the uploading. You can change this
-setting at any time by running [yellow]ruyi telemetry consent[/] or
-[yellow]ruyi telemetry optout[/].
+TELEMETRY_CONSENT_AND_UPLOAD_DESC = """
+RuyiSDK collects anonymized usage data locally to help us improve the product.
 
-We would like to ask if you agree to have basic information about this [yellow]ruyi[/]
-installation uploaded, right now, for one time. This will allow the RuyiSDK team
-to have more precise knowledge about the product's adoption. Thank you for
-your support!
+[green]By default, nothing leaves your machine[/], and you can also turn off usage data
+collection completely. Only with your explicit permission can [yellow]ruyi[/] upload
+collected telemetry, periodically to RuyiSDK team-managed servers located in
+the Chinese mainland. You can change this setting at any time by running
+[yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or [yellow]ruyi telemetry optout[/].
+
+If you enable uploads now, we'll also send a one-time report from this [yellow]ruyi[/]
+installation so the RuyiSDK team can better understand adoption. Thank you for
+helping us build a better experience!
 """
+TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = (
+    "Enable telemetry uploads and send a one-time report now?"
+)
+TELEMETRY_OPTOUT_PROMPT = "\nDo you want to disable telemetry entirely?"
 
 
 def next_utc_weekday(wday: int, now: float | None = None) -> int:
@@ -66,12 +70,17 @@ def set_telemetry_mode(
 
     logger = gc.logger
 
+    if mode == "on":
+        if consent_time is None:
+            consent_time = datetime.datetime.now().astimezone()
+    else:
+        # clear any previously recorded consent time
+        consent_time = None
+
+    # First, persist the changes to user config
     with ConfigEditor.work_on_user_local_config(gc) as ed:
         ed.set_value((schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_MODE), mode)
-
-        if mode == "on":
-            if consent_time is None:
-                consent_time = datetime.datetime.now().astimezone()
+        if consent_time is not None:
             ed.set_value(
                 (schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_UPLOAD_CONSENT),
                 consent_time,
@@ -82,6 +91,18 @@ def set_telemetry_mode(
             )
 
         ed.stage()
+
+    # Then, apply the changes to the running instance's GlobalConfig
+    # TelemetryProvider instance (if any) will pick them up automatically
+    # because the properties are backed by GlobalConfig.
+    gc.set_by_key(
+        (schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_MODE),
+        mode,
+    )
+    gc.set_by_key(
+        (schema.SECTION_TELEMETRY, schema.KEY_TELEMETRY_UPLOAD_CONSENT),
+        consent_time,
+    )
 
     if not show_cli_feedback:
         return
@@ -111,8 +132,6 @@ def set_telemetry_mode(
 class TelemetryProvider:
     def __init__(self, gc: "GlobalConfig") -> None:
         self.state_root = pathlib.Path(gc.telemetry_root)
-        self.local_mode = gc.telemetry_mode == "local"
-        self.upload_consent_time = gc.telemetry_upload_consent_time
 
         self._discard_events = False
         self._gc = gc
@@ -128,6 +147,14 @@ class TelemetryProvider:
     @property
     def logger(self) -> RuyiLogger:
         return self._gc.logger
+
+    @property
+    def local_mode(self) -> bool:
+        return self._gc.telemetry_mode == "local"
+
+    @property
+    def upload_consent_time(self) -> datetime.datetime | None:
+        return self._gc.telemetry_upload_consent_time
 
     def store(self, scope: TelemetryScope) -> TelemetryStore | None:
         return self._stores.get(scope)
@@ -386,16 +413,32 @@ class TelemetryProvider:
         return store.upload_staged_payloads()
 
     def oobe_prompt(self) -> None:
-        """Ask whether the user consents to a first-run telemetry upload."""
+        """Ask whether the user consents to a first-run telemetry upload, and
+        persist the user's exact telemetry choice."""
 
         from ..cli import user_input
 
-        self.logger.stdout(TELEMETRY_INITIAL_UPLOAD_PROMPT)
+        self.logger.stdout(TELEMETRY_CONSENT_AND_UPLOAD_DESC)
         if not user_input.ask_for_yesno_confirmation(
             self.logger,
-            "Do you agree?",
-            True,
+            TELEMETRY_CONSENT_AND_UPLOAD_PROMPT,
+            False,
         ):
+            # ask if the user wants to opt out entirely
+            if user_input.ask_for_yesno_confirmation(
+                self.logger,
+                TELEMETRY_OPTOUT_PROMPT,
+                False,
+            ):
+                set_telemetry_mode(self._gc, "off")
+                return
+
+            # user wants to stay in local mode
+            # explicitly record the preference, so we don't have to worry about
+            # us potentially changing defaults yet another time
+            set_telemetry_mode(self._gc, "local")
             return
 
+        consent_time = datetime.datetime.now().astimezone()
+        set_telemetry_mode(self._gc, "on", consent_time)
         self._upload_on_exit = True

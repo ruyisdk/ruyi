@@ -34,6 +34,7 @@ else:
 DEFAULT_APP_NAME: Final = "ruyi"
 DEFAULT_REPO_URL: Final = "https://github.com/ruyisdk/packages-index.git"
 DEFAULT_REPO_BRANCH: Final = "main"
+DEFAULT_TELEMETRY_MODE: Final = "local"  # "off", "local", "on"
 
 
 def get_host_path_fragment_for_binary_install_dir(canonicalized_host: str) -> str:
@@ -303,7 +304,7 @@ class GlobalConfig:
 
     @property
     def telemetry_mode(self) -> str:
-        return self._telemetry_mode or "on"
+        return self._telemetry_mode or DEFAULT_TELEMETRY_MODE
 
     @telemetry_mode.setter
     def telemetry_mode(self, mode: str) -> None:
