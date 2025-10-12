@@ -27,15 +27,20 @@ def should_prompt_for_renaming(argv0: str) -> bool:
 
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     logger = gc.logger
-    oobe = OOBE(gc)
 
-    if tm := gc.telemetry:
-        tm.check_first_run_status()
-        tm.init_installation(False)
-        atexit.register(tm.flush)
-        oobe.handlers.append(tm.oobe_prompt)
+    # do not init telemetry or OOBE on CLI auto-completion invocations, because
+    # our output isn't meant for humans in that case, and a "real" invocation
+    # will likely follow shortly after
+    if not gm.is_cli_autocomplete:
+        oobe = OOBE(gc)
 
-    oobe.maybe_prompt()
+        if tm := gc.telemetry:
+            tm.check_first_run_status()
+            tm.init_installation(False)
+            atexit.register(tm.flush)
+            oobe.handlers.append(tm.oobe_prompt)
+
+        oobe.maybe_prompt()
 
     if not is_called_as_ruyi(gm.argv0):
         if should_prompt_for_renaming(gm.argv0):
