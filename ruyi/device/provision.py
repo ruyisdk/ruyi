@@ -276,7 +276,7 @@ We are about to:
                 """
 Some flashing steps require the use of fastboot, in which case you should
 ensure the target device is showing up in [yellow]fastboot devices[/] output.
-Please confirm it yourself before the flashing begins.
+Please [bold red]confirm it yourself before continuing[/].
 """
             )
             if not user_input.ask_for_yesno_confirmation(
