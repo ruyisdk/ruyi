@@ -4,7 +4,7 @@ from typing import Final
 
 from ..log import RuyiLogger
 from .checksum import Checksummer
-from .fetch import BaseFetcher
+from .fetcher import BaseFetcher
 from .pkg_manifest import DistfileDecl
 from .repo import MetadataRepo
 from .unpack import do_unpack, do_unpack_or_symlink
