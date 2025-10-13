@@ -333,7 +333,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           registry: ghcr.io
-          image: ghcr.io/ruyisdk/ruyi-python-dist:20250406
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20250821
           options: |
             --user root
             --platform linux/${{ matrix.arch }}
