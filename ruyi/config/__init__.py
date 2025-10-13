@@ -289,8 +289,14 @@ class GlobalConfig:
     def telemetry_root(self) -> os.PathLike[Any]:
         return pathlib.Path(self.ensure_state_dir()) / "telemetry"
 
-    @cached_property
+    @property
     def telemetry(self) -> "TelemetryProvider | None":
+        return None if self.telemetry_mode == "off" else self._telemetry_provider
+
+    @cached_property
+    def _telemetry_provider(self) -> "TelemetryProvider | None":
+        """Do not access directly; use the ``telemetry`` property instead."""
+
         from ..telemetry.provider import TelemetryProvider
 
         return None if self.telemetry_mode == "off" else TelemetryProvider(self)
@@ -299,13 +305,31 @@ class GlobalConfig:
     def telemetry_mode(self) -> str:
         return self._telemetry_mode or "on"
 
+    @telemetry_mode.setter
+    def telemetry_mode(self, mode: str) -> None:
+        if mode not in ("off", "local", "on"):
+            raise ValueError("telemetry mode must be one of: off, local, on")
+        if self._gm.is_telemetry_optout and mode != "off":
+            raise ValueError(
+                "cannot enable telemetry when the environment variable opt-out is set"
+            )
+        self._telemetry_mode = mode
+
     @property
     def telemetry_upload_consent_time(self) -> datetime.datetime | None:
         return self._telemetry_upload_consent
 
+    @telemetry_upload_consent_time.setter
+    def telemetry_upload_consent_time(self, t: datetime.datetime | None) -> None:
+        self._telemetry_upload_consent = t
+
     @property
     def override_pm_telemetry_url(self) -> str | None:
         return self._telemetry_pm_telemetry_url
+
+    @override_pm_telemetry_url.setter
+    def override_pm_telemetry_url(self, url: str | None) -> None:
+        self._telemetry_pm_telemetry_url = url
 
     @cached_property
     def default_repo_dir(self) -> str:
