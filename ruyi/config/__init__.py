@@ -111,10 +111,14 @@ class GlobalConfig:
         is_global_scope: bool,
     ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
-            self.is_installation_externally_managed = ins_cfg.get(
-                schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
-                False,
-            )
+            iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
+            if iem is not None and not is_global_scope:
+                iem_cfg_key = f"{schema.SECTION_INSTALLATION}.{schema.KEY_INSTALLATION_EXTERNALLY_MANAGED}"
+                self.logger.W(
+                    f"the config key [yellow]{iem_cfg_key}[/] cannot be set from user config; ignoring",
+                )
+            else:
+                self.is_installation_externally_managed = bool(iem)
 
         if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
             self.include_prereleases = pkgs_cfg.get(
@@ -154,6 +158,9 @@ class GlobalConfig:
         return getattr(self, attr_name)
 
     def set_by_key(self, key: str | Sequence[str], value: object) -> None:
+        # We don't have to check for global-only keys here because this
+        # method is only used for programmatic changes to the in-memory
+        # config, not for loading from config files.
         parsed_key = schema.parse_config_key(key)
         section, sel = parsed_key[0], parsed_key[1:]
         attr_name = self._get_attr_name_by_key(section, sel)
@@ -447,7 +454,8 @@ class GlobalConfig:
         return self._dirs.app_config / "config.toml"
 
     def _try_apply_config_file(
-        self, path: os.PathLike[Any],
+        self,
+        path: os.PathLike[Any],
         *,
         is_global_scope: bool,
     ) -> None:
