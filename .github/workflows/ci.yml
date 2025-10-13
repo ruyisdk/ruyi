@@ -228,7 +228,7 @@ jobs:
         run: |
           sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           export PIPX_BIN_DIR=/usr/local/bin
-          export RUYI_VERSION=0.38.1
+          export RUYI_VERSION=0.41.0
           ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha
 
   shellcheck:
