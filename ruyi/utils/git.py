@@ -119,7 +119,7 @@ def pull_ff_or_die(
             logger.I(f"repository:          [yellow]{repo_path}[/]")
             logger.I(f"expected remote URL: [yellow]{remote_url}[/]")
             logger.I(f"actual remote URL:   [yellow]{remote.url}[/]")
-            logger.I("please fix the repo settings manually")
+            logger.I("please [bold red]fix the repo settings manually[/]")
             raise SystemExit(1)
 
         logger.D(
