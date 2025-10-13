@@ -315,7 +315,7 @@ class MetadataRepo(ProvidesPackageManifests):
 
         # only manage the repo settings on the user's behalf if the user
         # has not overridden the repo directory themselves
-        allow_auto_management = self._gc.override_repo_dir is None
+        allow_auto_management = not self._gc.have_overridden_repo_dir
 
         pull_ff_or_die(
             self.logger,

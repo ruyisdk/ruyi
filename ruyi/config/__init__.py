@@ -280,8 +280,21 @@ class GlobalConfig:
     def override_pm_telemetry_url(self) -> str | None:
         return self._telemetry_pm_telemetry_url
 
+    @cached_property
+    def default_repo_dir(self) -> str:
+        return os.path.join(self.cache_root, "packages-index")
+
     def get_repo_dir(self) -> str:
-        return self.override_repo_dir or os.path.join(self.cache_root, "packages-index")
+        return self.override_repo_dir or self.default_repo_dir
+
+    @cached_property
+    def have_overridden_repo_dir(self) -> bool:
+        if not self.override_repo_dir:
+            return False
+        override_path = pathlib.Path(self.override_repo_dir)
+        default_path = pathlib.Path(self.default_repo_dir)
+        # we don't use samefile() here because the path may not exist
+        return override_path.resolve() != default_path.resolve()
 
     def get_repo_url(self) -> str:
         return self.override_repo_url or DEFAULT_REPO_URL
