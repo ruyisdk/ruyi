@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 import pathlib
-from typing import Sequence, TYPE_CHECKING, cast
+from typing import Final, Sequence, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -9,11 +9,33 @@ if TYPE_CHECKING:
 import tomlkit
 from tomlkit.items import Table
 
-from .errors import MalformedConfigFileError
-from .schema import ensure_valid_config_kv, parse_config_key, validate_section
+from .errors import MalformedConfigFileError, ProtectedGlobalConfigError
+from .schema import (
+    SECTION_INSTALLATION,
+    KEY_INSTALLATION_EXTERNALLY_MANAGED,
+    ensure_valid_config_kv,
+    parse_config_key,
+    validate_section,
+)
 
 if TYPE_CHECKING:
     from . import GlobalConfig
+
+
+GLOBAL_ONLY_CONFIG_KEYS: Final[set[tuple[str, str]]] = {
+    (SECTION_INSTALLATION, KEY_INSTALLATION_EXTERNALLY_MANAGED),
+}
+"""Settings that can only be set in global-scope config files.
+
+Changes should be reflected in ``GlobalConfig._apply_config`` too."""
+
+
+def _is_config_key_global_only(key: str | Sequence[str]) -> bool:
+    parsed_key = parse_config_key(key)
+    if len(parsed_key) != 2:
+        return False
+    section, leaf = parsed_key
+    return (section, leaf) in GLOBAL_ONLY_CONFIG_KEYS
 
 
 class ConfigEditor(AbstractContextManager["ConfigEditor"]):
@@ -62,6 +84,15 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
     def set_value(self, key: str | Sequence[str], val: object | None) -> None:
         parsed_key = parse_config_key(key)
         ensure_valid_config_kv(parsed_key, check_val=True, val=val)
+
+        # Gate protected settings: user-local config is not allowed to override
+        # global-only settings.
+        if _is_config_key_global_only(parsed_key):
+            # This mechanism is only meant for modifying user-local configs,
+            # because global configs are assumed to be maintained by packagers
+            # and/or sysadmins, who are expected to write the config file by
+            # hand.
+            raise ProtectedGlobalConfigError(parsed_key)
 
         section, sel = parsed_key[0], parsed_key[1:]
         if section in self._stage:

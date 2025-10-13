@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from ..ruyipkg.state import RuyipkgGlobalStateStore
     from ..telemetry.provider import TelemetryProvider
     from ..utils.global_mode import ProvidesGlobalMode
+    from ..utils.xdg_basedir import XDGPathEntry
     from .news import NewsReadStatusStore
 
 from . import errors
@@ -103,12 +104,21 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
-    def apply_config(self, config_data: GlobalConfigRootType) -> None:
+    def _apply_config(
+        self,
+        config_data: GlobalConfigRootType,
+        *,
+        is_global_scope: bool,
+    ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
-            self.is_installation_externally_managed = ins_cfg.get(
-                schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
-                False,
-            )
+            iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
+            if iem is not None and not is_global_scope:
+                iem_cfg_key = f"{schema.SECTION_INSTALLATION}.{schema.KEY_INSTALLATION_EXTERNALLY_MANAGED}"
+                self.logger.W(
+                    f"the config key [yellow]{iem_cfg_key}[/] cannot be set from user config; ignoring",
+                )
+            else:
+                self.is_installation_externally_managed = bool(iem)
 
         if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
             self.include_prereleases = pkgs_cfg.get(
@@ -148,6 +158,9 @@ class GlobalConfig:
         return getattr(self, attr_name)
 
     def set_by_key(self, key: str | Sequence[str], value: object) -> None:
+        # We don't have to check for global-only keys here because this
+        # method is only used for programmatic changes to the in-memory
+        # config, not for loading from config files.
         parsed_key = schema.parse_config_key(key)
         section, sel = parsed_key[0], parsed_key[1:]
         attr_name = self._get_attr_name_by_key(section, sel)
@@ -377,7 +390,7 @@ class GlobalConfig:
     def lookup_binary_install_dir(self, host: str, slug: str) -> PathLike[Any] | None:
         host_path = get_host_path_fragment_for_binary_install_dir(host)
         for data_dir in self._dirs.app_data_dirs:
-            p = data_dir / "binaries" / host_path / slug
+            p = data_dir.path / "binaries" / host_path / slug
             if p.exists():
                 return p
         return None
@@ -412,30 +425,40 @@ class GlobalConfig:
         p.mkdir(parents=True, exist_ok=True)
         return p
 
-    def iter_preset_configs(self) -> Iterable[os.PathLike[Any]]:
+    def iter_preset_configs(self) -> "Iterable[XDGPathEntry]":
         """
         Yields possible Ruyi config files in all preset config path locations,
         sorted by precedence from lowest to highest (so that each file may be
         simply applied consecutively).
         """
 
-        for path in PRESET_GLOBAL_CONFIG_LOCATIONS:
-            yield pathlib.Path(path)
+        from ..utils.xdg_basedir import XDGPathEntry
 
-    def iter_xdg_configs(self) -> Iterable[os.PathLike[Any]]:
+        for path in PRESET_GLOBAL_CONFIG_LOCATIONS:
+            yield XDGPathEntry(pathlib.Path(path), True)
+
+    def iter_xdg_configs(self) -> "Iterable[XDGPathEntry]":
         """
         Yields possible Ruyi config files in all XDG config paths, sorted by precedence
         from lowest to highest (so that each file may be simply applied consecutively).
         """
 
-        for config_dir in reversed(list(self._dirs.app_config_dirs)):
-            yield config_dir / "config.toml"
+        from ..utils.xdg_basedir import XDGPathEntry
+
+        entries = list(self._dirs.app_config_dirs)
+        for e in reversed(entries):
+            yield XDGPathEntry(e.path / "config.toml", e.is_global)
 
     @property
     def local_user_config_file(self) -> pathlib.Path:
         return self._dirs.app_config / "config.toml"
 
-    def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
+    def _try_apply_config_file(
+        self,
+        path: os.PathLike[Any],
+        *,
+        is_global_scope: bool,
+    ) -> None:
         import tomlkit
 
         try:
@@ -444,20 +467,20 @@ class GlobalConfig:
         except FileNotFoundError:
             return
 
-        self.logger.D(f"applying config: {data}")
-        self.apply_config(data)
+        self.logger.D(f"applying config: {data}, is_global_scope={is_global_scope}")
+        self._apply_config(data, is_global_scope=is_global_scope)
 
     @classmethod
     def load_from_config(cls, gm: "ProvidesGlobalMode", logger: "RuyiLogger") -> "Self":
         obj = cls(gm, logger)
 
-        for config_path in obj.iter_preset_configs():
+        for config_path, is_global in obj.iter_preset_configs():
             obj.logger.D(f"trying config file from preset location: {config_path}")
-            obj.try_apply_config_file(config_path)
+            obj._try_apply_config_file(config_path, is_global_scope=is_global)
 
-        for config_path in obj.iter_xdg_configs():
+        for config_path, is_global in obj.iter_xdg_configs():
             obj.logger.D(f"trying config file from XDG path: {config_path}")
-            obj.try_apply_config_file(config_path)
+            obj._try_apply_config_file(config_path, is_global_scope=is_global)
 
         # let environment variable take precedence
         if gm.is_telemetry_optout:

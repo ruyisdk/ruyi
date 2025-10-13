@@ -74,3 +74,15 @@ class MalformedConfigFileError(Exception):
 
     def __repr__(self) -> str:
         return f"MalformedConfigFileError({self._path:!r})"
+
+
+class ProtectedGlobalConfigError(Exception):
+    def __init__(self, key: str | Sequence[str]) -> None:
+        super().__init__()
+        self._key = key
+
+    def __str__(self) -> str:
+        return f"attempt to modify protected global config key: {self._key}"
+
+    def __repr__(self) -> str:
+        return f"ProtectedGlobalConfigError({self._key!r})"
