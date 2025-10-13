@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
@@ -27,6 +28,25 @@ class ExtractCommand(
             a.completer = package_completer_builder(gc)
 
         p.add_argument(
+            "-d",
+            "--dest-dir",
+            type=str,
+            metavar="DESTDIR",
+            default=".",
+            help="Destination directory to extract to (default: current directory)",
+        )
+        p.add_argument(
+            "--extract-without-subdir",
+            action="store_true",
+            help="Extract files directly into DESTDIR instead of package-named subdirectories",
+        )
+        p.add_argument(
+            "-f",
+            "--fetch-only",
+            action="store_true",
+            help="Fetch distribution files only without installing",
+        )
+        p.add_argument(
             "--host",
             type=str,
             default=get_native_host(),
@@ -38,14 +58,22 @@ class ExtractCommand(
         from .host import canonicalize_host_str
         from .install import do_extract_atoms
 
-        host: str = args.host
         atom_strs: set[str] = set(args.atom)
+        dest_dir_arg: str = args.dest_dir
+        extract_without_subdir: bool = args.extract_without_subdir
+        host: str = args.host
+        fetch_only: bool = args.fetch_only
+
+        dest_dir = None if dest_dir_arg == "." else pathlib.Path(dest_dir_arg)
 
         return do_extract_atoms(
             cfg,
             cfg.repo,
             atom_strs,
             canonicalized_host=canonicalize_host_str(host),
+            dest_dir=dest_dir,
+            extract_without_subdir=extract_without_subdir,
+            fetch_only=fetch_only,
         )
 
 

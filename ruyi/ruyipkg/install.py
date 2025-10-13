@@ -1,7 +1,8 @@
-import os.path
+import os
 import pathlib
 import shutil
 import tempfile
+from typing import Any
 
 from ruyi.ruyipkg.state import BoundInstallationStateStore
 
@@ -29,6 +30,9 @@ def do_extract_atoms(
     atom_strs: set[str],
     *,
     canonicalized_host: str | RuyiHost,
+    dest_dir: os.PathLike[Any] | None,  # None for CWD
+    extract_without_subdir: bool,
+    fetch_only: bool,
 ) -> int:
     logger = cfg.logger
     logger.D(f"about to extract for host {canonicalized_host}: {atom_strs}")
@@ -41,7 +45,6 @@ def do_extract_atoms(
         if pm is None:
             logger.F(f"atom {a_str} matches no package in the repository")
             return 1
-        pkg_name = pm.name_for_installation
 
         sv = pm.service_level
         if sv.has_known_issues:
@@ -49,43 +52,92 @@ def do_extract_atoms(
             for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
                 logger.I(s)
 
-        bm = pm.binary_metadata
-        sm = pm.source_metadata
-        if bm is None and sm is None:
-            logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
-            return 2
+        ret = _do_extract_pkg(
+            cfg,
+            pm,
+            canonicalized_host=canonicalized_host,
+            fetch_only=fetch_only,
+            dest_dir=dest_dir,
+            extract_without_subdir=extract_without_subdir,
+        )
+        if ret != 0:
+            return ret
 
-        if bm is not None and sm is not None:
-            logger.F(
-                f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
-            )
-            return 2
+    return 0
 
-        distfiles_for_host: list[str] | None = None
-        if bm is not None:
-            distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
-        elif sm is not None:
-            distfiles_for_host = sm.get_distfile_names_for_host(canonicalized_host)
 
-        if not distfiles_for_host:
-            logger.F(
-                f"package [green]{pkg_name}[/] declares no distfile for host {canonicalized_host}"
-            )
-            return 2
+def _do_extract_pkg(
+    cfg: GlobalConfig,
+    pm: BoundPackageManifest,
+    *,
+    canonicalized_host: str | RuyiHost,
+    dest_dir: os.PathLike[Any] | None,  # None for CWD
+    extract_without_subdir: bool,
+    fetch_only: bool,
+) -> int:
+    logger = cfg.logger
 
-        dfs = pm.distfiles
+    pkg_name = pm.name_for_installation
 
-        for df_name in distfiles_for_host:
-            df_decl = dfs[df_name]
-            ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-            df = Distfile(df_decl, mr)
-            df.ensure(logger)
+    if not extract_without_subdir:
+        # extract into a subdirectory named <pkg_name>-<version>
+        subdir_name = pm.name_for_installation
+        if dest_dir is None:
+            dest_dir = pathlib.Path(subdir_name)
+        else:
+            dest_dir = pathlib.Path(dest_dir) / subdir_name
 
-            logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
-            # unpack into CWD
-            df.unpack(None, logger)
+    logger.D(f"about to extract {pm} to {dest_dir}")
 
-        logger.I(f"package [green]{pkg_name}[/] extracted to current working directory")
+    # Make sure destination directory exists
+    if dest_dir is not None:
+        dest_dir = pathlib.Path(dest_dir)
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+    bm = pm.binary_metadata
+    sm = pm.source_metadata
+    if bm is None and sm is None:
+        logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
+        return 2
+
+    if bm is not None and sm is not None:
+        logger.F(
+            f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
+        )
+        return 2
+
+    distfiles_for_host: list[str] | None = None
+    if bm is not None:
+        distfiles_for_host = bm.get_distfile_names_for_host(canonicalized_host)
+    elif sm is not None:
+        distfiles_for_host = sm.get_distfile_names_for_host(canonicalized_host)
+
+    if not distfiles_for_host:
+        logger.F(
+            f"package [green]{pkg_name}[/] declares no distfile for host {canonicalized_host}"
+        )
+        return 2
+
+    dfs = pm.distfiles
+
+    for df_name in distfiles_for_host:
+        df_decl = dfs[df_name]
+        ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
+        df = Distfile(df_decl, pm.repo)
+        df.ensure(logger)
+
+        if fetch_only:
+            logger.D("skipping extraction because [yellow]--fetch-only[/] is given")
+            continue
+
+        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
+        # unpack into destination
+        df.unpack(dest_dir, logger)
+
+    if not fetch_only:
+        logger.I(
+            f"package [green]{pkg_name}[/] has been extracted to {dest_dir}",
+        )
 
     return 0
 
@@ -143,6 +195,21 @@ def do_install_atoms(
 
         if pm.blob_metadata is not None:
             ret = _do_install_blob_pkg(config, mr, pm, fetch_only, reinstall)
+            if ret != 0:
+                return ret
+            continue
+
+        # the user may be trying to fetch a source-only package with `ruyi install --fetch-only`,
+        # so try that too for better UX
+        if fetch_only and pm.source_metadata is not None:
+            ret = _do_extract_pkg(
+                config,
+                pm,
+                canonicalized_host=canonicalized_host,
+                dest_dir=None,  # unused in this case
+                extract_without_subdir=False,  # unused in this case
+                fetch_only=fetch_only,
+            )
             if ret != 0:
                 return ret
             continue

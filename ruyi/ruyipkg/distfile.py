@@ -1,10 +1,10 @@
 from functools import cached_property
 import os
-from typing import Final
+from typing import Any, Final
 
 from ..log import RuyiLogger
 from .checksum import Checksummer
-from .fetch import BaseFetcher
+from .fetcher import BaseFetcher
 from .pkg_manifest import DistfileDecl
 from .repo import MetadataRepo
 from .unpack import do_unpack, do_unpack_or_symlink
@@ -187,7 +187,11 @@ class Distfile:
                 f"failed to fetch distfile: {self.dest} failed integrity checks"
             )
 
-    def unpack(self, root: str | None, logger: RuyiLogger) -> None:
+    def unpack(
+        self,
+        root: str | os.PathLike[Any] | None,
+        logger: RuyiLogger,
+    ) -> None:
         return do_unpack(
             logger,
             self.dest,
@@ -197,7 +201,11 @@ class Distfile:
             prefixes_to_unpack=self.prefixes_to_unpack,
         )
 
-    def unpack_or_symlink(self, root: str | None, logger: RuyiLogger) -> None:
+    def unpack_or_symlink(
+        self,
+        root: str | os.PathLike[Any] | None,
+        logger: RuyiLogger,
+    ) -> None:
         return do_unpack_or_symlink(
             logger,
             self.dest,
