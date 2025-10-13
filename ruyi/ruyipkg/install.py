@@ -177,6 +177,19 @@ def do_install_atoms(
                 return ret
             continue
 
+        # the user may be trying to fetch a source-only package with `ruyi install --fetch-only`,
+        # so try that too for better UX
+        if fetch_only and pm.source_metadata is not None:
+            ret = _do_extract_pkg(
+                config,
+                pm,
+                canonicalized_host=canonicalized_host,
+                fetch_only=fetch_only,
+            )
+            if ret != 0:
+                return ret
+            continue
+
         logger.F(f"don't know how to handle non-binary package [green]{pkg_name}[/]")
         return 2
 
