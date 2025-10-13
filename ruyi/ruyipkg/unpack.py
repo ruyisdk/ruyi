@@ -2,7 +2,7 @@ import mmap
 import os
 import shutil
 import subprocess
-from typing import BinaryIO, NoReturn, Protocol
+from typing import Any, BinaryIO, NoReturn, Protocol
 
 from ..log import RuyiLogger
 from ..utils import ar, prereqs
@@ -20,7 +20,7 @@ class SupportsRead(Protocol):
 def do_unpack(
     logger: RuyiLogger,
     filename: str,
-    dest: str | None,
+    dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: BinaryIO | SupportsRead | None = None,
@@ -77,7 +77,7 @@ def do_unpack(
 def do_unpack_or_symlink(
     logger: RuyiLogger,
     filename: str,
-    dest: str | None,
+    dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: BinaryIO | SupportsRead | None = None,
@@ -100,7 +100,7 @@ def do_unpack_or_symlink(
 
 def _do_copy_raw(
     src_path: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     src_filename = os.path.basename(src_path)
     if destdir is None:
@@ -114,7 +114,7 @@ def _do_copy_raw(
 
 def do_symlink(
     src_path: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     src_filename = os.path.basename(src_path)
     if destdir is None:
@@ -132,7 +132,7 @@ def do_symlink(
 def _do_unpack_tar(
     logger: RuyiLogger,
     filename: str,
-    dest: str | None,
+    dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
     stream: SupportsRead | None,
@@ -165,7 +165,7 @@ def _do_unpack_tar(
 
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
     if dest is not None:
-        argv.extend(("-C", dest))
+        argv.extend(("-C", str(dest)))
     if prefixes_to_unpack:
         if any(p.startswith("-") for p in prefixes_to_unpack):
             raise ValueError(
@@ -200,11 +200,11 @@ def _do_unpack_tar(
 def _do_unpack_zip(
     logger: RuyiLogger,
     filename: str,
-    dest: str | None,
+    dest: str | os.PathLike[Any] | None,
 ) -> None:
     argv = ["unzip", filename]
     if dest is not None:
-        argv.extend(("-d", dest))
+        argv.extend(("-d", str(dest)))
     logger.D(f"about to call unzip: argv={argv}")
     retcode = subprocess.call(argv, cwd=dest)
     if retcode != 0:
@@ -214,7 +214,7 @@ def _do_unpack_zip(
 def _do_unpack_bare_gz(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     # the suffix may not be ".gz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -235,7 +235,7 @@ def _do_unpack_bare_gz(
 def _do_unpack_bare_bzip2(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     # the suffix may not be ".bz2" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -256,7 +256,7 @@ def _do_unpack_bare_bzip2(
 def _do_unpack_bare_lz4(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     # the suffix may not be ".lz4" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -271,7 +271,7 @@ def _do_unpack_bare_lz4(
 def _do_unpack_bare_xz(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     # the suffix may not be ".xz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -292,7 +292,7 @@ def _do_unpack_bare_xz(
 def _do_unpack_bare_zstd(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     # the suffix may not be ".zst" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -307,7 +307,7 @@ def _do_unpack_bare_zstd(
 def _do_unpack_deb(
     logger: RuyiLogger,
     filename: str,
-    destdir: str | None,
+    destdir: str | os.PathLike[Any] | None,
 ) -> None:
     with ar.ArpyArchiveWrapper(filename) as a:
         for f in a.infolist():
