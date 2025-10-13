@@ -30,8 +30,9 @@ def do_extract_atoms(
     atom_strs: set[str],
     *,
     canonicalized_host: str | RuyiHost,
-    fetch_only: bool,
     dest_dir: os.PathLike[Any] | None,  # None for CWD
+    extract_without_subdir: bool,
+    fetch_only: bool,
 ) -> int:
     logger = cfg.logger
     logger.D(f"about to extract for host {canonicalized_host}: {atom_strs}")
@@ -57,6 +58,7 @@ def do_extract_atoms(
             canonicalized_host=canonicalized_host,
             fetch_only=fetch_only,
             dest_dir=dest_dir,
+            extract_without_subdir=extract_without_subdir,
         )
         if ret != 0:
             return ret
@@ -69,13 +71,29 @@ def _do_extract_pkg(
     pm: BoundPackageManifest,
     *,
     canonicalized_host: str | RuyiHost,
-    fetch_only: bool,
     dest_dir: os.PathLike[Any] | None,  # None for CWD
+    extract_without_subdir: bool,
+    fetch_only: bool,
 ) -> int:
     logger = cfg.logger
-    logger.D(f"about to extract for host {canonicalized_host}: {pm}")
 
     pkg_name = pm.name_for_installation
+
+    if not extract_without_subdir:
+        # extract into a subdirectory named <pkg_name>-<version>
+        subdir_name = pm.name_for_installation
+        if dest_dir is None:
+            dest_dir = pathlib.Path(subdir_name)
+        else:
+            dest_dir = pathlib.Path(dest_dir) / subdir_name
+
+    logger.D(f"about to extract {pm} to {dest_dir}")
+
+    # Make sure destination directory exists
+    if dest_dir is not None:
+        dest_dir = pathlib.Path(dest_dir)
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
     bm = pm.binary_metadata
     sm = pm.source_metadata
     if bm is None and sm is None:
@@ -188,8 +206,9 @@ def do_install_atoms(
                 config,
                 pm,
                 canonicalized_host=canonicalized_host,
-                fetch_only=fetch_only,
                 dest_dir=None,  # unused in this case
+                extract_without_subdir=False,  # unused in this case
+                fetch_only=fetch_only,
             )
             if ret != 0:
                 return ret

@@ -36,6 +36,11 @@ class ExtractCommand(
             help="Destination directory to extract to (default: current directory)",
         )
         p.add_argument(
+            "--extract-without-subdir",
+            action="store_true",
+            help="Extract files directly into DESTDIR instead of package-named subdirectories",
+        )
+        p.add_argument(
             "-f",
             "--fetch-only",
             action="store_true",
@@ -55,6 +60,7 @@ class ExtractCommand(
 
         atom_strs: set[str] = set(args.atom)
         dest_dir_arg: str = args.dest_dir
+        extract_without_subdir: bool = args.extract_without_subdir
         host: str = args.host
         fetch_only: bool = args.fetch_only
 
@@ -65,8 +71,9 @@ class ExtractCommand(
             cfg.repo,
             atom_strs,
             canonicalized_host=canonicalize_host_str(host),
-            fetch_only=fetch_only,
             dest_dir=dest_dir,
+            extract_without_subdir=extract_without_subdir,
+            fetch_only=fetch_only,
         )
 
 
