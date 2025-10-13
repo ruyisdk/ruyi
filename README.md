@@ -121,9 +121,8 @@ branch = "main"
 # details.
 #
 # If unset or empty, this default value is used: data will be collected and
-# uploaded every week, on a random weekday determined by the installation's
-# anonymous ID alone.
-mode = "on"
+# stored locally; nothing will be uploaded automatically.
+mode = "local"
 # The time the user's consent is given to telemetry data uploading. If the
 # system time is later than the time given here, telemetry consent banner will
 # not be displayed any more each time `ruyi` is executed. The exact consent
@@ -167,12 +166,16 @@ There are 3 telemetry modes available:
 * `off`: data will not be collected nor uploaded.
 * `on`: data will be collected and periodically uploaded.
 
-By default the `on` mode is active, which means every `ruyi` invocation
-will record some non-sensitive information locally alongside various other
-states of `ruyi`, and collected data will be periodically uploaded to servers
-managed by the RuyiSDK team in the People's Republic of China, in a weekly fashion.
-The upload will happen on a random weekday which is determined by the
-installation's anonymous ID alone.
+By default the `local` mode is active from `ruyi` 0.42.0 (inclusive) on, which
+means every `ruyi` invocation will record some non-sensitive information locally
+alongside various other states of `ruyi`, but collected data will not be
+uploaded automatically unless you explicitly request so (for example by
+switching to the `on` mode, or by executing `ruyi telemetry upload`).
+
+In case the `on` mode is active, collected data will be periodically uploaded
+to servers managed by the RuyiSDK team in the People's Republic of China, in a
+weekly fashion. The upload will happen on a random weekday which is determined
+by the installation's anonymous ID alone.
 
 You can change the telemetry mode by editing `ruyi`'s config file, or simply
 disable telemetry altogether by setting the `RUYI_TELEMETRY_OPTOUT` environment

@@ -4,6 +4,7 @@ import pytest
 
 from ruyi.config.errors import InvalidConfigValueError
 from ruyi.config.schema import decode_value, encode_value
+from ruyi.utils.toml import NoneValue
 
 
 def test_decode_value_bool() -> None:
@@ -38,6 +39,11 @@ def test_decode_value_datetime() -> None:
 
     # naive datetimes are decoded using the implicit local timezone
     decode_value(datetime.datetime, "2024-12-01T12:00:00")
+
+
+def test_encode_value_none() -> None:
+    with pytest.raises(NoneValue):
+        encode_value(None)
 
 
 def test_encode_value_bool() -> None:
