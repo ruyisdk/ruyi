@@ -164,8 +164,6 @@ def _do_unpack_tar(
         stdin = subprocess.PIPE
 
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
-    if dest is not None:
-        argv.extend(("-C", str(dest)))
     if prefixes_to_unpack:
         if any(p.startswith("-") for p in prefixes_to_unpack):
             raise ValueError(
