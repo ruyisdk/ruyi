@@ -27,6 +27,12 @@ class ExtractCommand(
             a.completer = package_completer_builder(gc)
 
         p.add_argument(
+            "-f",
+            "--fetch-only",
+            action="store_true",
+            help="Fetch distribution files only without installing",
+        )
+        p.add_argument(
             "--host",
             type=str,
             default=get_native_host(),
@@ -40,12 +46,14 @@ class ExtractCommand(
 
         host: str = args.host
         atom_strs: set[str] = set(args.atom)
+        fetch_only: bool = args.fetch_only
 
         return do_extract_atoms(
             cfg,
             cfg.repo,
             atom_strs,
             canonicalized_host=canonicalize_host_str(host),
+            fetch_only=fetch_only,
         )
 
 
