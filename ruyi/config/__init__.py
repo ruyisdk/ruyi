@@ -462,5 +462,6 @@ class GlobalConfig:
         # let environment variable take precedence
         if gm.is_telemetry_optout:
             obj._telemetry_mode = "off"
+            obj._telemetry_upload_consent = None
 
         return obj
