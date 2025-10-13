@@ -7,6 +7,17 @@ from tomlkit.container import Container
 from tomlkit.items import Array, Comment, InlineTable, Item, Table, Trivia, Whitespace
 
 
+class NoneValue(Exception):
+    """Used to indicate that a None value is to be dumped in TOML. Because TOML
+    does not support None natively, this means special handling is needed."""
+
+    def __str__(self) -> str:
+        return "NoneValue()"
+
+    def __repr__(self) -> str:
+        return "NoneValue()"
+
+
 def with_indent(item: Item, spaces: int = 2) -> Item:
     item.indent(spaces)
     return item

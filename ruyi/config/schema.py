@@ -145,6 +145,11 @@ def encode_value(v: object) -> str:
     """Encodes the given config value into a string representation suitable for
     display or storage into TOML config files."""
 
+    if v is None:
+        from ..utils.toml import NoneValue
+
+        raise NoneValue()
+
     if isinstance(v, bool):
         return "true" if v else "false"
     elif isinstance(v, int):
