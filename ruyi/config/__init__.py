@@ -104,7 +104,12 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
-    def apply_config(self, config_data: GlobalConfigRootType) -> None:
+    def _apply_config(
+        self,
+        config_data: GlobalConfigRootType,
+        *,
+        is_global_scope: bool,
+    ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
             self.is_installation_externally_managed = ins_cfg.get(
                 schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
@@ -441,9 +446,10 @@ class GlobalConfig:
     def local_user_config_file(self) -> pathlib.Path:
         return self._dirs.app_config / "config.toml"
 
-    def try_apply_config_file(
-        self, path: os.PathLike[Any], *,
-        is_global: bool | None = None,
+    def _try_apply_config_file(
+        self, path: os.PathLike[Any],
+        *,
+        is_global_scope: bool,
     ) -> None:
         import tomlkit
 
@@ -453,8 +459,8 @@ class GlobalConfig:
         except FileNotFoundError:
             return
 
-        self.logger.D(f"applying config: {data}")
-        self.apply_config(data)
+        self.logger.D(f"applying config: {data}, is_global_scope={is_global_scope}")
+        self._apply_config(data, is_global_scope=is_global_scope)
 
     @classmethod
     def load_from_config(cls, gm: "ProvidesGlobalMode", logger: "RuyiLogger") -> "Self":
@@ -462,11 +468,11 @@ class GlobalConfig:
 
         for config_path, is_global in obj.iter_preset_configs():
             obj.logger.D(f"trying config file from preset location: {config_path}")
-            obj.try_apply_config_file(config_path, is_global=is_global)
+            obj._try_apply_config_file(config_path, is_global_scope=is_global)
 
         for config_path, is_global in obj.iter_xdg_configs():
             obj.logger.D(f"trying config file from XDG path: {config_path}")
-            obj.try_apply_config_file(config_path, is_global=is_global)
+            obj._try_apply_config_file(config_path, is_global_scope=is_global)
 
         # let environment variable take precedence
         if gm.is_telemetry_optout:
