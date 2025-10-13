@@ -4,7 +4,12 @@
 
 import os
 import pathlib
-from typing import Iterable
+from typing import Iterable, NamedTuple
+
+
+class XDGPathEntry(NamedTuple):
+    path: pathlib.Path
+    is_global: bool
 
 
 def _paths_from_env(env: str, default: str) -> Iterable[pathlib.Path]:
@@ -38,14 +43,16 @@ class XDGBaseDir:
         return pathlib.Path(v) if v else pathlib.Path.home() / ".local" / "state"
 
     @property
-    def config_dirs(self) -> Iterable[pathlib.Path]:
+    def config_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        yield from _paths_from_env("XDG_CONFIG_DIRS", "/etc/xdg")
+        for p in _paths_from_env("XDG_CONFIG_DIRS", "/etc/xdg"):
+            yield XDGPathEntry(p, True)
 
     @property
-    def data_dirs(self) -> Iterable[pathlib.Path]:
+    def data_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        yield from _paths_from_env("XDG_DATA_DIRS", "/usr/local/share/:/usr/share/")
+        for p in _paths_from_env("XDG_DATA_DIRS", "/usr/local/share/:/usr/share/"):
+            yield XDGPathEntry(p, True)
 
     # derived info
 
@@ -66,15 +73,15 @@ class XDGBaseDir:
         return self.state_home / self.app_name
 
     @property
-    def app_config_dirs(self) -> Iterable[pathlib.Path]:
+    def app_config_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        yield self.app_config
-        for p in self.config_dirs:
-            yield p / self.app_name
+        yield XDGPathEntry(self.app_config, False)
+        for e in self.config_dirs:
+            yield XDGPathEntry(e.path / self.app_name, e.is_global)
 
     @property
-    def app_data_dirs(self) -> Iterable[pathlib.Path]:
+    def app_data_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        yield self.app_data
-        for p in self.data_dirs:
-            yield p / self.app_name
+        yield XDGPathEntry(self.app_data, False)
+        for e in self.data_dirs:
+            yield XDGPathEntry(e.path / self.app_name, e.is_global)
