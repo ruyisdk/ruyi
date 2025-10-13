@@ -1,7 +1,8 @@
-import os.path
+import os
 import pathlib
 import shutil
 import tempfile
+from typing import Any
 
 from ruyi.ruyipkg.state import BoundInstallationStateStore
 
@@ -30,6 +31,7 @@ def do_extract_atoms(
     *,
     canonicalized_host: str | RuyiHost,
     fetch_only: bool,
+    dest_dir: os.PathLike[Any] | None,  # None for CWD
 ) -> int:
     logger = cfg.logger
     logger.D(f"about to extract for host {canonicalized_host}: {atom_strs}")
@@ -54,6 +56,7 @@ def do_extract_atoms(
             pm,
             canonicalized_host=canonicalized_host,
             fetch_only=fetch_only,
+            dest_dir=dest_dir,
         )
         if ret != 0:
             return ret
@@ -67,6 +70,7 @@ def _do_extract_pkg(
     *,
     canonicalized_host: str | RuyiHost,
     fetch_only: bool,
+    dest_dir: os.PathLike[Any] | None,  # None for CWD
 ) -> int:
     logger = cfg.logger
     logger.D(f"about to extract for host {canonicalized_host}: {pm}")
@@ -109,12 +113,12 @@ def _do_extract_pkg(
             continue
 
         logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
-        # unpack into CWD
-        df.unpack(None, logger)
+        # unpack into destination
+        df.unpack(dest_dir, logger)
 
     if not fetch_only:
         logger.I(
-            f"package [green]{pkg_name}[/] extracted to current working directory",
+            f"package [green]{pkg_name}[/] has been extracted to {dest_dir}",
         )
 
     return 0
@@ -185,6 +189,7 @@ def do_install_atoms(
                 pm,
                 canonicalized_host=canonicalized_host,
                 fetch_only=fetch_only,
+                dest_dir=None,  # unused in this case
             )
             if ret != 0:
                 return ret
