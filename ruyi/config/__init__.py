@@ -146,6 +146,21 @@ class GlobalConfig:
             raise errors.InvalidConfigKeyError(key)
         return getattr(self, attr_name)
 
+    def set_by_key(self, key: str | Sequence[str], value: object) -> None:
+        parsed_key = schema.parse_config_key(key)
+        section, sel = parsed_key[0], parsed_key[1:]
+        attr_name = self._get_attr_name_by_key(section, sel)
+        if attr_name is None:
+            raise errors.InvalidConfigKeyError(key)
+
+        expected_type = schema.get_expected_type_for_config_key(key)
+        if not isinstance(value, expected_type):
+            raise TypeError(
+                f"expected type {expected_type.__name__} for config key '{key}', got {type(value).__name__}"
+            )
+
+        setattr(self, attr_name, value)
+
     @classmethod
     def _get_attr_name_by_key(cls, section: str, sel: list[str]) -> str | None:
         if section == schema.SECTION_INSTALLATION:
