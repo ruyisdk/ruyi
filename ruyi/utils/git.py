@@ -125,7 +125,9 @@ def pull_ff_or_die(
         logger.D(
             f"updating url of remote {remote_name} from {remote.url} to {remote_url}"
         )
-        repo.remotes.set_url("origin", remote_url)
+        repo.remotes.set_url(remote_name, remote_url)
+        # this needs manual refreshing
+        remote = repo.remotes[remote_name]
 
     logger.D("fetching")
     try:
