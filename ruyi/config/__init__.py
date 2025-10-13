@@ -441,7 +441,10 @@ class GlobalConfig:
     def local_user_config_file(self) -> pathlib.Path:
         return self._dirs.app_config / "config.toml"
 
-    def try_apply_config_file(self, path: os.PathLike[Any]) -> None:
+    def try_apply_config_file(
+        self, path: os.PathLike[Any], *,
+        is_global: bool | None = None,
+    ) -> None:
         import tomlkit
 
         try:
@@ -459,11 +462,11 @@ class GlobalConfig:
 
         for config_path, is_global in obj.iter_preset_configs():
             obj.logger.D(f"trying config file from preset location: {config_path}")
-            obj.try_apply_config_file(config_path)
+            obj.try_apply_config_file(config_path, is_global=is_global)
 
         for config_path, is_global in obj.iter_xdg_configs():
             obj.logger.D(f"trying config file from XDG path: {config_path}")
-            obj.try_apply_config_file(config_path)
+            obj.try_apply_config_file(config_path, is_global=is_global)
 
         # let environment variable take precedence
         if gm.is_telemetry_optout:
