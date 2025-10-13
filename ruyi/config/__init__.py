@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..utils.global_mode import ProvidesGlobalMode
     from .news import NewsReadStatusStore
 
+from . import errors
 from . import schema
 
 
@@ -137,61 +138,72 @@ class GlobalConfig:
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
 
-    def get_by_key(self, key: str | Sequence[str]) -> object | None:
+    def get_by_key(self, key: str | Sequence[str]) -> object:
         parsed_key = schema.parse_config_key(key)
         section, sel = parsed_key[0], parsed_key[1:]
+        attr_name = self._get_attr_name_by_key(section, sel)
+        if attr_name is None:
+            raise errors.InvalidConfigKeyError(key)
+        return getattr(self, attr_name)
+
+    @classmethod
+    def _get_attr_name_by_key(cls, section: str, sel: list[str]) -> str | None:
         if section == schema.SECTION_INSTALLATION:
-            return self._get_section_installation(sel)
+            return cls._get_section_installation(sel)
         elif section == schema.SECTION_PACKAGES:
-            return self._get_section_packages(sel)
+            return cls._get_section_packages(sel)
         elif section == schema.SECTION_REPO:
-            return self._get_section_repo(sel)
+            return cls._get_section_repo(sel)
         elif section == schema.SECTION_TELEMETRY:
-            return self._get_section_telemetry(sel)
+            return cls._get_section_telemetry(sel)
         else:
             return None
 
-    def _get_section_installation(self, selector: list[str]) -> object | None:
+    @classmethod
+    def _get_section_installation(cls, selector: list[str]) -> str | None:
         if len(selector) != 1:
             return None
         leaf = selector[0]
         if leaf == schema.KEY_INSTALLATION_EXTERNALLY_MANAGED:
-            return self.is_installation_externally_managed
+            return "is_installation_externally_managed"
         else:
             return None
 
-    def _get_section_packages(self, selector: list[str]) -> object | None:
+    @classmethod
+    def _get_section_packages(cls, selector: list[str]) -> str | None:
         if len(selector) != 1:
             return None
         leaf = selector[0]
         if leaf == schema.KEY_PACKAGES_PRERELEASES:
-            return self.include_prereleases
+            return "include_prereleases"
         else:
             return None
 
-    def _get_section_repo(self, selector: list[str]) -> object | None:
+    @classmethod
+    def _get_section_repo(cls, selector: list[str]) -> str | None:
         if len(selector) != 1:
             return None
         leaf = selector[0]
         if leaf == schema.KEY_REPO_BRANCH:
-            return self.override_repo_branch
+            return "override_repo_branch"
         elif leaf == schema.KEY_REPO_LOCAL:
-            return self.override_repo_dir
+            return "override_repo_dir"
         elif leaf == schema.KEY_REPO_REMOTE:
-            return self.override_repo_url
+            return "override_repo_url"
         else:
             return None
 
-    def _get_section_telemetry(self, selector: list[str]) -> object | None:
+    @classmethod
+    def _get_section_telemetry(cls, selector: list[str]) -> str | None:
         if len(selector) != 1:
             return None
         leaf = selector[0]
         if leaf == schema.KEY_TELEMETRY_MODE:
-            return self.telemetry_mode
+            return "telemetry_mode"
         elif leaf == schema.KEY_TELEMETRY_PM_TELEMETRY_URL:
-            return self.override_pm_telemetry_url
+            return "override_pm_telemetry_url"
         elif leaf == schema.KEY_TELEMETRY_UPLOAD_CONSENT:
-            return self.telemetry_upload_consent_time
+            return "telemetry_upload_consent_time"
         else:
             return None
 

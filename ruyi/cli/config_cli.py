@@ -43,12 +43,14 @@ class ConfigGetCommand(
 
     @classmethod
     def main(cls, cfg: "config.GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.errors import InvalidConfigKeyError
         from ..config.schema import encode_value
 
         key: str = args.key
 
-        val = cfg.get_by_key(key)
-        if val is None:
+        try:
+            val = cfg.get_by_key(key)
+        except InvalidConfigKeyError:
             return 1
 
         cfg.logger.stdout(encode_value(val))
