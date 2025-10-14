@@ -3,30 +3,30 @@ import datetime
 import pytest
 
 from ruyi.config.errors import InvalidConfigValueError
-from ruyi.config.schema import decode_value, encode_value
+from ruyi.config.schema import decode_value, encode_value, _decode_single_type_value
 from ruyi.utils.toml import NoneValue
 
 
 def test_decode_value_bool() -> None:
     assert decode_value("installation.externally_managed", "true") is True
 
-    assert decode_value(bool, "true") is True
-    assert decode_value(bool, "false") is False
-    assert decode_value(bool, "yes") is True
-    assert decode_value(bool, "no") is False
-    assert decode_value(bool, "1") is True
-    assert decode_value(bool, "0") is False
+    assert _decode_single_type_value(None, "true", bool) is True
+    assert _decode_single_type_value(None, "false", bool) is False
+    assert _decode_single_type_value(None, "yes", bool) is True
+    assert _decode_single_type_value(None, "no", bool) is False
+    assert _decode_single_type_value(None, "1", bool) is True
+    assert _decode_single_type_value(None, "0", bool) is False
     with pytest.raises(InvalidConfigValueError):
-        decode_value(bool, "invalid")
+        _decode_single_type_value(None, "invalid", bool)
     with pytest.raises(InvalidConfigValueError):
-        decode_value(bool, "x")
+        _decode_single_type_value(None, "x", bool)
     with pytest.raises(InvalidConfigValueError):
-        decode_value(bool, "True")
+        _decode_single_type_value(None, "True", bool)
 
 
 def test_decode_value_str() -> None:
     assert decode_value("repo.branch", "main") == "main"
-    assert decode_value(str, "main") == "main"
+    assert _decode_single_type_value(None, "main", str) == "main"
 
 
 def test_decode_value_datetime() -> None:
@@ -34,11 +34,17 @@ def test_decode_value_datetime() -> None:
     assert (
         decode_value("telemetry.upload_consent", "2024-12-01T12:00:00Z") == tz_aware_dt
     )
-    assert decode_value(datetime.datetime, "2024-12-01T12:00:00Z") == tz_aware_dt
-    assert decode_value(datetime.datetime, "2024-12-01T12:00:00+00:00") == tz_aware_dt
+    assert (
+        _decode_single_type_value(None, "2024-12-01T12:00:00Z", datetime.datetime)
+        == tz_aware_dt
+    )
+    assert (
+        _decode_single_type_value(None, "2024-12-01T12:00:00+00:00", datetime.datetime)
+        == tz_aware_dt
+    )
 
     # naive datetimes are decoded using the implicit local timezone
-    decode_value(datetime.datetime, "2024-12-01T12:00:00")
+    _decode_single_type_value(None, "2024-12-01T12:00:00", datetime.datetime)
 
 
 def test_encode_value_none() -> None:

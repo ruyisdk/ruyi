@@ -31,7 +31,7 @@ class InvalidConfigValueTypeError(TypeError):
         self,
         key: str | Sequence[str],
         val: object | None,
-        expected: type,
+        expected: type | Sequence[type],
     ) -> None:
         super().__init__()
         self._key = key
@@ -48,20 +48,24 @@ class InvalidConfigValueTypeError(TypeError):
 class InvalidConfigValueError(ValueError):
     def __init__(
         self,
-        key: str | Sequence[str] | type,
+        key: str | Sequence[str] | None,
         val: object | None,
+        typ: type | Sequence[type],
     ) -> None:
         super().__init__()
         self._key = key
         self._val = val
+        self._typ = typ
 
     def __str__(self) -> str:
-        if isinstance(self._key, type):
-            return f"invalid config value for type {self._key}: {self._val}"
-        return f"invalid config value for key {self._key}: {self._val}"
+        return (
+            f"invalid config value for key {self._key} (type {self._typ}): {self._val}"
+        )
 
     def __repr__(self) -> str:
-        return f"InvalidConfigValueError({self._key:!r}, {self._val:!r})"
+        return (
+            f"InvalidConfigValueError({self._key:!r}, {self._val:!r}, {self._typ:!r})"
+        )
 
 
 class MalformedConfigFileError(Exception):
