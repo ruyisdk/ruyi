@@ -1,7 +1,21 @@
 from os import PathLike
-from typing import Any, Iterable, TypeGuard, cast
+from typing import (
+    Any,
+    Iterable,
+    Mapping,
+    Protocol,
+    Sequence,
+    TypedDict,
+    TypeGuard,
+    TYPE_CHECKING,
+    cast,
+)
+
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
 
 from ..pluginhost.ctx import PluginHostContext, SupportsEvalFunction
+from .entity_provider import BaseEntityProvider
 from .pkg_manifest import EmulatorFlavor
 
 
@@ -206,3 +220,136 @@ class ProfileProxy:
         sysroot: PathLike[Any] | None,
     ) -> dict[str, str] | None:
         return self._provider.get_env_config_for_emu_flavor(self._id, flavor, sysroot)
+
+
+#
+# Protocols
+#
+
+
+# MetadataRepo is defined in repo.py, but we don't want to import repo.py here
+# to avoid circular import. Instead, we just describe the methods and properties
+# that we need from MetadataRepo with a Protocol.
+class ProvidesProfiles(Protocol):
+    def get_supported_arches(self) -> list[str]: ...
+    def get_profile_for_arch(self, arch: str, name: str) -> ProfileProxy | None: ...
+    def iter_profiles_for_arch(self, arch: str) -> Iterable[ProfileProxy]: ...
+
+
+#
+# Entity type and schema for profile entities
+#
+
+PROFILE_V1_ENTITY_TYPE = "profile-v1"
+PROFILE_V1_ENTITY_TYPE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "required": ["profile-v1"],
+    "properties": {
+        "profile-v1": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string"},
+                "display_name": {"type": "string"},
+                "name": {"type": "string"},
+                "arch": {"type": "string"},
+                "needed_toolchain_quirks": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                "toolchain_common_flags_str": {"type": "string"},
+            },
+            "required": [
+                "id",
+                "display_name",
+                "name",
+                "arch",
+                "needed_toolchain_quirks",
+                "toolchain_common_flags_str",
+            ],
+        },
+        "related": {
+            "type": "array",
+            "description": "List of related entity references",
+            "items": {"type": "string", "pattern": "^.+:.+"},
+        },
+        "unique_among_type_during_traversal": {
+            "type": "boolean",
+            "description": "Whether this entity should be unique among all entities of the same type during traversal",
+        },
+    },
+}
+
+
+class ProfileV1EntityData(TypedDict):
+    id: str
+    display_name: str
+    name: str
+    arch: str
+    needed_toolchain_quirks: list[str]
+    toolchain_common_flags_str: str
+
+
+ProfileV1Entity = TypedDict(
+    "ProfileV1Entity",
+    {
+        "profile-v1": ProfileV1EntityData,
+        "related": "NotRequired[list[str]]",
+        "unique_among_type_during_traversal": "NotRequired[bool]",
+    },
+    total=False,
+)
+
+
+class ProfileEntityProvider(BaseEntityProvider):
+    def __init__(self, provider: ProvidesProfiles) -> None:
+        super().__init__()
+        self._provider = provider
+
+    def discover_schemas(self) -> dict[str, object]:
+        return {
+            PROFILE_V1_ENTITY_TYPE: PROFILE_V1_ENTITY_TYPE_SCHEMA,
+        }
+
+    def load_entities(
+        self,
+        entity_types: Sequence[str],
+    ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
+        result: dict[str, Mapping[str, Mapping[str, Any]]] = {}
+        for ty in entity_types:
+            if ty == PROFILE_V1_ENTITY_TYPE:
+                result[ty] = _load_profile_v1_entities(self._provider)
+        return result
+
+
+def _load_profile_v1_entities(provider: ProvidesProfiles) -> dict[str, ProfileV1Entity]:
+    result: dict[str, ProfileV1Entity] = {}
+    for arch in provider.get_supported_arches():
+        result.update(_load_profile_v1_entities_for_arch(provider, arch))
+    return result
+
+
+def _load_profile_v1_entities_for_arch(
+    provider: ProvidesProfiles,
+    arch: str,
+) -> dict[str, ProfileV1Entity]:
+    result: dict[str, ProfileV1Entity] = {}
+    for profile in provider.iter_profiles_for_arch(arch):
+        full_name = profile.id
+        relations = [f"arch:{arch}"]
+
+        needed_toolchain_quirks = sorted(profile.need_quirks)
+
+        result[profile.id] = {
+            "profile-v1": {
+                "id": profile.id,
+                "display_name": full_name,
+                "name": profile.id,
+                "arch": profile.arch,
+                "needed_toolchain_quirks": needed_toolchain_quirks,
+                "toolchain_common_flags_str": profile.get_common_flags(
+                    needed_toolchain_quirks,
+                ),
+            },
+            "related": relations,
+        }
+    return result

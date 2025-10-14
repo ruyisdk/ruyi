@@ -34,7 +34,7 @@ from .pkg_manifest import (
     InputPackageManifestType,
     is_prerelease,
 )
-from .profile import PluginProfileProvider, ProfileProxy
+from .profile import PluginProfileProvider, ProfileEntityProvider, ProfileProxy
 from .protocols import ProvidesPackageManifests
 
 if sys.version_info >= (3, 11):
@@ -234,6 +234,7 @@ class MetadataRepo(ProvidesPackageManifests):
             gc.logger,
             FSEntityProvider(gc.logger, pathlib.Path(self.root) / "entities"),
             MetadataRepoEntityProvider(self),
+            ProfileEntityProvider(self),
         )
         self._plugin_host_ctx = PluginHostContext.new(gc.logger, self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
