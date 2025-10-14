@@ -166,13 +166,7 @@ class GlobalConfig:
         attr_name = self._get_attr_name_by_key(section, sel)
         if attr_name is None:
             raise errors.InvalidConfigKeyError(key)
-
-        expected_type = schema.get_expected_type_for_config_key(key)
-        if not isinstance(value, expected_type):
-            raise TypeError(
-                f"expected type {expected_type.__name__} for config key '{key}', got {type(value).__name__}"
-            )
-
+        schema.ensure_valid_config_kv(key, True, value)
         setattr(self, attr_name, value)
 
     @classmethod
