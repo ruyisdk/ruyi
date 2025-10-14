@@ -87,13 +87,13 @@ def _get_expected_type_for_section_repo(sel: str) -> type:
         raise InvalidConfigKeyError(sel)
 
 
-def _get_expected_type_for_section_telemetry(sel: str) -> type:
+def _get_expected_type_for_section_telemetry(sel: str) -> type | tuple[type, ...]:
     if sel == KEY_TELEMETRY_MODE:
         return str
     elif sel == KEY_TELEMETRY_PM_TELEMETRY_URL:
         return str
     elif sel == KEY_TELEMETRY_UPLOAD_CONSENT:
-        return datetime.datetime
+        return (type(None), datetime.datetime)
     else:
         raise InvalidConfigKeyError(sel)
 
