@@ -41,10 +41,16 @@ class OOBE:
     def should_prompt(self) -> bool:
         from ..utils.global_mode import is_env_var_truthy
 
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            # This is of higher priority than even the debug override, because
+            # we don't want to mess up non-interactive sessions even in case of
+            # debugging.
+            return False
+
         if is_env_var_truthy(os.environ, "RUYI_DEBUG_FORCE_FIRST_RUN"):
             return True
 
-        return self.is_first_run() and sys.stdin.isatty()
+        return self.is_first_run()
 
     def maybe_prompt(self) -> None:
         if not self.should_prompt():

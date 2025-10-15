@@ -128,6 +128,24 @@ def _guess_porcelain_from_argv(argv: list[str]) -> bool:
     return len(argv) > 1 and argv[1] == "--porcelain"
 
 
+def _probe_cli_autocomplete(env: Mapping[str, str], argv: list[str]) -> bool:
+    """
+    Probe if the current invocation is related to shell completion based on
+    the arguments passed, without requiring the ``argparse`` machinery to be
+    completely initialized, and the environment.
+    """
+
+    # If `--output-completion-script` is present anywhere in the arguments,
+    # then this is related to shell completion even if _ARGCOMPLETE is not yet
+    # set (which is only set for invocations after the shell finished sourcing
+    # the completion script).
+    for arg in argv:
+        if arg.startswith("--output-completion-script"):
+            return True
+
+    return "_ARGCOMPLETE" in os.environ
+
+
 class EnvGlobalModeProvider(GlobalModeProvider):
     def __init__(
         self,
@@ -150,7 +168,7 @@ class EnvGlobalModeProvider(GlobalModeProvider):
 
         # We have to lift this piece of implementation detail out of argcomplete,
         # as the argcomplete import is very costly in terms of startup time.
-        self._is_cli_autocomplete = "_ARGCOMPLETE" in os.environ
+        self._is_cli_autocomplete = _probe_cli_autocomplete(env, argv)
 
         self._venv_root = env.get(ENV_VENV_ROOT_KEY)
 

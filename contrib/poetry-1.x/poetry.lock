@@ -42,7 +42,7 @@ description = "The Real First Universal Charset Detector. Open, modern and activ
 name = "charset-normalizer"
 optional = false
 python-versions = ">=3.7"
-version = "3.4.3"
+version = "3.4.4"
 
 [[package]]
 category = "main"
@@ -60,8 +60,8 @@ category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
-python-versions = ">=3.6"
-version = "3.10"
+python-versions = ">=3.8"
+version = "3.11"
 
 [package.extras]
 all = ["ruff (>=0.6.2)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "flake8 (>=7.1.1)"]
@@ -187,7 +187,7 @@ description = "Render rich text, tables, progress bars, syntax highlighting, mar
 name = "rich"
 optional = false
 python-versions = ">=3.8.0"
-version = "14.1.0"
+version = "14.2.0"
 
 [package.dependencies]
 markdown-it-py = ">=2.2.0"
@@ -211,7 +211,7 @@ marker = "python_version < \"3.11\""
 name = "tomli"
 optional = false
 python-versions = ">=3.8"
-version = "2.2.1"
+version = "2.3.0"
 
 [[package]]
 category = "main"
@@ -245,7 +245,7 @@ socks = ["pysocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [metadata]
-content-hash = "a638b7ef4d9b7b2e855f452f63a4bad14a3efbb696c765e4ffebe440c618797a"
+content-hash = "289372ba649846d55866030076aaa974926be3746e7a7f1c98b27d5072138b09"
 python-versions = ">=3.10"
 
 [metadata.files]
