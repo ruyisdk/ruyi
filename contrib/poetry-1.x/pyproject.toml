@@ -31,6 +31,7 @@ include = ["ruyi/py.typed"]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
+argcomplete = ">=2.0.0"
 arpy = "*"
 fastjsonschema = ">=2.15.1"
 jinja2 = "^3"
@@ -43,7 +44,6 @@ semver = ">=2.10"
 tomlkit = ">=0.9"
 tomli = { version = ">=1.2", python = "<3.11" }
 tzdata = { version = "*", platform = "win32" }
-argcomplete = ">=2.0.0,<4.0.0"
 # markupsafe 3.0.3's pyproject.toml causes MixedArrayTypesError for Poetry 1.0.7
 markupsafe = "<3.0.3"
 
