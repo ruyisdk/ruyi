@@ -131,12 +131,16 @@ class SelfCleanCommand(
         _do_reset(
             cfg,
             quiet=quiet,
+            # state-related
+            all_state=all,
+            news_read_status=news_read_status,
+            telemetry=telemetry,
+            # cache-related
+            all_cache=all,
             distfiles=distfiles,
             installed_pkgs=installed_pkgs,
-            news_read_status=news_read_status,
             progcache=progcache,
             repo=repo,
-            telemetry=telemetry,
         )
 
         return 0
@@ -233,6 +237,7 @@ def _do_reset(
     if installed_pkgs:
         status("removing installed packages")
         shutil.rmtree(cfg.data_root, True)
+        cfg.ruyipkg_global_state.purge_installation_info()
 
     # do not record any telemetry data if we're purging it
     if all_state or telemetry:
