@@ -76,6 +76,16 @@ class RuyipkgGlobalStateStore:
         """Ensure the state directory exists."""
         self.root.mkdir(parents=True, exist_ok=True)
 
+    def purge_installation_info(self) -> None:
+        """Purge installation records."""
+        self._installs_file.unlink(missing_ok=True)
+        self._installs_cache = None
+        # if the state dir is empty, remove it
+        try:
+            self.root.rmdir()
+        except OSError:
+            pass
+
     def _load_installs(self) -> dict[str, PackageInstallationInfo]:
         """Load installation records from disk."""
         if self._installs_cache is not None:
