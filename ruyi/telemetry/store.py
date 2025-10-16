@@ -165,7 +165,7 @@ class TelemetryStore:
         payload: UploadPayload = {
             "fmt": 1,
             "nonce": payload_nonce,
-            "ruyi_version": str(RUYI_SEMVER),
+            "ruyi_version": RUYI_SEMVER,
             "events": aggregate_data,
         }
         if installation_data is not None:
