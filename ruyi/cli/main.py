@@ -6,6 +6,7 @@ from typing import Final, TYPE_CHECKING
 from ..config import GlobalConfig
 from ..telemetry.scope import TelemetryScope
 from ..utils.global_mode import GlobalModeProvider
+from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
 from .oobe import OOBE
 
@@ -22,7 +23,11 @@ def is_called_as_ruyi(argv0: str) -> bool:
 
 
 def should_prompt_for_renaming(argv0: str) -> bool:
-    return os.path.basename(argv0).lower().startswith(f"{RUYI_ENTRYPOINT_NAME}-")
+    # We need to allow things like "ruyi-qemu" through, to not break our mux.
+    # Only consider filenames starting with both our name *and* version to be
+    # un-renamed onefile artifacts that warrant a rename prompt.
+    likely_artifact_name_prefix = f"{RUYI_ENTRYPOINT_NAME}-{RUYI_SEMVER}."
+    return os.path.basename(argv0).lower().startswith(likely_artifact_name_prefix)
 
 
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
