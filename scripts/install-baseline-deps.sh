@@ -10,7 +10,6 @@ main() {
         python3-certifi  # 2020.6.20
         python3-fastjsonschema  # 2.15.1
         python3-jinja2  # 3.0.3
-        python3-packaging  # 21.3
         python3-pygit2  # 1.6.1
         python3-yaml  # 5.4.1  # https://github.com/yaml/pyyaml/issues/724
         python3-requests  # 2.25.1
