@@ -118,14 +118,6 @@ version = "0.1.2"
 
 [[package]]
 category = "main"
-description = "Core utilities for Python packages"
-name = "packaging"
-optional = false
-python-versions = ">=3.8"
-version = "25.0"
-
-[[package]]
-category = "main"
 description = "C parser in Python"
 marker = "implementation_name != \"PyPy\""
 name = "pycparser"
@@ -245,7 +237,7 @@ socks = ["pysocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [metadata]
-content-hash = "289372ba649846d55866030076aaa974926be3746e7a7f1c98b27d5072138b09"
+content-hash = "50a8aa85dad309428574f44ad573ef228e72a7fd96c08a36b632bb07993d091a"
 python-versions = ">=3.10"
 
 [metadata.files]
@@ -260,7 +252,6 @@ jinja2 = []
 markdown-it-py = []
 markupsafe = []
 mdurl = []
-packaging = []
 pycparser = []
 pygit2 = []
 pygments = []

@@ -1,53 +1,6 @@
-import importlib.metadata
-from typing import Final, TYPE_CHECKING
+from typing import Final
 
-import packaging.version
-
-if TYPE_CHECKING:
-    # pyright only works with semver 3.x
-    from semver.version import Version
-else:
-    try:
-        from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
-    except ModuleNotFoundError:
-        # semver 2.x
-        from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
-
-# NOTE: one cannot print logs in the version helpers, because the version info
-# is initialized so early (before argparse can look at argv because --version
-# requires version info to be ready) that the porcelain status is not yet
-# available.
-
-_PYPI_PRERELEASE_KINDS_MAP: Final = {
-    "a": "alpha",
-    "b": "beta",
-    "rc": "rc",
-}
-
-
-# based on https://python-semver.readthedocs.io/en/3.0.2/advanced/convert-pypi-to-semver.html
-def _convert2semver(ver: packaging.version.Version) -> Version:
-    if ver.epoch:
-        raise ValueError("Can't convert an epoch to semver")
-    if ver.post:
-        raise ValueError("Can't convert a post part to semver")
-
-    pre: str | None = None
-    if ver.pre:
-        kind, val = ver.pre
-        pre = f"{_PYPI_PRERELEASE_KINDS_MAP.get(kind, kind)}.{val}"
-
-    maj, min, pat = ver.release[:3]
-    return Version(maj, min, pat, prerelease=pre, build=ver.dev)
-
-
-def _init_pkg_semver() -> Version:
-    pkg_pypi_ver = packaging.version.Version(importlib.metadata.version("ruyi"))
-    # log.D(f"PyPI-style version of ruyi: {pkg_pypi_ver}")
-    return _convert2semver(pkg_pypi_ver)
-
-
-RUYI_SEMVER: Final = _init_pkg_semver()
+RUYI_SEMVER: Final = "0.42.0-alpha.20251013"
 RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE: Final = """\

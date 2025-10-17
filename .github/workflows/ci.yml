@@ -156,9 +156,14 @@ jobs:
         if: success() && matrix.baseline
         run: ./scripts/install-baseline-deps.sh
 
-      - name: Ensure metadata consistency for Poetry 1.x
+      - name: Ensure version metadata consistency
+        # Originally this was only checking the Poetry 1.x metadata, but now
+        # the hard-coded version string in ruyi.version is checked as well.
+        # This needs to be run only once so we still keep it in the Poetry 1.x
+        # job -- if someday Poetry 1.x compatibility is to be removed, be sure
+        # to retain the other check.
         if: success() && !matrix.baseline && matrix.poetry == 1
-        run: ./scripts/lint-poetry-1-metadata.py
+        run: ./scripts/lint-version-metadata.py
 
       - name: Install Poetry
         if: success() && !matrix.baseline
