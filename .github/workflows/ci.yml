@@ -324,7 +324,11 @@ jobs:
         if: success() && !matrix.skip
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
+          key: dist-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            dist-${{ runner.os }}-${{ matrix.arch }}-r5
+            ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
+            ${{ runner.os }}-tgt-${{ matrix.arch }}
           path: |
             build-cache
 
@@ -390,7 +394,11 @@ jobs:
         if: success() && !matrix.skip
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-tgt-${{ matrix.arch }}
+          key: clcache-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            clcache-${{ runner.os }}-${{ matrix.arch }}-r5
+            ${{ runner.os }}-tgt-${{ matrix.arch }}-r4
+            ${{ runner.os }}-tgt-${{ matrix.arch }}
           path: |
             /clcache
 
