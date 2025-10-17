@@ -11,6 +11,7 @@ from ruyi.utils.global_mode import (
     TRUTHY_ENV_VAR_VALUES,
     is_env_var_truthy,
 )
+from ruyi.utils.node_info import probe_for_container_runtime
 
 # NOTE: no imports that directly or indirectly pull in pygit2 should go here,
 # because import of pygit2 will fail if done before ssl_patch. Notably this
@@ -31,6 +32,9 @@ def _is_allowed_to_run_as_root() -> bool:
     if is_running_in_ci(os.environ):
         # CI environments are usually considered to be controlled, and safe
         # for root usage.
+        return True
+    if probe_for_container_runtime(os.environ) != "unknown":
+        # So are container environments.
         return True
     return False
 
