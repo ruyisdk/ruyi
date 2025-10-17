@@ -8,10 +8,10 @@ from typing import Callable, Final, Iterable
 import uuid
 
 from ..log import RuyiLogger
+from ..utils.node_info import NodeInfo
 from ..utils.url import urljoin_for_sure
 from .aggregate import UploadPayload, aggregate_events
 from .event import TelemetryEvent, is_telemetry_event
-from .node_info import NodeInfo
 from .scope import TelemetryScope
 
 # e.g. "run.202410201845.d06ca5d668e64fec833ed3e6eb926a2c.ndjson"

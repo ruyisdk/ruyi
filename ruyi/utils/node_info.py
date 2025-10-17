@@ -10,7 +10,7 @@ import uuid
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
-from ..utils.ci import probe_for_ci
+from .ci import probe_for_ci
 
 
 class NodeInfo(TypedDict):
