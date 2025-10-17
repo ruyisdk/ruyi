@@ -143,7 +143,7 @@ def _probe_cli_autocomplete(env: Mapping[str, str], argv: list[str]) -> bool:
         if arg.startswith("--output-completion-script"):
             return True
 
-    return "_ARGCOMPLETE" in os.environ
+    return "_ARGCOMPLETE" in env
 
 
 class EnvGlobalModeProvider(GlobalModeProvider):
