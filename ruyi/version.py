@@ -1,6 +1,6 @@
 from typing import Final
 
-RUYI_SEMVER: Final = "0.42.0-beta.20251015"
+RUYI_SEMVER: Final = "0.42.0-beta.20251017"
 RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE: Final = """\
