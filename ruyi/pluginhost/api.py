@@ -44,7 +44,7 @@ class RuyiHostAPI:
 
     @property
     def ruyi_version(self) -> str:
-        return str(RUYI_SEMVER)
+        return RUYI_SEMVER
 
     @property
     def ruyi_plugin_api_rev(self) -> int:
