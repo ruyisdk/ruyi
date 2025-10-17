@@ -8,7 +8,7 @@ from typing import Callable, TYPE_CHECKING, cast
 import uuid
 
 from ..log import RuyiLogger
-from .node_info import NodeInfo, gather_node_info
+from ..utils.node_info import NodeInfo, gather_node_info
 from .scope import TelemetryScope
 from .store import TelemetryStore
 

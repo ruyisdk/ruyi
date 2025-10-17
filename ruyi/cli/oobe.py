@@ -65,7 +65,7 @@ class OOBE:
             handler()
 
     def _builtin_shell_completion_tip(self) -> None:
-        from ..telemetry.node_info import probe_for_shell
+        from ..utils.node_info import probe_for_shell
         from .completion import SUPPORTED_SHELLS
 
         # Only show the tip if we're not externally managed by a package manager,

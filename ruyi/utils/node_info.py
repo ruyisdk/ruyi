@@ -1,5 +1,6 @@
 import glob
 import os
+import pathlib
 import platform
 import re
 import subprocess
@@ -10,7 +11,7 @@ import uuid
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
-from ..utils.ci import probe_for_ci
+from .ci import probe_for_ci
 
 
 class NodeInfo(TypedDict):
@@ -159,6 +160,56 @@ def probe_for_shell(os_environ: Mapping[str, str]) -> str:
     if x := os_environ.get("SHELL"):
         return os.path.basename(x)
     return "unknown"
+
+
+def probe_for_container_runtime(os_environ: Mapping[str, str]) -> str:
+    """Check if we are likely running in a container. Probes FS and environment
+    for signatures of known container runtimes."""
+
+    # check environment markers first
+
+    if "KUBERNETES_SERVICE_HOST" in os_environ:
+        return "kubernetes"
+
+    if "container" in os_environ:
+        v = os_environ["container"].lower()
+        if v == "oci":
+            return "other-oci-compliant"
+        # could be e.g. "lxc", "lxc-libvirt", "systemd-nspawn", etc.
+        return v
+
+    # check for filesystem markers
+
+    if os.path.exists("/run/.containerenv"):
+        return "podman"
+    # Docker must be checked after Podman
+    if os.path.exists("/.dockerenv"):
+        return "docker"
+
+    try:
+        v = pathlib.Path("/run/systemd/container").read_text(encoding="utf-8").strip()
+        if v:
+            return v.lower()
+    except Exception:
+        pass
+
+    if _probe_for_wsl():
+        return "wsl"
+
+    return "unknown"
+
+
+def _probe_for_wsl() -> bool:
+    if sys.platform != "linux":
+        return False
+    # http://github.com/Microsoft/WSL/issues/423#issuecomment-221627364
+    for path in ("/proc/sys/kernel/osrelease", "/proc/version"):
+        try:
+            ver = pathlib.Path(path).read_text(encoding="utf-8")
+        except Exception:
+            continue
+        return "Microsoft" in ver or "WSL" in ver
+    return False
 
 
 def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
