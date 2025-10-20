@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+
+# See debhelper(7) (uncomment to enable).
+# Output every command that modifies files on the build system.
+export DH_VERBOSE = 1
+distribution	:= $(shell lsb_release -is)
+distrelease	:= $(shell lsb_release -cs)
+derivative	:= $(shell if dpkg-vendor --derives-from Ubuntu; then echo Ubuntu; \
+			elif dpkg-vendor --derives-from Debian; then echo Debian; \
+			else echo Unknown; fi)
+
+ifeq ($(distrelease),n/a)
+distrelease	:= sid
+endif
+
+poetry_1_release := bookworm jammy noble beige
+
+export PYBUILD_NAME=python-ruyi
+
+%:
+	dh $@ --buildsystem=pybuild --with bash-completion
+
+override_dh_auto_configure:
+ifneq (,$(filter $(distrelease),$(poetry_1_release)))
+	mv -v contrib/poetry-1.x/* .
+endif
+	dh_auto_configure
+
+override_dh_auto_install:
+	dh_auto_install
+	dh_install debian/config.toml usr/share/ruyi/

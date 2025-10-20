@@ -1,0 +1,45 @@
+Source: ruyi
+Section: python
+Priority: optional
+Maintainer: JYbrucEupup <691800735@qq.com>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ bash-completion,
+ lsb-release,
+ dh-sequence-python3,
+ python3-setuptools,
+ python3-all,
+ pybuild-plugin-pyproject,
+ python3-arpy <!nocheck>,
+ python3-fastjsonschema <!nocheck>,
+ python3-jinja2 <!nocheck>,
+ python3-pytest <!nocheck>,
+ python3-poetry-core (>= 1.0.7),
+ python3-rich <!nocheck>,
+ python3-semver <!nocheck>,
+ python3-tomlkit <!nocheck>,
+#Testsuite: autopkgtest-pkg-python
+Standards-Version: 4.7.2
+Homepage: https://github.com/ruyisdk/ruyi
+Vcs-Browser: https://github.com/revyos/python-ruyi
+Vcs-Git: https://github.com/revyos/python-ruyi.git
+
+Package: ruyi
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+Recommends:
+ bzip2,
+ coreutils,
+ curl | wget,
+ fastboot,
+ gzip,
+ lz4,
+ tar,
+ unzip,
+ xz-utils,
+ zstd,
+Provides: ruyi
+Description: The package manager for RuyiSDK.
