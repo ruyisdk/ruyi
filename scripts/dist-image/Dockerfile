@@ -68,7 +68,7 @@ apt-get install -qqy "${package_list[@]}"
 ln -s /usr/bin/FileCheck-15 /usr/local/bin/FileCheck
 
 # Ubuntu 22.04 does not have yq in archive
-wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_linux_$TARGETARCH
+wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_$TARGETARCH
 chmod a+x /usr/local/bin/yq
 
 apt-get clean
