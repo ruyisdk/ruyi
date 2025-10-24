@@ -21,6 +21,9 @@ STDLIBS_TO_PRELOAD = [
     "zlib",
 ]
 
+if sys.version_info >= (3, 14):
+    STDLIBS_TO_PRELOAD.append("annotationlib")
+
 CURRENT_ALLOWLIST = {
     "ruyi",
     "ruyi.cli",

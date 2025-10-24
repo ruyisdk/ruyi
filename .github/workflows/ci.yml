@@ -109,13 +109,14 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
         experimental: [false]
         baseline: [false]
         runs_on: ["ubuntu-latest"]
         poetry: [2]
         include:
           # not yet available
-          #- python: '3.14'
+          #- python: '3.15'
           #  baseline: false
           #  experimental: true
           #  runs_on: ubuntu-latest
