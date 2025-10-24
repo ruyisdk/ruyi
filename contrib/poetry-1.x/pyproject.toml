@@ -35,6 +35,7 @@ argcomplete = ">=2.0.0"
 arpy = "*"
 fastjsonschema = ">=2.15.1"
 jinja2 = "^3"
+# cannot represent multiple pygit2's with different python version markers
 pygit2 = ">=1.6"
 pyyaml = ">=5.4"
 requests = "^2"
