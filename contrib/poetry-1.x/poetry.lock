@@ -4,7 +4,7 @@ description = "Bash tab completion for argparse"
 name = "argcomplete"
 optional = false
 python-versions = ">=3.8"
-version = "3.6.2"
+version = "3.6.3"
 
 [package.extras]
 test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
