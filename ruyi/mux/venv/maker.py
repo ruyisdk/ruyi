@@ -13,8 +13,17 @@ from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
 from ...utils.global_mode import ProvidesGlobalMode
 from ...utils.templating import render_template_str
-from . import ConfiguredTargetTuple
 from .emulator_cfg import ResolvedEmulatorProg
+
+
+class ConfiguredTargetTuple(TypedDict):
+    target: str
+    toolchain_root: PathLike[Any]
+    toolchain_sysroot: PathLike[Any] | None
+    toolchain_flags: str
+    binutils_flavor: str
+    cc_flavor: str
+    gcc_install_dir: PathLike[Any] | None
 
 
 def do_make_venv(
