@@ -30,6 +30,7 @@ RuyiSDK 体系内的命名作出一些约定。
 | `pine64` | Pine64 |
 | `sifive` | SiFive |
 | `sipeed` | Sipeed |
+| `spacemit` | SpacemiT |
 | `starfive` | StarFive |
 | `wch` | WinChipHead |
 
