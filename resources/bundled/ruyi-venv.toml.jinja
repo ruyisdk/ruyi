@@ -3,3 +3,39 @@ profile = "{{ profile }}"
 {% if sysroot -%}
 sysroot = "{{ sysroot }}"
 {%- endif %}
+
+[metadata]
+version = 1
+
+{% macro pkg_metadata(p) -%}
+repo_id = "{{ p['repo_id'] }}"
+category = "{{ p['category'] }}"
+name = "{{ p['name'] }}"
+version = "{{ p['version'] }}"
+{%- endmacro %}
+
+{% if metadata["sysroot_pkg"] %}
+[metadata.packages.sysroot]
+{{ pkg_metadata(metadata["sysroot_pkg"]) }}
+{% endif %}
+
+{% if metadata["emulator_pkgs"] %}
+{% for target_arch, p in metadata["emulator_pkgs"].items() -%}
+[metadata.packages.emulator."{{ target_arch }}"]
+{{ pkg_metadata(p) }}
+{% endfor %}
+{% endif %}
+
+{% if metadata["extra_pkgs"] %}
+{% for p in metadata["extra_pkgs"] -%}
+[[metadata.packages.extra]]
+{{ pkg_metadata(p) }}
+{% endfor %}
+{% endif %}
+
+{% if metadata["toolchain_pkgs"] %}
+{% for target_arch, p in metadata["toolchain_pkgs"].items() -%}
+[metadata.packages.toolchain."{{ target_arch }}"]
+{{ pkg_metadata(p) }}
+{% endfor %}
+{% endif %}
