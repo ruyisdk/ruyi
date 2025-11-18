@@ -9,7 +9,7 @@ from typing import Any, Final, Iterator, TypedDict
 from ...config import GlobalConfig
 from ...log import RuyiLogger, humanize_list
 from ...ruyipkg.atom import Atom
-from ...ruyipkg.pkg_manifest import EmulatorProgDecl
+from ...ruyipkg.pkg_manifest import BoundPackageManifest, EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
 from ...utils.global_mode import ProvidesGlobalMode
 from ...utils.templating import render_template_str
@@ -24,6 +24,29 @@ class ConfiguredTargetTuple(TypedDict):
     binutils_flavor: str
     cc_flavor: str
     gcc_install_dir: PathLike[Any] | None
+
+
+class VenvPackageInfo(TypedDict):
+    repo_id: str
+    category: str
+    name: str
+    version: str
+
+
+class VenvMetadata(TypedDict):
+    emulator_pkgs: dict[str, VenvPackageInfo]
+    extra_pkgs: list[VenvPackageInfo]
+    sysroot_pkg: VenvPackageInfo | None
+    toolchain_pkgs: dict[str, VenvPackageInfo]
+
+
+def _venv_pkg_info_from_pkg(pkg: BoundPackageManifest) -> VenvPackageInfo:
+    return VenvPackageInfo(
+        repo_id=pkg.repo_id,
+        category=pkg.category,
+        name=pkg.name,
+        version=pkg.ver,
+    )
 
 
 def do_make_venv(
@@ -59,6 +82,12 @@ def do_make_venv(
     seen_target_tuples: set[str] = set()
     targets: list[ConfiguredTargetTuple] = []
     warn_differing_target_arch = False
+    venv_metadata = VenvMetadata(
+        emulator_pkgs={},
+        extra_pkgs=[],
+        sysroot_pkg=None,
+        toolchain_pkgs={},
+    )
 
     for tc_atom_str in tc_atoms_str:
         tc_atom = Atom.parse(tc_atom_str)
@@ -106,6 +135,7 @@ def do_make_venv(
         if with_sysroot:
             if tc_sysroot_relpath := tc_pm.toolchain_metadata.included_sysroot:
                 tc_sysroot_dir = pathlib.Path(toolchain_root) / tc_sysroot_relpath
+                venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(tc_pm)
             else:
                 if sysroot_atom_str is None:
                     logger.F(
@@ -165,6 +195,8 @@ def do_make_venv(
                     )
                     return 1
 
+                venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(gcc_pkg_pm)
+
         # derive flags for (the quirks of) this toolchain
         tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.quirks)
 
@@ -186,6 +218,7 @@ def do_make_venv(
         logger.D(f"configuration for {target_tuple}: {configured_target}")
         targets.append(configured_target)
         seen_target_tuples.add(target_tuple)
+        venv_metadata["toolchain_pkgs"][target_tuple] = _venv_pkg_info_from_pkg(tc_pm)
 
         # record the target architecture for use in emulator package matching
         if not target_arch:
@@ -245,6 +278,8 @@ def do_make_venv(
             logger.F("cannot find the installed directory for the emulator")
             return 1
 
+        venv_metadata["emulator_pkgs"][target_arch] = _venv_pkg_info_from_pkg(emu_pm)
+
     # Now resolve extra commands to provide in the venv.
     extra_cmds: dict[str, str] = {}
     if extra_cmd_atoms_str:
@@ -285,6 +320,8 @@ def do_make_venv(
                 return 1
             cmd_root = pathlib.Path(cmd_root)
 
+            venv_metadata["extra_pkgs"].append(_venv_pkg_info_from_pkg(extra_cmd_pm))
+
             for cmd, cmd_rel_path in extra_cmds_decl.items():
                 # resolve the command path
                 cmd_path = (cmd_root / cmd_rel_path).resolve()
@@ -314,6 +351,7 @@ def do_make_venv(
         emu_progs,
         emu_root,
         extra_cmds,
+        venv_metadata,
         override_name,
     )
     maker.provision()
@@ -359,6 +397,7 @@ class VenvMaker:
         emulator_progs: list[EmulatorProgDecl] | None,
         emulator_root: PathLike[Any] | None,
         extra_cmds: dict[str, str] | None,
+        metadata: VenvMetadata,
         override_name: str | None = None,
     ) -> None:
         self.gc = gc
@@ -368,6 +407,7 @@ class VenvMaker:
         self.emulator_progs = emulator_progs
         self.emulator_root = emulator_root
         self.extra_cmds = extra_cmds or {}
+        self.metadata = metadata
         self.override_name = override_name
 
         self.bindir = self.venv_root / "bin"
@@ -424,6 +464,7 @@ class VenvMaker:
         env_data = {
             "profile": self.profile.id,
             "sysroot": self.sysroot_destdir(None),
+            "metadata": self.metadata,
         }
         self.render_and_write(
             venv_root / "ruyi-venv.toml",
