@@ -148,7 +148,7 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
     @staticmethod
     def source_to_code(
         data: "Buffer | str | ast.Module",
-        path: "Buffer | str | os.PathLike[str]" = "<string>",
+        path: "str | os.PathLike[str]" = "<string>",
     ) -> CodeType:
         mod_ast: ast.Module
         if isinstance(data, ast.Module):
