@@ -23,7 +23,7 @@ description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
 python-versions = ">=3.7"
-version = "2025.10.5"
+version = "2025.11.12"
 
 [[package]]
 category = "main"
