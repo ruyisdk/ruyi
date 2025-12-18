@@ -3,6 +3,7 @@ import datetime
 import functools
 import json
 import pathlib
+import random
 import time
 from typing import Callable, TYPE_CHECKING, cast
 import uuid
@@ -21,18 +22,18 @@ FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 TELEMETRY_CONSENT_AND_UPLOAD_DESC = """
 RuyiSDK collects anonymized usage data locally to help us improve the product.
 
-[green]By default, nothing leaves your machine[/], and you can also turn off usage data
-collection completely. Only with your explicit permission can [yellow]ruyi[/] upload
-collected telemetry, periodically to RuyiSDK team-managed servers located in
-the Chinese mainland. You can change this setting at any time by running
+[green]By default, only ruyi's version is reported[/], and you can also turn off
+data collection completely. Only with your explicit permission can [yellow]ruyi[/] upload
+more usage data, periodically to RuyiSDK team-managed servers located in the
+Chinese mainland. You can change this setting at any time by running
 [yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or [yellow]ruyi telemetry optout[/].
 
-If you enable uploads now, we'll also send a one-time report from this [yellow]ruyi[/]
-installation so the RuyiSDK team can better understand adoption. Thank you for
-helping us build a better experience!
+If you do not disable uploads now, we'll also send a one-time report from this
+[yellow]ruyi[/] installation so the RuyiSDK team can better understand adoption.
+Thank you for helping us build a better experience!
 """
 TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = (
-    "Enable telemetry uploads and send a one-time report now?"
+    "Do you agree to have usage data collected and periodically uploaded?"
 )
 TELEMETRY_OPTOUT_PROMPT = "\nDo you want to disable telemetry entirely?"
 
@@ -130,7 +131,7 @@ def set_telemetry_mode(
 
 
 class TelemetryProvider:
-    def __init__(self, gc: "GlobalConfig") -> None:
+    def __init__(self, gc: "GlobalConfig", minimal: bool) -> None:
         self.state_root = pathlib.Path(gc.telemetry_root)
 
         self._discard_events = False
@@ -138,6 +139,7 @@ class TelemetryProvider:
         self._is_first_run = False
         self._stores: dict[TelemetryScope, TelemetryStore] = {}
         self._upload_on_exit = False
+        self.minimal = minimal
 
         # create the PM store
         self.init_store(TelemetryScope(None))
@@ -154,6 +156,8 @@ class TelemetryProvider:
 
     @property
     def upload_consent_time(self) -> datetime.datetime | None:
+        if self.minimal or self.local_mode:
+            return None
         return self._gc.telemetry_upload_consent_time
 
     def store(self, scope: TelemetryScope) -> TelemetryStore | None:
@@ -203,11 +207,18 @@ class TelemetryProvider:
     def installation_file(self) -> pathlib.Path:
         return self.state_root / "installation.json"
 
+    @property
+    def minimal_weekday_file(self) -> pathlib.Path:
+        return self.state_root / "minimal-weekday.txt"
+
     def check_first_run_status(self) -> None:
         """Check if this is the first run of the application by checking if installation file exists.
         This must be done before init_installation() is potentially called.
         """
-        self._is_first_run = not self.installation_file.exists()
+        self._is_first_run = (
+            not self.installation_file.exists()
+            and not self.minimal_weekday_file.exists()
+        )
 
     @property
     def is_first_run(self) -> bool:
@@ -215,9 +226,15 @@ class TelemetryProvider:
         return self._is_first_run
 
     def init_installation(self, force_reinit: bool) -> NodeInfo | None:
+        if self.minimal:
+            # be extra safe by not reading or writing installation data at all
+            # in minimal mode
+            self._init_minimal_weekday(force_reinit)
+            return None
+
         installation_file = self.installation_file
         if installation_file.exists() and not force_reinit:
-            return self.read_installation_data()
+            return self._read_installation_data()
 
         # either this is a fresh installation or we're forcing a refresh
         installation_id = uuid.uuid4()
@@ -232,13 +249,48 @@ class TelemetryProvider:
             fp.write(json.dumps(installation_data).encode("utf-8"))
         return installation_data
 
-    def read_installation_data(self) -> NodeInfo | None:
+    def _init_minimal_weekday(self, force_reinit: bool) -> None:
+        if self.minimal_weekday_file.exists() and not force_reinit:
+            return
+
+        # randomly pick a minimal upload weekday
+        random.seed()
+        wday = random.randint(0, 6)  # 0 is Monday
+        self.logger.D(f"initializing minimal upload weekday file, wday={wday}")
+        self.state_root.mkdir(parents=True, exist_ok=True)
+
+        # write minimal weekday data
+        with open(self.minimal_weekday_file, "wb") as fp:
+            fp.write(f"{wday}\n".encode("utf-8"))
+
+    def _read_installation_data(self) -> NodeInfo | None:
         with open(self.installation_file, "rb") as fp:
             return cast(NodeInfo, json.load(fp))
 
-    def upload_weekday(self) -> int | None:
+    def _read_minimal_weekday(self) -> int | None:
         try:
-            installation_data = self.read_installation_data()
+            with open(self.minimal_weekday_file, "rb") as fp:
+                content = fp.read().decode("utf-8").strip()
+        except (FileNotFoundError, ValueError):
+            return None
+
+        try:
+            wday = int(content, 10)
+        except ValueError:
+            return None
+
+        if not (0 <= wday <= 6):
+            return None
+
+        return wday
+
+    def _upload_weekday(self) -> int | None:
+        if self.minimal:
+            # just read from minimal weekday file
+            return self._read_minimal_weekday()
+
+        try:
+            installation_data = self._read_installation_data()
         except FileNotFoundError:
             # init the node info if it's gone
             installation_data = self.init_installation(False)
@@ -253,55 +305,26 @@ class TelemetryProvider:
 
         return report_uuid_prefix % 7  # 0 is Monday
 
-    def has_upload_consent(self, time_now: float | None = None) -> bool:
+    def _has_upload_consent(self, time_now: float | None = None) -> bool:
         if self.upload_consent_time is None:
             return False
         if time_now is None:
             time_now = time.time()
         return self.upload_consent_time.timestamp() <= time_now
 
-    def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
-        if self.local_mode:
-            if for_cli_verbose_output:
-                self.logger.I(
-                    "telemetry mode is [green]local[/]: local data collection only, no uploads"
-                )
-            return
-
-        now = time.time()
-        if self.has_upload_consent(now) and not for_cli_verbose_output:
-            self.logger.D("user has consented to telemetry upload")
-            return
-
-        upload_wday = self.upload_weekday()
-        if upload_wday is None:
-            return
-        upload_wday_name = calendar.day_name[upload_wday]
-
+    def _print_upload_schedule_notice(self, upload_wday: int, now: float) -> None:
         next_upload_day_ts = next_utc_weekday(upload_wday, now)
         next_upload_day = time.localtime(next_upload_day_ts)
         next_upload_day_end = time.localtime(next_upload_day_ts + 86400)
         next_upload_day_str = time.strftime("%Y-%m-%d %H:%M:%S %z", next_upload_day)
         next_upload_day_end_str = time.strftime(
-            "%Y-%m-%d %H:%M:%S %z", next_upload_day_end
+            "%Y-%m-%d %H:%M:%S %z",
+            next_upload_day_end,
         )
 
-        today_is_upload_day = self.is_upload_day(now)
-        if for_cli_verbose_output:
-            self.logger.I(
-                "telemetry mode is [green]on[/]: data is collected and periodically uploaded"
-            )
-            self.logger.I(
-                f"non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {upload_wday_name}[/]"
-            )
-        else:
-            self.logger.W(
-                f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
-            )
-
-        if today_is_upload_day:
+        if self._is_upload_day(now):
             for scope, store in self._stores.items():
-                has_uploaded_today = self.has_uploaded_today(scope, now)
+                has_uploaded_today = self._has_uploaded_today(scope, now)
                 if has_uploaded_today:
                     if last_upload_time := store.last_upload_timestamp:
                         last_upload_time_str = time.strftime(
@@ -323,32 +346,75 @@ class TelemetryProvider:
                 f"the next upload will happen anytime [yellow]ruyi[/] is executed between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
             )
 
+    def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
+        now = time.time()
+        upload_wday = self._upload_weekday()
+        if upload_wday is None:
+            self.logger.W(
+                "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
+            )
+            return
+
+        upload_wday_name = calendar.day_name[upload_wday]
+
+        if self.minimal:
+            if for_cli_verbose_output:
+                self.logger.I(
+                    "telemetry mode is [green]off[/]: nothing is collected, only ruyi's version will be reported if requested"
+                )
+            return
+
+        if self.local_mode:
+            if for_cli_verbose_output:
+                self.logger.I(
+                    "telemetry mode is [green]local[/]: local usage collection only, no usage uploads except if requested"
+                )
+            return
+
+        if self._has_upload_consent(now) and not for_cli_verbose_output:
+            self.logger.D("user has consented to telemetry upload")
+            return
+
+        if for_cli_verbose_output:
+            self.logger.I(
+                "telemetry mode is [green]on[/]: usage data is collected and periodically uploaded"
+            )
+            self.logger.I(
+                f"non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {upload_wday_name}[/]"
+            )
+        else:
+            self.logger.W(
+                f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
+            )
+
+        self._print_upload_schedule_notice(upload_wday, now)
+
         if not for_cli_verbose_output:
             self.logger.I("in order to hide this banner:")
             self.logger.I("- opt out with [yellow]ruyi telemetry optout[/]")
             self.logger.I("- or give consent with [yellow]ruyi telemetry consent[/]")
 
-    def next_upload_day(self, time_now: float | None = None) -> int | None:
-        upload_wday = self.upload_weekday()
+    def _next_upload_day(self, time_now: float | None = None) -> int | None:
+        upload_wday = self._upload_weekday()
         if upload_wday is None:
             return None
         return next_utc_weekday(upload_wday, time_now)
 
-    def is_upload_day(self, time_now: float | None = None) -> bool:
+    def _is_upload_day(self, time_now: float | None = None) -> bool:
         if time_now is None:
             time_now = time.time()
-        if upload_day := self.next_upload_day(time_now):
+        if upload_day := self._next_upload_day(time_now):
             return upload_day <= time_now
         return False
 
-    def has_uploaded_today(
+    def _has_uploaded_today(
         self,
         scope: TelemetryScope,
         time_now: float | None = None,
     ) -> bool:
         if time_now is None:
             time_now = time.time()
-        if upload_day := self.next_upload_day(time_now):
+        if upload_day := self._next_upload_day(time_now):
             upload_day_end = upload_day + 86400
             store = self.store(scope)
             if store is None:
@@ -358,14 +424,28 @@ class TelemetryProvider:
         return False
 
     def record(self, scope: TelemetryScope, kind: str, **params: object) -> None:
+        if self.minimal:
+            self.logger.D(
+                f"minimal telemetry mode enabled, discarding event '{kind}' for scope {scope}"
+            )
+            return
+
         if store := self.store(scope):
             return store.record(kind, **params)
-        self.logger.D(f"no telemetry store for scope {scope}, discarding event")
+        self.logger.D(
+            f"no telemetry store for scope {scope}, discarding event '{kind}'"
+        )
 
     def discard_events(self, v: bool = True) -> None:
         self._discard_events = v
 
     def flush(self, *, upload_now: bool = False) -> None:
+        if self.minimal:
+            if upload_now:
+                for store in self._stores.values():
+                    store.upload_minimal()
+            return
+
         now = time.time()
 
         # We may be self-uninstalling and purging all state data, and in this
@@ -386,19 +466,19 @@ class TelemetryProvider:
             # * we haven't uploaded today
             if not (upload_now or self._upload_on_exit) and (
                 self.local_mode
-                or not self.is_upload_day(now)
-                or self.has_uploaded_today(scope, now)
+                or not self._is_upload_day(now)
+                or self._has_uploaded_today(scope, now)
             ):
                 continue
 
-            self.prepare_data_for_upload(store)
-            self.upload_staged_payloads(store)
+            self._prepare_data_for_upload(store)
+            self._upload_staged_payloads(store)
 
-    def prepare_data_for_upload(self, store: TelemetryStore) -> None:
+    def _prepare_data_for_upload(self, store: TelemetryStore) -> None:
         installation_data: NodeInfo | None = None
         if store.scope.is_pm:
             try:
-                installation_data = self.read_installation_data()
+                installation_data = self._read_installation_data()
             except FileNotFoundError:
                 # should not happen due to is_upload_day() initializing it for us
                 # beforehand, but proceed without node info nonetheless
@@ -406,7 +486,7 @@ class TelemetryProvider:
 
         return store.prepare_data_for_upload(installation_data)
 
-    def upload_staged_payloads(self, store: TelemetryStore) -> None:
+    def _upload_staged_payloads(self, store: TelemetryStore) -> None:
         if self.local_mode:
             return
 

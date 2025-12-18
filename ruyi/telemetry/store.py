@@ -85,6 +85,11 @@ class TelemetryStore:
     def record_upload_timestamp(self, time_now: float | None = None) -> None:
         if time_now is None:
             time_now = time.time()
+
+        # We may not have store_root existing yet if we're in minimal telemetry
+        # mode
+        self.store_root.mkdir(parents=True, exist_ok=True)
+
         f = self.last_upload_marker_file
         f.touch()
         os.utime(f, (time_now, time_now))
@@ -212,6 +217,7 @@ class TelemetryStore:
 
         p = self.prepare_data_for_minimal_upload()
         self.upload_one_staged_payload(p, self.api_url)
+        self.record_upload_timestamp()
 
     def upload_staged_payloads(self) -> None:
         if not self.api_url:

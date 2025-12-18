@@ -297,17 +297,13 @@ class GlobalConfig:
     def telemetry_root(self) -> os.PathLike[Any]:
         return pathlib.Path(self.ensure_state_dir()) / "telemetry"
 
-    @property
-    def telemetry(self) -> "TelemetryProvider | None":
-        return None if self.telemetry_mode == "off" else self._telemetry_provider
-
     @cached_property
-    def _telemetry_provider(self) -> "TelemetryProvider | None":
-        """Do not access directly; use the ``telemetry`` property instead."""
-
+    def telemetry(self) -> "TelemetryProvider | None":
         from ..telemetry.provider import TelemetryProvider
 
-        return None if self.telemetry_mode == "off" else TelemetryProvider(self)
+        # for allowing minimal uploads when telemetry is off
+        minimal_mode = self.telemetry_mode == "off"
+        return TelemetryProvider(self, minimal_mode)
 
     @property
     def telemetry_mode(self) -> str:
