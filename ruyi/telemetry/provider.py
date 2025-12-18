@@ -516,12 +516,14 @@ class TelemetryProvider:
             return
 
         now = time.time()
-        should_proceed = lambda scope: self._should_proceed_with_upload(
-            scope,
-            explicit_request=upload_now,
-            cron_mode=cron_mode,
-            now=now,
-        )
+
+        def should_proceed(scope: TelemetryScope) -> tuple[bool, str]:
+            return self._should_proceed_with_upload(
+                scope,
+                explicit_request=upload_now,
+                cron_mode=cron_mode,
+                now=now,
+            )
 
         if self.minimal:
             for scope, store in self._stores.items():
