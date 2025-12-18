@@ -117,10 +117,6 @@ class TelemetryUploadCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        if cfg.telemetry is None:
-            cfg.logger.W("telemetry is disabled, nothing to upload")
-            return 0
-
         cfg.telemetry.flush(upload_now=True)
         # disable the flush at program exit because we have just done that
         cfg.telemetry.discard_events()

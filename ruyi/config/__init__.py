@@ -298,7 +298,7 @@ class GlobalConfig:
         return pathlib.Path(self.ensure_state_dir()) / "telemetry"
 
     @cached_property
-    def telemetry(self) -> "TelemetryProvider | None":
+    def telemetry(self) -> "TelemetryProvider":
         from ..telemetry.provider import TelemetryProvider
 
         # for allowing minimal uploads when telemetry is off
