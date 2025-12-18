@@ -122,10 +122,6 @@ class TelemetryStore:
             f"scope {self.scope}: persisted {len(self._events)} telemetry event(s)"
         )
 
-    def upload(self, installation_data: NodeInfo | None = None) -> None:
-        self.prepare_data_for_upload(installation_data)
-        self.upload_staged_payloads()
-
     def read_back_raw_events(self) -> Iterable[TelemetryEvent]:
         try:
             for f in self.raw_events_dir.glob("run.*.ndjson"):
@@ -177,6 +173,46 @@ class TelemetryStore:
 
         self.purge_raw_events()
 
+    def prepare_data_for_minimal_upload(self) -> bytes:
+        """Prepare a minimal upload payload with no installation data and no events.
+
+        Used when user has not consented to telemetry collection but also not
+        explicitly opted out, for gaining minimal insight into adoption.
+        """
+
+        # import ruyi.version here because this package is on the CLI startup
+        # critical path, and version probing is costly there
+        from ..version import RUYI_SEMVER
+
+        payload_nonce = uuid.uuid4().hex  # for server-side dedup purposes
+
+        # We don't have installation data, and cannot have it initialized
+        # in this case because absence of installation data means no user
+        # consent. And making up a persistent installation ID is not a
+        # choice either, because "installation ID" resembles "advertising
+        # ID" a lot, which is considered personally identifiable information
+        # (PII) and not allowed to be collected without user consent.
+        #
+        # So, resort to re-using the completely random nonce as the report
+        # UUID, which does not allow for server-side correlation but at least
+        # allows for some insight into end-user adoption.
+        payload: UploadPayload = {
+            "fmt": 1,
+            "nonce": payload_nonce,
+            "ruyi_version": RUYI_SEMVER,
+            "report_uuid": payload_nonce,
+            "events": [],
+        }
+
+        return json.dumps(payload).encode("utf-8")
+
+    def upload_minimal(self) -> None:
+        if not self.api_url:
+            return
+
+        p = self.prepare_data_for_minimal_upload()
+        self.upload_one_staged_payload(p, self.api_url)
+
     def upload_staged_payloads(self) -> None:
         if not self.api_url:
             return
@@ -198,7 +234,7 @@ class TelemetryStore:
 
     def upload_one_staged_payload(
         self,
-        f: pathlib.Path,
+        f: pathlib.Path | bytes,
         endpoint: str,
     ) -> None:
         # import ruyi.version here because this package is on the CLI startup
@@ -206,13 +242,23 @@ class TelemetryStore:
         from ..version import RUYI_USER_AGENT
 
         api_path = urljoin_for_sure(endpoint, "upload-v1")
-        self._logger.D(f"scope {self.scope}: about to upload payload {f} to {api_path}")
+
+        if isinstance(f, pathlib.Path):
+            self._logger.D(
+                f"scope {self.scope}: about to upload payload {f} to {api_path}"
+            )
+            data = f.read_bytes()
+        else:
+            self._logger.D(
+                f"scope {self.scope}: about to upload in-memory payload to {api_path}"
+            )
+            data = f
 
         import requests
 
         resp = requests.post(
             api_path,
-            data=f.read_bytes(),
+            data=data,
             headers={"User-Agent": RUYI_USER_AGENT},
             allow_redirects=True,
             timeout=5,
@@ -228,11 +274,12 @@ class TelemetryStore:
             f"scope {self.scope}: telemetry upload ok: status code {resp.status_code}"
         )
 
-        # move to completed dir
-        # TODO: rotation
-        try:
-            f.rename(self.uploaded_dir / f.name)
-        except OSError as e:
-            self._logger.D(
-                f"scope {self.scope}: failed to move uploaded payload away: {e}"
-            )
+        if isinstance(f, pathlib.Path):
+            # move to completed dir
+            # TODO: rotation
+            try:
+                f.rename(self.uploaded_dir / f.name)
+            except OSError as e:
+                self._logger.D(
+                    f"scope {self.scope}: failed to move uploaded payload away: {e}"
+                )
