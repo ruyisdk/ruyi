@@ -272,11 +272,13 @@ class TelemetryProvider:
     def _read_minimal_weekday(self) -> int | None:
         try:
             with open(self.minimal_weekday_file, "rb") as fp:
-                content = fp.read().decode("utf-8").strip()
-        except (FileNotFoundError, ValueError):
+                # It's just a single ASCII digit
+                content = fp.read().decode("ascii", "replace").strip()
+        except OSError:
             return None
 
         try:
+            # any non-ASCII content will error out here during parsing
             wday = int(content, 10)
         except ValueError:
             return None
