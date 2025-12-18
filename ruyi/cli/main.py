@@ -39,11 +39,11 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     if not gm.is_cli_autocomplete:
         oobe = OOBE(gc)
 
-        if tm := gc.telemetry:
-            tm.check_first_run_status()
-            tm.init_installation(False)
-            atexit.register(tm.flush)
-            oobe.handlers.append(tm.oobe_prompt)
+        tm = gc.telemetry
+        tm.check_first_run_status()
+        tm.init_installation(False)
+        atexit.register(tm.flush)
+        oobe.handlers.append(tm.oobe_prompt)
 
         oobe.maybe_prompt()
 
@@ -59,12 +59,11 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         from ..mux.runtime import mux_main
 
         # record an invocation and the command name being proxied to
-        if tm := gc.telemetry:
-            tm.record(
-                TelemetryScope(None),
-                "cli:mux-invocation-v1",
-                target=os.path.basename(gm.argv0),
-            )
+        gc.telemetry.record(
+            TelemetryScope(None),
+            "cli:mux-invocation-v1",
+            target=os.path.basename(gm.argv0),
+        )
 
         return mux_main(gm, gc, argv)
 
@@ -127,8 +126,16 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     except AttributeError:
         pass
 
-    if tm := gc.telemetry:
-        tm.print_telemetry_notice()
+    tm = gc.telemetry
+    tm.print_telemetry_notice()
+
+    # Do not record `ruyi telemetry --cron-upload` invocations.
+    skip_recording_invocation = telemetry_key == "telemetry" and getattr(
+        args,
+        "cron_upload",
+        False,
+    )
+    if not skip_recording_invocation:
         tm.record(
             TelemetryScope(None),
             "cli:invocation-v1",

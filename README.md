@@ -163,7 +163,8 @@ described below.
 There are 3 telemetry modes available:
 
 * `local`: data will be collected but not uploaded without user action.
-* `off`: data will not be collected nor uploaded.
+* `off`: data will not be collected nor uploaded, except for a single version
+  number of `ruyi` reported at most once per week.
 * `on`: data will be collected and periodically uploaded.
 
 By default the `local` mode is active from `ruyi` 0.42.0 (inclusive) on, which

@@ -13,12 +13,34 @@ if TYPE_CHECKING:
 class TelemetryCommand(
     RootCommand,
     cmd="telemetry",
+    has_main=True,
     has_subcommands=True,
     help="Manage your telemetry preferences",
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        pass
+        # https://github.com/python/cpython/issues/67037 prevents the registration
+        # of undocumented subcommands, so a preferred usage of
+        # "ruyi telemetry cron-upload" is not possible right now.
+        p.add_argument(
+            "--cron-upload",
+            action="store_true",
+            dest="cron_upload",
+            default=False,
+            help=argparse.SUPPRESS,
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        cron_upload: bool = args.cron_upload
+        if not cron_upload:
+            args._parser.print_help()  # pylint: disable=protected-access
+            return 0
+
+        # the rest are implementation of "--cron-upload"
+
+        cfg.telemetry.flush(cron_mode=True)
+        return 0
 
 
 class TelemetryConsentCommand(
@@ -117,10 +139,6 @@ class TelemetryUploadCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        if cfg.telemetry is None:
-            cfg.logger.W("telemetry is disabled, nothing to upload")
-            return 0
-
         cfg.telemetry.flush(upload_now=True)
         # disable the flush at program exit because we have just done that
         cfg.telemetry.discard_events()

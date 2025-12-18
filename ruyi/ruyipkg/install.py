@@ -168,17 +168,16 @@ def do_install_atoms(
             for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
                 logger.I(s)
 
-        if tm := config.telemetry:
-            tm.record(
-                TelemetryScope(mr.repo_id),
-                "repo:package-install-v1",
-                atom=a_str,
-                host=canonicalized_host,
-                pkg_category=pm.category,
-                pkg_kinds=pm.kind,
-                pkg_name=pm.name,
-                pkg_version=pm.ver,
-            )
+        config.telemetry.record(
+            TelemetryScope(mr.repo_id),
+            "repo:package-install-v1",
+            atom=a_str,
+            host=canonicalized_host,
+            pkg_category=pm.category,
+            pkg_kinds=pm.kind,
+            pkg_name=pm.name,
+            pkg_version=pm.ver,
+        )
 
         if pm.binary_metadata is not None:
             ret = _do_install_binary_pkg(
@@ -478,17 +477,16 @@ def do_uninstall_atoms(
     for a_str, pm in pms_to_uninstall:
         pkg_name = pm.name_for_installation
 
-        if tm := config.telemetry:
-            tm.record(
-                TelemetryScope(mr.repo_id),
-                "repo:package-uninstall-v1",
-                atom=a_str,
-                host=canonicalized_host,
-                pkg_category=pm.category,
-                pkg_kinds=pm.kind,
-                pkg_name=pm.name,
-                pkg_version=pm.ver,
-            )
+        config.telemetry.record(
+            TelemetryScope(mr.repo_id),
+            "repo:package-uninstall-v1",
+            atom=a_str,
+            host=canonicalized_host,
+            pkg_category=pm.category,
+            pkg_kinds=pm.kind,
+            pkg_name=pm.name,
+            pkg_version=pm.ver,
+        )
 
         if pm.binary_metadata is not None:
             ret = _do_uninstall_binary_pkg(

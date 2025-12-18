@@ -241,8 +241,7 @@ def _do_reset(
 
     # do not record any telemetry data if we're purging it
     if all_state or telemetry:
-        if tm := cfg.telemetry:
-            tm.discard_events(True)
+        cfg.telemetry.discard_events(True)
 
     if all_state:
         status("removing state data")
