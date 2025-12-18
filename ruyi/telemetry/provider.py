@@ -439,14 +439,42 @@ class TelemetryProvider:
     def discard_events(self, v: bool = True) -> None:
         self._discard_events = v
 
-    def flush(self, *, upload_now: bool = False) -> None:
-        if self.minimal:
-            if upload_now:
-                for store in self._stores.values():
-                    store.upload_minimal()
-            return
+    def _should_proceed_with_upload(
+        self,
+        explicit_request: bool,
+        cron_mode: bool,
+        now: float,
+    ) -> bool:
+        # proceed to uploading if forced (explicit requested or _upload_on_exit)
+        # regardless of schedule
+        if explicit_request or self._upload_on_exit:
+            return True
 
-        now = time.time()
+        # this is not an explicitly requested upload, so only proceed if today
+        # is the day
+        #
+        # checking whether we haven't uploaded today is left to each scope
+        if not self._is_upload_day(now):
+            return False
+
+        # if we're in cron mode, proceed as if it's an explicit request;
+        # otherwise, only proceed if mode is "on"
+        if cron_mode:
+            return True
+
+        return self._gc.telemetry_mode == "on"
+
+    def flush(self, *, upload_now: bool = False, cron_mode: bool = False) -> None:
+        """
+        Flush collected telemetry data to persistent store, and upload if needed.
+
+        :param upload_now: Upload data right now regardless of schedule.
+        :type upload_now: bool
+        :param cron_mode: Whether this flush is called from a cron job. If true,
+            non-upload-day uploads will be skipped, otherwise acts just like
+            explicit uploads via `ruyi telemetry upload`.
+        :type cron_mode: bool
+        """
 
         # We may be self-uninstalling and purging all state data, and in this
         # case we don't want to record anything (thus re-creating directories).
@@ -454,21 +482,24 @@ class TelemetryProvider:
             self.logger.D("discarding collected telemetry data")
             return
 
+        now = time.time()
+        if not self._should_proceed_with_upload(upload_now, cron_mode, now):
+            return
+        # Now we're sure we want to upload data right now.
+
+        if self.minimal:
+            for scope, store in self._stores.items():
+                if self._has_uploaded_today(scope, now):
+                    continue
+                self.logger.D(f"uploading minimal telemetry for scope {scope}")
+                store.upload_minimal()
+            return
+
         self.logger.D("flushing telemetry to persistent store")
 
         for scope, store in self._stores.items():
             store.persist(now)
-
-            # try to upload if forced (upload_now or _upload_on_exit), or:
-            #
-            # * we're not in local mode
-            # * today is the day
-            # * we haven't uploaded today
-            if not (upload_now or self._upload_on_exit) and (
-                self.local_mode
-                or not self._is_upload_day(now)
-                or self._has_uploaded_today(scope, now)
-            ):
+            if self._has_uploaded_today(scope, now):
                 continue
 
             self._prepare_data_for_upload(store)

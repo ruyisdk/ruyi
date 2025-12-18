@@ -128,10 +128,18 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
 
     tm = gc.telemetry
     tm.print_telemetry_notice()
-    tm.record(
-        TelemetryScope(None),
-        "cli:invocation-v1",
-        key=telemetry_key,
+
+    # Do not record `ruyi telemetry --cron-upload` invocations.
+    skip_recording_invocation = telemetry_key == "telemetry" and getattr(
+        args,
+        "cron_upload",
+        False,
     )
+    if not skip_recording_invocation:
+        tm.record(
+            TelemetryScope(None),
+            "cli:invocation-v1",
+            key=telemetry_key,
+        )
 
     return func(gc, args)
