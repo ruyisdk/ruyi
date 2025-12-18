@@ -18,8 +18,13 @@ class UploadPayload(TypedDict):
     fmt: int
     nonce: str
     ruyi_version: str
+    report_uuid: "NotRequired[str]"
+    """Optional field in case the client wishes to report this, and nothing
+    else. If `installation` is present, this field is ignored."""
     installation: "NotRequired[NodeInfo | None]"
+    """More detailed installation info that the client has user consent to report."""
     events: list[AggregatedTelemetryEvent]
+    """Aggregated telemetry events that the client has user consent to upload."""
 
 
 def stringify_param_val(v: object) -> str:
