@@ -324,7 +324,10 @@ class TelemetryProvider:
 
         if self._is_upload_day(now):
             for scope, store in self._stores.items():
-                has_uploaded_today = self._has_uploaded_today(scope, now)
+                has_uploaded_today = self._has_uploaded_today(
+                    store.last_upload_timestamp,
+                    now,
+                )
                 if has_uploaded_today:
                     if last_upload_time := store.last_upload_timestamp:
                         last_upload_time_str = time.strftime(
@@ -343,8 +346,12 @@ class TelemetryProvider:
                     )
         else:
             self.logger.I(
-                f"the next upload will happen anytime [yellow]ruyi[/] is executed between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
+                "the next upload will happen anytime [yellow]ruyi[/] is executed:"
             )
+            self.logger.I(
+                f"  -  between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
+            )
+            self.logger.I("  - or if the last upload is more than a week ago")
 
     def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
         now = time.time()
@@ -409,17 +416,14 @@ class TelemetryProvider:
 
     def _has_uploaded_today(
         self,
-        scope: TelemetryScope,
+        last_upload_time: float | None,
         time_now: float | None = None,
     ) -> bool:
         if time_now is None:
             time_now = time.time()
         if upload_day := self._next_upload_day(time_now):
             upload_day_end = upload_day + 86400
-            store = self.store(scope)
-            if store is None:
-                return False
-            if last_upload_time := store.last_upload_timestamp:
+            if last_upload_time is not None:
                 return upload_day <= last_upload_time < upload_day_end
         return False
 
@@ -441,6 +445,7 @@ class TelemetryProvider:
 
     def _should_proceed_with_upload(
         self,
+        scope: TelemetryScope,
         explicit_request: bool,
         cron_mode: bool,
         now: float,
@@ -451,18 +456,36 @@ class TelemetryProvider:
             return True
 
         # this is not an explicitly requested upload, so only proceed if today
-        # is the day
+        # is the day, or if the last upload is more than a week ago
         #
-        # checking whether we haven't uploaded today is left to each scope
+        # the last-upload-more-than-a-week-ago check is to avoid situations
+        # where the user has not run ruyi for a long time, thus missing
+        # the scheduled upload day.
+        #
+        # cron jobs are a mitigation, but we cannot rely on them either, because:
+        #
+        # * ruyi is more likely installed user-locally than system-wide, so
+        #   users may not set up cron jobs for themselves;
+        # * telemetry data is always recorded per user so system-wide cron jobs
+        #   cannot easily access this data.
+        last_upload_time: float | None = None
+        if store := self.store(scope):
+            last_upload_time = store.last_upload_timestamp
+
         if not self._is_upload_day(now):
-            return False
+            return last_upload_time is not None and now - last_upload_time >= 7 * 86400
+        # now we're sure today is the day
 
         # if we're in cron mode, proceed as if it's an explicit request;
-        # otherwise, only proceed if mode is "on"
+        # otherwise, only proceed if mode is "on" and we haven't uploaded yet today
+        # for this scope
         if cron_mode:
             return True
 
-        return self._gc.telemetry_mode == "on"
+        if self._gc.telemetry_mode != "on":
+            return False
+
+        return not self._has_uploaded_today(last_upload_time, now)
 
     def flush(self, *, upload_now: bool = False, cron_mode: bool = False) -> None:
         """
@@ -483,13 +506,16 @@ class TelemetryProvider:
             return
 
         now = time.time()
-        if not self._should_proceed_with_upload(upload_now, cron_mode, now):
-            return
-        # Now we're sure we want to upload data right now.
+        should_proceed = lambda scope: self._should_proceed_with_upload(
+            scope,
+            explicit_request=upload_now,
+            cron_mode=cron_mode,
+            now=now,
+        )
 
         if self.minimal:
             for scope, store in self._stores.items():
-                if self._has_uploaded_today(scope, now):
+                if not should_proceed(scope):
                     continue
                 self.logger.D(f"uploading minimal telemetry for scope {scope}")
                 store.upload_minimal()
@@ -499,7 +525,7 @@ class TelemetryProvider:
 
         for scope, store in self._stores.items():
             store.persist(now)
-            if self._has_uploaded_today(scope, now):
+            if not should_proceed(scope):
                 continue
 
             self._prepare_data_for_upload(store)
