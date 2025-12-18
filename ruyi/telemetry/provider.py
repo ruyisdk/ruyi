@@ -472,7 +472,7 @@ class TelemetryProvider:
                 continue
 
             self._prepare_data_for_upload(store)
-            self._upload_staged_payloads(store)
+            store.upload_staged_payloads()
 
     def _prepare_data_for_upload(self, store: TelemetryStore) -> None:
         installation_data: NodeInfo | None = None
@@ -485,12 +485,6 @@ class TelemetryProvider:
                 pass
 
         return store.prepare_data_for_upload(installation_data)
-
-    def _upload_staged_payloads(self, store: TelemetryStore) -> None:
-        if self.local_mode:
-            return
-
-        return store.upload_staged_payloads()
 
     def oobe_prompt(self) -> None:
         """Ask whether the user consents to a first-run telemetry upload, and
