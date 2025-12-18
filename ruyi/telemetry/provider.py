@@ -449,11 +449,13 @@ class TelemetryProvider:
         explicit_request: bool,
         cron_mode: bool,
         now: float,
-    ) -> bool:
+    ) -> tuple[bool, str]:
         # proceed to uploading if forced (explicit requested or _upload_on_exit)
         # regardless of schedule
-        if explicit_request or self._upload_on_exit:
-            return True
+        if explicit_request:
+            return True, "explicit request"
+        if self._upload_on_exit:
+            return True, "first-run upload on exit"
 
         # this is not an explicitly requested upload, so only proceed if today
         # is the day, or if the last upload is more than a week ago
@@ -473,19 +475,23 @@ class TelemetryProvider:
             last_upload_time = store.last_upload_timestamp
 
         if not self._is_upload_day(now):
-            return last_upload_time is not None and now - last_upload_time >= 7 * 86400
+            if last_upload_time is not None and now - last_upload_time >= 7 * 86400:
+                return True, "last upload more than a week ago"
+            return False, "not upload day"
         # now we're sure today is the day
 
         # if we're in cron mode, proceed as if it's an explicit request;
         # otherwise, only proceed if mode is "on" and we haven't uploaded yet today
         # for this scope
         if cron_mode:
-            return True
+            return True, "cron mode upload on upload day"
 
         if self._gc.telemetry_mode != "on":
-            return False
+            return False, "telemetry mode not 'on'"
 
-        return not self._has_uploaded_today(last_upload_time, now)
+        if not self._has_uploaded_today(last_upload_time, now):
+            return True, "upload day, not yet uploaded today"
+        return False, "upload day, already uploaded today"
 
     def flush(self, *, upload_now: bool = False, cron_mode: bool = False) -> None:
         """
@@ -515,17 +521,24 @@ class TelemetryProvider:
 
         if self.minimal:
             for scope, store in self._stores.items():
-                if not should_proceed(scope):
+                go_ahead, reason = should_proceed(scope)
+                self.logger.D(
+                    f"minimal telemetry upload check for scope {scope}: go_ahead={go_ahead}, reason={reason}"
+                )
+                if not go_ahead:
                     continue
-                self.logger.D(f"uploading minimal telemetry for scope {scope}")
                 store.upload_minimal()
             return
 
-        self.logger.D("flushing telemetry to persistent store")
-
         for scope, store in self._stores.items():
+            self.logger.D(f"flushing telemetry to persistent store for scope {scope}")
             store.persist(now)
-            if not should_proceed(scope):
+
+            go_ahead, reason = should_proceed(scope)
+            self.logger.D(
+                f"regular telemetry upload check for scope {scope}: go_ahead={go_ahead}, reason={reason}"
+            )
+            if not go_ahead:
                 continue
 
             self._prepare_data_for_upload(store)
