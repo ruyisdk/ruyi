@@ -20,13 +20,15 @@ if TYPE_CHECKING:
 FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
 TELEMETRY_CONSENT_AND_UPLOAD_DESC = """
-RuyiSDK collects anonymized usage data locally to help us improve the product.
+RuyiSDK collects minimal usage data in the form of just a version number of
+the running [yellow]ruyi[/], to help us improve the product. With your consent,
+RuyiSDK may also collect additional non-tracking usage data. The data are sent
+periodically to RuyiSDK team-managed servers located in the Chinese mainland.
 
-[green]By default, only ruyi's version is reported[/], and you can also turn off
-data collection completely. Only with your explicit permission can [yellow]ruyi[/] upload
-more usage data, periodically to RuyiSDK team-managed servers located in the
-Chinese mainland. You can change this setting at any time by running
-[yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or [yellow]ruyi telemetry optout[/].
+[green]By default, only ruyi's version is reported[/], and only with your explicit
+permission will [yellow]ruyi[/] upload more usage data. You can change this setting
+at any time by running [yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or
+[yellow]ruyi telemetry optout[/].
 
 If you do not disable uploads now, we'll also send a one-time report from this
 [yellow]ruyi[/] installation so the RuyiSDK team can better understand adoption.
@@ -35,7 +37,7 @@ Thank you for helping us build a better experience!
 TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = (
     "Do you agree to have usage data collected and periodically uploaded?"
 )
-TELEMETRY_OPTOUT_PROMPT = "\nDo you want to disable telemetry entirely?"
+TELEMETRY_OPTOUT_PROMPT = "\nDo you want to disable usage data collection?"
 
 
 def next_utc_weekday(wday: int, now: float | None = None) -> int:
