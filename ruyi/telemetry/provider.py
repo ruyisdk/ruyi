@@ -549,6 +549,11 @@ class TelemetryProvider:
         """Ask whether the user consents to a first-run telemetry upload, and
         persist the user's exact telemetry choice."""
 
+        if self._gc.is_telemetry_optout:
+            # user has already explicitly opted out via the environment variable,
+            # don't bother asking
+            return
+
         # We always report installation info on first run, regardless of
         # user's telemetry choice. In case the user opts out, only do a one-time
         # upload now, and never upload anything again.
