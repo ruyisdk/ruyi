@@ -3,7 +3,6 @@ import datetime
 import functools
 import json
 import pathlib
-import random
 import time
 from typing import Callable, TYPE_CHECKING, cast
 import uuid
@@ -22,22 +21,25 @@ FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 TELEMETRY_CONSENT_AND_UPLOAD_DESC = """
 RuyiSDK collects minimal usage data in the form of just a version number of
 the running [yellow]ruyi[/], to help us improve the product. With your consent,
-RuyiSDK may also collect additional non-tracking usage data. The data are sent
-periodically to RuyiSDK team-managed servers located in the Chinese mainland.
+RuyiSDK may also collect additional non-tracking usage data to be sent
+periodically. The data will be recorded and processed by RuyiSDK team-managed
+servers located in the Chinese mainland.
 
-[green]By default, only ruyi's version is reported[/], and only with your explicit
-permission will [yellow]ruyi[/] upload more usage data. You can change this setting
-at any time by running [yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or
-[yellow]ruyi telemetry optout[/].
+[green]By default, nothing leaves your machine[/], and you can also turn off usage data
+collection completely. Only with your explicit permission can [yellow]ruyi[/] collect and
+upload more usage data. You can change this setting at any time by running
+[yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or [yellow]ruyi telemetry optout[/].
 
-If you do not disable uploads now, we'll also send a one-time report from this
-[yellow]ruyi[/] installation so the RuyiSDK team can better understand adoption.
+We'll also send a one-time report from this [yellow]ruyi[/] installation so the RuyiSDK
+team can better understand adoption. If you choose to opt out, this will be the
+only data to be ever uploaded, without any tracking ID being generated or kept.
 Thank you for helping us build a better experience!
 """
 TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = (
-    "Do you agree to have usage data collected and periodically uploaded?"
+    "Do you agree to have usage data periodically uploaded?"
 )
-TELEMETRY_OPTOUT_PROMPT = "\nDo you want to disable usage data collection?"
+TELEMETRY_OPTOUT_PROMPT = "\nDo you want to opt out of telemetry entirely?"
+MALFORMED_TELEMETRY_STATE_MSG = "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
 
 
 def next_utc_weekday(wday: int, now: float | None = None) -> int:
@@ -210,8 +212,8 @@ class TelemetryProvider:
         return self.state_root / "installation.json"
 
     @property
-    def minimal_weekday_file(self) -> pathlib.Path:
-        return self.state_root / "minimal-weekday.txt"
+    def minimal_installation_marker_file(self) -> pathlib.Path:
+        return self.state_root / "minimal-installation-marker"
 
     def check_first_run_status(self) -> None:
         """Check if this is the first run of the application by checking if installation file exists.
@@ -219,7 +221,7 @@ class TelemetryProvider:
         """
         self._is_first_run = (
             not self.installation_file.exists()
-            and not self.minimal_weekday_file.exists()
+            and not self.minimal_installation_marker_file.exists()
         )
 
     @property
@@ -231,7 +233,7 @@ class TelemetryProvider:
         if self.minimal:
             # be extra safe by not reading or writing installation data at all
             # in minimal mode
-            self._init_minimal_weekday(force_reinit)
+            self._init_minimal_installation_marker(force_reinit)
             return None
 
         installation_file = self.installation_file
@@ -251,47 +253,23 @@ class TelemetryProvider:
             fp.write(json.dumps(installation_data).encode("utf-8"))
         return installation_data
 
-    def _init_minimal_weekday(self, force_reinit: bool) -> None:
-        if self.minimal_weekday_file.exists() and not force_reinit:
+    def _init_minimal_installation_marker(self, force_reinit: bool) -> None:
+        if self.minimal_installation_marker_file.exists() and not force_reinit:
             return
 
-        # randomly pick a minimal upload weekday
-        random.seed()
-        wday = random.randint(0, 6)  # 0 is Monday
-        self.logger.D(f"initializing minimal upload weekday file, wday={wday}")
+        self.logger.D("initializing minimal installation marker file")
         self.state_root.mkdir(parents=True, exist_ok=True)
 
-        # write minimal weekday data
-        with open(self.minimal_weekday_file, "wb") as fp:
-            fp.write(f"{wday}\n".encode("utf-8"))
+        # just touch the file
+        self.minimal_installation_marker_file.touch()
 
     def _read_installation_data(self) -> NodeInfo | None:
         with open(self.installation_file, "rb") as fp:
             return cast(NodeInfo, json.load(fp))
 
-    def _read_minimal_weekday(self) -> int | None:
-        try:
-            with open(self.minimal_weekday_file, "rb") as fp:
-                # It's just a single ASCII digit
-                content = fp.read().decode("ascii", "replace").strip()
-        except OSError:
-            return None
-
-        try:
-            # any non-ASCII content will error out here during parsing
-            wday = int(content, 10)
-        except ValueError:
-            return None
-
-        if not (0 <= wday <= 6):
-            return None
-
-        return wday
-
     def _upload_weekday(self) -> int | None:
         if self.minimal:
-            # just read from minimal weekday file
-            return self._read_minimal_weekday()
+            return None
 
         try:
             installation_data = self._read_installation_data()
@@ -358,22 +336,23 @@ class TelemetryProvider:
             self.logger.I("  - or if the last upload is more than a week ago")
 
     def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
-        now = time.time()
-        upload_wday = self._upload_weekday()
-        if upload_wday is None:
-            self.logger.W(
-                "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
-            )
-            return
-
-        upload_wday_name = calendar.day_name[upload_wday]
-
         if self.minimal:
             if for_cli_verbose_output:
                 self.logger.I(
-                    "telemetry mode is [green]off[/]: nothing is collected, only ruyi's version will be reported if requested"
+                    "telemetry mode is [green]off[/]: nothing is collected or uploaded after the first run"
                 )
             return
+
+        now = time.time()
+        upload_wday = self._upload_weekday()
+        if upload_wday is None:
+            if for_cli_verbose_output:
+                self.logger.W(MALFORMED_TELEMETRY_STATE_MSG)
+            else:
+                self.logger.D(MALFORMED_TELEMETRY_STATE_MSG)
+            return
+
+        upload_wday_name = calendar.day_name[upload_wday]
 
         if self.local_mode:
             if for_cli_verbose_output:
@@ -526,6 +505,10 @@ class TelemetryProvider:
             )
 
         if self.minimal:
+            if not self._upload_on_exit:
+                self.logger.D("skipping upload for non-first-run in minimal mode")
+                return
+
             for scope, store in self._stores.items():
                 go_ahead, reason = should_proceed(scope)
                 self.logger.D(
@@ -566,6 +549,16 @@ class TelemetryProvider:
         """Ask whether the user consents to a first-run telemetry upload, and
         persist the user's exact telemetry choice."""
 
+        if self._gc.is_telemetry_optout:
+            # user has already explicitly opted out via the environment variable,
+            # don't bother asking
+            return
+
+        # We always report installation info on first run, regardless of
+        # user's telemetry choice. In case the user opts out, only do a one-time
+        # upload now, and never upload anything again.
+        self._upload_on_exit = True
+
         from ..cli import user_input
 
         self.logger.stdout(TELEMETRY_CONSENT_AND_UPLOAD_DESC)
@@ -591,4 +584,3 @@ class TelemetryProvider:
 
         consent_time = datetime.datetime.now().astimezone()
         set_telemetry_mode(self._gc, "on", consent_time)
-        self._upload_on_exit = True
