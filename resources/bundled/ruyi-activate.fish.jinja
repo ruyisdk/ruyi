@@ -1,0 +1,67 @@
+# This file must be sourced from fish: `source bin/ruyi-activate.fish`
+# you cannot run it directly
+
+if test "$_" != "source" -a "$_" != "."
+    echo 'You must source this script: $ source '(status filename) >&2
+    return 33
+end
+
+function ruyi-deactivate -d "Exit ruyi virtual environment and return to normal shell environment"
+    # reset old environment variables
+    if set -q _RUYI_OLD_PATH
+        set -gx PATH $_RUYI_OLD_PATH
+        set -e _RUYI_OLD_PATH
+    end
+
+    if set -q _RUYI_OLD_FISH_PROMPT_OVERRIDE
+        set -e _RUYI_OLD_FISH_PROMPT_OVERRIDE
+        if functions -q _ruyi_old_fish_prompt
+            functions -e fish_prompt
+            functions -c _ruyi_old_fish_prompt fish_prompt
+            functions -e _ruyi_old_fish_prompt
+        end
+    end
+
+    set -e RUYI_VENV
+    set -e RUYI_VENV_PROMPT
+
+    if test "$argv[1]" != "nondestructive"
+        # Self-destruct!
+        functions -e ruyi-deactivate
+    end
+end
+
+# unset irrelevant variables
+ruyi-deactivate nondestructive
+
+set -gx RUYI_VENV {{ RUYI_VENV | sh }}
+
+set -gx _RUYI_OLD_PATH $PATH
+set -gx PATH "$RUYI_VENV/bin" $PATH
+
+{% if RUYI_VENV_NAME -%}
+set -gx RUYI_VENV_PROMPT {{ RUYI_VENV_NAME | sh }}
+{%- else -%}
+set -gx RUYI_VENV_PROMPT (basename $RUYI_VENV)
+{%- endif %}
+
+if test -z "$RUYI_VENV_DISABLE_PROMPT"
+    # Save the current fish_prompt function as the function _ruyi_old_fish_prompt
+    functions -c fish_prompt _ruyi_old_fish_prompt
+
+    function fish_prompt
+        # Save the return status of the last command
+        set -l old_status $status
+
+        # Output the prompt
+        echo -n "«Ruyi $RUYI_VENV_PROMPT» "
+
+        # Restore the return status of the previous command
+        echo "exit $old_status" | .
+
+        # Output the original/"old" prompt
+        _ruyi_old_fish_prompt
+    end
+
+    set -gx _RUYI_OLD_FISH_PROMPT_OVERRIDE "$RUYI_VENV"
+end
