@@ -32,6 +32,7 @@ requires-python = ">=3.10"
 dependencies = [
   "argcomplete>=2.0.0",
   "arpy",
+  "babel>=2.8.0",
   "fastjsonschema>=2.15.1",
   "jinja2 (>=3, <4)",
   "pygit2 (>=1.6, <1.19); python_version<'3.11'",

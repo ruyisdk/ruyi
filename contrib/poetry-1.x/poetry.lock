@@ -19,11 +19,22 @@ version = "2.3.0"
 
 [[package]]
 category = "main"
+description = "Internationalization utilities"
+name = "babel"
+optional = false
+python-versions = ">=3.8"
+version = "2.17.0"
+
+[package.extras]
+dev = ["tzdata", "backports.zoneinfo", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest-cov", "pytest (>=6.0)", "pytz", "setuptools"]
+
+[[package]]
+category = "main"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
 python-versions = ">=3.7"
-version = "2025.11.12"
+version = "2026.1.4"
 
 [[package]]
 category = "main"
@@ -203,15 +214,15 @@ marker = "python_version < \"3.11\""
 name = "tomli"
 optional = false
 python-versions = ">=3.8"
-version = "2.3.0"
+version = "2.4.0"
 
 [[package]]
 category = "main"
 description = "Style preserving TOML library"
 name = "tomlkit"
 optional = false
-python-versions = ">=3.8"
-version = "0.13.3"
+python-versions = ">=3.9"
+version = "0.14.0"
 
 [[package]]
 category = "main"
@@ -220,7 +231,7 @@ marker = "sys_platform == \"win32\""
 name = "tzdata"
 optional = false
 python-versions = ">=2"
-version = "2025.2"
+version = "2025.3"
 
 [[package]]
 category = "main"
@@ -228,21 +239,22 @@ description = "HTTP library with thread-safe connection pooling, file post, and 
 name = "urllib3"
 optional = false
 python-versions = ">=3.9"
-version = "2.5.0"
+version = "2.6.3"
 
 [package.extras]
-brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
+brotli = ["brotli (>=1.2.0)", "brotlicffi (>=1.2.0.0)"]
 h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
-zstd = ["zstandard (>=0.18.0)"]
+zstd = ["backports-zstd (>=1.0.0)"]
 
 [metadata]
-content-hash = "50a8aa85dad309428574f44ad573ef228e72a7fd96c08a36b632bb07993d091a"
+content-hash = "379aabcd733bb32464400c8742b3dd6fbacb21495ebd0078a305a01ccc2d0e8a"
 python-versions = ">=3.10"
 
 [metadata.files]
 argcomplete = []
 arpy = []
+babel = []
 certifi = []
 cffi = []
 charset-normalizer = []
