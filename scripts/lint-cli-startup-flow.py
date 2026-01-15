@@ -35,6 +35,7 @@ CURRENT_ALLOWLIST = {
     "ruyi.cli.version_cli",
     "ruyi.device",
     "ruyi.device.provision_cli",
+    "ruyi.i18n",
     "ruyi.mux",
     "ruyi.mux.venv",
     "ruyi.mux.venv.venv_cli",
