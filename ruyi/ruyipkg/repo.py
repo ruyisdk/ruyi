@@ -19,6 +19,7 @@ from urllib import parse
 from pygit2 import clone_repository
 from pygit2.repository import Repository
 
+from ..i18n import _
 from ..log import RuyiLogger
 from ..pluginhost.ctx import PluginHostContext
 from ..telemetry.scope import TelemetryScopeConfig
@@ -167,7 +168,9 @@ class RepoConfig:
                 return [url]
             case _:
                 # deny others
-                logger.W(f"unrecognized dist URL scheme: {u.scheme}")
+                logger.W(
+                    _("unrecognized dist URL scheme: {scheme}").format(scheme=u.scheme)
+                )
                 return []
 
     def get_mirror_urls_for_file(self, mirror_id: str, path: str) -> list[str]:
@@ -286,9 +289,13 @@ class MetadataRepo(ProvidesPackageManifests):
             return self.repo
 
         self.logger.I(
-            f"the package repository does not exist at [yellow]{self.root}[/]"
+            _("the package repository does not exist at [yellow]{root}[/]").format(
+                root=self.root
+            )
         )
-        self.logger.I(f"cloning from [cyan link={self.remote}]{self.remote}[/]")
+        self.logger.I(
+            _("cloning from [cyan link={remote}]{remote}[/]").format(remote=self.remote)
+        )
 
         with RemoteGitProgressIndicator() as pr:
             repo = clone_repository(
@@ -310,7 +317,7 @@ class MetadataRepo(ProvidesPackageManifests):
         return self.repo
 
     def sync(self) -> None:
-        self._gc.logger.I("updating the package repository")
+        self._gc.logger.I(_("updating the package repository"))
 
         repo = self.ensure_git_repo()
 
@@ -327,7 +334,7 @@ class MetadataRepo(ProvidesPackageManifests):
             allow_auto_management=allow_auto_management,
         )
 
-        self._gc.logger.I("package repository is updated")
+        self._gc.logger.I(_("package repository is updated"))
 
     @property
     def global_config(self) -> "GlobalConfig":
@@ -605,7 +612,9 @@ class MetadataRepo(ProvidesPackageManifests):
                         contents = fp.read()
                     except UnicodeDecodeError:
                         self.logger.W(
-                            f"UnicodeDecodeError: {os.path.join(news_dir, f)}"
+                            _("UnicodeDecodeError: {path}").format(
+                                path=os.path.join(news_dir, f)
+                            )
                         )
                         continue
                     cache.add(f, contents)  # may fail but failures are harmless
@@ -638,9 +647,14 @@ class MetadataRepo(ProvidesPackageManifests):
         ret = self.eval_plugin_fn(plugin_entrypoint, args)
         if not isinstance(ret, int):
             self.logger.W(
-                f"unexpected return type of cmd plugin '{plugin_id}': {type(ret)} is not int."
+                _(
+                    "unexpected return type of cmd plugin '{plugin_id}': {type} is not int."
+                ).format(
+                    plugin_id=plugin_id,
+                    type=type(ret),
+                )
             )
-            self.logger.I("forcing return code to 1; the plugin should be fixed")
+            self.logger.I(_("forcing return code to 1; the plugin should be fixed"))
             ret = 1
         return ret
 
