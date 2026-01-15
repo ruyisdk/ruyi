@@ -2,6 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
+from ..i18n import _
 
 if TYPE_CHECKING:
     from ..cli.completion import ArgumentParser
@@ -12,7 +13,7 @@ class DeviceCommand(
     RootCommand,
     cmd="device",
     has_subcommands=True,
-    help="Manage devices",
+    help=_("Manage devices"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -23,7 +24,7 @@ class DeviceProvisionCommand(
     DeviceCommand,
     cmd="provision",
     aliases=["flash"],
-    help="Interactively initialize a device for development",
+    help=_("Interactively initialize a device for development"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -36,5 +37,7 @@ class DeviceProvisionCommand(
         try:
             return do_provision_interactive(cfg)
         except KeyboardInterrupt:
-            cfg.logger.stdout("\n\nKeyboard interrupt received, exiting.", end="\n\n")
+            cfg.logger.stdout(
+                _("\n\nKeyboard interrupt received, exiting."), end="\n\n"
+            )
             return 1
