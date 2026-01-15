@@ -2,6 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
+from ..i18n import _
 
 if TYPE_CHECKING:
     from ..cli.completion import ArgumentParser
@@ -14,7 +15,7 @@ class NewsCommand(
     has_subcommands=True,
     is_subcommand_required=False,
     has_main=True,
-    help="List and read news items from configured repository",
+    help=_("List and read news items from configured repository"),
 ):
     _my_parser: "ArgumentParser | None" = None
 
@@ -36,14 +37,14 @@ class NewsCommand(
 class NewsListCommand(
     NewsCommand,
     cmd="list",
-    help="List news items",
+    help=_("List news items"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument(
             "--new",
             action="store_true",
-            help="List unread news items only",
+            help=_("List unread news items only"),
         )
 
     @classmethod
@@ -60,8 +61,10 @@ class NewsListCommand(
 class NewsReadCommand(
     NewsCommand,
     cmd="read",
-    help="Read news items",
-    description="Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified.",
+    help=_("Read news items"),
+    description=_(
+        "Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified."
+    ),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -69,13 +72,13 @@ class NewsReadCommand(
             "--quiet",
             "-q",
             action="store_true",
-            help="Do not output anything and only mark as read",
+            help=_("Do not output anything and only mark as read"),
         )
         p.add_argument(
             "item",
             type=str,
             nargs="*",
-            help="Ordinal or ID of the news item(s) to read",
+            help=_("Ordinal or ID of the news item(s) to read"),
         )
 
     @classmethod

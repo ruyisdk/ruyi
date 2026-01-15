@@ -2,6 +2,7 @@ from rich import box
 from rich.table import Table
 
 from ..config import GlobalConfig
+from ..i18n import _
 from ..log import RuyiLogger
 from ..utils.markdown import RuyiStyledMarkdown
 from ..utils.porcelain import PorcelainOutput
@@ -14,9 +15,12 @@ def print_news_item_titles(
     lang: str,
 ) -> None:
     tbl = Table(box=box.SIMPLE, show_edge=False)
-    tbl.add_column("No.")
-    tbl.add_column("ID")
-    tbl.add_column("Title")
+    # i18n NOTE: used as news item table title
+    tbl.add_column(_("No."))
+    # i18n NOTE: used as news item table title
+    tbl.add_column(_("ID"))
+    # i18n NOTE: used as news item table title
+    tbl.add_column(_("Title"))
 
     for ni in newsitems:
         unread = not ni.is_read
@@ -40,14 +44,20 @@ def maybe_notify_unread_news(
 
     unread_newsitems = gc.repo.news_store().list(True)
     if unread_newsitems:
-        gc.logger.stdout(f"\nThere are {len(unread_newsitems)} new news item(s):\n")
+        gc.logger.stdout(
+            _("\nThere are {count} new news item(s):\n").format(
+                count=len(unread_newsitems),
+            )
+        )
         print_news_item_titles(gc.logger, unread_newsitems, gc.lang_code)
-        gc.logger.stdout("\nYou can read them with [yellow]ruyi news read[/].")
+        gc.logger.stdout(_("\nYou can read them with [yellow]ruyi news read[/]."))
         return
 
     if prompt_no_unread:
         gc.logger.stdout(
-            "\nAll news items have been read. To see a list of them, run [yellow]ruyi news list[/].\n"
+            _(
+                "\nAll news items have been read. To see a list of them, run [yellow]ruyi news list[/].\n"
+            )
         )
 
 
@@ -65,9 +75,9 @@ def do_news_list(
                 po.emit(ni.to_porcelain())
         return 0
 
-    logger.stdout("[bold green]News items:[/]\n")
+    logger.stdout(_("[bold green]News items:[/]\n"))
     if not newsitems:
-        logger.stdout("  (no unread item)" if only_unread else "  (no item)")
+        logger.stdout(_("  (no unread item)") if only_unread else _("  (no item)"))
         return 0
 
     print_news_item_titles(logger, newsitems, cfg.lang_code)
@@ -98,7 +108,7 @@ def do_news_read(
             for ni in items:
                 print_news(logger, ni.get_content_for_lang(cfg.lang_code))
         else:
-            logger.stdout("No news to display.")
+            logger.stdout(_("No news to display."))
 
     # record read statuses
     store.mark_as_read(*(ni.id for ni in items))
@@ -123,13 +133,15 @@ def filter_news_items_by_specs(
         try:
             ni_ord = int(i)
             if ni_ord not in ni_by_ord:
-                logger.F(f"there is no news item with ordinal {ni_ord}")
+                logger.F(
+                    _("there is no news item with ordinal {ord}").format(ord=ni_ord)
+                )
                 return None
             items.append(ni_by_ord[ni_ord])
         except ValueError:
             # treat i as id
             if i not in ni_by_id:
-                logger.F(f"there is no news item with ID '{i}'")
+                logger.F(_("there is no news item with ID '{id}'").format(id=i))
                 return None
             items.append(ni_by_id[i])
 

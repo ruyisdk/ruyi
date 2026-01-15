@@ -1,6 +1,7 @@
 from itertools import chain
 
 from ..config import GlobalConfig
+from ..i18n import _
 from ..log import RuyiLogger
 from ..utils.porcelain import PorcelainOutput
 from .augmented_pkg import AugmentedPkg
@@ -22,9 +23,11 @@ def do_list(
             # all packages either
             return 1
 
-        logger.F("no filter specified for list operation")
+        logger.F(_("no filter specified for list operation"))
         logger.I(
-            "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+            _(
+                "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+            )
         )
         return 1
 
@@ -49,7 +52,7 @@ def _do_list_non_verbose(
     logger: RuyiLogger,
     augmented_pkgs: list[AugmentedPkg],
 ) -> int:
-    logger.stdout("List of available packages:\n")
+    logger.stdout(_("List of available packages:\n"))
 
     for ap in augmented_pkgs:
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/]")
@@ -82,45 +85,49 @@ def _print_pkg_detail(
     logger.stdout(f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/][/]\n")
 
     if pm.slug is not None:
-        logger.stdout(f"* Slug: [yellow]{pm.slug}[/]")
+        logger.stdout(_("* Slug: [yellow]{slug}[/]").format(slug=pm.slug))
     else:
-        logger.stdout("* Slug: (none)")
-    logger.stdout(f"* Package kind: {sorted(pm.kind)}")
-    logger.stdout(f"* Vendor: {pm.vendor_name}")
+        logger.stdout(_("* Slug: (none)"))
+    logger.stdout(_("* Package kind: {kind}").format(kind=sorted(pm.kind)))
+    logger.stdout(_("* Vendor: {vendor}").format(vendor=pm.vendor_name))
     if upstream_ver := pm.upstream_version:
-        logger.stdout(f"* Upstream version number: {upstream_ver}")
+        logger.stdout(
+            _("* Upstream version number: {version}").format(version=upstream_ver)
+        )
     else:
-        logger.stdout("* Upstream version number: (undeclared)")
+        logger.stdout(_("* Upstream version number: (undeclared)"))
     logger.stdout("")
 
     sv = pm.service_level
     if sv.has_known_issues:
-        logger.stdout("\nPackage has known issue(s):\n")
+        logger.stdout(_("\nPackage has known issue(s):\n"))
         for x in sv.render_known_issues(pm.repo.messages, lang_code):
             logger.stdout(x, end="\n\n")
 
     df = pm.distfiles
-    logger.stdout(f"Package declares {len(df)} distfile(s):\n")
+    logger.stdout(_("Package declares {count} distfile(s):\n").format(count=len(df)))
     for dd in df.values():
         logger.stdout(f"* [green]{dd.name}[/]")
-        logger.stdout(f"    - Size: [yellow]{dd.size}[/] bytes")
+        logger.stdout(_("    - Size: [yellow]{size}[/] bytes").format(size=dd.size))
         for kind, csum in dd.checksums.items():
             logger.stdout(f"    - {kind.upper()}: [yellow]{csum}[/]")
 
     if bm := pm.binary_metadata:
-        logger.stdout("\n### Binary artifacts\n")
+        logger.stdout(_("\n### Binary artifacts\n"))
         for host, data in bm.data.items():
-            logger.stdout(f"* Host [green]{host}[/]:")
-            logger.stdout(f"    - Distfiles: {data['distfiles']}")
+            logger.stdout(_("* Host [green]{host}[/]:").format(host=host))
+            logger.stdout(
+                _("    - Distfiles: {distfiles}").format(distfiles=data["distfiles"])
+            )
             if cmds := data.get("commands"):
-                logger.stdout("    - Available command(s):")
+                logger.stdout(_("    - Available command(s):"))
                 for k in sorted(cmds.keys()):
                     logger.stdout(f"        - [green]{k}[/]")
 
     if tm := pm.toolchain_metadata:
-        logger.stdout("\n### Toolchain metadata\n")
-        logger.stdout(f"* Target: [bold green]{tm.target}[/]")
-        logger.stdout(f"* Quirks: {tm.quirks}")
-        logger.stdout("* Components:")
+        logger.stdout(_("\n### Toolchain metadata\n"))
+        logger.stdout(_("* Target: [bold green]{target}[/]").format(target=tm.target))
+        logger.stdout(_("* Quirks: {quirks}").format(quirks=tm.quirks))
+        logger.stdout(_("* Components:"))
         for tc in tm.components:
             logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
