@@ -40,12 +40,12 @@ def cli_version(cfg: "GlobalConfig", args: argparse.Namespace) -> int:
 
     print()
 
-    cfg.logger.stdout(COPYRIGHT_NOTICE)
+    cfg.logger.stdout(_(COPYRIGHT_NOTICE))
 
     # Output the MPL notice only when we actually bundle and depend on the
     # MPL component(s), which right now is only certifi. Keep the condition
     # synced with __main__.py.
     if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
-        cfg.logger.stdout(MPL_REDIST_NOTICE)
+        cfg.logger.stdout(_(MPL_REDIST_NOTICE))
 
     return 0

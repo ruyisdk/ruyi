@@ -4,6 +4,7 @@ import os
 import sys
 
 import ruyi
+from ruyi.i18n import _
 from ruyi.utils.ci import is_running_in_ci
 from ruyi.utils.global_mode import (
     EnvGlobalModeProvider,
@@ -50,11 +51,16 @@ def entrypoint() -> None:
 
         logger = RuyiConsoleLogger(gm)
 
-        logger.F("refusing to run as super user outside CI without explicit consent")
+        logger.F(_("refusing to run as super user outside CI without explicit consent"))
 
         choices = ", ".join(f"'{x}'" for x in TRUTHY_ENV_VAR_VALUES)
         logger.I(
-            f"re-run with environment variable [yellow]{ENV_FORCE_ALLOW_ROOT}[/] set to one of [yellow]{choices}[/] to signify consent"
+            _(
+                "re-run with environment variable [yellow]{env_var}[/] set to one of [yellow]{choices}[/] to signify consent"
+            ).format(
+                env_var=ENV_FORCE_ALLOW_ROOT,
+                choices=choices,
+            )
         )
         sys.exit(1)
 
@@ -63,7 +69,7 @@ def entrypoint() -> None:
 
         logger = RuyiConsoleLogger(gm)
 
-        logger.F("no argv?")
+        logger.F(_("no argv?"))
         sys.exit(1)
 
     if gm.is_packaged and ruyi.__compiled__.standalone:
