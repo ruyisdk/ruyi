@@ -5,6 +5,7 @@ import shlex
 from typing import Final, List, NoReturn
 
 from ..config import GlobalConfig
+from ..i18n import _
 from ..utils.global_mode import ProvidesGlobalMode
 from .venv_cfg import RuyiVenvConfig
 
@@ -31,8 +32,8 @@ def mux_main(
 
     vcfg = RuyiVenvConfig.load_from_venv(gm, logger)
     if vcfg is None:
-        logger.F("the Ruyi toolchain mux is not configured")
-        logger.I("check out `ruyi venv` for making a virtual environment")
+        logger.F(_("the Ruyi toolchain mux is not configured"))
+        logger.I(_("check out `ruyi venv` for making a virtual environment"))
         return 1
 
     direct_symlink_target = resolve_direct_symlink_target(gm.argv0, vcfg)
@@ -60,7 +61,11 @@ def mux_main(
             tgt_data = vcfg.targets.get(target_tuple)
             if tgt_data is None:
                 logger.F(
-                    f"internal error: no target data for tuple [yellow]{target_tuple}[/]"
+                    _(
+                        "internal error: no target data for tuple [yellow]{target_tuple}[/]"
+                    ).format(
+                        target_tuple=target_tuple,
+                    )
                 )
                 return 1
             toolchain_sysroot = tgt_data.get("toolchain_sysroot")
@@ -83,14 +88,22 @@ def mux_main(
         if toolchain_bindir is None:
             # should not happen
             logger.F(
-                f"internal error: no bindir configured for target [yellow]{target_tuple}[/]"
+                _(
+                    "internal error: no bindir configured for target [yellow]{target_tuple}[/]"
+                ).format(
+                    target_tuple=target_tuple,
+                )
             )
             return 1
 
         binpath = os.path.join(toolchain_bindir, basename)
 
     if target_tuple is None:
-        logger.F(f"no configured target found for command [yellow]{basename}[/]")
+        logger.F(
+            _("no configured target found for command [yellow]{basename}[/]").format(
+                basename=basename,
+            )
+        )
         return 1
 
     logger.D(f"binary to exec: {binpath}")
@@ -176,7 +189,7 @@ def mux_qemu_main(
     logger = gc.logger
     binpath = vcfg.qemu_bin
     if binpath is None:
-        logger.F("this virtual environment has no QEMU-like emulator configured")
+        logger.F(_("this virtual environment has no QEMU-like emulator configured"))
         return 1
 
     if vcfg.profile_emu_env is not None:

@@ -3,6 +3,7 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from ...cli.cmd import RootCommand
+from ...i18n import _
 
 if TYPE_CHECKING:
     from ...cli.completion import ArgumentParser
@@ -12,55 +13,57 @@ if TYPE_CHECKING:
 class VenvCommand(
     RootCommand,
     cmd="venv",
-    help="Generate a virtual environment adapted to the chosen toolchain and profile",
+    help=_("Generate a virtual environment adapted to the chosen toolchain and profile"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument("profile", type=str, help="Profile to use for the environment")
-        p.add_argument("dest", type=str, help="Path to the new virtual environment")
+        p.add_argument("profile", type=str, help=_("Profile to use for the environment"),
+                       )
+        p.add_argument("dest", type=str, help=_("Path to the new virtual environment"),
+                       )
         p.add_argument(
             "--name",
             "-n",
             type=str,
             default=None,
-            help="Override the venv's name",
+            help=_("Override the venv's name"),
         )
         p.add_argument(
             "--toolchain",
             "-t",
             type=str,
             action="append",
-            help="Specifier(s) (atoms) of the toolchain package(s) to use",
+            help=_("Specifier(s) (atoms) of the toolchain package(s) to use"),
         )
         p.add_argument(
             "--emulator",
             "-e",
             type=str,
-            help="Specifier (atom) of the emulator package to use",
+            help=_("Specifier (atom) of the emulator package to use"),
         )
         p.add_argument(
             "--with-sysroot",
             action="store_true",
             dest="with_sysroot",
             default=True,
-            help="Provision a fresh sysroot inside the new virtual environment (default)",
+            help=_("Provision a fresh sysroot inside the new virtual environment (default)"),
         )
         p.add_argument(
             "--without-sysroot",
             action="store_false",
             dest="with_sysroot",
-            help="Do not include a sysroot inside the new virtual environment",
+            help=_("Do not include a sysroot inside the new virtual environment"),
         )
         p.add_argument(
             "--sysroot-from",
             type=str,
-            help="Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable",
+            help=_("Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable"),
         )
         p.add_argument(
             "--extra-commands-from",
             type=str,
             action="append",
-            help="Specifier(s) (atoms) of extra package(s) to add commands to the new virtual environment",
+            help=_("Specifier(s) (atoms) of extra package(s) to add commands to the new virtual environment"),
         )
 
     @classmethod
