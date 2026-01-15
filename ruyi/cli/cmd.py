@@ -1,6 +1,7 @@
 import argparse
 from typing import Callable, IO, Protocol, TYPE_CHECKING
 
+from ..i18n import _
 from . import RUYI_ENTRYPOINT_NAME
 
 if TYPE_CHECKING:
@@ -114,7 +115,7 @@ class BaseCommand:
             return
 
         sp = p.add_subparsers(
-            title="subcommands",
+            title=_("subcommands"),
             required=cls.is_subcommand_required,
         )
         for subcmd_cls in cls.parsers:
@@ -158,7 +159,7 @@ class RootCommand(
     has_subcommands=True,
     has_main=True,
     prog=RUYI_ENTRYPOINT_NAME,
-    description="RuyiSDK Package Manager",
+    description=_("RuyiSDK Package Manager"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -170,12 +171,12 @@ class RootCommand(
             action="store_const",
             dest="func",
             const=cli_version,
-            help="Print version information",
+            help=_("Print version information"),
         )
         p.add_argument(
             "--porcelain",
             action="store_true",
-            help="Give the output in a machine-friendly format if applicable",
+            help=_("Give the output in a machine-friendly format if applicable"),
         )
 
         # https://github.com/python/cpython/issues/67037 prevents the registration
@@ -219,7 +220,7 @@ class AdminCommand(
     has_subcommands=True,
     # https://github.com/python/cpython/issues/67037
     # help=argparse.SUPPRESS,
-    help="(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos",
+    help=_("(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:

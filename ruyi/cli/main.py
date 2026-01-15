@@ -4,6 +4,7 @@ import sys
 from typing import Final, TYPE_CHECKING
 
 from ..config import GlobalConfig
+from ..i18n import _
 from ..telemetry.scope import TelemetryScope
 from ..utils.global_mode import GlobalModeProvider
 from ..version import RUYI_SEMVER
@@ -50,10 +51,19 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     if not is_called_as_ruyi(gm.argv0):
         if should_prompt_for_renaming(gm.argv0):
             logger.F(
-                f"the {RUYI_ENTRYPOINT_NAME} executable must be named [green]'{RUYI_ENTRYPOINT_NAME}'[/] to work"
+                _(
+                    "the {ruyi_exe} executable must be named [green]'{expected_name}'[/] to work"
+                ).format(
+                    ruyi_exe=RUYI_ENTRYPOINT_NAME,
+                    expected_name=RUYI_ENTRYPOINT_NAME,
+                )
             )
-            logger.I(f"it is now [yellow]'{gm.argv0}'[/]")
-            logger.I("please rename the command file and retry")
+            logger.I(
+                _("it is now [yellow]'{current_name}'[/]").format(
+                    current_name=gm.argv0,
+                )
+            )
+            logger.I(_("please rename the command file and retry"))
             return 1
 
         from ..mux.runtime import mux_main
@@ -115,7 +125,7 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     try:
         telemetry_key: str = args.tele_key
     except AttributeError:
-        logger.F("internal error: CLI entrypoint was added without a telemetry key")
+        logger.F(_("internal error: CLI entrypoint was added without a telemetry key"))
         return 1
 
     # Special-case the `--output-completion-script` argument; treat it as if

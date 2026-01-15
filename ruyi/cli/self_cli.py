@@ -4,13 +4,16 @@ import pathlib
 import shutil
 from typing import Final, TYPE_CHECKING
 
+from ..i18n import _, d_
 from .cmd import RootCommand
 
 if TYPE_CHECKING:
     from .completion import ArgumentParser
     from .. import config
 
-UNINSTALL_NOTICE: Final = """
+
+UNINSTALL_NOTICE: Final = d_(
+    """
 [bold]Thanks for hacking with [yellow]Ruyi[/]![/]
 
 This will uninstall [yellow]Ruyi[/] from your system, and optionally remove
@@ -21,6 +24,7 @@ Note that your [yellow]Ruyi[/] virtual environments [bold]will become unusable[/
 [yellow]Ruyi[/] is uninstalled. You should take care of migrating or cleaning
 them yourselves afterwards.
 """
+)
 
 
 # Self-management commands
@@ -28,7 +32,7 @@ class SelfCommand(
     RootCommand,
     cmd="self",
     has_subcommands=True,
-    help="Manage this Ruyi installation",
+    help=_("Manage this Ruyi installation"),
 ):
     @classmethod
     def configure_args(
@@ -42,7 +46,7 @@ class SelfCommand(
 class SelfCleanCommand(
     SelfCommand,
     cmd="clean",
-    help="Remove various Ruyi-managed data to reclaim storage",
+    help=_("Remove various Ruyi-managed data to reclaim storage"),
 ):
     @classmethod
     def configure_args(
@@ -54,42 +58,42 @@ class SelfCleanCommand(
             "--quiet",
             "-q",
             action="store_true",
-            help="Do not print out the actions being performed",
+            help=_("Do not print out the actions being performed"),
         )
         p.add_argument(
             "--all",
             action="store_true",
-            help="Remove all covered data",
+            help=_("Remove all covered data"),
         )
         p.add_argument(
             "--distfiles",
             action="store_true",
-            help="Remove all downloaded distfiles if any",
+            help=_("Remove all downloaded distfiles if any"),
         )
         p.add_argument(
             "--installed-pkgs",
             action="store_true",
-            help="Remove all installed packages if any",
+            help=_("Remove all installed packages if any"),
         )
         p.add_argument(
             "--news-read-status",
             action="store_true",
-            help="Mark all news items as unread",
+            help=_("Mark all news items as unread"),
         )
         p.add_argument(
             "--progcache",
             action="store_true",
-            help="Clear the Ruyi program cache",
+            help=_("Clear the Ruyi program cache"),
         )
         p.add_argument(
             "--repo",
             action="store_true",
-            help="Remove the Ruyi repo if located in Ruyi-managed cache directory",
+            help=_("Remove the Ruyi repo if located in Ruyi-managed cache directory"),
         )
         p.add_argument(
             "--telemetry",
             action="store_true",
-            help="Remove all telemetry data recorded if any",
+            help=_("Remove all telemetry data recorded if any"),
         )
 
     @classmethod
@@ -122,9 +126,11 @@ class SelfCleanCommand(
                 telemetry,
             ]
         ):
-            logger.F("no data specified for cleaning")
+            logger.F(_("no data specified for cleaning"))
             logger.I(
-                "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
+                _(
+                    "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
+                )
             )
             return 1
 
@@ -149,7 +155,7 @@ class SelfCleanCommand(
 class SelfUninstallCommand(
     SelfCommand,
     cmd="uninstall",
-    help="Uninstall Ruyi",
+    help=_("Uninstall Ruyi"),
 ):
     @classmethod
     def configure_args(
@@ -160,13 +166,15 @@ class SelfUninstallCommand(
         p.add_argument(
             "--purge",
             action="store_true",
-            help="Remove all installed packages and Ruyi-managed remote repo data",
+            help=_("Remove all installed packages and Ruyi-managed remote repo data"),
         )
         p.add_argument(
             "-y",
             action="store_true",
             dest="consent",
-            help="Give consent for uninstallation on CLI; do not ask for confirmation",
+            help=_(
+                "Give consent for uninstallation on CLI; do not ask for confirmation"
+            ),
         )
 
     @classmethod
@@ -180,24 +188,28 @@ class SelfUninstallCommand(
 
         if cfg.is_installation_externally_managed:
             logger.F(
-                "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
+                _(
+                    "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
+                )
             )
-            logger.I("please uninstall via the external manager instead")
+            logger.I(_("please uninstall via the external manager instead"))
             return 1
 
         if not cfg.is_packaged:
             logger.F(
-                "this [yellow]ruyi[/] is not in standalone form, and cannot be uninstalled this way"
+                _(
+                    "this [yellow]ruyi[/] is not in standalone form, and cannot be uninstalled this way"
+                )
             )
             return 1
 
         if not consent:
-            logger.stdout(UNINSTALL_NOTICE)
-            if not user_input.ask_for_yesno_confirmation(logger, "Continue?"):
-                logger.I("aborting uninstallation")
+            logger.stdout(_(UNINSTALL_NOTICE))
+            if not user_input.ask_for_yesno_confirmation(logger, _("Continue?")):
+                logger.I(_("aborting uninstallation"))
                 return 0
         else:
-            logger.I("uninstallation consent given over CLI, proceeding")
+            logger.I(_("uninstallation consent given over CLI, proceeding"))
 
         _do_reset(
             cfg,
@@ -208,7 +220,7 @@ class SelfUninstallCommand(
             self_binary=True,
         )
 
-        logger.I("[yellow]ruyi[/] is uninstalled")
+        logger.I(_("[yellow]ruyi[/] is uninstalled"))
 
         return 0
 
@@ -235,7 +247,7 @@ def _do_reset(
         logger.I(s)
 
     if installed_pkgs:
-        status("removing installed packages")
+        status(_("removing installed packages"))
         shutil.rmtree(cfg.data_root, True)
         cfg.ruyipkg_global_state.purge_installation_info()
 
@@ -244,28 +256,28 @@ def _do_reset(
         cfg.telemetry.discard_events(True)
 
     if all_state:
-        status("removing state data")
+        status(_("removing state data"))
         shutil.rmtree(cfg.state_root, True)
     else:
         if news_read_status:
-            status("removing read status of news items")
+            status(_("removing read status of news items"))
             cfg.news_read_status.remove()
 
         if telemetry:
-            status("removing all telemetry data")
+            status(_("removing all telemetry data"))
             shutil.rmtree(cfg.telemetry_root, True)
 
     if all_cache:
-        status("removing cached data")
+        status(_("removing cached data"))
         shutil.rmtree(cfg.cache_root, True)
     else:
         if distfiles:
-            status("removing downloaded distfiles")
+            status(_("removing downloaded distfiles"))
             # TODO: deduplicate the path derivation
             shutil.rmtree(os.path.join(cfg.cache_root, "distfiles"), True)
 
         if progcache:
-            status("clearing the Ruyi program cache")
+            status(_("clearing the Ruyi program cache"))
             # TODO: deduplicate the path derivation
             shutil.rmtree(os.path.join(cfg.cache_root, "progcache"), True)
 
@@ -283,14 +295,16 @@ def _do_reset(
 
             if not repo_is_below_cache_root:
                 logger.W(
-                    "not removing the Ruyi repo: it is outside of the Ruyi cache directory"
+                    _(
+                        "not removing the Ruyi repo: it is outside of the Ruyi cache directory"
+                    )
                 )
             else:
-                status("removing the Ruyi repo")
+                status(_("removing the Ruyi repo"))
                 shutil.rmtree(repo_dir, True)
 
     if self_binary:
-        status("removing the ruyi binary")
+        status(_("removing the ruyi binary"))
         try:
             os.unlink(cfg.self_exe)
         except FileNotFoundError:
