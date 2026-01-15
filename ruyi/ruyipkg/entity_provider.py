@@ -10,6 +10,7 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+from ..i18n import _
 from ..log import RuyiLogger
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 
@@ -208,7 +209,10 @@ class FSEntityProvider(BaseEntityProvider):
             schema_files = list(self._schemas_root.glob("*.jsonschema"))
         except IOError as e:
             self._logger.W(
-                f"failed to access entity schemas directory {self._schemas_root}: {e}"
+                _("failed to access entity schemas directory {dir}: {reason}").format(
+                    dir=self._schemas_root,
+                    reason=e,
+                )
             )
             return schemas
 
@@ -259,7 +263,12 @@ class FSEntityProvider(BaseEntityProvider):
                     with open(file_path, "rb") as f:
                         data = tomllib.load(f)
                 except (IOError, tomllib.TOMLDecodeError) as e:
-                    self._logger.W(f"failed to load entity from {file_path}: {e}")
+                    self._logger.W(
+                        _("failed to load entity from {path}: {reason}").format(
+                            path=file_path,
+                            reason=e,
+                        )
+                    )
                     continue
 
                 # Extract entity ID from filename (remove .toml extension)

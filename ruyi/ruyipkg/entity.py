@@ -3,6 +3,7 @@ from typing import Any, Callable, Iterable, Iterator, Mapping
 import fastjsonschema
 from fastjsonschema.exceptions import JsonSchemaException
 
+from ..i18n import _
 from ..log import RuyiLogger
 from .entity_provider import BaseEntity, BaseEntityProvider, EntityValidationError
 
@@ -63,7 +64,11 @@ class EntityStore:
 
         schema = self._schemas.get(entity_type)
         if not schema:
-            self._logger.W(f"no schema found for entity type: {entity_type}")
+            self._logger.W(
+                _("no schema found for entity type: {entity_type}").format(
+                    entity_type=entity_type,
+                )
+            )
             # Return a simple validator that accepts anything
             return lambda x: x
 
@@ -72,7 +77,12 @@ class EntityStore:
             self._validators[entity_type] = validator
             return validator
         except Exception as e:
-            self._logger.W(f"failed to compile schema for {entity_type}: {e}")
+            self._logger.W(
+                _("failed to compile schema for {entity_type}: {reason}").format(
+                    entity_type=entity_type,
+                    reason=e,
+                )
+            )
             # Return a simple validator that accepts anything
             return lambda x: x
 

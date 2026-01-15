@@ -1,12 +1,14 @@
 import hashlib
 from typing import BinaryIO, Final, Iterable
 
+from ..i18n import _
+
 SUPPORTED_CHECKSUM_KINDS: Final = {"sha256", "sha512"}
 
 
 def get_hash_instance(kind: str) -> "hashlib._Hash":
     if kind not in SUPPORTED_CHECKSUM_KINDS:
-        raise ValueError(f"checksum algorithm {kind} not supported")
+        raise ValueError(_("checksum algorithm {kind} not supported").format(kind=kind))
     return hashlib.new(kind)
 
 
@@ -20,7 +22,11 @@ class Checksummer:
         for kind, expected_csum in self.checksums.items():
             if computed_csums[kind] != expected_csum:
                 raise ValueError(
-                    f"wrong {kind} checksum: want {expected_csum}, got {computed_csums[kind]}"
+                    _("wrong {kind} checksum: want {want}, got {got}").format(
+                        kind=kind,
+                        want=expected_csum,
+                        got=computed_csums[kind],
+                    )
                 )
 
     def compute(
