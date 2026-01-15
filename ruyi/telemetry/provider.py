@@ -7,6 +7,7 @@ import time
 from typing import Callable, TYPE_CHECKING, cast
 import uuid
 
+from ..i18n import _, d_
 from ..log import RuyiLogger
 from ..utils.node_info import NodeInfo, gather_node_info
 from .scope import TelemetryScope
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
 
 FALLBACK_PM_TELEMETRY_ENDPOINT = "https://api.ruyisdk.cn/telemetry/pm/"
 
-TELEMETRY_CONSENT_AND_UPLOAD_DESC = """
+TELEMETRY_CONSENT_AND_UPLOAD_DESC = d_(
+    """
 RuyiSDK collects minimal usage data in the form of just a version number of
 the running [yellow]ruyi[/], to help us improve the product. With your consent,
 RuyiSDK may also collect additional non-tracking usage data to be sent
@@ -35,11 +37,14 @@ team can better understand adoption. If you choose to opt out, this will be the
 only data to be ever uploaded, without any tracking ID being generated or kept.
 Thank you for helping us build a better experience!
 """
-TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = (
+)
+TELEMETRY_CONSENT_AND_UPLOAD_PROMPT = d_(
     "Do you agree to have usage data periodically uploaded?"
 )
-TELEMETRY_OPTOUT_PROMPT = "\nDo you want to opt out of telemetry entirely?"
-MALFORMED_TELEMETRY_STATE_MSG = "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
+TELEMETRY_OPTOUT_PROMPT = d_("\nDo you want to opt out of telemetry entirely?")
+MALFORMED_TELEMETRY_STATE_MSG = d_(
+    "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
+)
 
 
 def next_utc_weekday(wday: int, now: float | None = None) -> int:
@@ -113,22 +118,28 @@ def set_telemetry_mode(
         return
     match mode:
         case "on":
-            logger.I("telemetry data uploading is now enabled")
+            logger.I(_("telemetry data uploading is now enabled"))
             logger.I(
-                "you can opt out at any time by running [yellow]ruyi telemetry optout[/]"
+                _(
+                    "you can opt out at any time by running [yellow]ruyi telemetry optout[/]"
+                )
             )
         case "local":
-            logger.I("telemetry mode is now set to local collection only")
+            logger.I(_("telemetry mode is now set to local collection only"))
             logger.I(
-                "you can re-enable telemetry data uploading at any time by running [yellow]ruyi telemetry consent[/]"
+                _(
+                    "you can re-enable telemetry data uploading at any time by running [yellow]ruyi telemetry consent[/]"
+                )
             )
             logger.I(
-                "or opt out at any time by running [yellow]ruyi telemetry optout[/]"
+                _("or opt out at any time by running [yellow]ruyi telemetry optout[/]")
             )
         case "off":
-            logger.I("telemetry data collection is now disabled")
+            logger.I(_("telemetry data collection is now disabled"))
             logger.I(
-                "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
+                _(
+                    "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
+                )
             )
         case _:
             raise ValueError(f"invalid telemetry mode: {mode}")
@@ -316,30 +327,50 @@ class TelemetryProvider:
                             "%Y-%m-%d %H:%M:%S %z", time.localtime(last_upload_time)
                         )
                         self.logger.I(
-                            f"scope {scope}: usage information has already been uploaded today at {last_upload_time_str}"
+                            _(
+                                "scope {scope}: usage information has already been uploaded today at {last_upload_time_str}"
+                            ).format(
+                                scope=scope,
+                                last_upload_time_str=last_upload_time_str,
+                            )
                         )
                     else:
                         self.logger.I(
-                            f"scope {scope}: usage information has already been uploaded sometime today"
+                            _(
+                                "scope {scope}: usage information has already been uploaded sometime today"
+                            ).format(
+                                scope=scope,
+                            )
                         )
                 else:
                     self.logger.I(
-                        f"scope {scope}: the next upload will happen [bold green]today[/] if not already"
+                        _(
+                            "scope {scope}: the next upload will happen [bold green]today[/] if not already"
+                        ).format(
+                            scope=scope,
+                        )
                     )
         else:
             self.logger.I(
-                "the next upload will happen anytime [yellow]ruyi[/] is executed:"
+                _("the next upload will happen anytime [yellow]ruyi[/] is executed:")
             )
             self.logger.I(
-                f"  -  between [bold green]{next_upload_day_str}[/] and [bold green]{next_upload_day_end_str}[/]"
+                _(
+                    "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+                ).format(
+                    time_start=next_upload_day_str,
+                    time_end=next_upload_day_end_str,
+                )
             )
-            self.logger.I("  - or if the last upload is more than a week ago")
+            self.logger.I(_("  - or if the last upload is more than a week ago"))
 
     def print_telemetry_notice(self, for_cli_verbose_output: bool = False) -> None:
         if self.minimal:
             if for_cli_verbose_output:
                 self.logger.I(
-                    "telemetry mode is [green]off[/]: nothing is collected or uploaded after the first run"
+                    _(
+                        "telemetry mode is [green]off[/]: nothing is collected or uploaded after the first run"
+                    )
                 )
             return
 
@@ -357,7 +388,9 @@ class TelemetryProvider:
         if self.local_mode:
             if for_cli_verbose_output:
                 self.logger.I(
-                    "telemetry mode is [green]local[/]: local usage collection only, no usage uploads except if requested"
+                    _(
+                        "telemetry mode is [green]local[/]: local usage collection only, no usage uploads except if requested"
+                    )
                 )
             return
 
@@ -367,22 +400,34 @@ class TelemetryProvider:
 
         if for_cli_verbose_output:
             self.logger.I(
-                "telemetry mode is [green]on[/]: usage data is collected and periodically uploaded"
+                _(
+                    "telemetry mode is [green]on[/]: usage data is collected and periodically uploaded"
+                )
             )
             self.logger.I(
-                f"non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {upload_wday_name}[/]"
+                _(
+                    "non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {weekday}[/]"
+                ).format(
+                    weekday=upload_wday_name,
+                )
             )
         else:
             self.logger.W(
-                f"this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {upload_wday_name}[/]"
+                _(
+                    "this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {weekday}[/]"
+                ).format(
+                    weekday=upload_wday_name,
+                )
             )
 
         self._print_upload_schedule_notice(upload_wday, now)
 
         if not for_cli_verbose_output:
-            self.logger.I("in order to hide this banner:")
-            self.logger.I("- opt out with [yellow]ruyi telemetry optout[/]")
-            self.logger.I("- or give consent with [yellow]ruyi telemetry consent[/]")
+            self.logger.I(_("in order to hide this banner:"))
+            self.logger.I(_(" - opt out with [yellow]ruyi telemetry optout[/]"))
+            self.logger.I(
+                _(" - or give consent with [yellow]ruyi telemetry consent[/]")
+            )
 
     def _next_upload_day(self, time_now: float | None = None) -> int | None:
         upload_wday = self._upload_weekday()
@@ -561,16 +606,16 @@ class TelemetryProvider:
 
         from ..cli import user_input
 
-        self.logger.stdout(TELEMETRY_CONSENT_AND_UPLOAD_DESC)
+        self.logger.stdout(_(TELEMETRY_CONSENT_AND_UPLOAD_DESC))
         if not user_input.ask_for_yesno_confirmation(
             self.logger,
-            TELEMETRY_CONSENT_AND_UPLOAD_PROMPT,
+            _(TELEMETRY_CONSENT_AND_UPLOAD_PROMPT),
             False,
         ):
             # ask if the user wants to opt out entirely
             if user_input.ask_for_yesno_confirmation(
                 self.logger,
-                TELEMETRY_OPTOUT_PROMPT,
+                _(TELEMETRY_OPTOUT_PROMPT),
                 False,
             ):
                 set_telemetry_mode(self._gc, "off")
