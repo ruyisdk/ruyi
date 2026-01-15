@@ -3,6 +3,7 @@ import sys
 from typing import Final, Iterable, NoReturn
 
 from ..cli.user_input import pause_before_continuing
+from ..i18n import _
 from ..log import RuyiLogger, humanize_list
 
 
@@ -57,21 +58,25 @@ def ensure_cmds(
             return None
 
         cmds_str = humanize_list(absent_cmds, item_color="yellow")
-        prompt = f"The command(s) {cmds_str} cannot be found in PATH, which [yellow]ruyi[/] requires"
+        prompt = _(
+            "The command(s) {cmds} cannot be found in PATH, which [yellow]ruyi[/] requires"
+        ).format(cmds=cmds_str)
         if not interactive_retry:
             logger.F(prompt)
-            logger.I("please install and retry")
+            logger.I(_("please install and retry"))
             sys.exit(1)
 
         logger.W(prompt)
         logger.I(
-            "please install them and press [green]Enter[/] to retry, or [green]Ctrl+C[/] to exit"
+            _(
+                "please install them and press [green]Enter[/] to retry, or [green]Ctrl+C[/] to exit"
+            )
         )
         try:
             pause_before_continuing(logger)
         except EOFError:
-            logger.I("exiting due to EOF")
+            logger.I(_("exiting due to EOF"))
             sys.exit(1)
         except KeyboardInterrupt:
-            logger.I("exiting due to keyboard interrupt")
+            logger.I(_("exiting due to keyboard interrupt"))
             sys.exit(1)

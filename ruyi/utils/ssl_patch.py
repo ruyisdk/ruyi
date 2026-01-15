@@ -6,6 +6,7 @@ from typing import Final, NamedTuple
 
 import certifi
 
+from ..i18n import _
 from ..log import RuyiConsoleLogger, RuyiLogger
 from .global_mode import EnvGlobalModeProvider
 
@@ -35,7 +36,7 @@ def _get_system_ssl_default_verify_paths(logger: RuyiLogger) -> ssl.DefaultVerif
     try:
         parts = _query_linux_system_ssl_default_cert_paths(logger)
         if parts is None:
-            logger.W("failed to probe system libcrypto")
+            logger.W(_("failed to probe system libcrypto"))
         else:
             result = to_ssl_paths(parts)
     except Exception as e:
