@@ -20,15 +20,16 @@ def main() -> None:
 
     resources: dict[str, str] = {}
     template_names: dict[str, str] = {}
-    for f in bundled_resource_root.iterdir():
+    for f in bundled_resource_root.glob("**/*"):
         if not f.is_file():
             continue
 
-        resources[f.name] = make_payload_from_file(f)
+        rel_path = f.relative_to(bundled_resource_root)
+        resources[str(rel_path)] = make_payload_from_file(f)
 
         if f.suffix.lower() == ".jinja":
             # strip the .jinja suffix for the template name
-            template_names[f.stem] = f.name
+            template_names[str(rel_path.with_suffix(""))] = str(rel_path)
 
     with open(self_path / "data.py", "w", encoding="utf-8") as fp:
 
