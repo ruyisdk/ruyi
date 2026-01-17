@@ -4,7 +4,7 @@ import os
 import sys
 
 import ruyi
-from ruyi.i18n import _
+from ruyi.i18n import _, ADAPTER
 from ruyi.utils.ci import is_running_in_ci
 from ruyi.utils.global_mode import (
     EnvGlobalModeProvider,
@@ -42,6 +42,8 @@ def _is_allowed_to_run_as_root() -> bool:
 
 def entrypoint() -> None:
     gm = EnvGlobalModeProvider(os.environ, sys.argv)
+    ADAPTER.init_from_env(os.environ)
+    ADAPTER.hook()
 
     # NOTE: import of `ruyi.log` takes ~90ms on my machine, so initialization
     # of logging is deferred as late as possible

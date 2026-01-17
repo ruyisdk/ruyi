@@ -7,15 +7,20 @@ import time
 # these must be modules that does not significantly affect the ruyi CLI's
 # startup performance
 STDLIBS_TO_PRELOAD = [
+    "_struct",
     "argparse",
+    "base64",
+    "binascii",
     "bz2",
     "datetime",
     "functools",
+    "gettext",
     "itertools",
     "lzma",
     "pathlib",
     "platform",
     "shutil",
+    "struct",
     "typing",
     "os",
     "zlib",
@@ -41,6 +46,8 @@ CURRENT_ALLOWLIST = {
     "ruyi.mux.venv.venv_cli",
     "ruyi.pluginhost",
     "ruyi.pluginhost.plugin_cli",
+    "ruyi.resource_bundle",
+    "ruyi.resource_bundle.data",
     "ruyi.ruyipkg",
     "ruyi.ruyipkg.admin_cli",
     "ruyi.ruyipkg.cli_completion",  # part of the argparse machinery
