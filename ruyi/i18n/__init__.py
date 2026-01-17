@@ -7,15 +7,21 @@ from typing import Final, Mapping, NewType
 if sys.version_info >= (3, 11):
     from typing import LiteralString
 else:
-    try:
-        from typing_extensions import LiteralString
-    except ImportError:
-        # Python and typing_extensions both too old, which is unfortunately
-        # the case with Ubuntu 22.04 LTS system packages.
-        #
-        # We don't expect development work within such an environment, so just
-        # alias to str.
-        LiteralString = str  # type: ignore[misc]
+    # It may happen that Python and typing_extensions are both too old, which
+    # is unfortunately the case with Ubuntu 22.04 LTS system packages, meaning
+    # typing_extensions cannot guarantee us LiteralString either.
+    #
+    # We don't expect development work within such an environment, so just
+    # alias to str to avoid importing typing_extensions altogether. This also
+    # helps CLI startup performance.
+    #
+    # Unfortunately, simply assigning str to LiteralString would not work either,
+    # due to mypy/pyright not wanting us to re-assign types; we have to
+    # resort to providing different function signatures for Python 3.10, which
+    # is done below.
+    #
+    # LiteralString = str  # type: ignore[misc]
+    pass
 
 from ..resource_bundle import get_resource_blob
 
@@ -100,12 +106,24 @@ ADAPTER: Final = I18nAdapter()
 DeferredI18nString = NewType("DeferredI18nString", str)
 
 
-def _(x: LiteralString | DeferredI18nString) -> str:
-    """``gettext`` alias that ensures its input is string literal via type
-    signature."""
-    return ADAPTER.gettext(x)
+if sys.version_info >= (3, 11):
 
+    def _(x: LiteralString | DeferredI18nString) -> str:
+        """``gettext`` alias that ensures its input is string literal via type
+        signature."""
+        return ADAPTER.gettext(x)
 
-def d_(x: LiteralString) -> DeferredI18nString:
-    """Mark a string literal for deferred translation: call ``_`` at use sites."""
-    return DeferredI18nString(x)
+    def d_(x: LiteralString) -> DeferredI18nString:
+        """Mark a string literal for deferred translation: call ``_`` at use sites."""
+        return DeferredI18nString(x)
+
+else:
+
+    def _(x: str | DeferredI18nString) -> str:
+        """``gettext`` alias that ensures its input is string literal via type
+        signature."""
+        return ADAPTER.gettext(x)
+
+    def d_(x: str) -> DeferredI18nString:
+        """Mark a string literal for deferred translation: call ``_`` at use sites."""
+        return DeferredI18nString(x)
