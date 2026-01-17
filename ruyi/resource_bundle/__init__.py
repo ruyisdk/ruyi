@@ -4,13 +4,19 @@ import zlib
 from .data import RESOURCES, TEMPLATE_NAME_MAP
 
 
-def _unpack_payload(x: bytes) -> str:
-    return zlib.decompress(base64.b64decode(x)).decode("utf-8")
+def _unpack_payload(x: bytes) -> bytes:
+    return zlib.decompress(base64.b64decode(x))
 
 
-def get_resource_str(template_name: str) -> str | None:
-    if t := RESOURCES.get(template_name):
+def get_resource_blob(name: str) -> bytes | None:
+    if t := RESOURCES.get(name):
         return _unpack_payload(t)
+    return None
+
+
+def get_resource_str(name: str) -> str | None:
+    if blob := get_resource_blob(name):
+        return blob.decode("utf-8")
     return None
 
 
