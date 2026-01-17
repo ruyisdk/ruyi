@@ -16,12 +16,12 @@ RESOURCES: Final = {
     "toolchain.cmake.jinja": b"eNqFkVFrwjAUhd/7Ky6IMGF274M9dG2cZWlT0joUhJDVaIuajKQTR+l/X6zOWccwb+F+5+Scmx5MjIBNuRaPTs/pQb7lawGu68Lc3g5nGPiR94pYRgj2x14Ys1GI0VNdw07IHdNKVdA0D5VSm7zgpXSPFnOn7g+hXIL5Mi3Tb64MwzjNPIxZQtEonB4Mf9CmOcmFXFiHs9LGchwjqrujQTpLMxSx2IsQ4FJ+7gd/hwklPkpTQsH6f2iVC2OUti9csj7zSZTYVi2V59fj6bQL7PctUfcv+w1tzF/NKIwDRgnJWOJlY+iUa5UX1YzgOi9gaXMVgi+ENsDlwn7Ku+a6FAZKCVUhoOJ6JSqr3JVaya2Q1X1XbfutNN+eBYUyHfzffCwiATrs6oV6EcToDdHBDRiHz9SjMyAxnt1iw9jHkwCd2G+4PsQk",  # fmt: skip
 }
 
-TEMPLATES: Final = {
-    "binfmt.conf": RESOURCES["binfmt.conf.jinja"],
-    "meson-cross.ini": RESOURCES["meson-cross.ini.jinja"],
-    "prompt.venv-created.txt": RESOURCES["prompt.venv-created.txt.jinja"],
-    "ruyi-activate.bash": RESOURCES["ruyi-activate.bash.jinja"],
-    "ruyi-cache.toml": RESOURCES["ruyi-cache.toml.jinja"],
-    "ruyi-venv.toml": RESOURCES["ruyi-venv.toml.jinja"],
-    "toolchain.cmake": RESOURCES["toolchain.cmake.jinja"],
+TEMPLATE_NAME_MAP: Final = {
+    "binfmt.conf": "binfmt.conf.jinja",
+    "meson-cross.ini": "meson-cross.ini.jinja",
+    "prompt.venv-created.txt": "prompt.venv-created.txt.jinja",
+    "ruyi-activate.bash": "ruyi-activate.bash.jinja",
+    "ruyi-cache.toml": "ruyi-cache.toml.jinja",
+    "ruyi-venv.toml": "ruyi-venv.toml.jinja",
+    "toolchain.cmake": "toolchain.cmake.jinja",
 }

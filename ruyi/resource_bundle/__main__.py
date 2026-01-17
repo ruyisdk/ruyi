@@ -46,9 +46,9 @@ def main() -> None:
             p(f'    "{filename}": b"{payload}",  # fmt: skip')
         p("}\n")
 
-        p("TEMPLATES: Final = {")
+        p("TEMPLATE_NAME_MAP: Final = {")
         for stem, full_filename in sorted(template_names.items()):
-            p(f'    "{stem}": RESOURCES["{full_filename}"],')
+            p(f'    "{stem}": "{full_filename}",')
         p("}")
 
 
