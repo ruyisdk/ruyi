@@ -8,9 +8,17 @@ def _unpack_payload(x: bytes) -> bytes:
     return zlib.decompress(base64.b64decode(x))
 
 
+_CACHE: dict[str, bytes] = {}
+
+
 def get_resource_blob(name: str) -> bytes | None:
     if t := RESOURCES.get(name):
-        return _unpack_payload(t)
+        if name not in _CACHE:
+            # In our use cases, the program is short-lived and involved resources
+            # are small in size, so it is fine to just store the decompressed
+            # blobs without eviction.
+            _CACHE[name] = _unpack_payload(t)
+        return _CACHE[name]
     return None
 
 
