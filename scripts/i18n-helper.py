@@ -13,6 +13,12 @@ else:
 from babel.messages.frontend import CommandLineInterface
 
 
+DOMAINS = (
+    "argparse",
+    "ruyi",
+)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Helper script for Ruyi i18n tasks.",
@@ -70,6 +76,17 @@ def _invoke_babel(argv: list[str]) -> None:
 
 
 def _do_refresh_pot() -> int:
+    for domain in DOMAINS:
+        if generator := POT_GENERATORS.get(domain):
+            print(f"Refreshing POT for domain '{domain}'...")
+            generator()
+        else:
+            print(f"fatal error: no POT generator for domain '{domain}'")
+            return 1
+    return 0
+
+
+def _do_refresh_ruyi_pot() -> int:
     project_version = _query_project_version()
 
     babel_argv = [
@@ -102,24 +119,50 @@ def _do_refresh_pot() -> int:
     return 0
 
 
-def _do_init_po(locale: str) -> int:
+def _do_refresh_argparse_pot() -> int:
     babel_argv = [
         "pybabel",
-        "init",
-        # project metadata
-        "--domain=ruyi",
-        "-l",
-        locale,
-        # same formatting as the POT
+        "extract",
+        # general nice-to-have options
         "--no-wrap",
-        # assume the POT file is already there
-        "-i",
-        "resources/po/ruyi.pot",
-        # destination
-        "-d",
-        "resources/po",
+        "--sort-by-file",
+        # no project metadata for argparse which is Python stdlib
+        # output file
+        "-o",
+        "resources/po/argparse.pot",
+        # add source file
+        # for now this is only one file
+        argparse.__file__,
     ]
     _invoke_babel(babel_argv)
+    return 0
+
+
+POT_GENERATORS = {
+    "ruyi": _do_refresh_ruyi_pot,
+    "argparse": _do_refresh_argparse_pot,
+}
+
+
+def _do_init_po(locale: str) -> int:
+    for domain in DOMAINS:
+        babel_argv = [
+            "pybabel",
+            "init",
+            # project metadata
+            f"--domain={domain}",
+            "-l",
+            locale,
+            # same formatting as the POT
+            "--no-wrap",
+            # assume the POT file is already there
+            "-i",
+            f"resources/po/{domain}.pot",
+            # destination
+            "-d",
+            "resources/po",
+        ]
+        _invoke_babel(babel_argv)
     return 0
 
 
@@ -127,23 +170,24 @@ def _do_build_mo(locale: str) -> int:
     destdir = pathlib.Path("resources/bundled/locale") / locale / "LC_MESSAGES"
     destdir.mkdir(parents=True, exist_ok=True)
 
-    babel_argv = [
-        "pybabel",
-        "compile",
-        "-f",
-        "--statistics",
-        # project metadata
-        "--domain=ruyi",
-        "-l",
-        locale,
-        # destination directory
-        "-d",
-        "resources/bundled/locale",
-        # input file
-        "-i",
-        f"resources/po/{locale}/LC_MESSAGES/ruyi.po",
-    ]
-    _invoke_babel(babel_argv)
+    for domain in DOMAINS:
+        babel_argv = [
+            "pybabel",
+            "compile",
+            "-f",
+            "--statistics",
+            # project metadata
+            f"--domain={domain}",
+            "-l",
+            locale,
+            # destination directory
+            "-d",
+            "resources/bundled/locale",
+            # input file
+            "-i",
+            f"resources/po/{locale}/LC_MESSAGES/{domain}.po",
+        ]
+        _invoke_babel(babel_argv)
 
     # regenerate resource bundle data
     from ruyi.resource_bundle.__main__ import main as resource_bundle_main
