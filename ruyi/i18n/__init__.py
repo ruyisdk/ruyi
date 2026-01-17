@@ -65,13 +65,11 @@ class I18nAdapter:
         if environ is None:
             environ = os.environ
 
-        for lang in _probe_lang(environ):
-            for domain in _DOMAINS:
+        langs = _probe_lang(environ)
+        for domain in _DOMAINS:
+            for lang in langs:
                 if self.set_locale(domain, lang):
                     break
-
-        # Fallback to null translations
-        self._t = gettext.NullTranslations()
 
     def _get_mo(self, domain: str, locale: str) -> BytesIO | None:
         # this is always forward-slash-separated, because this is not a concrete
@@ -85,7 +83,7 @@ class I18nAdapter:
     def set_locale(self, domain: str, locale: str | None = None) -> bool:
         if locale is not None:
             if mo_file := self._get_mo(domain, locale):
-                self._t = gettext.GNUTranslations(mo_file)
+                self._t.add_fallback(gettext.GNUTranslations(mo_file))
                 return True
         return False
 
