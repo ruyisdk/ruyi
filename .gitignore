@@ -1,5 +1,3 @@
-/tmp
-
 # Created by https://www.toptal.com/developers/gitignore/api/python,linux,vim,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,linux,vim,visualstudiocode
 
@@ -230,3 +228,9 @@ tags
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,linux,vim,visualstudiocode
+
+/tmp
+
+# these are pre-built to avoid requiring additional build deps on a multitude
+# of distros
+!resources/bundled/locale/**/*.mo
