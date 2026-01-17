@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from typing import Any, BinaryIO, NoReturn, Protocol
 
+from ..i18n import _
 from ..log import RuyiLogger
 from ..utils import ar, prereqs
 from .unpack_method import (
@@ -192,7 +193,12 @@ def _do_unpack_tar(
         retcode = p.wait()
 
     if retcode != 0:
-        raise RuntimeError(f"untar failed: command {' '.join(argv)} returned {retcode}")
+        raise RuntimeError(
+            _("untar failed: command {cmd} returned {retcode}").format(
+                cmd=" ".join(argv),
+                retcode=retcode,
+            )
+        )
 
 
 def _do_unpack_zip(
@@ -206,7 +212,12 @@ def _do_unpack_zip(
     logger.D(f"about to call unzip: argv={argv}")
     retcode = subprocess.call(argv, cwd=dest)
     if retcode != 0:
-        raise RuntimeError(f"unzip failed: command {' '.join(argv)} returned {retcode}")
+        raise RuntimeError(
+            _("unzip failed: command {cmd} returned {retcode}").format(
+                cmd=" ".join(argv),
+                retcode=retcode,
+            )
+        )
 
 
 def _do_unpack_bare_gz(
@@ -226,7 +237,10 @@ def _do_unpack_bare_gz(
         retcode = subprocess.call(argv, stdout=out)
         if retcode != 0:
             raise RuntimeError(
-                f"gunzip failed: command {' '.join(argv)} returned {retcode}"
+                _("gunzip failed: command {cmd} returned {retcode}").format(
+                    cmd=" ".join(argv),
+                    retcode=retcode,
+                )
             )
 
 
@@ -247,7 +261,10 @@ def _do_unpack_bare_bzip2(
         retcode = subprocess.call(argv, stdout=out)
         if retcode != 0:
             raise RuntimeError(
-                f"bzip2 failed: command {' '.join(argv)} returned {retcode}"
+                _("bzip2 failed: command {cmd} returned {retcode}").format(
+                    cmd=" ".join(argv),
+                    retcode=retcode,
+                )
             )
 
 
@@ -263,7 +280,12 @@ def _do_unpack_bare_lz4(
     logger.D(f"about to call lz4: argv={argv}")
     retcode = subprocess.call(argv, cwd=destdir)
     if retcode != 0:
-        raise RuntimeError(f"lz4 failed: command {' '.join(argv)} returned {retcode}")
+        raise RuntimeError(
+            _("lz4 failed: command {cmd} returned {retcode}").format(
+                cmd=" ".join(argv),
+                retcode=retcode,
+            )
+        )
 
 
 def _do_unpack_bare_xz(
@@ -283,7 +305,10 @@ def _do_unpack_bare_xz(
         retcode = subprocess.call(argv, stdout=out)
         if retcode != 0:
             raise RuntimeError(
-                f"xz failed: command {' '.join(argv)} returned {retcode}"
+                _("xz failed: command {cmd} returned {retcode}").format(
+                    cmd=" ".join(argv),
+                    retcode=retcode,
+                )
             )
 
 
@@ -299,7 +324,12 @@ def _do_unpack_bare_zstd(
     logger.D(f"about to call zstd: argv={argv}")
     retcode = subprocess.call(argv, cwd=destdir)
     if retcode != 0:
-        raise RuntimeError(f"zstd failed: command {' '.join(argv)} returned {retcode}")
+        raise RuntimeError(
+            _("zstd failed: command {cmd} returned {retcode}").format(
+                cmd=" ".join(argv),
+                retcode=retcode,
+            )
+        )
 
 
 def _do_unpack_deb(
@@ -321,7 +351,11 @@ def _do_unpack_deb(
                     a.open(f),
                 )
 
-    raise RuntimeError(f"file '{filename}' does not appear to be a deb")
+    raise RuntimeError(
+        _("file '{filename}' does not appear to be a deb").format(
+            filename=filename,
+        )
+    )
 
 
 def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:

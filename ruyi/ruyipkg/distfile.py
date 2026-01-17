@@ -2,6 +2,7 @@ from functools import cached_property
 import os
 from typing import Any, Final
 
+from ..i18n import _, d_
 from ..log import RuyiLogger
 from .checksum import Checksummer
 from .fetcher import BaseFetcher
@@ -12,7 +13,8 @@ from .unpack_method import UnpackMethod
 
 
 # https://github.com/ruyisdk/ruyi/issues/46
-HELP_ERROR_FETCHING: Final = """
+HELP_ERROR_FETCHING: Final = d_(
+    """
 Downloads can fail for a multitude of reasons, most of which should not and
 cannot be handled by [yellow]Ruyi[/]. For your convenience though, please check if any
 of the following common failure modes apply to you, and take actions
@@ -28,6 +30,7 @@ accordingly if one of them turns out to be the case:
 * Volatile upstream
     - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)
 """
+)
 
 
 class Distfile:
@@ -86,9 +89,13 @@ class Distfile:
                 # to reduce surprises for packagers.
                 if k in fr["params"]:
                     logger.F(
-                        f"malformed package fetch instructions: the param named '{k}' is reserved and cannot be overridden by packages"
+                        _(
+                            "malformed package fetch instructions: the param named '{param}' is reserved and cannot be overridden by packages"
+                        ).format(
+                            param=k,
+                        )
                     )
-                    raise RuntimeError("malformed package fetch instructions")
+                    raise RuntimeError(_("malformed package fetch instructions"))
 
             params.update(fr["params"])
 
@@ -128,7 +135,13 @@ class Distfile:
             return self.fetch_and_ensure_integrity(logger)
 
         logger.W(
-            f"file {self.dest} is corrupt: size too big ({st.st_size} > {self.size}); deleting"
+            _(
+                "file {file} is corrupt: size too big ({actual_size} > {expected_size}); deleting"
+            ).format(
+                file=self.dest,
+                actual_size=st.st_size,
+                expected_size=self.size,
+            )
         )
         os.remove(self.dest)
         return self.fetch_and_ensure_integrity(logger)
@@ -140,7 +153,12 @@ class Distfile:
                 cs.check()
                 return True
         except ValueError as e:
-            logger.W(f"file {self.dest} is corrupt: {e}; deleting")
+            logger.W(
+                _("file {file} is corrupt: {reason}; deleting").format(
+                    file=self.dest,
+                    reason=e,
+                )
+            )
             os.remove(self.dest)
             return False
 
@@ -158,9 +176,13 @@ class Distfile:
             # TODO: allow rendering instructions for all missing fetch-restricted
             # files at once
             logger.F(
-                f"the file [yellow]'{self.dest}'[/] cannot be automatically fetched"
+                _(
+                    "the file [yellow]'{file}'[/] cannot be automatically fetched"
+                ).format(
+                    file=self.dest,
+                )
             )
-            logger.I("instructions on fetching this file:")
+            logger.I(_("instructions on fetching this file:"))
             logger.I(
                 self.render_fetch_instructions(logger, self._mr.global_config.lang_code)
             )
@@ -170,7 +192,7 @@ class Distfile:
             return self._fetch_and_ensure_integrity(logger, resume=resume)
         except RuntimeError as e:
             logger.F(f"{e}")
-            logger.stdout(HELP_ERROR_FETCHING)
+            logger.stdout(_(HELP_ERROR_FETCHING))
             raise SystemExit(1)
 
     def _fetch_and_ensure_integrity(
@@ -184,7 +206,9 @@ class Distfile:
 
         if not self.ensure_integrity_or_rm(logger):
             raise RuntimeError(
-                f"failed to fetch distfile: {self.dest} failed integrity checks"
+                _("failed to fetch distfile: {file} failed integrity checks").format(
+                    file=self.dest,
+                )
             )
 
     def unpack(

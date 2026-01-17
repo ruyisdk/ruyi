@@ -6,6 +6,7 @@ from tomlkit import document, table
 from tomlkit.items import AoT, Table
 from tomlkit.toml_document import TOMLDocument
 
+from ..i18n import _
 from ..log import RuyiLogger
 from . import checksum
 from .pkg_manifest import DistfileDeclType, RestrictKind
@@ -18,7 +19,9 @@ def do_admin_checksum(
     restrict: list[str],
 ) -> int:
     if not validate_restrict_kinds(restrict):
-        logger.F(f"invalid restrict kinds given: {restrict}")
+        logger.F(
+            _("invalid restrict kinds given: {restrict}").format(restrict=restrict)
+        )
         return 1
 
     entries = [gen_distfile_entry(logger, f, restrict) for f in files]

@@ -7,6 +7,7 @@ from typing import Any, Final
 import requests
 from rich import progress
 
+from ..i18n import _
 from ..log import RuyiLogger
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
@@ -40,19 +41,31 @@ class BaseFetcher:
     ) -> bool:
         for t in range(retries):
             if t > 0:
-                self._logger.I(f"retrying download ({t + 1} of {retries} times)")
+                self._logger.I(
+                    _("retrying download ({current} of {total} times)").format(
+                        current=t + 1,
+                        total=retries,
+                    )
+                )
             if self.fetch_one(url, dest, resume):
                 return True
         return False
 
     def fetch(self, *, resume: bool = False, retries: int = 3) -> None:
         for url in self.urls:
-            self._logger.I(f"downloading {url} to {self.dest}")
+            self._logger.I(
+                _("downloading {url} to {dest}").format(
+                    url=url,
+                    dest=self.dest,
+                )
+            )
             if self.fetch_one_with_retry(url, self.dest, resume, retries):
                 return
         # all URLs have been tried and all have failed
         raise RuntimeError(
-            f"failed to fetch '{self.dest}': all source URLs have failed"
+            _("failed to fetch '{dest}': all source URLs have failed").format(
+                dest=self.dest,
+            )
         )
 
     @classmethod
@@ -78,7 +91,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
     if _fetcher_cache_populated:
         if _cached_usable_fetcher_class is None:
-            raise RuntimeError("no fetcher is available on the system")
+            raise RuntimeError(_("no fetcher is available on the system"))
         return _cached_usable_fetcher_class
 
     _fetcher_cache_populated = True
@@ -88,10 +101,16 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
         cls = KNOWN_FETCHERS.get(override_name)
         if cls is None:
-            raise RuntimeError(f"unknown fetcher '{override_name}'")
+            raise RuntimeError(
+                _("unknown fetcher '{name}'").format(
+                    name=override_name,
+                )
+            )
         if not cls.is_available(logger):
             raise RuntimeError(
-                f"the requested fetcher '{override_name}' is unavailable on the system"
+                _("the requested fetcher '{name}' is unavailable on the system").format(
+                    name=override_name,
+                )
             )
         _cached_usable_fetcher_class = cls
         return cls
@@ -103,7 +122,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
         _cached_usable_fetcher_class = cls
         return cls
 
-    raise RuntimeError("no fetcher is available on the system")
+    raise RuntimeError(_("no fetcher is available on the system"))
 
 
 class CurlFetcher(BaseFetcher):
@@ -152,7 +171,12 @@ class CurlFetcher(BaseFetcher):
         retcode = subprocess.call(argv)
         if retcode != 0:
             self._logger.W(
-                f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
+                _(
+                    "failed to fetch distfile: command '{cmd}' returned {retcode}"
+                ).format(
+                    cmd=" ".join(argv),
+                    retcode=retcode,
+                )
             )
             return False
 
@@ -190,7 +214,12 @@ class WgetFetcher(BaseFetcher):
         retcode = subprocess.call(argv)
         if retcode != 0:
             self._logger.W(
-                f"failed to fetch distfile: command '{' '.join(argv)}' returned {retcode}"
+                _(
+                    "failed to fetch distfile: command '{cmd}' returned {retcode}"
+                ).format(
+                    cmd=" ".join(argv),
+                    retcode=retcode,
+                )
             )
             return False
 

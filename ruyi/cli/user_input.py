@@ -1,5 +1,6 @@
 import os.path
 
+from ..i18n import _
 from ..log import RuyiLogger
 
 
@@ -10,7 +11,7 @@ def pause_before_continuing(
 
     EOFError should be handled by the caller."""
 
-    logger.stdout("Press [green]<ENTER>[/] to continue: ", end="")
+    logger.stdout(_("Press [green]<ENTER>[/] to continue: "), end="")
     input()
 
 
@@ -26,9 +27,11 @@ def ask_for_yesno_confirmation(
             logger.stdout(f"{prompt} {choices_help} ", end="")
             user_input = input()
         except EOFError:
-            yesno = "YES" if default else "NO"
+            yesno = _("YES") if default else _("NO")
             logger.W(
-                f"EOF while reading user input, assuming the default choice {yesno}"
+                _(
+                    "EOF while reading user input, assuming the default choice {yesno}"
+                ).format(yesno=yesno)
             )
             return default
 
@@ -39,8 +42,12 @@ def ask_for_yesno_confirmation(
         if user_input in {"N", "n", "no"}:
             return False
         else:
-            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/].")
-            logger.stdout("Accepted choices: Y/y/yes for YES, N/n/no for NO.")
+            logger.stdout(
+                _("Unrecognized input [yellow]'{user_input}'[/].").format(
+                    user_input=user_input
+                )
+            )
+            logger.stdout(_("Accepted choices: Y/y/yes for YES, N/n/no for NO."))
 
 
 def ask_for_kv_choice(
@@ -81,12 +88,19 @@ def ask_for_choice(
     if default_idx is not None:
         if not (0 <= default_idx < nr_choices):
             raise ValueError(f"Default choice index {default_idx} out of range")
-        choices_help = f"(1-{nr_choices}, default {default_idx + 1})"
+        choices_help = _("(1-{nr_choices}, default {default})").format(
+            nr_choices=nr_choices,
+            default=default_idx + 1,
+        )
     else:
-        choices_help = f"(1-{nr_choices})"
+        choices_help = _("(1-{nr_choices})").format(nr_choices=nr_choices)
     while True:
         try:
-            user_input = input(f"Choice? {choices_help} ")
+            user_input = input(
+                _("Choice? {choices_help} ").format(
+                    choices_help=choices_help,
+                )
+            )
         except EOFError:
             raise ValueError("EOF while reading user choice")
 
@@ -96,18 +110,34 @@ def ask_for_choice(
         try:
             choice_int = int(user_input)
         except ValueError:
-            logger.stdout(f"Unrecognized input [yellow]'{user_input}'[/].")
             logger.stdout(
-                f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+                _("Unrecognized input [yellow]'{user_input}'[/].").format(
+                    user_input=user_input,
+                )
+            )
+            logger.stdout(
+                _(
+                    "Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+                ).format(
+                    nr_choices=nr_choices,
+                )
             )
             continue
 
         if 1 <= choice_int <= nr_choices:
             return choice_int - 1
 
-        logger.stdout(f"Out-of-range input [yellow]'{user_input}'[/].")
         logger.stdout(
-            f"Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+            _("Out-of-range input [yellow]'{user_input}'[/].").format(
+                user_input=user_input,
+            )
+        )
+        logger.stdout(
+            _(
+                "Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+            ).format(
+                nr_choices=nr_choices,
+            )
         )
 
 

@@ -7,6 +7,7 @@ import shutil
 from typing import Any, Final, Iterator, TypedDict
 
 from ...config import GlobalConfig
+from ...i18n import _
 from ...log import RuyiLogger, humanize_list
 from ...ruyipkg.atom import Atom
 from ...ruyipkg.pkg_manifest import BoundPackageManifest, EmulatorProgDecl
@@ -67,7 +68,7 @@ def do_make_venv(
     # this should come after implementation of local state cache
     if tc_atoms_str is None:
         logger.F(
-            "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
+            _("You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]")
         )
         return 1
 
@@ -75,7 +76,7 @@ def do_make_venv(
 
     profile = mr.get_profile(profile_name)
     if profile is None:
-        logger.F(f"profile '{profile_name}' not found")
+        logger.F(_("profile '{profile}' not found").format(profile=profile_name))
         return 1
 
     target_arch = ""
@@ -93,32 +94,46 @@ def do_make_venv(
         tc_atom = Atom.parse(tc_atom_str)
         tc_pm = tc_atom.match_in_repo(mr, config.include_prereleases)
         if tc_pm is None:
-            logger.F(f"cannot match a toolchain package with [yellow]{tc_atom_str}[/]")
+            logger.F(_("cannot match a toolchain package with [yellow]{atom}[/]").format(
+                atom=tc_atom_str,
+            ))
             return 1
 
         if tc_pm.toolchain_metadata is None:
-            logger.F(f"the package [yellow]{tc_atom_str}[/] is not a toolchain")
+            logger.F(_("the package [yellow]{atom}[/] is not a toolchain").format(
+                atom=tc_atom_str,
+            ))
             return 1
 
         if not tc_pm.toolchain_metadata.satisfies_quirk_set(profile.need_quirks):
-            logger.F(
-                f"the package [yellow]{tc_atom_str}[/] does not support all necessary features for the profile [yellow]{profile_name}[/]"
+            logger.F(_(
+                "the package [yellow]{atom}[/] does not support all necessary features for the profile [yellow]{profile}[/]"
+                ).format(
+                    atom=tc_atom_str,
+                    profile=profile_name,
+                    )
             )
             logger.I(
-                f"quirks needed by profile:   {humanize_list(profile.need_quirks, item_color='cyan')}"
+                _("quirks needed by profile:   {humanized_list}").format(
+                humanized_list=humanize_list(profile.need_quirks, item_color='cyan'),
+                )
             )
             logger.I(
-                f"quirks provided by package: {humanize_list(tc_pm.toolchain_metadata.quirks, item_color='yellow')}"
+                _("quirks provided by package: {humanized_list}").format(
+                humanized_list=humanize_list(tc_pm.toolchain_metadata.quirks, item_color='yellow'),
+                )
             )
             return 1
 
         target_tuple = tc_pm.toolchain_metadata.target
         if target_tuple in seen_target_tuples:
             logger.F(
-                f"the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
+                _("the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains").format(
+                    target_tuple=target_tuple,
+                    )
             )
             logger.I(
-                "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
+                _("for now, only toolchains with differing target tuples can co-exist in one virtual environment")
             )
             return 1
 
@@ -127,7 +142,7 @@ def do_make_venv(
             tc_pm.name_for_installation,
         )
         if toolchain_root is None:
-            logger.F("cannot find the installed directory for the toolchain")
+            logger.F(_("cannot find the installed directory for the toolchain"))
             return 1
 
         tc_sysroot_dir: PathLike[Any] | None = None
@@ -139,7 +154,7 @@ def do_make_venv(
             else:
                 if sysroot_atom_str is None:
                     logger.F(
-                        "sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given"
+                        _("sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given")
                     )
                     return 1
 
@@ -150,13 +165,17 @@ def do_make_venv(
                 gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
                 if gcc_pkg_pm is None:
                     logger.F(
-                        f"cannot match a toolchain package with [yellow]{sysroot_atom_str}[/]"
+                        _("cannot match a toolchain package with [yellow]{atom}[/]").format(
+                            atom=sysroot_atom_str,
+                        )
                     )
                     return 1
 
                 if gcc_pkg_pm.toolchain_metadata is None:
                     logger.F(
-                        f"the package [yellow]{sysroot_atom_str}[/] is not a toolchain"
+                        _("the package [yellow]{atom}[/] is not a toolchain").format(
+                            atom=sysroot_atom_str,
+                        )
                     )
                     return 1
 
@@ -166,14 +185,16 @@ def do_make_venv(
                 )
                 if gcc_pkg_root is None:
                     logger.F(
-                        "cannot find the installed directory for the sysroot package"
+                        _("cannot find the installed directory for the sysroot package")
                     )
                     return 1
 
                 tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
                 if tc_sysroot_relpath is None:
                     logger.F(
-                        f"sysroot is requested but the package [yellow]{sysroot_atom_str}[/] does not contain one"
+                        _("sysroot is requested but the package [yellow]{atom}[/] does not contain one").format(
+                            atom=sysroot_atom_str,
+                        )
                     )
                     return 1
 
@@ -191,7 +212,7 @@ def do_make_venv(
                 # for now, require this directory to be present (or clang would barely work)
                 if gcc_install_dir is None:
                     logger.F(
-                        "cannot find a GCC include & lib directory in the sysroot package"
+                        _("cannot find a GCC include & lib directory in the sysroot package")
                     )
                     return 1
 
@@ -228,9 +249,11 @@ def do_make_venv(
             warn_differing_target_arch = True
 
     if warn_differing_target_arch:
-        logger.W("multiple toolchains specified with differing target architecture")
+        logger.W(_("multiple toolchains specified with differing target architecture"))
         logger.I(
-            f"using the target architecture of the first toolchain: [yellow]{target_arch}[/]"
+            _("using the target architecture of the first toolchain: [yellow]{arch}[/]").format(
+                arch=target_arch,
+                )
         )
 
     # Now handle the emulator.
@@ -240,17 +263,24 @@ def do_make_venv(
         emu_atom = Atom.parse(emu_atom_str)
         emu_pm = emu_atom.match_in_repo(mr, config.include_prereleases)
         if emu_pm is None:
-            logger.F(f"cannot match an emulator package with [yellow]{emu_atom_str}[/]")
+            logger.F(_("cannot match an emulator package with [yellow]{atom}[/]").format(
+                atom=emu_atom_str,
+            ))
             return 1
 
         if emu_pm.emulator_metadata is None:
-            logger.F(f"the package [yellow]{emu_atom_str}[/] is not an emulator")
+            logger.F(_("the package [yellow]{atom}[/] is not an emulator").format(
+                atom=emu_atom_str,
+            ))
             return 1
 
         emu_progs = list(emu_pm.emulator_metadata.list_for_arch(target_arch))
         if not emu_progs:
             logger.F(
-                f"the emulator package [yellow]{emu_atom_str}[/] does not support the target architecture [yellow]{target_arch}[/]"
+                _("the emulator package [yellow]{atom}[/] does not support the target architecture [yellow]{arch}[/]").format(
+                    atom=emu_atom_str,
+                    arch=target_arch,
+                )
             )
             return 1
 
@@ -260,13 +290,20 @@ def do_make_venv(
                 emu_pm.emulator_metadata.quirks,
             ):
                 logger.F(
-                    f"the package [yellow]{emu_atom_str}[/] does not support all necessary features for the profile [yellow]{profile_name}[/]"
+                    _("the package [yellow]{atom}[/] does not support all necessary features for the profile [yellow]{profile}[/]").format(
+                        atom=emu_atom_str,
+                        profile=profile_name,
+                    )
                 )
                 logger.I(
-                    f"quirks needed by profile:   {humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan')}"
+                    _("quirks needed by profile:   {humanized_list}").format(
+                        humanized_list=humanize_list(profile.get_needed_emulator_pkg_flavors(prog.flavor), item_color='cyan'),
+                    )
                 )
                 logger.I(
-                    f"quirks provided by package: {humanize_list(emu_pm.emulator_metadata.quirks or [], item_color='yellow')}"
+                    _("quirks provided by package: {humanized_list}").format(
+                        humanized_list=humanize_list(emu_pm.emulator_metadata.quirks or [], item_color='yellow'),
+                    )
                 )
                 return 1
 
@@ -275,7 +312,7 @@ def do_make_venv(
             emu_pm.name_for_installation,
         )
         if emu_root is None:
-            logger.F("cannot find the installed directory for the emulator")
+            logger.F(_("cannot find the installed directory for the emulator"))
             return 1
 
         venv_metadata["emulator_pkgs"][target_arch] = _venv_pkg_info_from_pkg(emu_pm)
@@ -291,21 +328,28 @@ def do_make_venv(
             )
             if extra_cmd_pm is None:
                 logger.F(
-                    f"cannot match an extra command package with [yellow]{extra_cmd_atom_str}[/]"
+                    _("cannot match an extra command package with [yellow]{atom}[/]").format(
+                        atom=extra_cmd_atom_str,
+                    )
                 )
                 return 1
 
             extra_cmd_bm = extra_cmd_pm.binary_metadata
             if not extra_cmd_bm:
                 logger.F(
-                    f"the package [yellow]{extra_cmd_atom_str}[/] is not a binary-providing package"
+                    _("the package [yellow]{atom}[/] is not a binary-providing package").format(
+                        atom=extra_cmd_atom_str,
+                    )
                 )
                 return 1
 
             extra_cmds_decl = extra_cmd_bm.get_commands_for_host(host)
             if not extra_cmds_decl:
                 logger.W(
-                    f"the package [yellow]{extra_cmd_atom_str}[/] does not provide any command for host [yellow]{host}[/], ignoring"
+                    _("the package [yellow]{atom}[/] does not provide any command for host [yellow]{host}[/], ignoring").format(
+                        atom=extra_cmd_atom_str,
+                        host=host,
+                    )
                 )
                 continue
 
@@ -315,7 +359,9 @@ def do_make_venv(
             )
             if cmd_root is None:
                 logger.F(
-                    f"cannot find the installed directory for the package [yellow]{extra_cmd_pm.name_for_installation}[/]"
+                    _("cannot find the installed directory for the package [yellow]{pkg}[/]").format(
+                        pkg=extra_cmd_pm.name_for_installation,
+                    )
                 )
                 return 1
             cmd_root = pathlib.Path(cmd_root)
@@ -329,7 +375,7 @@ def do_make_venv(
                     # we don't allow commands to resolve outside of the
                     # providing package's install root
                     logger.F(
-                        "internal error: resolved command path is outside of the providing package"
+                        _("internal error: resolved command path is outside of the providing package")
                     )
                     return 1
 
@@ -338,10 +384,15 @@ def do_make_venv(
 
     if override_name is not None:
         logger.I(
-            f"Creating a Ruyi virtual environment [cyan]'{override_name}'[/] at [green]{dest}[/]..."
+            _("Creating a Ruyi virtual environment [cyan]'{name}'[/] at [green]{dest}[/]...").format(
+                name=override_name,
+                dest=dest,
+            )
         )
     else:
-        logger.I(f"Creating a Ruyi virtual environment at [green]{dest}[/]...")
+        logger.I(_("Creating a Ruyi virtual environment at [green]{dest}[/]...").format(
+            dest=dest,
+                                                                                        ))
 
     maker = VenvMaker(
         config,
@@ -559,7 +610,9 @@ class VenvMaker:
         for cmd, dest in extra_cmds.items():
             if cmd in cmd_metadata_map:
                 self.logger.W(
-                    f"extra command {cmd} is already provided by another package, overriding it"
+                    _("extra command {cmd} is already provided by another package, overriding it").format(
+                        cmd=cmd,
+                        )
                 )
             cmd_metadata_map[cmd] = {
                 "dest": dest,

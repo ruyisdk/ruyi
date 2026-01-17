@@ -2,6 +2,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import AdminCommand
+from ..i18n import _
 
 if TYPE_CHECKING:
     from ..cli.completion import ArgumentParser
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 class AdminRunPluginCommand(
     AdminCommand,
     cmd="run-plugin-cmd",
-    help="Run a plugin-defined command",
+    help=_("Run a plugin-defined command"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -19,14 +20,14 @@ class AdminRunPluginCommand(
             "cmd_name",
             type=str,
             metavar="COMMAND-NAME",
-            help="Command name",
+            help=_("Command name"),
         )
         p.add_argument(
             "cmd_args",
             type=str,
             nargs="*",
             metavar="COMMAND-ARG",
-            help="Arguments to pass to the plugin command",
+            help=_("Arguments to pass to the plugin command"),
         )
 
     @classmethod

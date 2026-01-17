@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from rich.console import Console, RenderableType
     from rich.text import Text
 
+from ..i18n import _
 from ..utils.global_mode import ProvidesGlobalMode
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
@@ -217,7 +218,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("F", message, sep, *objects)
 
         return self.log_console.print(
-            f"[bold red]fatal error:[/] {message}",
+            _("[bold red]fatal error:[/] {message}").format(message=message),
             *objects,
             sep=sep,
             end=end,
@@ -234,7 +235,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("I", message, sep, *objects)
 
         return self.log_console.print(
-            f"[bold green]info:[/] {message}",
+            _("[bold green]info:[/] {message}").format(message=message),
             *objects,
             sep=sep,
             end=end,
@@ -251,7 +252,7 @@ class RuyiConsoleLogger(RuyiLogger):
             return self._emit_porcelain_log("W", message, sep, *objects)
 
         return self.log_console.print(
-            f"[bold yellow]warn:[/] {message}",
+            _("[bold yellow]warn:[/] {message}").format(message=message),
             *objects,
             sep=sep,
             end=end,
@@ -263,10 +264,10 @@ def humanize_list(
     *,
     sep: str = ", ",
     item_color: str | None = None,
-    empty_prompt: str = "(none)",
+    empty_prompt: str | None = None,
 ) -> str:
     if not obj:
-        return empty_prompt
+        return empty_prompt if empty_prompt is not None else _("(none)")
     if item_color is None:
         return sep.join(obj)
     return sep.join(f"[{item_color}]{x}[/]" for x in obj)

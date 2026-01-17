@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, TypedDict, TypeGuard, cast
 
 from ..cli import user_input
 from ..config import GlobalConfig
+from ..i18n import _
 from ..log import RuyiLogger
 from ..ruyipkg.atom import Atom, ExprAtom, SlugAtom
 from ..ruyipkg.entity_provider import BaseEntity
@@ -36,7 +37,8 @@ def do_provision_interactive(config: GlobalConfig) -> int:
     mr.ensure_git_repo()
 
     log.stdout(
-        """
+        _(
+            """
 [bold green]RuyiSDK Device Provisioning Wizard[/]
 
 This is a wizard intended to help you install a system on your device for your
@@ -52,11 +54,12 @@ required to flash images, you should arrange to allow your user account [yellow]
 access to necessary commands such as [yellow]dd[/]. Flashing will fail if the [yellow]sudo[/]
 configuration does not allow so.
 """
+        )
     )
 
-    if not user_input.ask_for_yesno_confirmation(log, "Continue?"):
+    if not user_input.ask_for_yesno_confirmation(log, _("Continue?")):
         log.stdout(
-            "\nExiting. You can restart the wizard whenever prepared.",
+            _("\nExiting. You can restart the wizard whenever prepared."),
             end="\n\n",
         )
         return 1
@@ -68,7 +71,9 @@ configuration does not allow so.
     dev_choices = {k: v.display_name or "" for k, v in devices_by_id.items()}
     dev_id = user_input.ask_for_kv_choice(
         log,
-        "\nThe following devices are currently supported by the wizard. Please pick your device:",
+        _(
+            "\nThe following devices are currently supported by the wizard. Please pick your device:"
+        ),
         dev_choices,
     )
     dev = devices_by_id[dev_id]
@@ -84,7 +89,9 @@ configuration does not allow so.
     variant_choices = [get_variant_display_name(dev, i) for i in variants]
     variant_idx = user_input.ask_for_choice(
         log,
-        "\nThe device has the following variants. Please choose the one corresponding to your hardware at hand:",
+        _(
+            "\nThe device has the following variants. Please choose the one corresponding to your hardware at hand:"
+        ),
         variant_choices,
     )
     variant = variants[variant_idx]
@@ -101,7 +108,9 @@ configuration does not allow so.
     combo_choices = [combo.display_name or "" for combo in supported_combos]
     combo_idx = user_input.ask_for_choice(
         log,
-        "\nThe following system configurations are supported by the device variant you have chosen. Please pick the one you want to put on the device:",
+        _(
+            "\nThe following system configurations are supported by the device variant you have chosen. Please pick the one you want to put on the device:"
+        ),
         combo_choices,
     )
     combo = supported_combos[combo_idx]
@@ -132,7 +141,8 @@ def do_provision_combo_interactive(
     combo: BaseEntity,
 ) -> int:
     logger = config.logger
-    logger.D(f"provisioning device variant '{dev_decl.id}@{variant_decl.id}'")
+    devid = f"{dev_decl.id}@{variant_decl.id}"
+    logger.D(f"provisioning device variant '{devid}'")
 
     # download packages
     pkg_atoms = combo.data.get("package_atoms", [])
@@ -141,28 +151,36 @@ def do_provision_combo_interactive(
             return 0
 
         logger.F(
-            f"malformed config: device variant '{dev_decl.id}@{variant_decl.id}' asks for no packages but provides no messages either"
+            _(
+                "malformed config: device variant '{devid}' asks for no packages but provides no messages either"
+            ).format(
+                devid=devid,
+            )
         )
         return 1
 
     new_pkg_atoms = customize_package_versions(config, mr, pkg_atoms)
     if new_pkg_atoms is None:
-        logger.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+        logger.stdout(
+            _("\nExiting. You may restart the wizard at any time."), end="\n\n"
+        )
         return 1
     else:
         pkg_atoms = new_pkg_atoms
 
     pkg_names_for_display = "\n".join(f" * [green]{i}[/]" for i in pkg_atoms)
     logger.stdout(
-        f"""
-We are about to download and install the following packages for your device:
-
-{pkg_names_for_display}
-"""
+        _(
+            "\nWe are about to download and install the following packages for your device:"
+        ),
+        end="\n\n",
     )
+    logger.stdout(pkg_names_for_display, end="\n\n")
 
-    if not user_input.ask_for_yesno_confirmation(logger, "Proceed?"):
-        logger.stdout("\nExiting. You may restart the wizard at any time.", end="\n\n")
+    if not user_input.ask_for_yesno_confirmation(logger, _("Proceed?")):
+        logger.stdout(
+            _("\nExiting. You may restart the wizard at any time."), end="\n\n"
+        )
         return 1
 
     ret = do_install_atoms(
@@ -174,8 +192,8 @@ We are about to download and install the following packages for your device:
         reinstall=False,
     )
     if ret != 0:
-        logger.F("failed to download and install packages")
-        logger.I("your device was not touched")
+        logger.F(_("failed to download and install packages"))
+        logger.I(_("your device was not touched"))
         return 2
 
     strat_provider = ProvisionStrategyProvider(mr)
@@ -198,7 +216,8 @@ We are about to download and install the following packages for your device:
     host_blkdev_map: PartitionMapDecl = {}
     if requested_host_blkdevs:
         logger.stdout(
-            """
+            _(
+                """
 For initializing this target device, you should plug into this host system the
 device's storage (e.g. SD card or NVMe SSD), or a removable disk to be
 reformatted as a live medium, and note down the corresponding device file
@@ -206,6 +225,7 @@ path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY, /dev/nvmeXnYpZ
 for partitions. You may consult e.g. [yellow]sudo blkid[/] output for the
 information you will need later.
 """
+            )
         )
         for part in requested_host_blkdevs:
             part_desc = get_part_desc(part)
@@ -213,7 +233,9 @@ information you will need later.
             while True:
                 path = user_input.ask_for_file(
                     logger,
-                    f"Please give the path for the {part_desc}:",
+                    _("Please give the path for the {part_desc}:").format(
+                        part_desc=part_desc,
+                    ),
                 )
 
                 # Retrieve the latest mount info in case the user un-mounts
@@ -224,10 +246,17 @@ information you will need later.
                 for m in blkdev_mounts:
                     if m.source_path.samefile(path):
                         logger.W(
-                            f"path [cyan]'{path}'[/] is currently mounted at [yellow]'{m.target}'[/]"
+                            _(
+                                "path [cyan]'{path}'[/] is currently mounted at [yellow]'{target}'[/]"
+                            ).format(
+                                path=path,
+                                target=m.target,
+                            )
                         )
                         logger.I(
-                            "rejecting the path for safety; please double-check and retry"
+                            _(
+                                "rejecting the path for safety; please double-check and retry"
+                            )
                         )
                         path_valid = False
                         break
@@ -238,12 +267,14 @@ information you will need later.
 
     # final confirmation
     logger.stdout(
-        """
+        _(
+            """
 We have collected enough information for the actual flashing. Now is the last
 chance to re-check and confirm everything is fine.
 
 We are about to:
 """
+        )
     )
 
     pretend_steps = "\n".join(
@@ -257,9 +288,11 @@ We are about to:
     )
     logger.stdout(pretend_steps, end="\n\n")
 
-    if not user_input.ask_for_yesno_confirmation(logger, "Proceed with flashing?"):
+    if not user_input.ask_for_yesno_confirmation(logger, _("Proceed with flashing?")):
         logger.stdout(
-            "\nExiting. The device is not touched and you may re-start the wizard at will.",
+            _(
+                "\nExiting. The device is not touched and you may re-start the wizard at will."
+            ),
             end="\n\n",
         )
         return 1
@@ -273,18 +306,20 @@ We are about to:
             # ask the user to ensure the device shows up
             # TODO: automate doing so
             logger.stdout(
-                """
+                _("""
 Some flashing steps require the use of fastboot, in which case you should
 ensure the target device is showing up in [yellow]fastboot devices[/] output.
 Please [bold red]confirm it yourself before continuing[/].
-"""
+""")
             )
             if not user_input.ask_for_yesno_confirmation(
                 logger,
-                "Is the device identified by fastboot now?",
+                _("Is the device identified by fastboot now?"),
             ):
                 logger.stdout(
-                    "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/] is fixed for the device.",
+                    _(
+                        "\nAborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/] is fixed for the device."
+                    ),
                     end="\n\n",
                 )
                 return 1
@@ -294,16 +329,16 @@ Please [bold red]confirm it yourself before continuing[/].
         logger.D(f"flashing {pkg} with strategy {strat}")
         ret = strat.flash(pkg_part_maps[pkg], host_blkdev_map)
         if ret != 0:
-            logger.F("flashing failed, check your device right now")
+            logger.F(_("flashing failed, check your device right now"))
             return ret
 
     # parting words
     logger.stdout(
-        """
+        _("""
 It seems the flashing has finished without errors.
 
 [bold green]Happy hacking![/]
-"""
+""")
     )
 
     maybe_render_postinst_msg(logger, mr, combo, config.lang_code)
@@ -314,11 +349,11 @@ It seems the flashing has finished without errors.
 def get_part_desc(part: PartitionKind) -> str:
     match part:
         case "disk":
-            return "target's whole disk"
+            return _("target's whole disk")
         case "live":
-            return "removable disk to use as live medium"
+            return _("removable disk to use as live medium")
         case _:
-            return f"target's '{part}' partition"
+            return _("target's '{part}' partition").format(part=part)
 
 
 class PackageProvisionStrategyDecl(TypedDict):
@@ -489,17 +524,19 @@ def customize_package_versions(
 
     # Ask if the user wants to customize package versions
     logger.stdout(
-        "By default, we'll install the latest version of each package, but in this case, other choices are possible."
+        _(
+            "By default, we'll install the latest version of each package, but in this case, other choices are possible."
+        )
     )
     if not user_input.ask_for_yesno_confirmation(
         logger,
-        "Would you like to customize package versions?",
+        _("Would you like to customize package versions?"),
     ):
         return pkg_atoms
 
     while True:  # Loop to allow restarting the selection process
         result: list[str] = []
-        logger.stdout("\n[bold]Package Version Selection[/]")
+        logger.stdout(_("\n[bold]Package Version Selection[/]"))
 
         for atom_str in pkg_atoms:
             # Parse the atom to get package name
@@ -507,18 +544,26 @@ def customize_package_versions(
             if isinstance(a, ExprAtom):
                 # If it's already an expression with version constraints, show the constraints
                 logger.stdout(
-                    f"\nPackage [green]{atom_str}[/] already has version constraints."
+                    _(
+                        "\nPackage [green]{atom}[/] already has version constraints."
+                    ).format(
+                        atom=atom_str,
+                    )
                 )
                 if not user_input.ask_for_yesno_confirmation(
                     logger,
-                    "Would you like to change them?",
+                    _("Would you like to change them?"),
                 ):
                     result.append(atom_str)
                     continue
             elif isinstance(a, SlugAtom):
                 # Slugs already fix the version, so we can't change them
                 logger.W(
-                    f"version cannot be overridden for slug atom [green]{atom_str}[/]"
+                    _(
+                        "version cannot be overridden for slug atom [green]{atom}[/]"
+                    ).format(
+                        atom=atom_str,
+                    )
                 )
                 result.append(atom_str)
                 continue
@@ -526,19 +571,24 @@ def customize_package_versions(
             # Get all available versions for this package
             package_name = a.name
             category = a.category
+            pkg_fullname = f"{category}/{package_name}" if category else package_name
 
             available_versions: "list[BoundPackageManifest]" = []
             try:
                 available_versions = list(mr.iter_pkg_vers(package_name, category))
             except KeyError:
                 logger.W(
-                    f"could not find package [yellow]{category}/{package_name}[/] in repository"
+                    _("could not find package [yellow]{pkg}[/] in repository").format(
+                        pkg=pkg_fullname
+                    )
                 )
                 result.append(atom_str)
 
             if not available_versions:
                 logger.W(
-                    f"no versions found for package [yellow]{category}/{package_name}[/]"
+                    _("no versions found for package [yellow]{pkg}[/]").format(
+                        pkg=pkg_fullname
+                    )
                 )
                 result.append(atom_str)
                 continue
@@ -547,7 +597,12 @@ def customize_package_versions(
                 # If there's only one version available, use it
                 selected_version = available_versions[0]
                 logger.stdout(
-                    f"Only one version available for [green]{category}/{package_name}[/]: [blue]{selected_version.ver}[/], using it."
+                    _(
+                        "Only one version available for [green]{pkg}[/]: [blue]{ver}[/], using it."
+                    ).format(
+                        pkg=pkg_fullname,
+                        ver=selected_version.ver,
+                    )
                 )
                 result.append(atom_str)
                 continue
@@ -562,11 +617,15 @@ def customize_package_versions(
                 remarks = []
 
                 if pm.is_prerelease:
-                    remarks.append("prerelease")
+                    remarks.append(_("prerelease"))
                 if pm.service_level.has_known_issues:
-                    remarks.append("has known issues")
+                    remarks.append(_("has known issues"))
                 if pm.upstream_version:
-                    remarks.append(f"upstream: {pm.upstream_version}")
+                    remarks.append(
+                        _("upstream: {upstream_ver}").format(
+                            upstream_ver=pm.upstream_version
+                        )
+                    )
 
                 remark_str = f" ({', '.join(remarks)})" if remarks else ""
                 version_choices.append(f"{version_str}{remark_str}")
@@ -574,7 +633,9 @@ def customize_package_versions(
             # Ask the user to select a version
             version_idx = user_input.ask_for_choice(
                 logger,
-                f"\nSelect a version for package [green]{category or ''}{('/' + package_name) if category else package_name}[/]:",
+                _("\nSelect a version for package [green]{pkg}[/]:").format(
+                    pkg=pkg_fullname,
+                ),
                 version_choices,
             )
 
@@ -586,27 +647,27 @@ def customize_package_versions(
             else:
                 new_atom = f"{package_name}(=={selected_version.ver})"
 
-            logger.stdout(f"Selected: [blue]{new_atom}[/]")
+            logger.stdout(_("Selected: [blue]{new_atom}[/]").format(new_atom=new_atom))
             result.append(new_atom)
 
-        logger.stdout("\nPackage versions to be installed:")
+        logger.stdout(_("\nPackage versions to be installed:"))
         for atom in result:
             logger.stdout(f" * [green]{atom}[/]")
 
         confirmation = user_input.ask_for_choice(
             logger,
-            "\nHow would you like to proceed?",
+            _("\nHow would you like to proceed?"),
             [
-                "Continue with these versions",
-                "Restart version selection",
-                "Abort device provisioning",
+                _("Continue with these versions"),
+                _("Restart version selection"),
+                _("Abort device provisioning"),
             ],
         )
 
         if confirmation == 0:  # Continue with these versions
             return result
         elif confirmation == 1:  # Restart version selection
-            logger.stdout("\nRestarting package version selection...")
+            logger.stdout(_("\nRestarting package version selection..."))
             continue
         else:  # Abort installation
             return None

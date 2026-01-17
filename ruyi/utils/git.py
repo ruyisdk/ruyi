@@ -30,6 +30,7 @@ from rich.text import Text
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+from ..i18n import _
 from ..log import RuyiLogger
 
 
@@ -77,11 +78,11 @@ class RemoteGitProgressIndicator(
             self._last_stats is None
             or self._last_stats.received_objects != stats.received_objects
         ):
-            task_name = "transferring objects"
+            task_name = _("transferring objects")
             total = stats.total_objects
             completed = stats.received_objects
         elif self._last_stats.indexed_deltas != stats.indexed_deltas:
-            task_name = "processing deltas"
+            task_name = _("processing deltas")
             total = stats.total_deltas
             completed = stats.indexed_deltas
         elif self._last_stats.received_bytes != stats.received_bytes:
@@ -113,13 +114,15 @@ def pull_ff_or_die(
     if remote.url != remote_url:
         if not allow_auto_management:
             logger.F(
-                f"URL of remote '[yellow]{remote_name}[/]' does not match expected URL"
+                _(
+                    "URL of remote '[yellow]{remote}[/]' does not match expected URL"
+                ).format(remote=remote_name)
             )
             repo_path = human_readable_path_of_repo(repo)
-            logger.I(f"repository:          [yellow]{repo_path}[/]")
-            logger.I(f"expected remote URL: [yellow]{remote_url}[/]")
-            logger.I(f"actual remote URL:   [yellow]{remote.url}[/]")
-            logger.I("please [bold red]fix the repo settings manually[/]")
+            logger.I(_("repository:          [yellow]{path}[/]").format(path=repo_path))
+            logger.I(_("expected remote URL: [yellow]{url}[/]").format(url=remote_url))
+            logger.I(_("actual remote URL:   [yellow]{url}[/]").format(url=remote.url))
+            logger.I(_("please [bold red]fix the repo settings manually[/]"))
             raise SystemExit(1)
 
         logger.D(
@@ -134,7 +137,11 @@ def pull_ff_or_die(
         with RemoteGitProgressIndicator() as pr:
             remote.fetch(callbacks=pr)
     except GitError as e:
-        logger.F(f"failed to fetch from remote URL {remote_url}: {e}")
+        logger.F(
+            _("failed to fetch from remote URL {url}: {reason}").format(
+                url=remote_url, reason=e
+            )
+        )
         raise SystemExit(1) from e
 
     remote_head_ref = repo.lookup_reference(f"refs/remotes/{remote_name}/{branch_name}")
@@ -145,7 +152,7 @@ def pull_ff_or_die(
         assert isinstance(remote_head_ref.target, str)
         remote_head = Oid(hex=remote_head_ref.target)
 
-    merge_analysis, _ = repo.merge_analysis(remote_head)
+    merge_analysis, _mp = repo.merge_analysis(remote_head)
 
     if merge_analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE:
         # nothing to do
@@ -166,6 +173,6 @@ def pull_ff_or_die(
         return
 
     # cannot handle these cases
-    logger.F("cannot fast-forward repo to newly fetched state")
-    logger.I("manual intervention is required to avoid data loss")
+    logger.F(_("cannot fast-forward repo to newly fetched state"))
+    logger.I(_("manual intervention is required to avoid data loss"))
     raise SystemExit(1)

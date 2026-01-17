@@ -8,6 +8,7 @@ from ruyi.ruyipkg.state import BoundInstallationStateStore
 
 from ..cli.user_input import ask_for_yesno_confirmation
 from ..config import GlobalConfig
+from ..i18n import _
 from ..telemetry.scope import TelemetryScope
 from .atom import Atom
 from .distfile import Distfile
@@ -43,12 +44,16 @@ def do_extract_atoms(
         a = Atom.parse(a_str)
         pm = a.match_in_repo(mr, cfg.include_prereleases)
         if pm is None:
-            logger.F(f"atom {a_str} matches no package in the repository")
+            logger.F(
+                _("atom {atom} matches no package in the repository").format(
+                    atom=a_str,
+                )
+            )
             return 1
 
         sv = pm.service_level
         if sv.has_known_issues:
-            logger.W("package has known issue(s)")
+            logger.W(_("package has known issue(s)"))
             for s in sv.render_known_issues(pm.repo.messages, cfg.lang_code):
                 logger.I(s)
 
@@ -97,12 +102,20 @@ def _do_extract_pkg(
     bm = pm.binary_metadata
     sm = pm.source_metadata
     if bm is None and sm is None:
-        logger.F(f"don't know how to extract package [green]{pkg_name}[/]")
+        logger.F(
+            _("don't know how to extract package [green]{pkg}[/]").format(
+                pkg=pkg_name,
+            )
+        )
         return 2
 
     if bm is not None and sm is not None:
         logger.F(
-            f"cannot handle package [green]{pkg_name}[/]: package is both binary and source"
+            _(
+                "cannot handle package [green]{pkg}[/]: package is both binary and source"
+            ).format(
+                pkg=pkg_name,
+            )
         )
         return 2
 
@@ -114,7 +127,10 @@ def _do_extract_pkg(
 
     if not distfiles_for_host:
         logger.F(
-            f"package [green]{pkg_name}[/] declares no distfile for host {canonicalized_host}"
+            _("package [green]{pkg}[/] declares no distfile for host {host}").format(
+                pkg=pkg_name,
+                host=canonicalized_host,
+            )
         )
         return 2
 
@@ -130,13 +146,21 @@ def _do_extract_pkg(
             logger.D("skipping extraction because [yellow]--fetch-only[/] is given")
             continue
 
-        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
+        logger.I(
+            _("extracting [green]{distfile}[/] for package [green]{pkg}[/]").format(
+                distfile=df_name,
+                pkg=pkg_name,
+            )
+        )
         # unpack into destination
         df.unpack(dest_dir, logger)
 
     if not fetch_only:
         logger.I(
-            f"package [green]{pkg_name}[/] has been extracted to {dest_dir}",
+            _("package [green]{pkg}[/] has been extracted to {dest_dir}").format(
+                pkg=pkg_name,
+                dest_dir=dest_dir,
+            )
         )
 
     return 0
@@ -158,13 +182,15 @@ def do_install_atoms(
         a = Atom.parse(a_str)
         pm = a.match_in_repo(mr, config.include_prereleases)
         if pm is None:
-            logger.F(f"atom {a_str} matches no package in the repository")
+            logger.F(
+                _("atom {atom} matches no package in the repository").format(atom=a_str)
+            )
             return 1
         pkg_name = pm.name_for_installation
 
         sv = pm.service_level
         if sv.has_known_issues:
-            logger.W("package has known issue(s)")
+            logger.W(_("package has known issue(s)"))
             for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
                 logger.I(s)
 
@@ -213,7 +239,11 @@ def do_install_atoms(
                 return ret
             continue
 
-        logger.F(f"don't know how to handle non-binary package [green]{pkg_name}[/]")
+        logger.F(
+            _("don't know how to handle non-binary package [green]{pkg}[/]").format(
+                pkg=pkg_name,
+            )
+        )
         return 2
 
     return 0
@@ -249,11 +279,17 @@ def _do_install_binary_pkg(
 
     if is_installed:
         if not reinstall:
-            logger.I(f"skipping already installed package [green]{pkg_name}[/]")
+            logger.I(
+                _("skipping already installed package [green]{pkg}[/]").format(
+                    pkg=pkg_name,
+                )
+            )
             return 0
 
         logger.W(
-            f"package [green]{pkg_name}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
+            _(
+                "package [green]{pkg}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
+            ).format(pkg=pkg_name)
         )
         # Remove from state tracking before purging
         rgs.remove_installation(
@@ -290,7 +326,12 @@ def _do_install_binary_pkg(
             install_path=install_root,
         )
 
-    logger.I(f"package [green]{pkg_name}[/] installed to [yellow]{install_root}[/]")
+    logger.I(
+        _("package [green]{pkg}[/] installed to [yellow]{install_root}[/]").format(
+            pkg=pkg_name,
+            install_root=install_root,
+        )
+    )
     return 0
 
 
@@ -312,7 +353,10 @@ def _do_install_binary_pkg_to(
     distfiles_for_host = bm.get_distfile_names_for_host(str(canonicalized_host))
     if not distfiles_for_host:
         logger.F(
-            f"package [green]{pkg_name}[/] declares no binary for host {canonicalized_host}"
+            _("package [green]{pkg}[/] declares no binary for host {host}").format(
+                pkg=pkg_name,
+                host=canonicalized_host,
+            )
         )
         return 2
 
@@ -323,10 +367,17 @@ def _do_install_binary_pkg_to(
         df.ensure(logger)
 
         if fetch_only:
-            logger.D("skipping installation because [yellow]--fetch-only[/] is given")
+            logger.D(
+                _("skipping installation because [yellow]--fetch-only[/] is given")
+            )
             continue
 
-        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
+        logger.I(
+            _("extracting [green]{distfile}[/] for package [green]{pkg}[/]").format(
+                distfile=df_name,
+                pkg=pkg_name,
+            )
+        )
         df.unpack(install_root, logger)
 
     return 0
@@ -361,11 +412,17 @@ def _do_install_blob_pkg(
 
     if is_installed:
         if not reinstall:
-            logger.I(f"skipping already installed package [green]{pkg_name}[/]")
+            logger.I(
+                _("skipping already installed package [green]{pkg}[/]").format(
+                    pkg=pkg_name,
+                )
+            )
             return 0
 
         logger.W(
-            f"package [green]{pkg_name}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
+            _(
+                "package [green]{pkg}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
+            ).format(pkg=pkg_name)
         )
         # Remove from state tracking before purging
         rgs.remove_installation(
@@ -401,7 +458,12 @@ def _do_install_blob_pkg(
             install_path=install_root,
         )
 
-    logger.I(f"package [green]{pkg_name}[/] installed to [yellow]{install_root}[/]")
+    logger.I(
+        _("package [green]{pkg}[/] installed to [yellow]{install_root}[/]").format(
+            pkg=pkg_name,
+            install_root=install_root,
+        )
+    )
     return 0
 
 
@@ -420,7 +482,9 @@ def _do_install_blob_pkg_to(
     dfs = pm.distfiles
     distfile_names = bm.get_distfile_names()
     if not distfile_names:
-        logger.F(f"package [green]{pkg_name}[/] declares no blob distfile")
+        logger.F(
+            _("package [green]{pkg}[/] declares no blob distfile").format(pkg=pkg_name)
+        )
         return 2
 
     for df_name in distfile_names:
@@ -430,10 +494,17 @@ def _do_install_blob_pkg_to(
         df.ensure(logger)
 
         if fetch_only:
-            logger.D("skipping installation because [yellow]--fetch-only[/] is given")
+            logger.D(
+                _("skipping installation because [yellow]--fetch-only[/] is given")
+            )
             continue
 
-        logger.I(f"extracting [green]{df_name}[/] for package [green]{pkg_name}[/]")
+        logger.I(
+            _("extracting [green]{distfile}[/] for package [green]{pkg}[/]").format(
+                distfile=df_name,
+                pkg=pkg_name,
+            )
+        )
         df.unpack_or_symlink(install_root, logger)
 
     return 0
@@ -457,21 +528,31 @@ def do_uninstall_atoms(
         a = Atom.parse(a_str)
         pm = a.match_in_repo(bis, config.include_prereleases)
         if pm is None:
-            logger.F(f"atom [yellow]{a_str}[/] is non-existent or not installed")
+            logger.F(
+                _("atom [yellow]{atom}[/] is non-existent or not installed").format(
+                    atom=a_str,
+                )
+            )
             return 1
         pms_to_uninstall.append((a_str, pm))
 
     if not pms_to_uninstall:
-        logger.I("no packages to uninstall")
+        logger.I(_("no packages to uninstall"))
         return 0
 
-    logger.I("the following packages will be uninstalled:")
-    for _, pm in pms_to_uninstall:
-        logger.I(f"  - [green]{pm.category}/{pm.name}[/] ({pm.ver})")
+    logger.I(_("the following packages will be uninstalled:"))
+    for _unused, pm in pms_to_uninstall:
+        logger.I(
+            _("  - [green]{category}/{name}[/] ({version})").format(
+                category=pm.category,
+                name=pm.name,
+                version=pm.ver,
+            )
+        )
 
     if not assume_yes:
-        if not ask_for_yesno_confirmation(logger, "Proceed?", default=False):
-            logger.I("uninstallation aborted")
+        if not ask_for_yesno_confirmation(logger, _("Proceed?"), default=False):
+            logger.I(_("uninstallation aborted"))
             return 0
 
     for a_str, pm in pms_to_uninstall:
@@ -504,7 +585,11 @@ def do_uninstall_atoms(
                 return ret
             continue
 
-        logger.F(f"don't know how to handle non-binary package [green]{pkg_name}[/]")
+        logger.F(
+            _("don't know how to handle non-binary package [green]{pkg}[/]").format(
+                pkg=pkg_name,
+            )
+        )
         return 2
 
     return 0
@@ -534,21 +619,29 @@ def _do_uninstall_binary_pkg(
     # Check directory existence if the PM state says the package is not installed
     if not is_installed:
         if not os.path.exists(install_root):
-            logger.I(f"skipping not-installed package [green]{pkg_name}[/]")
+            logger.I(
+                _("skipping not-installed package [green]{pkg}[/]").format(
+                    pkg=pkg_name,
+                )
+            )
             return 0
 
         # There may be potentially user-generated data in the directory,
         # let's be safe and fail the process.
         logger.F(
-            f"package [green]{pkg_name}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+            _(
+                "package [green]{pkg}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+            ).format(pkg=pkg_name, install_root=install_root)
         )
-        logger.I("Please remove it manually if you are sure it's safe to do so.")
+        logger.I(_("Please remove it manually if you are sure it's safe to do so."))
         logger.I(
-            "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+            _(
+                "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+            )
         )
         return 1
 
-    logger.I(f"uninstalling package [green]{pkg_name}[/]")
+    logger.I(_("uninstalling package [green]{pkg}[/]").format(pkg=pkg_name))
     if is_installed:
         rgs.remove_installation(
             pm.repo_id,
@@ -561,7 +654,7 @@ def _do_uninstall_binary_pkg(
     if os.path.exists(install_root):
         shutil.rmtree(install_root)
 
-    logger.I(f"package [green]{pkg_name}[/] uninstalled")
+    logger.I(_("package [green]{pkg}[/] uninstalled").format(pkg=pkg_name))
     return 0
 
 
@@ -588,21 +681,29 @@ def _do_uninstall_blob_pkg(
     # Check directory existence if the PM state says the package is not installed
     if not is_installed:
         if not os.path.exists(install_root):
-            logger.I(f"skipping not-installed package [green]{pkg_name}[/]")
+            logger.I(
+                _("skipping not-installed package [green]{pkg}[/]").format(
+                    pkg=pkg_name,
+                )
+            )
             return 0
 
         # There may be potentially user-generated data in the directory,
         # let's be safe and fail the process.
         logger.F(
-            f"package [green]{pkg_name}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+            _(
+                "package [green]{pkg}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+            ).format(pkg=pkg_name, install_root=install_root)
         )
-        logger.I("Please remove it manually if you are sure it's safe to do so.")
+        logger.I(_("Please remove it manually if you are sure it's safe to do so."))
         logger.I(
-            "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+            _(
+                "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+            )
         )
         return 1
 
-    logger.I(f"uninstalling package [green]{pkg_name}[/]")
+    logger.I(_("uninstalling package [green]{pkg}[/]").format(pkg=pkg_name))
     if is_installed:
         rgs.remove_installation(
             pm.repo_id,
@@ -615,5 +716,5 @@ def _do_uninstall_blob_pkg(
     if os.path.exists(install_root):
         shutil.rmtree(install_root)
 
-    logger.I(f"package [green]{pkg_name}[/] uninstalled")
+    logger.I(_("package [green]{pkg}[/] uninstalled").format(pkg=pkg_name))
     return 0

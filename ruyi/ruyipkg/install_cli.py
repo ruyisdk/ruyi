@@ -3,6 +3,7 @@ import pathlib
 from typing import TYPE_CHECKING
 
 from ..cli.cmd import RootCommand
+from ..i18n import _
 from .cli_completion import package_completer_builder
 from .host import get_native_host
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 class ExtractCommand(
     RootCommand,
     cmd="extract",
-    help="Fetch package(s) then extract to current directory",
+    help=_("Fetch package(s) then extract to current directory"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -22,7 +23,7 @@ class ExtractCommand(
             "atom",
             type=str,
             nargs="+",
-            help="Specifier (atom) of the package(s) to extract",
+            help=_("Specifier (atom) of the package(s) to extract"),
         )
         if gc.is_cli_autocomplete:
             a.completer = package_completer_builder(gc)
@@ -33,24 +34,26 @@ class ExtractCommand(
             type=str,
             metavar="DESTDIR",
             default=".",
-            help="Destination directory to extract to (default: current directory)",
+            help=_("Destination directory to extract to (default: current directory)"),
         )
         p.add_argument(
             "--extract-without-subdir",
             action="store_true",
-            help="Extract files directly into DESTDIR instead of package-named subdirectories",
+            help=_(
+                "Extract files directly into DESTDIR instead of package-named subdirectories"
+            ),
         )
         p.add_argument(
             "-f",
             "--fetch-only",
             action="store_true",
-            help="Fetch distribution files only without installing",
+            help=_("Fetch distribution files only without installing"),
         )
         p.add_argument(
             "--host",
             type=str,
             default=get_native_host(),
-            help="Override the host architecture (normally not needed)",
+            help=_("Override the host architecture (normally not needed)"),
         )
 
     @classmethod
@@ -81,7 +84,7 @@ class InstallCommand(
     RootCommand,
     cmd="install",
     aliases=["i"],
-    help="Install package from configured repository",
+    help=_("Install package from configured repository"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -89,7 +92,7 @@ class InstallCommand(
             "atom",
             type=str,
             nargs="+",
-            help="Specifier (atom) of the package to install",
+            help=_("Specifier (atom) of the package to install"),
         )
         if gc.is_cli_autocomplete:
             a.completer = package_completer_builder(gc)
@@ -98,18 +101,18 @@ class InstallCommand(
             "-f",
             "--fetch-only",
             action="store_true",
-            help="Fetch distribution files only without installing",
+            help=_("Fetch distribution files only without installing"),
         )
         p.add_argument(
             "--host",
             type=str,
             default=get_native_host(),
-            help="Override the host architecture (normally not needed)",
+            help=_("Override the host architecture (normally not needed)"),
         )
         p.add_argument(
             "--reinstall",
             action="store_true",
-            help="Force re-installation of already installed packages",
+            help=_("Force re-installation of already installed packages"),
         )
 
     @classmethod
@@ -136,7 +139,7 @@ class UninstallCommand(
     RootCommand,
     cmd="uninstall",
     aliases=["remove", "rm"],
-    help="Uninstall installed packages",
+    help=_("Uninstall installed packages"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: argparse.ArgumentParser) -> None:
@@ -144,20 +147,20 @@ class UninstallCommand(
             "atom",
             type=str,
             nargs="+",
-            help="Specifier (atom) of the package to uninstall",
+            help=_("Specifier (atom) of the package to uninstall"),
         )
         p.add_argument(
             "--host",
             type=str,
             default=get_native_host(),
-            help="Override the host architecture (normally not needed)",
+            help=_("Override the host architecture (normally not needed)"),
         )
         p.add_argument(
             "-y",
             "--yes",
             action="store_true",
             dest="assume_yes",
-            help="Assume yes to all prompts",
+            help=_("Assume yes to all prompts"),
         )
 
     @classmethod

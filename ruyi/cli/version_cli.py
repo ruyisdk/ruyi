@@ -1,6 +1,7 @@
 import argparse
 from typing import TYPE_CHECKING
 
+from ..i18n import _
 from .cmd import RootCommand
 
 if TYPE_CHECKING:
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 class VersionCommand(
     RootCommand,
     cmd="version",
-    help="Print version information",
+    help=_("Print version information"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -27,19 +28,24 @@ def cli_version(cfg: "GlobalConfig", args: argparse.Namespace) -> int:
     from ..ruyipkg.host import get_native_host
     from ..version import COPYRIGHT_NOTICE, MPL_REDIST_NOTICE, RUYI_SEMVER
 
-    print(f"Ruyi {RUYI_SEMVER}\n\nRunning on {get_native_host()}.")
+    print(
+        _("Ruyi {version}\n\nRunning on {host}.").format(
+            version=RUYI_SEMVER,
+            host=get_native_host(),
+        )
+    )
 
     if cfg.is_installation_externally_managed:
-        print("This Ruyi installation is externally managed.")
+        print(_("This Ruyi installation is externally managed."))
 
     print()
 
-    cfg.logger.stdout(COPYRIGHT_NOTICE)
+    cfg.logger.stdout(_(COPYRIGHT_NOTICE))
 
     # Output the MPL notice only when we actually bundle and depend on the
     # MPL component(s), which right now is only certifi. Keep the condition
     # synced with __main__.py.
     if hasattr(ruyi, "__compiled__") and ruyi.__compiled__.standalone:
-        cfg.logger.stdout(MPL_REDIST_NOTICE)
+        cfg.logger.stdout(_(MPL_REDIST_NOTICE))
 
     return 0

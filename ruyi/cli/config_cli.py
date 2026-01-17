@@ -1,6 +1,7 @@
 import argparse
 from typing import TYPE_CHECKING
 
+from ..i18n import _
 from .cmd import RootCommand
 
 if TYPE_CHECKING:
@@ -13,7 +14,7 @@ class ConfigCommand(
     RootCommand,
     cmd="config",
     has_subcommands=True,
-    help="Manage Ruyi's config options",
+    help=_("Manage Ruyi's config options"),
 ):
     @classmethod
     def configure_args(
@@ -27,7 +28,7 @@ class ConfigCommand(
 class ConfigGetCommand(
     ConfigCommand,
     cmd="get",
-    help="Query the value of a Ruyi config option",
+    help=_("Query the value of a Ruyi config option"),
 ):
     @classmethod
     def configure_args(
@@ -38,7 +39,7 @@ class ConfigGetCommand(
         p.add_argument(
             "key",
             type=str,
-            help="The Ruyi config option to query",
+            help=_("The Ruyi config option to query"),
         )
 
     @classmethod
@@ -66,7 +67,7 @@ class ConfigGetCommand(
 class ConfigSetCommand(
     ConfigCommand,
     cmd="set",
-    help="Set the value of a Ruyi config option",
+    help=_("Set the value of a Ruyi config option"),
 ):
     @classmethod
     def configure_args(
@@ -77,12 +78,12 @@ class ConfigSetCommand(
         p.add_argument(
             "key",
             type=str,
-            help="The Ruyi config option to set",
+            help=_("The Ruyi config option to set"),
         )
         p.add_argument(
             "value",
             type=str,
-            help="The value to set the option to",
+            help=_("The value to set the option to"),
         )
 
     @classmethod
@@ -100,7 +101,9 @@ class ConfigSetCommand(
                 ed.set_value(key, pyval)
             except ProtectedGlobalConfigError:
                 cfg.logger.F(
-                    f"the config [yellow]{key}[/] is protected and not meant to be overridden by users",
+                    _(
+                        "the config [yellow]{key}[/] is protected and not meant to be overridden by users"
+                    ).format(key=key)
                 )
                 return 2
 
@@ -112,7 +115,7 @@ class ConfigSetCommand(
 class ConfigUnsetCommand(
     ConfigCommand,
     cmd="unset",
-    help="Unset a Ruyi config option",
+    help=_("Unset a Ruyi config option"),
 ):
     @classmethod
     def configure_args(
@@ -123,7 +126,7 @@ class ConfigUnsetCommand(
         p.add_argument(
             "key",
             type=str,
-            help="The Ruyi config option to unset",
+            help=_("The Ruyi config option to unset"),
         )
 
     @classmethod
@@ -142,7 +145,7 @@ class ConfigUnsetCommand(
 class ConfigRemoveSectionCommand(
     ConfigCommand,
     cmd="remove-section",
-    help="Remove a section from the Ruyi config",
+    help=_("Remove a section from the Ruyi config"),
 ):
     @classmethod
     def configure_args(
@@ -153,7 +156,7 @@ class ConfigRemoveSectionCommand(
         p.add_argument(
             "section",
             type=str,
-            help="The section to remove",
+            help=_("The section to remove"),
         )
 
     @classmethod

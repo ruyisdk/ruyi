@@ -3,6 +3,7 @@ import pathlib
 from typing import TYPE_CHECKING, cast
 
 from ..cli.cmd import AdminCommand
+from ..i18n import _
 
 if TYPE_CHECKING:
     from ..cli.completion import ArgumentParser
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 class AdminChecksumCommand(
     AdminCommand,
     cmd="checksum",
-    help="Generate a checksum section for a manifest file for the distfiles given",
+    help=_("Generate a checksum section for a manifest file for the distfiles given"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -22,19 +23,21 @@ class AdminChecksumCommand(
             type=str,
             choices=["toml"],
             default="toml",
-            help="Format of checksum section to generate in",
+            help=_("Format of checksum section to generate in"),
         )
         p.add_argument(
             "--restrict",
             type=str,
             default="",
-            help="the 'restrict' field to use for all mentioned distfiles, separated with comma",
+            help=_(
+                "the 'restrict' field to use for all mentioned distfiles, separated with comma"
+            ),
         )
         p.add_argument(
             "file",
             type=str,
             nargs="+",
-            help="Path to the distfile(s) to checksum",
+            help=_("Path to the distfile(s) to checksum"),
         )
 
     @classmethod
@@ -53,7 +56,7 @@ class AdminChecksumCommand(
 class AdminFormatManifestCommand(
     AdminCommand,
     cmd="format-manifest",
-    help="Format the given package manifests into canonical TOML representation",
+    help=_("Format the given package manifests into canonical TOML representation"),
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
@@ -61,7 +64,7 @@ class AdminFormatManifestCommand(
             "file",
             type=str,
             nargs="+",
-            help="Path to the distfile(s) to generate manifest for",
+            help=_("Path to the distfile(s) to generate manifest for"),
         )
 
     @classmethod

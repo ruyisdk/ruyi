@@ -3,6 +3,8 @@ import re
 import sys
 from typing import Final
 
+from ..i18n import _
+
 RE_TARBALL: Final = re.compile(r"\.tar(?:\.gz|\.bz2|\.lz4|\.xz|\.zst)?$")
 
 
@@ -60,7 +62,9 @@ class UnrecognizedPackFormatError(Exception):
         self.filename = filename
 
     def __str__(self) -> str:
-        return f"don't know how to unpack file {self.filename}"
+        return _("don't know how to unpack file {filename}").format(
+            filename=self.filename,
+        )
 
 
 def determine_unpack_method(

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 from ..config import GlobalConfig
+from ..i18n import _
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from .distfile import Distfile
 from .host import get_native_host
@@ -28,19 +29,19 @@ if sys.version_info >= (3, 11):
         def as_rich_markup(self) -> str:
             match self:
                 case self.Latest:
-                    return "latest"
+                    return _("latest")
                 case self.LatestPreRelease:
-                    return "latest-prerelease"
+                    return _("latest-prerelease")
                 case self.NoBinaryForCurrentHost:
-                    return "[red]no binary for current host[/]"
+                    return _("[red]no binary for current host[/]")
                 case self.PreRelease:
-                    return "prerelease"
+                    return _("prerelease")
                 case self.HasKnownIssue:
-                    return "[yellow]has known issue[/]"
+                    return _("[yellow]has known issue[/]")
                 case self.Downloaded:
-                    return "[green]downloaded[/]"
+                    return _("[green]downloaded[/]")
                 case self.Installed:
-                    return "[green]installed[/]"
+                    return _("[green]installed[/]")
             return ""
 
 else:
@@ -57,19 +58,19 @@ else:
         def as_rich_markup(self) -> str:
             match self:
                 case self.Latest:
-                    return "latest"
+                    return _("latest")
                 case self.LatestPreRelease:
-                    return "latest-prerelease"
+                    return _("latest-prerelease")
                 case self.NoBinaryForCurrentHost:
-                    return "[red]no binary for current host[/]"
+                    return _("[red]no binary for current host[/]")
                 case self.PreRelease:
-                    return "prerelease"
+                    return _("prerelease")
                 case self.HasKnownIssue:
-                    return "[yellow]has known issue[/]"
+                    return _("[yellow]has known issue[/]")
                 case self.Downloaded:
-                    return "[green]downloaded[/]"
+                    return _("[green]downloaded[/]")
                 case self.Installed:
-                    return "[green]installed[/]"
+                    return _("[green]installed[/]")
             return ""
 
 

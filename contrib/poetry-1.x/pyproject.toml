@@ -34,6 +34,7 @@ include = ["ruyi/py.typed"]
 python = ">=3.10"
 argcomplete = ">=2.0.0"
 arpy = "*"
+babel = ">=2.8.0"
 fastjsonschema = ">=2.15.1"
 jinja2 = "^3"
 # cannot represent multiple pygit2's with different python version markers

@@ -2,13 +2,16 @@
 
 import os
 import sys
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, Final, TYPE_CHECKING
+
+from ..i18n import _, d_
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
 
 
-SHELL_AUTO_COMPLETION_TIP = """
+SHELL_AUTO_COMPLETION_TIP: Final = d_(
+    """
 [bold green]tip[/]: you can enable shell auto-completion for [yellow]ruyi[/] by adding the
 following line to your [green]{shrc}[/], if you have not done so already:
 
@@ -18,6 +21,7 @@ You can do so by running the following command later:
 
     [green]echo 'eval "$(ruyi --output-completion-script={shell})"' >> {shrc}[/]
 """
+)
 
 
 class OOBE:
@@ -74,7 +78,7 @@ class OOBE:
             return
 
         self._gc.logger.stdout(
-            SHELL_AUTO_COMPLETION_TIP.format(
+            _(SHELL_AUTO_COMPLETION_TIP).format(
                 shell=shell,
                 shrc=f"~/.{shell}rc",
             )

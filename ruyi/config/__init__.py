@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..utils.xdg_basedir import XDGPathEntry
     from .news import NewsReadStatusStore
 
+from ..i18n import _
 from . import errors
 from . import schema
 
@@ -115,7 +116,11 @@ class GlobalConfig:
             if iem is not None and not is_global_scope:
                 iem_cfg_key = f"{schema.SECTION_INSTALLATION}.{schema.KEY_INSTALLATION_EXTERNALLY_MANAGED}"
                 self.logger.W(
-                    f"the config key [yellow]{iem_cfg_key}[/] cannot be set from user config; ignoring",
+                    _(
+                        "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
+                    ).format(
+                        key=iem_cfg_key,
+                    ),
                 )
             else:
                 self.is_installation_externally_managed = bool(iem)
@@ -133,7 +138,11 @@ class GlobalConfig:
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
                     self.logger.W(
-                        f"the local repo path '{self.override_repo_dir}' is not absolute; ignoring"
+                        _(
+                            "the local repo path '{path}' is not absolute; ignoring"
+                        ).format(
+                            path=self.override_repo_dir,
+                        )
                     )
                     self.override_repo_dir = None
 

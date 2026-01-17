@@ -1,0 +1,1954 @@
+# Chinese (Simplified, China) translations for ruyi.
+# Copyright (C) 2026 Institute of Software, Chinese Academy of Sciences (ISCAS)
+# This file is distributed under the same license as the ruyi project.
+# WANG Xuerui <wangxuerui@iscas.ac.cn>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ruyi 0.45.0-alpha.20251230\n"
+"Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
+"POT-Creation-Date: 2026-01-16 00:49+0800\n"
+"PO-Revision-Date: 2026-01-16 01:05+0800\n"
+"Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
+"Language: zh_Hans_CN\n"
+"Language-Team: zh_Hans_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: ruyi/__main__.py:54
+msgid "refusing to run as super user outside CI without explicit consent"
+msgstr "拒绝在无明示授权的前提下，在 CI 环境以外以超级用户身份运行"
+
+#: ruyi/__main__.py:59
+#, python-brace-format
+msgid "re-run with environment variable [yellow]{env_var}[/] set to one of [yellow]{choices}[/] to signify consent"
+msgstr "将环境变量 [yellow]{env_var}[/] 设为 [yellow]{choices}[/] 其中之一以明示授权，而后请重新运行"
+
+#: ruyi/__main__.py:72
+msgid "no argv?"
+msgstr "没有 argv？"
+
+#: ruyi/cli/cmd.py:118
+msgid "subcommands"
+msgstr "子命令"
+
+#: ruyi/cli/cmd.py:162
+msgid "RuyiSDK Package Manager"
+msgstr "RuyiSDK 包管理器"
+
+#: ruyi/cli/cmd.py:174 ruyi/cli/version_cli.py:15
+msgid "Print version information"
+msgstr "打印版本信息"
+
+#: ruyi/cli/cmd.py:179
+msgid "Give the output in a machine-friendly format if applicable"
+msgstr "在适用的情况下，以机器友好格式输出"
+
+#: ruyi/cli/cmd.py:223
+msgid "(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos"
+msgstr "（非面向普通用户）用来管理 Ruyi 软件源仓库的子命令"
+
+#: ruyi/cli/config_cli.py:17
+msgid "Manage Ruyi's config options"
+msgstr "管理 Ruyi 的配置选项"
+
+#: ruyi/cli/config_cli.py:31
+msgid "Query the value of a Ruyi config option"
+msgstr "查询 Ruyi 配置选项的值"
+
+#: ruyi/cli/config_cli.py:42
+msgid "The Ruyi config option to query"
+msgstr "要查询的 Ruyi 配置选项"
+
+#: ruyi/cli/config_cli.py:70
+msgid "Set the value of a Ruyi config option"
+msgstr "设置 Ruyi 配置选项的值"
+
+#: ruyi/cli/config_cli.py:81
+msgid "The Ruyi config option to set"
+msgstr "要设置的 Ruyi 配置选项"
+
+#: ruyi/cli/config_cli.py:86
+msgid "The value to set the option to"
+msgstr "要设置的值"
+
+#: ruyi/cli/config_cli.py:105
+#, python-brace-format
+msgid "the config [yellow]{key}[/] is protected and not meant to be overridden by users"
+msgstr "配置项 [yellow]{key}[/] 受保护，不应被用户覆盖"
+
+#: ruyi/cli/config_cli.py:118
+msgid "Unset a Ruyi config option"
+msgstr "取消设置 Ruyi 配置选项"
+
+#: ruyi/cli/config_cli.py:129
+msgid "The Ruyi config option to unset"
+msgstr "要取消设置的 Ruyi 配置选项"
+
+#: ruyi/cli/config_cli.py:148
+msgid "Remove a section from the Ruyi config"
+msgstr "从 Ruyi 配置中移除一个章节"
+
+#: ruyi/cli/config_cli.py:159
+msgid "The section to remove"
+msgstr "要移除的章节"
+
+#: ruyi/cli/main.py:55
+#, python-brace-format
+msgid "the {ruyi_exe} executable must be named [green]'{expected_name}'[/] to work"
+msgstr "{ruyi_exe} 可执行文件必须名为 [green]'{expected_name}'[/] 才能工作"
+
+#: ruyi/cli/main.py:62
+#, python-brace-format
+msgid "it is now [yellow]'{current_name}'[/]"
+msgstr "当前为 [yellow]'{current_name}'[/]"
+
+#: ruyi/cli/main.py:66
+msgid "please rename the command file and retry"
+msgstr "请给命令文件重命名后重试"
+
+#: ruyi/cli/main.py:128
+msgid "internal error: CLI entrypoint was added without a telemetry key"
+msgstr "内部错误：CLI 入口点被添加时未附带遥测键"
+
+#: ruyi/cli/oobe.py:14
+#, python-brace-format
+msgid ""
+"\n"
+"[bold green]tip[/]: you can enable shell auto-completion for [yellow]ruyi[/] by adding the\n"
+"following line to your [green]{shrc}[/], if you have not done so already:\n"
+"\n"
+"    [green]eval \"$(ruyi --output-completion-script={shell})\"[/]\n"
+"\n"
+"You can do so by running the following command later:\n"
+"\n"
+"    [green]echo 'eval \"$(ruyi --output-completion-script={shell})\"' >> {shrc}[/]\n"
+msgstr ""
+"\n"
+"[bold green]提示[/]：您可以为 [yellow]ruyi[/] 启用 shell 自动补全，方法是将以下\n"
+"行添加到 [green]{shrc}[/] 中（如果您还没有如此操作过）：\n"
+"\n"
+"    [green]eval \"$(ruyi --output-completion-script={shell})\"[/]\n"
+"\n"
+"您也可以稍后运行以下命令来完成此操作：\n"
+"\n"
+"    [green]echo 'eval \"$(ruyi --output-completion-script={shell})\"' >> {shrc}[/]\n"
+
+#: ruyi/cli/self_cli.py:16
+msgid ""
+"\n"
+"[bold]Thanks for hacking with [yellow]Ruyi[/]![/]\n"
+"\n"
+"This will uninstall [yellow]Ruyi[/] from your system, and optionally remove\n"
+"all installed packages and [yellow]Ruyi[/]-managed repository data if the\n"
+"[green]--purge[/] switch is given on the command line.\n"
+"\n"
+"Note that your [yellow]Ruyi[/] virtual environments [bold]will become unusable[/] after\n"
+"[yellow]Ruyi[/] is uninstalled. You should take care of migrating or cleaning\n"
+"them yourselves afterwards.\n"
+msgstr ""
+"\n"
+"[bold]感谢您折腾 [yellow]Ruyi[/]！[/]\n"
+"\n"
+"这将从您的系统中卸载 [yellow]Ruyi[/]。如果在命令行中提供了[green]--purge[/] 开关，\n"
+"则还将移除所有已安装的软件包和 [yellow]Ruyi[/] 所管理的仓库数据。\n"
+"\n"
+"请注意，您的 [yellow]Ruyi[/] 虚拟环境在 [yellow]Ruyi[/] 卸载后[bold]将变得不可用[/]。您需要自行迁移或清理它们。\n"
+
+#: ruyi/cli/self_cli.py:35
+msgid "Manage this Ruyi installation"
+msgstr "管理当前的 Ruyi 安装"
+
+#: ruyi/cli/self_cli.py:49
+msgid "Remove various Ruyi-managed data to reclaim storage"
+msgstr "移除 Ruyi 管理的各种数据以回收存储空间"
+
+#: ruyi/cli/self_cli.py:61
+msgid "Do not print out the actions being performed"
+msgstr "不要打印正在执行的操作"
+
+#: ruyi/cli/self_cli.py:66
+msgid "Remove all covered data"
+msgstr "移除所有涵盖的数据"
+
+#: ruyi/cli/self_cli.py:71
+msgid "Remove all downloaded distfiles if any"
+msgstr "移除所有已下载的分发文件（如果有）"
+
+#: ruyi/cli/self_cli.py:76
+msgid "Remove all installed packages if any"
+msgstr "移除所有已安装的软件包（如果有）"
+
+#: ruyi/cli/self_cli.py:81
+msgid "Mark all news items as unread"
+msgstr "将所有新闻条目标记为未读"
+
+#: ruyi/cli/self_cli.py:86
+msgid "Clear the Ruyi program cache"
+msgstr "清除 Ruyi 程序缓存"
+
+#: ruyi/cli/self_cli.py:91
+msgid "Remove the Ruyi repo if located in Ruyi-managed cache directory"
+msgstr "移除 Ruyi 仓库（如果位于 Ruyi 管理的缓存目录中）"
+
+#: ruyi/cli/self_cli.py:96
+msgid "Remove all telemetry data recorded if any"
+msgstr "移除所有已记录的遥测数据（如果有）"
+
+#: ruyi/cli/self_cli.py:129
+msgid "no data specified for cleaning"
+msgstr "未指定要清理的数据"
+
+#: ruyi/cli/self_cli.py:132
+msgid "please check [yellow]ruyi self clean --help[/] for a list of cleanable data"
+msgstr "请查看 [yellow]ruyi self clean --help[/] 以获取可清理数据的列表"
+
+#: ruyi/cli/self_cli.py:158
+msgid "Uninstall Ruyi"
+msgstr "卸载 Ruyi"
+
+#: ruyi/cli/self_cli.py:169
+msgid "Remove all installed packages and Ruyi-managed remote repo data"
+msgstr "移除所有已安装的软件包和 Ruyi 管理的远程仓库数据"
+
+#: ruyi/cli/self_cli.py:176
+msgid "Give consent for uninstallation on CLI; do not ask for confirmation"
+msgstr "在 CLI 中确认卸载；不要请求确认"
+
+#: ruyi/cli/self_cli.py:192
+msgid "this [yellow]ruyi[/] is externally managed, for example, by the system package manager, and cannot be uninstalled this way"
+msgstr "这个 [yellow]ruyi[/] 由外部管理，例如系统包管理器，不能以这种方式卸载"
+
+#: ruyi/cli/self_cli.py:195
+msgid "please uninstall via the external manager instead"
+msgstr "请通过外部管理器卸载"
+
+#: ruyi/cli/self_cli.py:201
+msgid "this [yellow]ruyi[/] is not in standalone form, and cannot be uninstalled this way"
+msgstr "这个 [yellow]ruyi[/] 不是独立形式，不能以这种方式卸载"
+
+#: ruyi/cli/self_cli.py:208 ruyi/device/provision.py:60
+msgid "Continue?"
+msgstr "继续吗？"
+
+#: ruyi/cli/self_cli.py:209
+msgid "aborting uninstallation"
+msgstr "中止卸载"
+
+#: ruyi/cli/self_cli.py:212
+msgid "uninstallation consent given over CLI, proceeding"
+msgstr "已通过 CLI 同意卸载，继续进行"
+
+#: ruyi/cli/self_cli.py:223
+msgid "[yellow]ruyi[/] is uninstalled"
+msgstr "[yellow]ruyi[/] 已被卸载"
+
+#: ruyi/cli/self_cli.py:250
+msgid "removing installed packages"
+msgstr "正在移除已安装的软件包"
+
+#: ruyi/cli/self_cli.py:259
+msgid "removing state data"
+msgstr "正在移除状态数据"
+
+#: ruyi/cli/self_cli.py:263
+msgid "removing read status of news items"
+msgstr "正在移除新闻条目的阅读状态"
+
+#: ruyi/cli/self_cli.py:267
+msgid "removing all telemetry data"
+msgstr "正在移除所有遥测数据"
+
+#: ruyi/cli/self_cli.py:271
+msgid "removing cached data"
+msgstr "正在移除缓存数据"
+
+#: ruyi/cli/self_cli.py:275
+msgid "removing downloaded distfiles"
+msgstr "正在移除已下载的分发文件"
+
+#: ruyi/cli/self_cli.py:280
+msgid "clearing the Ruyi program cache"
+msgstr "正在清除 Ruyi 程序缓存"
+
+#: ruyi/cli/self_cli.py:299
+msgid "not removing the Ruyi repo: it is outside of the Ruyi cache directory"
+msgstr "不移除 Ruyi 仓库：它位于 Ruyi 缓存目录之外"
+
+#: ruyi/cli/self_cli.py:303
+msgid "removing the Ruyi repo"
+msgstr "正在移除 Ruyi 仓库"
+
+#: ruyi/cli/self_cli.py:307
+msgid "removing the ruyi binary"
+msgstr "正在移除 ruyi 可执行文件"
+
+#: ruyi/cli/user_input.py:14
+msgid "Press [green]<ENTER>[/] to continue: "
+msgstr "按 [green]<ENTER>[/] 键继续："
+
+#: ruyi/cli/user_input.py:30
+msgid "YES"
+msgstr "是"
+
+#: ruyi/cli/user_input.py:30
+msgid "NO"
+msgstr "否"
+
+#: ruyi/cli/user_input.py:33
+#, python-brace-format
+msgid "EOF while reading user input, assuming the default choice {yesno}"
+msgstr "读取用户输入时遇到 EOF，假定为默认选择 {yesno}"
+
+#: ruyi/cli/user_input.py:46 ruyi/cli/user_input.py:114
+#, python-brace-format
+msgid "Unrecognized input [yellow]'{user_input}'[/]."
+msgstr "未识别的输入 [yellow]'{user_input}'[/]。"
+
+#: ruyi/cli/user_input.py:50
+msgid "Accepted choices: Y/y/yes for YES, N/n/no for NO."
+msgstr "可接受的选择：Y/y/yes 表示“是”，N/n/no 表示“否”。"
+
+#: ruyi/cli/user_input.py:91
+#, python-brace-format
+msgid "(1-{nr_choices}, default {default})"
+msgstr "(1-{nr_choices}，默认为 {default})"
+
+#: ruyi/cli/user_input.py:96
+#, python-brace-format
+msgid "(1-{nr_choices})"
+msgstr "(1-{nr_choices})"
+
+#: ruyi/cli/user_input.py:100
+#, python-brace-format
+msgid "Choice? {choices_help} "
+msgstr "选择？{choices_help} "
+
+#: ruyi/cli/user_input.py:120 ruyi/cli/user_input.py:137
+#, python-brace-format
+msgid "Accepted choices: an integer number from 1 to {nr_choices} inclusive."
+msgstr "可接受的选择：从 1 到 {nr_choices}（含）的整数。"
+
+#: ruyi/cli/user_input.py:131
+#, python-brace-format
+msgid "Out-of-range input [yellow]'{user_input}'[/]."
+msgstr "输入 [yellow]'{user_input}'[/] 超出了范围。"
+
+#: ruyi/cli/version_cli.py:32
+#, python-brace-format
+msgid ""
+"Ruyi {version}\n"
+"\n"
+"Running on {host}."
+msgstr ""
+"Ruyi {version}\n"
+"\n"
+"在 {host} 上运行。"
+
+#: ruyi/cli/version_cli.py:39
+msgid "This Ruyi installation is externally managed."
+msgstr "该 Ruyi 安装由外部管理。"
+
+#: ruyi/config/__init__.py:120
+#, python-brace-format
+msgid "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
+msgstr "配置项 [yellow]{key}[/] 不能从用户配置文件被设置；忽略"
+
+#: ruyi/config/__init__.py:142
+#, python-brace-format
+msgid "the local repo path '{path}' is not absolute; ignoring"
+msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
+
+#: ruyi/config/errors.py:13
+#, python-brace-format
+msgid "invalid config section: {section}"
+msgstr "无效的配置章节：{section}"
+
+#: ruyi/config/errors.py:25
+#, python-brace-format
+msgid "invalid config key: {key}"
+msgstr "无效的配置项：{key}"
+
+#: ruyi/config/errors.py:45
+#, python-brace-format
+msgid "invalid value type for config key {key}: {actual_type}, expected {expected_type}"
+msgstr "配置项 {key} 的值类型无效：{actual_type}，期望 {expected_type}"
+
+#: ruyi/config/errors.py:69
+#, python-brace-format
+msgid "invalid config value for key {key} (type {typ}): {val}"
+msgstr "配置项 {key} 的值无效（类型 {typ}）：{val}"
+
+#: ruyi/config/errors.py:87
+#, python-brace-format
+msgid "malformed config file: {path}"
+msgstr "配置文件格式错误：{path}"
+
+#: ruyi/config/errors.py:99
+#, python-brace-format
+msgid "attempt to modify protected global config key: {key}"
+msgstr "尝试修改受保护的全局配置项：{key}"
+
+#: ruyi/device/provision.py:41
+msgid ""
+"\n"
+"[bold green]RuyiSDK Device Provisioning Wizard[/]\n"
+"\n"
+"This is a wizard intended to help you install a system on your device for your\n"
+"development pleasure, all with ease.\n"
+"\n"
+"You will be asked some questions that help RuyiSDK understand your device and\n"
+"your intended configuration, then packages will be downloaded and flashed onto\n"
+"the device's storage, that you should somehow make available on this host\n"
+"system beforehand.\n"
+"\n"
+"Note that, as Ruyi does not run as [yellow]root[/], but raw disk access is most likely\n"
+"required to flash images, you should arrange to allow your user account [yellow]sudo[/]\n"
+"access to necessary commands such as [yellow]dd[/]. Flashing will fail if the [yellow]sudo[/]\n"
+"configuration does not allow so.\n"
+msgstr ""
+"\n"
+"[bold green]RuyiSDK 设备安装向导[/]\n"
+"\n"
+"这是一个向导，旨在帮助您轻松地在您的设备上安装系统，以便您开展开发工作。\n"
+"\n"
+"您将被问及一些问题，好让 RuyiSDK 了解您的设备和您预期的配置，然后一些软件包将被下载并刷写到\n"
+"设备的存储上。您应当事先以某种方式在此主机系统上提供该存储。\n"
+"\n"
+"请注意，由于 Ruyi 不以 [yellow]root[/] 身份运行，但刷写镜像很可能需要底层的磁盘访问权限，\n"
+"您应当配置您的用户能够以 [yellow]sudo[/] 方式运行 [yellow]dd[/] 等必要命令。\n"
+"如果您的 [yellow]sudo[/] 配置不允许您这么做，刷写将会失败。\n"
+
+#: ruyi/device/provision.py:62
+msgid ""
+"\n"
+"Exiting. You can restart the wizard whenever prepared."
+msgstr ""
+"\n"
+"正在退出。您可在准备好之后随时重新启动向导。"
+
+#: ruyi/device/provision.py:75
+msgid ""
+"\n"
+"The following devices are currently supported by the wizard. Please pick your device:"
+msgstr ""
+"\n"
+"向导当前支持以下设备。请选择您的设备："
+
+#: ruyi/device/provision.py:93
+msgid ""
+"\n"
+"The device has the following variants. Please choose the one corresponding to your hardware at hand:"
+msgstr ""
+"\n"
+"该设备有以下变体。请选择与您手头硬件对应的变体："
+
+#: ruyi/device/provision.py:112
+msgid ""
+"\n"
+"The following system configurations are supported by the device variant you have chosen. Please pick the one you want to put on the device:"
+msgstr ""
+"\n"
+"您选择的设备变体支持以下系统配置。请选择您想要安装到设备上的配置："
+
+#: ruyi/device/provision.py:155
+#, python-brace-format
+msgid "malformed config: device variant '{devid}' asks for no packages but provides no messages either"
+msgstr "配置格式错误：设备变体 '{devid}' 未要求任何软件包，但也未提供任何消息文案"
+
+#: ruyi/device/provision.py:165 ruyi/device/provision.py:182
+msgid ""
+"\n"
+"Exiting. You may restart the wizard at any time."
+msgstr ""
+"\n"
+"正在退出。您可随时重新启动向导。"
+
+#: ruyi/device/provision.py:174
+msgid ""
+"\n"
+"We are about to download and install the following packages for your device:"
+msgstr ""
+"\n"
+"我们即将为您的设备下载并安装以下软件包："
+
+#: ruyi/device/provision.py:195
+msgid "failed to download and install packages"
+msgstr "下载和安装软件包失败"
+
+#: ruyi/device/provision.py:196
+msgid "your device was not touched"
+msgstr "您的设备未受任何操作"
+
+#: ruyi/device/provision.py:220
+msgid ""
+"\n"
+"For initializing this target device, you should plug into this host system the\n"
+"device's storage (e.g. SD card or NVMe SSD), or a removable disk to be\n"
+"reformatted as a live medium, and note down the corresponding device file\n"
+"path(s), e.g. /dev/sdX, /dev/nvmeXnY for whole disks; /dev/sdXY, /dev/nvmeXnYpZ\n"
+"for partitions. You may consult e.g. [yellow]sudo blkid[/] output for the\n"
+"information you will need later.\n"
+msgstr ""
+"\n"
+"要初始化此目标设备，您需要将设备的存储（例如 SD 卡或 NVMe SSD）插入此主机系统，或插入一个\n"
+"可移动磁盘以重新格式化为 live 介质。您还需要记下相应的设备文件路径，例如 /dev/sdX、\n"
+"/dev/nvmeXnY（对于完整磁盘），或者 /dev/sdXY、/dev/nvmeXnYpZ（对于分区）。您可参考例如\n"
+"[yellow]sudo blkid[/] 输出等，以获取稍后需要的信息。\n"
+
+#: ruyi/device/provision.py:236
+#, python-brace-format
+msgid "Please give the path for the {part_desc}:"
+msgstr "请提供 {part_desc} 的路径："
+
+#: ruyi/device/provision.py:250
+#, python-brace-format
+msgid "path [cyan]'{path}'[/] is currently mounted at [yellow]'{target}'[/]"
+msgstr "路径 [cyan]'{path}'[/] 当前挂载在 [yellow]'{target}'[/]"
+
+#: ruyi/device/provision.py:258
+msgid "rejecting the path for safety; please double-check and retry"
+msgstr "出于安全考虑，拒绝该路径；请再次检查后重试"
+
+#: ruyi/device/provision.py:271
+msgid ""
+"\n"
+"We have collected enough information for the actual flashing. Now is the last\n"
+"chance to re-check and confirm everything is fine.\n"
+"\n"
+"We are about to:\n"
+msgstr ""
+"\n"
+"我们已收集到足够的信息以进行实际刷写。现在是您重新检查并确认一切正常的最后机会。\n"
+"\n"
+"我们即将：\n"
+
+#: ruyi/device/provision.py:291
+msgid "Proceed with flashing?"
+msgstr "进行刷写吗？"
+
+#: ruyi/device/provision.py:294
+msgid ""
+"\n"
+"Exiting. The device is not touched and you may re-start the wizard at will."
+msgstr ""
+"\n"
+"正在退出。设备未受任何操作，您可随时重新启动向导。"
+
+#: ruyi/device/provision.py:309
+msgid ""
+"\n"
+"Some flashing steps require the use of fastboot, in which case you should\n"
+"ensure the target device is showing up in [yellow]fastboot devices[/] output.\n"
+"Please [bold red]confirm it yourself before continuing[/].\n"
+msgstr ""
+"\n"
+"某些刷写步骤需要使用 fastboot，此时您应该确保目标设备显示在了 [yellow]fastboot devices[/] 输出中。\n"
+"请[bold red]在继续之前自行确认[/]。\n"
+
+#: ruyi/device/provision.py:317
+msgid "Is the device identified by fastboot now?"
+msgstr "设备现在是否被 fastboot 识别到了？"
+
+#: ruyi/device/provision.py:321
+msgid ""
+"\n"
+"Aborting. The device is not touched. You may re-start the wizard after [yellow]fastboot[/] is fixed for the device."
+msgstr ""
+"\n"
+"正在中止。设备未受任何操作。您可在修复 [yellow]fastboot[/] 对设备的识别后重新启动向导。"
+
+#: ruyi/device/provision.py:332
+msgid "flashing failed, check your device right now"
+msgstr "刷写失败，请立即检查您的设备"
+
+#: ruyi/device/provision.py:337
+msgid ""
+"\n"
+"It seems the flashing has finished without errors.\n"
+"\n"
+"[bold green]Happy hacking![/]\n"
+msgstr ""
+"\n"
+"看起来刷写已顺利完成。\n"
+"\n"
+"[bold green]祝您折腾愉快！[/]\n"
+
+#: ruyi/device/provision.py:352
+msgid "target's whole disk"
+msgstr "目标的整个磁盘"
+
+#: ruyi/device/provision.py:354
+msgid "removable disk to use as live medium"
+msgstr "用作 live 介质的可移动磁盘"
+
+#: ruyi/device/provision.py:356
+#, python-brace-format
+msgid "target's '{part}' partition"
+msgstr "目标的 '{part}' 分区"
+
+#: ruyi/device/provision.py:528
+msgid "By default, we'll install the latest version of each package, but in this case, other choices are possible."
+msgstr "我们默认将安装每个软件包的最新版本，但在当前情况下，也可以选择其他版本。"
+
+#: ruyi/device/provision.py:533
+msgid "Would you like to customize package versions?"
+msgstr "您想自定义软件包版本吗？"
+
+#: ruyi/device/provision.py:539
+msgid ""
+"\n"
+"[bold]Package Version Selection[/]"
+msgstr ""
+"\n"
+"[bold]软件包版本选择[/]"
+
+#: ruyi/device/provision.py:548
+#, python-brace-format
+msgid ""
+"\n"
+"Package [green]{atom}[/] already has version constraints."
+msgstr ""
+"\n"
+"软件包 [green]{atom}[/] 已有版本约束。"
+
+#: ruyi/device/provision.py:555
+msgid "Would you like to change them?"
+msgstr "您想更改它们吗？"
+
+#: ruyi/device/provision.py:563
+#, python-brace-format
+msgid "version cannot be overridden for slug atom [green]{atom}[/]"
+msgstr "slug atom [green]{atom}[/] 的版本无法覆盖"
+
+#: ruyi/device/provision.py:581
+#, python-brace-format
+msgid "could not find package [yellow]{pkg}[/] in repository"
+msgstr "在仓库中找不到软件包 [yellow]{pkg}[/]"
+
+#: ruyi/device/provision.py:589
+#, python-brace-format
+msgid "no versions found for package [yellow]{pkg}[/]"
+msgstr "找不到软件包 [yellow]{pkg}[/] 的任何版本"
+
+#: ruyi/device/provision.py:601
+#, python-brace-format
+msgid "Only one version available for [green]{pkg}[/]: [blue]{ver}[/], using it."
+msgstr "[green]{pkg}[/] 仅有一个可用版本：[blue]{ver}[/]，使用它。"
+
+#: ruyi/device/provision.py:622
+msgid "has known issues"
+msgstr "有已知问题"
+
+#: ruyi/device/provision.py:625
+#, python-brace-format
+msgid "upstream: {upstream_ver}"
+msgstr "上游：{upstream_ver}"
+
+#: ruyi/device/provision.py:636
+#, python-brace-format
+msgid ""
+"\n"
+"Select a version for package [green]{pkg}[/]:"
+msgstr ""
+"\n"
+"为软件包 [green]{pkg}[/] 选择一个版本："
+
+#: ruyi/device/provision.py:650
+#, python-brace-format
+msgid "Selected: [blue]{new_atom}[/]"
+msgstr "已选择：[blue]{new_atom}[/]"
+
+#: ruyi/device/provision.py:653
+msgid ""
+"\n"
+"Package versions to be installed:"
+msgstr ""
+"\n"
+"要安装的软件包版本："
+
+#: ruyi/device/provision.py:659
+msgid ""
+"\n"
+"How would you like to proceed?"
+msgstr ""
+"\n"
+"您想如何继续？"
+
+#: ruyi/device/provision.py:661
+msgid "Continue with these versions"
+msgstr "继续使用这些版本"
+
+#: ruyi/device/provision.py:662
+msgid "Restart version selection"
+msgstr "重新选择版本"
+
+#: ruyi/device/provision.py:663
+msgid "Abort device provisioning"
+msgstr "中止设备配置"
+
+#: ruyi/device/provision.py:670
+msgid ""
+"\n"
+"Restarting package version selection..."
+msgstr ""
+"\n"
+"正在重新选择软件包版本..."
+
+#: ruyi/device/provision_cli.py:16
+msgid "Manage devices"
+msgstr "管理设备"
+
+#: ruyi/device/provision_cli.py:27
+msgid "Interactively initialize a device for development"
+msgstr "交互式地初始化一台设备做开发工作"
+
+#: ruyi/device/provision_cli.py:41
+msgid ""
+"\n"
+"\n"
+"Keyboard interrupt received, exiting."
+msgstr ""
+"\n"
+"\n"
+"收到键盘中断，正在退出。"
+
+#: ruyi/log/__init__.py:221
+#, python-brace-format
+msgid "[bold red]fatal error:[/] {message}"
+msgstr "[bold red]致命错误：[/]{message}"
+
+#: ruyi/log/__init__.py:238
+#, python-brace-format
+msgid "[bold green]info:[/] {message}"
+msgstr "[bold green]信息：[/]{message}"
+
+#: ruyi/log/__init__.py:255
+#, python-brace-format
+msgid "[bold yellow]warn:[/] {message}"
+msgstr "[bold yellow]警告：[/]{message}"
+
+#: ruyi/log/__init__.py:270
+msgid "(none)"
+msgstr "（无）"
+
+#: ruyi/mux/runtime.py:35
+msgid "the Ruyi toolchain mux is not configured"
+msgstr "Ruyi 工具链复用器未配置"
+
+#: ruyi/mux/runtime.py:36
+msgid "check out `ruyi venv` for making a virtual environment"
+msgstr "要创建虚拟环境，请查阅 `ruyi venv` 相关信息"
+
+#: ruyi/mux/runtime.py:65
+#, python-brace-format
+msgid "internal error: no target data for tuple [yellow]{target_tuple}[/]"
+msgstr "内部错误：元组 [yellow]{target_tuple}[/] 没有目标数据"
+
+#: ruyi/mux/runtime.py:92
+#, python-brace-format
+msgid "internal error: no bindir configured for target [yellow]{target_tuple}[/]"
+msgstr "内部错误：未为目标 [yellow]{target_tuple}[/] 配置 bindir"
+
+#: ruyi/mux/runtime.py:103
+#, python-brace-format
+msgid "no configured target found for command [yellow]{basename}[/]"
+msgstr "未找到命令 [yellow]{basename}[/] 对应的已配置目标"
+
+#: ruyi/mux/runtime.py:192
+msgid "this virtual environment has no QEMU-like emulator configured"
+msgstr "此虚拟环境未配置有类似 QEMU 的模拟器"
+
+#: ruyi/mux/venv/maker.py:71
+msgid "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
+msgstr "当前，您必须至少指定一个工具链 atom，例如 [yellow]`-t gnu-plct`[/]"
+
+#: ruyi/mux/venv/maker.py:79
+#, python-brace-format
+msgid "profile '{profile}' not found"
+msgstr "未找到配置文件 '{profile}'"
+
+#: ruyi/mux/venv/maker.py:97 ruyi/mux/venv/maker.py:168
+#, python-brace-format
+msgid "cannot match a toolchain package with [yellow]{atom}[/]"
+msgstr "无法将 [yellow]{atom}[/] 匹配到工具链软件包"
+
+#: ruyi/mux/venv/maker.py:103 ruyi/mux/venv/maker.py:176
+#, python-brace-format
+msgid "the package [yellow]{atom}[/] is not a toolchain"
+msgstr "软件包 [yellow]{atom}[/] 不是工具链"
+
+#: ruyi/mux/venv/maker.py:110 ruyi/mux/venv/maker.py:293
+#, python-brace-format
+msgid "the package [yellow]{atom}[/] does not support all necessary features for the profile [yellow]{profile}[/]"
+msgstr "软件包 [yellow]{atom}[/] 不支持配置文件 [yellow]{profile}[/] 所需的所有特性"
+
+#: ruyi/mux/venv/maker.py:117 ruyi/mux/venv/maker.py:299
+#, python-brace-format
+msgid "quirks needed by profile:   {humanized_list}"
+msgstr "配置文件所需的特殊特性：{humanized_list}"
+
+#: ruyi/mux/venv/maker.py:122 ruyi/mux/venv/maker.py:304
+#, python-brace-format
+msgid "quirks provided by package: {humanized_list}"
+msgstr "软件包所提供的特殊特性：{humanized_list}"
+
+#: ruyi/mux/venv/maker.py:131
+#, python-brace-format
+msgid "the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
+msgstr "目标元组 [yellow]{target_tuple}[/] 已被请求的工具链之一涵盖"
+
+#: ruyi/mux/venv/maker.py:136
+msgid "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
+msgstr "目前，只有目标元组不同的工具链才能在一个虚拟环境中共存"
+
+#: ruyi/mux/venv/maker.py:145
+msgid "cannot find the installed directory for the toolchain"
+msgstr "找不到工具链的安装目录"
+
+#: ruyi/mux/venv/maker.py:157
+msgid "sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given"
+msgstr "请求了 sysroot，但工具链软件包不含 sysroot，且命令行上未给出 [yellow]--sysroot-from[/]"
+
+#: ruyi/mux/venv/maker.py:188
+msgid "cannot find the installed directory for the sysroot package"
+msgstr "找不到 sysroot 软件包的安装目录"
+
+#: ruyi/mux/venv/maker.py:195
+#, python-brace-format
+msgid "sysroot is requested but the package [yellow]{atom}[/] does not contain one"
+msgstr "请求了 sysroot，但软件包 [yellow]{atom}[/] 不含 sysroot"
+
+#: ruyi/mux/venv/maker.py:215
+msgid "cannot find a GCC include & lib directory in the sysroot package"
+msgstr "在 sysroot 软件包中找不到 GCC include 和 lib 目录"
+
+#: ruyi/mux/venv/maker.py:252
+msgid "multiple toolchains specified with differing target architecture"
+msgstr "指定了具有不同目标架构的多个工具链"
+
+#: ruyi/mux/venv/maker.py:254
+#, python-brace-format
+msgid "using the target architecture of the first toolchain: [yellow]{arch}[/]"
+msgstr "将使用第一个工具链的目标架构：[yellow]{arch}[/]"
+
+#: ruyi/mux/venv/maker.py:266
+#, python-brace-format
+msgid "cannot match an emulator package with [yellow]{atom}[/]"
+msgstr "无法将 [yellow]{atom}[/] 匹配到模拟器软件包"
+
+#: ruyi/mux/venv/maker.py:272
+#, python-brace-format
+msgid "the package [yellow]{atom}[/] is not an emulator"
+msgstr "软件包 [yellow]{atom}[/] 不是模拟器"
+
+#: ruyi/mux/venv/maker.py:280
+#, python-brace-format
+msgid "the emulator package [yellow]{atom}[/] does not support the target architecture [yellow]{arch}[/]"
+msgstr "模拟器软件包 [yellow]{atom}[/] 不支持目标架构 [yellow]{arch}[/]"
+
+#: ruyi/mux/venv/maker.py:315
+msgid "cannot find the installed directory for the emulator"
+msgstr "找不到模拟器的安装目录"
+
+#: ruyi/mux/venv/maker.py:331
+#, python-brace-format
+msgid "cannot match an extra command package with [yellow]{atom}[/]"
+msgstr "无法将 [yellow]{atom}[/] 匹配到额外命令软件包"
+
+#: ruyi/mux/venv/maker.py:340
+#, python-brace-format
+msgid "the package [yellow]{atom}[/] is not a binary-providing package"
+msgstr "软件包 [yellow]{atom}[/] 未提供二进制文件"
+
+#: ruyi/mux/venv/maker.py:349
+#, python-brace-format
+msgid "the package [yellow]{atom}[/] does not provide any command for host [yellow]{host}[/], ignoring"
+msgstr "软件包 [yellow]{atom}[/] 未为主机 [yellow]{host}[/] 提供任何命令，将被忽略"
+
+#: ruyi/mux/venv/maker.py:362
+#, python-brace-format
+msgid "cannot find the installed directory for the package [yellow]{pkg}[/]"
+msgstr "找不到软件包 [yellow]{pkg}[/] 的安装目录"
+
+#: ruyi/mux/venv/maker.py:378
+msgid "internal error: resolved command path is outside of the providing package"
+msgstr "内部错误：解析的命令路径落在了提供者软件包之外"
+
+#: ruyi/mux/venv/maker.py:387
+#, python-brace-format
+msgid "Creating a Ruyi virtual environment [cyan]'{name}'[/] at [green]{dest}[/]..."
+msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境 [cyan]'{name}'[/]..."
+
+#: ruyi/mux/venv/maker.py:393
+#, python-brace-format
+msgid "Creating a Ruyi virtual environment at [green]{dest}[/]..."
+msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境..."
+
+#: ruyi/mux/venv/maker.py:613
+#, python-brace-format
+msgid "extra command {cmd} is already provided by another package, overriding it"
+msgstr "额外命令 {cmd} 已由另一个软件包提供，将用当前软件包覆盖它"
+
+#: ruyi/mux/venv/venv_cli.py:16
+msgid "Generate a virtual environment adapted to the chosen toolchain and profile"
+msgstr "生成适应所选工具链和配置文件的虚拟环境"
+
+#: ruyi/mux/venv/venv_cli.py:20
+msgid "Profile to use for the environment"
+msgstr "环境使用的配置文件"
+
+#: ruyi/mux/venv/venv_cli.py:22
+msgid "Path to the new virtual environment"
+msgstr "新虚拟环境的路径"
+
+#: ruyi/mux/venv/venv_cli.py:29
+msgid "Override the venv's name"
+msgstr "自定义虚拟环境的名称"
+
+#: ruyi/mux/venv/venv_cli.py:36
+msgid "Specifier(s) (atoms) of the toolchain package(s) to use"
+msgstr "要使用的工具链软件包的指示表达式（atoms）"
+
+#: ruyi/mux/venv/venv_cli.py:42
+msgid "Specifier (atom) of the emulator package to use"
+msgstr "要使用的模拟器软件包的指示表达式（atom）"
+
+#: ruyi/mux/venv/venv_cli.py:49
+msgid "Provision a fresh sysroot inside the new virtual environment (default)"
+msgstr "在新虚拟环境内准备一个全新的 sysroot（默认）"
+
+#: ruyi/mux/venv/venv_cli.py:55
+msgid "Do not include a sysroot inside the new virtual environment"
+msgstr "不在新虚拟环境内准备任何 sysroot"
+
+#: ruyi/mux/venv/venv_cli.py:60
+msgid "Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable"
+msgstr "要使用的 sysroot 软件包的指示表达式（atom），如工具链软件包也内置了 sysroot 则优先于它"
+
+#: ruyi/mux/venv/venv_cli.py:66
+msgid "Specifier(s) (atoms) of extra package(s) to add commands to the new virtual environment"
+msgstr "要向新虚拟环境添加额外命令，这些命令的提供者软件包的指示表达式（atoms）"
+
+#: ruyi/pluginhost/plugin_cli.py:15
+msgid "Run a plugin-defined command"
+msgstr "运行一个由插件定义的命令"
+
+#: ruyi/pluginhost/plugin_cli.py:23
+msgid "Command name"
+msgstr "命令名称"
+
+#: ruyi/pluginhost/plugin_cli.py:30
+msgid "Arguments to pass to the plugin command"
+msgstr "要传递给插件命令的参数"
+
+#: ruyi/ruyipkg/admin_checksum.py:23
+#, python-brace-format
+msgid "invalid restrict kinds given: {restrict}"
+msgstr "给出了无效的 restrict 类型：{restrict}"
+
+#: ruyi/ruyipkg/admin_cli.py:16
+msgid "Generate a checksum section for a manifest file for the distfiles given"
+msgstr "为给定的分发文件生成清单文件的校验和章节"
+
+#: ruyi/ruyipkg/admin_cli.py:26
+msgid "Format of checksum section to generate in"
+msgstr "要生成的校验和章节的格式"
+
+#: ruyi/ruyipkg/admin_cli.py:33
+msgid "the 'restrict' field to use for all mentioned distfiles, separated with comma"
+msgstr "所有提及的分发文件使用的 'restrict' 字段，用逗号分隔"
+
+#: ruyi/ruyipkg/admin_cli.py:40
+msgid "Path to the distfile(s) to checksum"
+msgstr "要计算校验和的分发文件的路径"
+
+#: ruyi/ruyipkg/admin_cli.py:59
+msgid "Format the given package manifests into canonical TOML representation"
+msgstr "将给定的软件包清单文件格式化为规范的 TOML 表示"
+
+#: ruyi/ruyipkg/admin_cli.py:67
+msgid "Path to the distfile(s) to generate manifest for"
+msgstr "要为其生成清单文件的分发文件的路径"
+
+#: ruyi/ruyipkg/augmented_pkg.py:32 ruyi/ruyipkg/augmented_pkg.py:61
+msgid "latest"
+msgstr "最新"
+
+#: ruyi/ruyipkg/augmented_pkg.py:34 ruyi/ruyipkg/augmented_pkg.py:63
+msgid "latest-prerelease"
+msgstr "最新预发布"
+
+#: ruyi/ruyipkg/augmented_pkg.py:36 ruyi/ruyipkg/augmented_pkg.py:65
+msgid "[red]no binary for current host[/]"
+msgstr "[red]无适用当前主机的二进制文件[/]"
+
+#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:38
+#: ruyi/ruyipkg/augmented_pkg.py:67
+msgid "prerelease"
+msgstr "预发布"
+
+#: ruyi/ruyipkg/augmented_pkg.py:40 ruyi/ruyipkg/augmented_pkg.py:69
+msgid "[yellow]has known issue[/]"
+msgstr "[yellow]有已知问题[/]"
+
+#: ruyi/ruyipkg/augmented_pkg.py:42 ruyi/ruyipkg/augmented_pkg.py:71
+msgid "[green]downloaded[/]"
+msgstr "[green]已下载[/]"
+
+#: ruyi/ruyipkg/augmented_pkg.py:44 ruyi/ruyipkg/augmented_pkg.py:73
+msgid "[green]installed[/]"
+msgstr "[green]已安装[/]"
+
+#: ruyi/ruyipkg/checksum.py:11
+#, python-brace-format
+msgid "checksum algorithm {kind} not supported"
+msgstr "校验和算法 {kind} 不被支持"
+
+#: ruyi/ruyipkg/checksum.py:25
+#, python-brace-format
+msgid "wrong {kind} checksum: want {want}, got {got}"
+msgstr "错误的 {kind} 校验和：期望 {want}，得到 {got}"
+
+#: ruyi/ruyipkg/distfile.py:17
+msgid ""
+"\n"
+"Downloads can fail for a multitude of reasons, most of which should not and\n"
+"cannot be handled by [yellow]Ruyi[/]. For your convenience though, please check if any\n"
+"of the following common failure modes apply to you, and take actions\n"
+"accordingly if one of them turns out to be the case:\n"
+"\n"
+"* Basic connectivity problems\n"
+"    - is [yellow]the gateway[/] reachable?\n"
+"    - is [yellow]common websites[/] reachable?\n"
+"    - is there any [yellow]DNS pollution[/]?\n"
+"* Organizational and/or ISP restrictions\n"
+"    - is there a [yellow]firewall[/] preventing Ruyi traffic?\n"
+"    - is your [yellow]ISP blocking access[/] to the source website?\n"
+"* Volatile upstream\n"
+"    - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)\n"
+msgstr ""
+"\n"
+"下载可能因各种原因失败，其中大多数原因不应也无法由 [yellow]Ruyi[/] 处理。不过为了您的方便，\n"
+"请检查以下常见失败模式是否适用于您。如果您的情况属于其中之一，请采取相应措施：\n"
+"\n"
+"* 基本连接问题\n"
+"    - [yellow]网关[/]是否可访问？\n"
+"    - [yellow]常用网站[/]是否可访问？\n"
+"    - 是否存在 [yellow]DNS 污染[/]？\n"
+"* 您的组织 和/或 互联网服务提供商（ISP）限制\n"
+"    - 是否有[yellow]防火墙[/]阻止 Ruyi 流量？\n"
+"    - 您的 [yellow]ISP 是否阻止访问[/]源网站？\n"
+"* 上游不稳定\n"
+"    - 软件包内记录的[yellow]链接是否失效[/]？（请向 Ruyi 提起工单以获取修复！）\n"
+
+#: ruyi/ruyipkg/distfile.py:93
+#, python-brace-format
+msgid "malformed package fetch instructions: the param named '{param}' is reserved and cannot be overridden by packages"
+msgstr "软件包下载方法文案的格式错误：名为 '{param}' 的参数是保留的，不能被软件包覆盖"
+
+#: ruyi/ruyipkg/distfile.py:98
+msgid "malformed package fetch instructions"
+msgstr "软件包下载方法文案的格式错误"
+
+#: ruyi/ruyipkg/distfile.py:139
+#, python-brace-format
+msgid "file {file} is corrupt: size too big ({actual_size} > {expected_size}); deleting"
+msgstr "文件 {file} 已损坏：大小过大（{actual_size} > {expected_size}）；正在移除"
+
+#: ruyi/ruyipkg/distfile.py:157
+#, python-brace-format
+msgid "file {file} is corrupt: {reason}; deleting"
+msgstr "文件 {file} 已损坏：{reason}；正在移除"
+
+#: ruyi/ruyipkg/distfile.py:180
+#, python-brace-format
+msgid "the file [yellow]'{file}'[/] cannot be automatically fetched"
+msgstr "文件 [yellow]'{file}'[/] 无法被自动获取"
+
+#: ruyi/ruyipkg/distfile.py:185
+msgid "instructions on fetching this file:"
+msgstr "获取此文件的方法说明："
+
+#: ruyi/ruyipkg/distfile.py:209
+#, python-brace-format
+msgid "failed to fetch distfile: {file} failed integrity checks"
+msgstr "获取分发文件失败：{file} 未通过完整性检查"
+
+#: ruyi/ruyipkg/entity.py:68
+#, python-brace-format
+msgid "no schema found for entity type: {entity_type}"
+msgstr "未找到实体类型的格式定义：{entity_type}"
+
+#: ruyi/ruyipkg/entity.py:81
+#, python-brace-format
+msgid "failed to compile schema for {entity_type}: {reason}"
+msgstr "编译 {entity_type} 的格式定义失败：{reason}"
+
+#: ruyi/ruyipkg/entity_cli.py:17
+msgid "Interact with entities defined in the repositories"
+msgstr "与仓库中定义的实体进行交互"
+
+#: ruyi/ruyipkg/entity_cli.py:27
+msgid "Describe an entity"
+msgstr "描述一个实体"
+
+#: ruyi/ruyipkg/entity_cli.py:34
+msgid "Reference to the entity to describe in the form of '<type>:<name>'"
+msgstr "以 '<type>:<name>' 形式描述实体的引用"
+
+#: ruyi/ruyipkg/entity_cli.py:46
+#, python-brace-format
+msgid "entity [yellow]{ref}[/] not found"
+msgstr "未找到实体 [yellow]{ref}[/]"
+
+#: ruyi/ruyipkg/entity_cli.py:50
+#, python-brace-format
+msgid "Entity [bold]{entity}[/] ([green]{display_name}[/])\n"
+msgstr "实体 [bold]{entity}[/]（[green]{display_name}[/]）\n"
+
+#: ruyi/ruyipkg/entity_cli.py:58
+msgid "  Direct forward relationships:"
+msgstr "  直接正向关系："
+
+#: ruyi/ruyipkg/entity_cli.py:62
+msgid "  Direct forward relationships: [gray]none[/]"
+msgstr "  直接正向关系：[gray]无[/]"
+
+#: ruyi/ruyipkg/entity_cli.py:66
+msgid "  Direct reverse relationships:"
+msgstr "  直接反向关系："
+
+#: ruyi/ruyipkg/entity_cli.py:70
+msgid "  Direct reverse relationships: [gray]none[/]"
+msgstr "  直接反向关系：[gray]无[/]"
+
+#: ruyi/ruyipkg/entity_cli.py:72
+msgid "  All indirectly related entities:"
+msgstr "  所有间接相关的实体："
+
+#: ruyi/ruyipkg/entity_cli.py:90
+msgid "List entities"
+msgstr "列出实体"
+
+#: ruyi/ruyipkg/entity_cli.py:101
+msgid "List entities of this type. Can be passed multiple times to list multiple types."
+msgstr "列出此类型的实体。可以多次传递该参数以列出多种类型。"
+
+#: ruyi/ruyipkg/entity_provider.py:212
+#, python-brace-format
+msgid "failed to access entity schemas directory {dir}: {reason}"
+msgstr "访问实体格式定义目录 {dir} 失败：{reason}"
+
+#: ruyi/ruyipkg/entity_provider.py:267
+#, python-brace-format
+msgid "failed to load entity from {path}: {reason}"
+msgstr "从 {path} 加载实体失败：{reason}"
+
+#: ruyi/ruyipkg/fetcher.py:45
+#, python-brace-format
+msgid "retrying download ({current} of {total} times)"
+msgstr "正在重试下载（第 {current} 次，共 {total} 次）"
+
+#: ruyi/ruyipkg/fetcher.py:57
+#, python-brace-format
+msgid "downloading {url} to {dest}"
+msgstr "正在将 {url} 下载到 {dest}"
+
+#: ruyi/ruyipkg/fetcher.py:66
+#, python-brace-format
+msgid "failed to fetch '{dest}': all source URLs have failed"
+msgstr "获取 '{dest}' 失败：所有源 URL 均失败"
+
+#: ruyi/ruyipkg/fetcher.py:94 ruyi/ruyipkg/fetcher.py:125
+msgid "no fetcher is available on the system"
+msgstr "系统上没有可用的下载器"
+
+#: ruyi/ruyipkg/fetcher.py:105
+#, python-brace-format
+msgid "unknown fetcher '{name}'"
+msgstr "未知的下载器 '{name}'"
+
+#: ruyi/ruyipkg/fetcher.py:111
+#, python-brace-format
+msgid "the requested fetcher '{name}' is unavailable on the system"
+msgstr "请求的下载器 '{name}' 在当前系统不可用"
+
+#: ruyi/ruyipkg/fetcher.py:175 ruyi/ruyipkg/fetcher.py:218
+#, python-brace-format
+msgid "failed to fetch distfile: command '{cmd}' returned {retcode}"
+msgstr "获取分发文件失败：命令 '{cmd}' 返回 {retcode}"
+
+#: ruyi/ruyipkg/install.py:48 ruyi/ruyipkg/install.py:186
+#, python-brace-format
+msgid "atom {atom} matches no package in the repository"
+msgstr "atom {atom} 在仓库中未匹配到任何软件包"
+
+#: ruyi/ruyipkg/install.py:56 ruyi/ruyipkg/install.py:193
+msgid "package has known issue(s)"
+msgstr "软件包有已知问题"
+
+#: ruyi/ruyipkg/install.py:106
+#, python-brace-format
+msgid "don't know how to extract package [green]{pkg}[/]"
+msgstr "不知道如何解压缩软件包 [green]{pkg}[/]"
+
+#: ruyi/ruyipkg/install.py:115
+#, python-brace-format
+msgid "cannot handle package [green]{pkg}[/]: package is both binary and source"
+msgstr "无法处理软件包 [green]{pkg}[/]：软件包既是二进制又是源码"
+
+#: ruyi/ruyipkg/install.py:130
+#, python-brace-format
+msgid "package [green]{pkg}[/] declares no distfile for host {host}"
+msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明分发文件"
+
+#: ruyi/ruyipkg/install.py:150 ruyi/ruyipkg/install.py:376
+#: ruyi/ruyipkg/install.py:503
+#, python-brace-format
+msgid "extracting [green]{distfile}[/] for package [green]{pkg}[/]"
+msgstr "正在为软件包 [green]{pkg}[/] 解压缩 [green]{distfile}[/]"
+
+#: ruyi/ruyipkg/install.py:160
+#, python-brace-format
+msgid "package [green]{pkg}[/] has been extracted to {dest_dir}"
+msgstr "软件包 [green]{pkg}[/] 已被解压缩到 {dest_dir}"
+
+#: ruyi/ruyipkg/install.py:243 ruyi/ruyipkg/install.py:589
+#, python-brace-format
+msgid "don't know how to handle non-binary package [green]{pkg}[/]"
+msgstr "不知道如何处理非二进制软件包 [green]{pkg}[/]"
+
+#: ruyi/ruyipkg/install.py:283 ruyi/ruyipkg/install.py:416
+#, python-brace-format
+msgid "skipping already installed package [green]{pkg}[/]"
+msgstr "跳过已安装的软件包 [green]{pkg}[/]"
+
+#: ruyi/ruyipkg/install.py:291 ruyi/ruyipkg/install.py:424
+#, python-brace-format
+msgid "package [green]{pkg}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
+msgstr "软件包 [green]{pkg}[/] 似乎已安装；由于传入了 [yellow]--reinstall[/]，将移除并重新安装它"
+
+#: ruyi/ruyipkg/install.py:330 ruyi/ruyipkg/install.py:462
+#, python-brace-format
+msgid "package [green]{pkg}[/] installed to [yellow]{install_root}[/]"
+msgstr "软件包 [green]{pkg}[/] 已安装到 [yellow]{install_root}[/]"
+
+#: ruyi/ruyipkg/install.py:356
+#, python-brace-format
+msgid "package [green]{pkg}[/] declares no binary for host {host}"
+msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明二进制文件"
+
+#: ruyi/ruyipkg/install.py:371 ruyi/ruyipkg/install.py:498
+msgid "skipping installation because [yellow]--fetch-only[/] is given"
+msgstr "由于传入了 [yellow]--fetch-only[/]，跳过安装"
+
+#: ruyi/ruyipkg/install.py:486
+#, python-brace-format
+msgid "package [green]{pkg}[/] declares no blob distfile"
+msgstr "软件包 [green]{pkg}[/] 未声明 blob 分发文件"
+
+#: ruyi/ruyipkg/install.py:532
+#, python-brace-format
+msgid "atom [yellow]{atom}[/] is non-existent or not installed"
+msgstr "atom [yellow]{atom}[/] 不存在或未安装"
+
+#: ruyi/ruyipkg/install.py:540
+msgid "no packages to uninstall"
+msgstr "没有要卸载的软件包"
+
+#: ruyi/ruyipkg/install.py:543
+msgid "the following packages will be uninstalled:"
+msgstr "以下软件包将被卸载："
+
+#: ruyi/ruyipkg/install.py:546
+#, python-brace-format
+msgid "  - [green]{category}/{name}[/] ({version})"
+msgstr "  - [green]{category}/{name}[/]（{version}）"
+
+#: ruyi/device/provision.py:180 ruyi/ruyipkg/install.py:554
+msgid "Proceed?"
+msgstr "继续吗？"
+
+#: ruyi/ruyipkg/install.py:555
+msgid "uninstallation aborted"
+msgstr "卸载已中止"
+
+#: ruyi/ruyipkg/install.py:623 ruyi/ruyipkg/install.py:685
+#, python-brace-format
+msgid "skipping not-installed package [green]{pkg}[/]"
+msgstr "跳过未安装的软件包 [green]{pkg}[/]"
+
+#: ruyi/ruyipkg/install.py:633 ruyi/ruyipkg/install.py:695
+#, python-brace-format
+msgid "package [green]{pkg}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
+msgstr "软件包 [green]{pkg}[/] 未被记录为已安装，但其目录 [yellow]{install_root}[/] 存在。"
+
+#: ruyi/ruyipkg/install.py:636 ruyi/ruyipkg/install.py:698
+msgid "Please remove it manually if you are sure it's safe to do so."
+msgstr "如果您确定这样做是安全的，请手动移除它。"
+
+#: ruyi/ruyipkg/install.py:639 ruyi/ruyipkg/install.py:701
+msgid "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
+msgstr "如果您认为这是一个 bug，请在 [yellow]https://github.com/ruyisdk/ruyi/issues[/] 提交工单。"
+
+#: ruyi/ruyipkg/install.py:644 ruyi/ruyipkg/install.py:706
+#, python-brace-format
+msgid "uninstalling package [green]{pkg}[/]"
+msgstr "正在卸载软件包 [green]{pkg}[/]"
+
+#: ruyi/ruyipkg/install.py:657 ruyi/ruyipkg/install.py:719
+#, python-brace-format
+msgid "package [green]{pkg}[/] uninstalled"
+msgstr "软件包 [green]{pkg}[/] 已被卸载"
+
+#: ruyi/ruyipkg/install_cli.py:18
+msgid "Fetch package(s) then extract to current directory"
+msgstr "获取软件包然后解压缩到当前目录"
+
+#: ruyi/ruyipkg/install_cli.py:26
+msgid "Specifier (atom) of the package(s) to extract"
+msgstr "要解压缩的软件包的指示表达式（atom）"
+
+#: ruyi/ruyipkg/install_cli.py:37
+msgid "Destination directory to extract to (default: current directory)"
+msgstr "解压缩的目标目录（默认：当前目录）"
+
+#: ruyi/ruyipkg/install_cli.py:43
+msgid "Extract files directly into DESTDIR instead of package-named subdirectories"
+msgstr "直接将文件解压缩到 DESTDIR 而不是以软件包命名的子目录"
+
+#: ruyi/ruyipkg/install_cli.py:50 ruyi/ruyipkg/install_cli.py:104
+msgid "Fetch distribution files only without installing"
+msgstr "仅获取分发文件而不安装"
+
+#: ruyi/ruyipkg/install_cli.py:56 ruyi/ruyipkg/install_cli.py:110
+#: ruyi/ruyipkg/install_cli.py:156
+msgid "Override the host architecture (normally not needed)"
+msgstr "覆盖主机架构（通常不需要）"
+
+#: ruyi/ruyipkg/install_cli.py:87
+msgid "Install package from configured repository"
+msgstr "从已配置的仓库安装软件包"
+
+#: ruyi/ruyipkg/install_cli.py:95
+msgid "Specifier (atom) of the package to install"
+msgstr "要安装的软件包的指示表达式（atom）"
+
+#: ruyi/ruyipkg/install_cli.py:115
+msgid "Force re-installation of already installed packages"
+msgstr "强制重新安装已安装的软件包"
+
+#: ruyi/ruyipkg/install_cli.py:142
+msgid "Uninstall installed packages"
+msgstr "卸载已安装的软件包"
+
+#: ruyi/ruyipkg/install_cli.py:150
+msgid "Specifier (atom) of the package to uninstall"
+msgstr "要卸载的软件包的指示表达式（atom）"
+
+#: ruyi/ruyipkg/install_cli.py:163
+msgid "Assume yes to all prompts"
+msgstr "对所有问题都回答“是”"
+
+#: ruyi/ruyipkg/list.py:26
+msgid "no filter specified for list operation"
+msgstr "未为 list 操作指定过滤器"
+
+#: ruyi/ruyipkg/list.py:29
+msgid "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --name-contains ''[/]"
+
+#: ruyi/ruyipkg/list.py:55
+msgid "List of available packages:\n"
+msgstr "可用软件包列表：\n"
+
+#: ruyi/ruyipkg/list.py:88
+#, python-brace-format
+msgid "* Slug: [yellow]{slug}[/]"
+msgstr "* Slug：[yellow]{slug}[/]"
+
+#: ruyi/ruyipkg/list.py:90
+msgid "* Slug: (none)"
+msgstr "* Slug：（无）"
+
+#: ruyi/ruyipkg/list.py:91
+#, python-brace-format
+msgid "* Package kind: {kind}"
+msgstr "* 软件包类型：{kind}"
+
+#: ruyi/ruyipkg/list.py:92
+#, python-brace-format
+msgid "* Vendor: {vendor}"
+msgstr "* 供应商：{vendor}"
+
+#: ruyi/ruyipkg/list.py:95
+#, python-brace-format
+msgid "* Upstream version number: {version}"
+msgstr "* 上游版本号：{version}"
+
+#: ruyi/ruyipkg/list.py:98
+msgid "* Upstream version number: (undeclared)"
+msgstr "* 上游版本号：（未声明）"
+
+#: ruyi/ruyipkg/list.py:103
+msgid ""
+"\n"
+"Package has known issue(s):\n"
+msgstr ""
+"\n"
+"软件包有已知问题：\n"
+
+#: ruyi/ruyipkg/list.py:108
+#, python-brace-format
+msgid "Package declares {count} distfile(s):\n"
+msgstr "软件包声明了 {count} 个分发文件：\n"
+
+#: ruyi/ruyipkg/list.py:111
+#, python-brace-format
+msgid "    - Size: [yellow]{size}[/] bytes"
+msgstr "    - 大小：[yellow]{size}[/] 字节"
+
+#: ruyi/ruyipkg/list.py:116
+msgid ""
+"\n"
+"### Binary artifacts\n"
+msgstr ""
+"\n"
+"### 二进制制品\n"
+
+#: ruyi/ruyipkg/list.py:118
+#, python-brace-format
+msgid "* Host [green]{host}[/]:"
+msgstr "* 主机 [green]{host}[/]："
+
+#: ruyi/ruyipkg/list.py:120
+#, python-brace-format
+msgid "    - Distfiles: {distfiles}"
+msgstr "    - 分发文件：{distfiles}"
+
+#: ruyi/ruyipkg/list.py:123
+msgid "    - Available command(s):"
+msgstr "    - 可用命令："
+
+#: ruyi/ruyipkg/list.py:128
+msgid ""
+"\n"
+"### Toolchain metadata\n"
+msgstr ""
+"\n"
+"### 工具链元数据\n"
+
+#: ruyi/ruyipkg/list.py:129
+#, python-brace-format
+msgid "* Target: [bold green]{target}[/]"
+msgstr "* 目标：[bold green]{target}[/]"
+
+#: ruyi/ruyipkg/list.py:130
+#, python-brace-format
+msgid "* Quirks: {quirks}"
+msgstr "* 特殊特性：{quirks}"
+
+#: ruyi/ruyipkg/list.py:131
+msgid "* Components:"
+msgstr "* 组件："
+
+#: ruyi/ruyipkg/list_cli.py:19
+msgid "List available packages in configured repository"
+msgstr "列出已配置仓库中的可用软件包"
+
+#: ruyi/ruyipkg/list_cli.py:27
+msgid "Also show details for every package"
+msgstr "也显示每个软件包的详细信息"
+
+#: ruyi/ruyipkg/list_cli.py:37
+msgid "Match packages that are installed (y/true/1) or not installed (n/false/0)"
+msgstr "匹配已安装（y/true/1）或未安装（n/false/0）的软件包"
+
+#: ruyi/ruyipkg/list_cli.py:46
+msgid "Match packages from categories whose names contain the given string"
+msgstr "匹配属于特定类别的软件包，其中类别的名称包含给定字符串"
+
+#: ruyi/ruyipkg/list_cli.py:54
+msgid "Match packages from the given category"
+msgstr "匹配来自给定类别的软件包"
+
+#: ruyi/ruyipkg/list_cli.py:61
+msgid "Match packages whose names contain the given string"
+msgstr "匹配名称包含给定字符串的软件包"
+
+#: ruyi/ruyipkg/list_cli.py:70
+msgid "Match packages related to the given entity"
+msgstr "匹配与给定实体相关的软件包"
+
+#. i18n NOTE: used as news item table title
+#: ruyi/ruyipkg/news.py:19
+msgid "No."
+msgstr "序号"
+
+#. i18n NOTE: used as news item table title
+#: ruyi/ruyipkg/news.py:21
+msgid "ID"
+msgstr "ID"
+
+#. i18n NOTE: used as news item table title
+#: ruyi/ruyipkg/news.py:23
+msgid "Title"
+msgstr "标题"
+
+#: ruyi/ruyipkg/news.py:48
+#, python-brace-format
+msgid ""
+"\n"
+"There are {count} new news item(s):\n"
+msgstr ""
+"\n"
+"有 {count} 条新的新闻条目：\n"
+
+#: ruyi/ruyipkg/news.py:53
+msgid ""
+"\n"
+"You can read them with [yellow]ruyi news read[/]."
+msgstr ""
+"\n"
+"您可以使用 [yellow]ruyi news read[/] 阅读它们。"
+
+#: ruyi/ruyipkg/news.py:59
+msgid ""
+"\n"
+"All news items have been read. To see a list of them, run [yellow]ruyi news list[/].\n"
+msgstr ""
+"\n"
+"所有新闻条目均已读。如要查看新闻列表，请执行 [yellow]ruyi news list[/]。\n"
+
+#: ruyi/ruyipkg/news.py:78
+msgid "[bold green]News items:[/]\n"
+msgstr "[bold green]新闻条目：[/]\n"
+
+#: ruyi/ruyipkg/news.py:80
+msgid "  (no unread item)"
+msgstr "  （无未读条目）"
+
+#: ruyi/ruyipkg/news.py:80
+msgid "  (no item)"
+msgstr "  （无条目）"
+
+#: ruyi/ruyipkg/news.py:111
+msgid "No news to display."
+msgstr "没有要显示的新闻。"
+
+#: ruyi/ruyipkg/news.py:137
+#, python-brace-format
+msgid "there is no news item with ordinal {ord}"
+msgstr "没有序号为 {ord} 的新闻条目"
+
+#: ruyi/ruyipkg/news.py:144
+#, python-brace-format
+msgid "there is no news item with ID '{id}'"
+msgstr "没有 ID 为 '{id}' 的新闻条目"
+
+#: ruyi/ruyipkg/news_cli.py:18
+msgid "List and read news items from configured repository"
+msgstr "列出并阅读已配置仓库中的新闻条目"
+
+#: ruyi/ruyipkg/news_cli.py:40
+msgid "List news items"
+msgstr "列出新闻条目"
+
+#: ruyi/ruyipkg/news_cli.py:47
+msgid "List unread news items only"
+msgstr "仅列出未读的新闻条目"
+
+#: ruyi/ruyipkg/news_cli.py:64
+msgid "Read news items"
+msgstr "阅读新闻条目"
+
+#: ruyi/ruyipkg/news_cli.py:66
+msgid "Outputs news item(s) to the console and mark as already read. Defaults to reading all unread items if no item is specified."
+msgstr "将新闻条目输出到控制台并标记为已读。如果未指定条目，默认阅读所有未读条目。"
+
+#: ruyi/ruyipkg/news_cli.py:75
+msgid "Do not output anything and only mark as read"
+msgstr "不输出任何内容，仅标记为已读"
+
+#: ruyi/ruyipkg/news_cli.py:81
+msgid "Ordinal or ID of the news item(s) to read"
+msgstr "要阅读的新闻条目的序号或 ID"
+
+#: ruyi/ruyipkg/profile_cli.py:15
+msgid "List all available profiles"
+msgstr "列出所有可用配置文件"
+
+#: ruyi/ruyipkg/profile_cli.py:33
+#, python-brace-format
+msgid "{profile_id} (needs quirks: {need_quirks})"
+msgstr "{profile_id}（需要特殊特性：{need_quirks}）"
+
+#: ruyi/ruyipkg/repo.py:172
+#, python-brace-format
+msgid "unrecognized dist URL scheme: {scheme}"
+msgstr "未识别的分发 URL 协议：{scheme}"
+
+#: ruyi/ruyipkg/repo.py:292
+#, python-brace-format
+msgid "the package repository does not exist at [yellow]{root}[/]"
+msgstr "软件包仓库不存在于 [yellow]{root}[/]"
+
+#: ruyi/ruyipkg/repo.py:297
+#, python-brace-format
+msgid "cloning from [cyan link={remote}]{remote}[/]"
+msgstr "正在从 [cyan link={remote}]{remote}[/] 克隆"
+
+#: ruyi/ruyipkg/repo.py:320
+msgid "updating the package repository"
+msgstr "正在更新软件包仓库"
+
+#: ruyi/ruyipkg/repo.py:337
+msgid "package repository is updated"
+msgstr "软件包仓库已更新"
+
+#: ruyi/ruyipkg/repo.py:615
+#, python-brace-format
+msgid "UnicodeDecodeError: {path}"
+msgstr "Unicode 解码错误：{path}"
+
+#: ruyi/ruyipkg/repo.py:651
+#, python-brace-format
+msgid "unexpected return type of cmd plugin '{plugin_id}': {type} is not int."
+msgstr "命令插件 '{plugin_id}' 的返回类型非预期：{type} 不是 int。"
+
+#: ruyi/ruyipkg/repo.py:657
+msgid "forcing return code to 1; the plugin should be fixed"
+msgstr "强制返回码为 1；该插件需要被修复"
+
+#: ruyi/ruyipkg/unpack.py:197
+#, python-brace-format
+msgid "untar failed: command {cmd} returned {retcode}"
+msgstr "tar 解包失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:216
+#, python-brace-format
+msgid "unzip failed: command {cmd} returned {retcode}"
+msgstr "unzip 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:240
+#, python-brace-format
+msgid "gunzip failed: command {cmd} returned {retcode}"
+msgstr "gunzip 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:264
+#, python-brace-format
+msgid "bzip2 failed: command {cmd} returned {retcode}"
+msgstr "bzip2 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:284
+#, python-brace-format
+msgid "lz4 failed: command {cmd} returned {retcode}"
+msgstr "lz4 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:308
+#, python-brace-format
+msgid "xz failed: command {cmd} returned {retcode}"
+msgstr "xz 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:328
+#, python-brace-format
+msgid "zstd failed: command {cmd} returned {retcode}"
+msgstr "zstd 失败：命令 {cmd} 返回 {retcode}"
+
+#: ruyi/ruyipkg/unpack.py:355
+#, python-brace-format
+msgid "file '{filename}' does not appear to be a deb"
+msgstr "文件 '{filename}' 似乎不是一个 deb"
+
+#: ruyi/ruyipkg/unpack_method.py:65
+#, python-brace-format
+msgid "don't know how to unpack file {filename}"
+msgstr "不知道如何解包文件 {filename}"
+
+#: ruyi/ruyipkg/update_cli.py:15
+msgid "Update RuyiSDK repo and packages"
+msgstr "更新 RuyiSDK 仓库和软件包"
+
+#: ruyi/ruyipkg/update_cli.py:37
+msgid ""
+"\n"
+"Newer versions are available for some of your installed packages:\n"
+msgstr ""
+"\n"
+"您的某些已安装软件包有更新的版本可用：\n"
+
+#: ruyi/ruyipkg/update_cli.py:46
+msgid ""
+"\n"
+"Re-run [yellow]ruyi install[/] to upgrade, and don't forget to re-create any affected\n"
+"virtual environments."
+msgstr ""
+"\n"
+"重新运行 [yellow]ruyi install[/] 以升级，不要忘记重新创建任何受影响的虚拟环境。"
+
+#: ruyi/telemetry/provider.py:23
+msgid ""
+"\n"
+"RuyiSDK collects minimal usage data in the form of just a version number of\n"
+"the running [yellow]ruyi[/], to help us improve the product. With your consent,\n"
+"RuyiSDK may also collect additional non-tracking usage data to be sent\n"
+"periodically. The data will be recorded and processed by RuyiSDK team-managed\n"
+"servers located in the Chinese mainland.\n"
+"\n"
+"[green]By default, nothing leaves your machine[/], and you can also turn off usage data\n"
+"collection completely. Only with your explicit permission can [yellow]ruyi[/] collect and\n"
+"upload more usage data. You can change this setting at any time by running\n"
+"[yellow]ruyi telemetry consent[/], [yellow]ruyi telemetry local[/], or [yellow]ruyi telemetry optout[/].\n"
+"\n"
+"We'll also send a one-time report from this [yellow]ruyi[/] installation so the RuyiSDK\n"
+"team can better understand adoption. If you choose to opt out, this will be the\n"
+"only data to be ever uploaded, without any tracking ID being generated or kept.\n"
+"Thank you for helping us build a better experience!\n"
+msgstr ""
+"\n"
+"RuyiSDK 仅以运行中的 [yellow]ruyi[/] 版本号的形式最小化地收集使用数据，以帮助我们改进产品。经您同意，\n"
+"RuyiSDK 也可以收集并定期发送额外的、无法用来追踪用户身份的使用数据。数据将由位于中国大陆的、\n"
+"由 RuyiSDK 团队管理的服务器记录和处理。\n"
+"\n"
+"[green]默认情况下，任何内容都不会离开您的计算机[/]，您也可以完全关闭使用数据收集。\n"
+"只有在您明确许可的情况下，[yellow]ruyi[/] 才能收集和上传更多使用数据。您随时可以通过运行\n"
+"[yellow]ruyi telemetry consent[/]、[yellow]ruyi telemetry local[/] 或 [yellow]ruyi telemetry optout[/] 更改设置。\n"
+"\n"
+"我们还将一次性从本台 [yellow]ruyi[/] 实例发送单条报告，以便 RuyiSDK 团队更好地了解产品用户增长情况。\n"
+"如果您选择不同意，这将是唯一被上传的数据，我们不会生成或保留任何跟踪用的 ID。\n"
+"感谢您帮助我们构建更好的体验！\n"
+
+#: ruyi/telemetry/provider.py:42
+msgid "Do you agree to have usage data periodically uploaded?"
+msgstr "您是否同意定期上传使用数据？"
+
+#: ruyi/telemetry/provider.py:44
+msgid ""
+"\n"
+"Do you want to opt out of telemetry entirely?"
+msgstr ""
+"\n"
+"您是否要完全禁用遥测？"
+
+#: ruyi/telemetry/provider.py:46
+msgid "malformed telemetry state: unable to determine upload weekday, nothing will be uploaded"
+msgstr "遥测状态格式错误：无法确定上传日，将不会上传任何数据"
+
+#: ruyi/telemetry/provider.py:121
+msgid "telemetry data uploading is now enabled"
+msgstr "现已启用遥测数据上传"
+
+#: ruyi/telemetry/provider.py:124
+msgid "you can opt out at any time by running [yellow]ruyi telemetry optout[/]"
+msgstr "您可以随时通过运行 [yellow]ruyi telemetry optout[/] 退出遥测"
+
+#: ruyi/telemetry/provider.py:128
+msgid "telemetry mode is now set to local collection only"
+msgstr "遥测模式现已设置为仅本地收集"
+
+#: ruyi/telemetry/provider.py:131
+msgid "you can re-enable telemetry data uploading at any time by running [yellow]ruyi telemetry consent[/]"
+msgstr "您可以随时通过运行 [yellow]ruyi telemetry consent[/] 重新启用遥测数据上传"
+
+#: ruyi/telemetry/provider.py:135
+msgid "or opt out at any time by running [yellow]ruyi telemetry optout[/]"
+msgstr "或随时通过运行 [yellow]ruyi telemetry optout[/] 退出遥测"
+
+#: ruyi/telemetry/provider.py:138
+msgid "telemetry data collection is now disabled"
+msgstr "现已禁用遥测数据收集"
+
+#: ruyi/telemetry/provider.py:141
+msgid "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
+msgstr "您可以随时通过运行 [yellow]ruyi telemetry consent[/] 重新启用遥测数据上传"
+
+#: ruyi/telemetry/provider.py:331
+#, python-brace-format
+msgid "scope {scope}: usage information has already been uploaded today at {last_upload_time_str}"
+msgstr "{scope} 范畴：使用信息已于今天 {last_upload_time_str} 上传"
+
+#: ruyi/telemetry/provider.py:340
+#, python-brace-format
+msgid "scope {scope}: usage information has already been uploaded sometime today"
+msgstr "{scope} 范畴：使用信息已于今天上传"
+
+#: ruyi/telemetry/provider.py:348
+#, python-brace-format
+msgid "scope {scope}: the next upload will happen [bold green]today[/] if not already"
+msgstr "{scope} 范畴：下次上传将在[bold green]今天[/]进行（如果尚未上传）"
+
+#: ruyi/telemetry/provider.py:355
+msgid "the next upload will happen anytime [yellow]ruyi[/] is executed:"
+msgstr "下次上传将在执行 [yellow]ruyi[/] 时进行："
+
+#: ruyi/telemetry/provider.py:359
+#, python-brace-format
+msgid "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+msgstr "  -  在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
+
+#: ruyi/telemetry/provider.py:365
+msgid "  - or if the last upload is more than a week ago"
+msgstr "  - 或者如果上次上传是一周之前"
+
+#: ruyi/telemetry/provider.py:372
+msgid "telemetry mode is [green]off[/]: nothing is collected or uploaded after the first run"
+msgstr "遥测模式为 [green]off[/]：首次运行后，不会收集或上传任何内容"
+
+#: ruyi/telemetry/provider.py:392
+msgid "telemetry mode is [green]local[/]: local usage collection only, no usage uploads except if requested"
+msgstr "遥测模式为 [green]local[/]：仅本地使用收集，除非明确请求否则不会上传"
+
+#: ruyi/telemetry/provider.py:404
+msgid "telemetry mode is [green]on[/]: usage data is collected and periodically uploaded"
+msgstr "遥测模式为 [green]on[/]：使用数据会被收集并定期上传"
+
+#: ruyi/telemetry/provider.py:409
+#, python-brace-format
+msgid "non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {weekday}[/]"
+msgstr "无法用来追踪用户身份的使用信息将于[bold green]每周{weekday}[/]上传到 RuyiSDK 管理的服务器"
+
+#: ruyi/telemetry/provider.py:417
+#, python-brace-format
+msgid "this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {weekday}[/]"
+msgstr "本 [yellow]ruyi[/] 安装的遥测模式被设置为 [yellow]on[/]，[bold]将于[bold green]每周{weekday}[/]上传无法用来追踪用户身份的使用信息到 RuyiSDK 管理的服务器[/]"
+
+#: ruyi/telemetry/provider.py:426
+msgid "in order to hide this banner:"
+msgstr "要隐藏此横幅："
+
+#: ruyi/telemetry/provider.py:427
+msgid " - opt out with [yellow]ruyi telemetry optout[/]"
+msgstr " - 使用 [yellow]ruyi telemetry optout[/] 退出遥测"
+
+#: ruyi/telemetry/provider.py:429
+msgid " - or give consent with [yellow]ruyi telemetry consent[/]"
+msgstr " - 或使用 [yellow]ruyi telemetry consent[/] 明确同意"
+
+#: ruyi/telemetry/telemetry_cli.py:19
+msgid "Manage your telemetry preferences"
+msgstr "管理您的遥测偏好设置"
+
+#: ruyi/telemetry/telemetry_cli.py:51
+msgid "Give consent to telemetry data uploads"
+msgstr "同意上传遥测数据"
+
+#: ruyi/telemetry/telemetry_cli.py:69
+msgid "Set telemetry mode to local collection only"
+msgstr "将遥测模式设置为仅本地收集"
+
+#: ruyi/telemetry/telemetry_cli.py:87
+msgid "Opt out of telemetry data collection"
+msgstr "退出遥测数据收集"
+
+#: ruyi/telemetry/telemetry_cli.py:104
+msgid "Print the current telemetry mode"
+msgstr "打印当前遥测模式"
+
+#: ruyi/telemetry/telemetry_cli.py:112
+msgid "Enable verbose output"
+msgstr "启用详细输出"
+
+#: ruyi/telemetry/telemetry_cli.py:124
+msgid "telemetry mode is [green]off[/]: no further data will be collected"
+msgstr "遥测模式为 [green]off[/]：不会收集更多数据"
+
+#: ruyi/telemetry/telemetry_cli.py:135
+msgid "Upload collected telemetry data now"
+msgstr "立即上传已收集的遥测数据"
+
+#: ruyi/utils/git.py:81
+msgid "transferring objects"
+msgstr "正在传输对象"
+
+#: ruyi/utils/git.py:85
+msgid "processing deltas"
+msgstr "正在处理 deltas"
+
+#: ruyi/utils/git.py:118
+#, python-brace-format
+msgid "URL of remote '[yellow]{remote}[/]' does not match expected URL"
+msgstr "远端 '[yellow]{remote}[/]' 的 URL 与预期 URL 不匹配"
+
+#: ruyi/utils/git.py:122
+#, python-brace-format
+msgid "repository:          [yellow]{path}[/]"
+msgstr "仓库：        [yellow]{path}[/]"
+
+#: ruyi/utils/git.py:123
+#, python-brace-format
+msgid "expected remote URL: [yellow]{url}[/]"
+msgstr "预期远端 URL： [yellow]{url}[/]"
+
+#: ruyi/utils/git.py:124
+#, python-brace-format
+msgid "actual remote URL:   [yellow]{url}[/]"
+msgstr "实际远端 URL： [yellow]{url}[/]"
+
+#: ruyi/utils/git.py:125
+msgid "please [bold red]fix the repo settings manually[/]"
+msgstr "请[bold red]手动修复仓库设置[/]"
+
+#: ruyi/utils/git.py:141
+#, python-brace-format
+msgid "failed to fetch from remote URL {url}: {reason}"
+msgstr "从远端 URL {url} 获取失败：{reason}"
+
+#: ruyi/utils/git.py:176
+msgid "cannot fast-forward repo to newly fetched state"
+msgstr "无法将仓库快进到新获取的状态"
+
+#: ruyi/utils/git.py:177
+msgid "manual intervention is required to avoid data loss"
+msgstr "需要手动干预以避免数据丢失"
+
+#: ruyi/utils/prereqs.py:62
+#, python-brace-format
+msgid "The command(s) {cmds} cannot be found in PATH, which [yellow]ruyi[/] requires"
+msgstr "在 PATH 中找不到命令 {cmds}，而 [yellow]ruyi[/] 需要它们"
+
+#: ruyi/utils/prereqs.py:66
+msgid "please install and retry"
+msgstr "请安装并重试"
+
+#: ruyi/utils/prereqs.py:72
+msgid "please install them and press [green]Enter[/] to retry, or [green]Ctrl+C[/] to exit"
+msgstr "请安装它们并按 [green]Enter[/] 重试，或按 [green]Ctrl+C[/] 退出"
+
+#: ruyi/utils/prereqs.py:78
+msgid "exiting due to EOF"
+msgstr "由于 EOF 退出"
+
+#: ruyi/utils/prereqs.py:81
+msgid "exiting due to keyboard interrupt"
+msgstr "由于键盘中断退出"
+
+#: ruyi/utils/ssl_patch.py:39
+msgid "failed to probe system libcrypto"
+msgstr "探测系统 libcrypto 失败"
+
+#: ruyi/version.py:9
+msgid ""
+"Copyright (C) Institute of Software, Chinese Academy of Sciences (ISCAS).\n"
+"All rights reserved.\n"
+"License: Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0>\n"
+msgstr ""
+"版权所有 (C) 中国科学院软件研究所 (ISCAS)。所有权利保留。\n"
+"许可证：Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0>\n"
+
+#: ruyi/version.py:18
+msgid ""
+"This distribution of ruyi contains code licensed under the Mozilla Public\n"
+"License 2.0 (https://mozilla.org/MPL/2.0/). You can get the respective\n"
+"project's sources from the project's official website:\n"
+"\n"
+"* certifi: https://github.com/certifi/python-certifi\n"
+msgstr ""
+"此 ruyi 发行版包含以 Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/)\n"
+"授权的代码。您可以从相应项目的官方网站获取源代码：\n"
+"\n"
+"* certifi: https://github.com/certifi/python-certifi\n"
+
