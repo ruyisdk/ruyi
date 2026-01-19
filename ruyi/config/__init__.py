@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from ..utils.xdg_basedir import XDGPathEntry
     from .news import NewsReadStatusStore
 
+import babel
+
 from ..i18n import _
 from . import errors
 from . import schema
@@ -282,6 +284,10 @@ class GlobalConfig:
     @property
     def lang_code(self) -> str:
         return self._lang_code
+
+    @cached_property
+    def babel_locale(self) -> babel.Locale:
+        return babel.Locale.parse(self.lang_code)
 
     @property
     def cache_root(self) -> os.PathLike[Any]:
