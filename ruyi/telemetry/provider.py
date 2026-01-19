@@ -383,7 +383,7 @@ class TelemetryProvider:
                 self.logger.D(MALFORMED_TELEMETRY_STATE_MSG)
             return
 
-        upload_wday_name = calendar.day_name[upload_wday]
+        upload_wday_name = self._gc.babel_locale.days["format"]["wide"][upload_wday]
 
         if self.local_mode:
             if for_cli_verbose_output:
