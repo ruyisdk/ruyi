@@ -233,6 +233,7 @@ jobs:
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
           sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
+          sed -i 's@arpy certifi jinja2@arpy babel certifi jinja2@' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           export PIPX_BIN_DIR=/usr/local/bin
           export RUYI_VERSION=0.43.0
           ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha

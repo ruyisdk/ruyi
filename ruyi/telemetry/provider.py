@@ -356,7 +356,7 @@ class TelemetryProvider:
             )
             self.logger.I(
                 _(
-                    "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+                    "  - between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
                 ).format(
                     time_start=next_upload_day_str,
                     time_end=next_upload_day_end_str,
@@ -383,7 +383,7 @@ class TelemetryProvider:
                 self.logger.D(MALFORMED_TELEMETRY_STATE_MSG)
             return
 
-        upload_wday_name = calendar.day_name[upload_wday]
+        upload_wday_name = self._gc.babel_locale.days["format"]["wide"][upload_wday]
 
         if self.local_mode:
             if for_cli_verbose_output:

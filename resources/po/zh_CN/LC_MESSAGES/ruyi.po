@@ -1787,8 +1787,8 @@ msgstr "下次上传将在执行 [yellow]ruyi[/] 时进行："
 
 #: ruyi/telemetry/provider.py:359
 #, python-brace-format
-msgid "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
-msgstr "  -  在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
+msgid "  - between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+msgstr "  - 在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
 
 #: ruyi/telemetry/provider.py:365
 msgid "  - or if the last upload is more than a week ago"
@@ -1809,12 +1809,12 @@ msgstr "遥测模式为 [green]on[/]：使用数据会被收集并定期上传"
 #: ruyi/telemetry/provider.py:409
 #, python-brace-format
 msgid "non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {weekday}[/]"
-msgstr "无法用来追踪用户身份的使用信息将于[bold green]每周{weekday}[/]上传到 RuyiSDK 管理的服务器"
+msgstr "无法用来追踪用户身份的使用信息将于[bold green]每{weekday}[/]上传到 RuyiSDK 管理的服务器"
 
 #: ruyi/telemetry/provider.py:417
 #, python-brace-format
 msgid "this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {weekday}[/]"
-msgstr "本 [yellow]ruyi[/] 安装的遥测模式被设置为 [yellow]on[/]，[bold]将于[bold green]每周{weekday}[/]上传无法用来追踪用户身份的使用信息到 RuyiSDK 管理的服务器[/]"
+msgstr "本 [yellow]ruyi[/] 安装的遥测模式被设置为 [yellow]on[/]，[bold]将于[bold green]每{weekday}[/]上传无法用来追踪用户身份的使用信息到 RuyiSDK 管理的服务器[/]"
 
 #: ruyi/telemetry/provider.py:426
 msgid "in order to hide this banner:"
