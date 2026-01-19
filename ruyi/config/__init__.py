@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from .news import NewsReadStatusStore
 
 import babel
+# not sure why Pyright insists on individual imports
+# otherwise, at the use site (`except babel.core.UnknownLocaleError`):
+#   error: "core" is not a known attribute of module "babel" (reportAttributeAccessIssue)
+from babel.core import UnknownLocaleError
 
 from ..i18n import _
 from . import errors
@@ -289,7 +293,7 @@ class GlobalConfig:
     def babel_locale(self) -> babel.Locale:
         try:
             return babel.Locale.parse(self.lang_code)
-        except babel.core.UnknownLocaleError:
+        except UnknownLocaleError:
             # this can happen in case of unrecognized locale names, which
             # apparently falls back to "C"
             return babel.Locale.parse("en_US")
