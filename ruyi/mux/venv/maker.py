@@ -390,9 +390,11 @@ def do_make_venv(
             )
         )
     else:
-        logger.I(_("Creating a Ruyi virtual environment at [green]{dest}[/]...").format(
-            dest=dest,
-                                                                                        ))
+        logger.I(
+            _("Creating a Ruyi virtual environment at [green]{dest}[/]...").format(
+                dest=dest,
+            )
+        )
 
     maker = VenvMaker(
         config,

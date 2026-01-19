@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import sys
 
 import ruyi
@@ -93,8 +94,11 @@ def entrypoint() -> None:
     #
     # we assume the one-file build if Nuitka is detected; sys.argv[0] does NOT
     # work if it's just `ruyi` so we have to check our parent process in that case
-    self_exe = get_nuitka_self_exe() if gm.is_packaged else __file__
     sys.argv[0] = get_argv0()
+    if gm.is_packaged:
+        self_exe = get_nuitka_self_exe()
+    else:
+        self_exe = str(pathlib.Path(sys.argv[0]).resolve())
     gm.record_self_exe(sys.argv[0], __file__, self_exe)
 
     from ruyi.config import GlobalConfig
