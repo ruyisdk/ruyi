@@ -287,7 +287,12 @@ class GlobalConfig:
 
     @cached_property
     def babel_locale(self) -> babel.Locale:
-        return babel.Locale.parse(self.lang_code)
+        try:
+            return babel.Locale.parse(self.lang_code)
+        except babel.core.UnknownLocaleError:
+            # this can happen in case of unrecognized locale names, which
+            # apparently falls back to "C"
+            return babel.Locale.parse("en_US")
 
     @property
     def cache_root(self) -> os.PathLike[Any]:
