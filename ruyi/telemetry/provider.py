@@ -356,7 +356,7 @@ class TelemetryProvider:
             )
             self.logger.I(
                 _(
-                    "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+                    "  - between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
                 ).format(
                     time_start=next_upload_day_str,
                     time_end=next_upload_day_end_str,

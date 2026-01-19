@@ -1787,8 +1787,8 @@ msgstr "下次上传将在执行 [yellow]ruyi[/] 时进行："
 
 #: ruyi/telemetry/provider.py:359
 #, python-brace-format
-msgid "  -  between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
-msgstr "  -  在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
+msgid "  - between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
+msgstr "  - 在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
 
 #: ruyi/telemetry/provider.py:365
 msgid "  - or if the last upload is more than a week ago"
