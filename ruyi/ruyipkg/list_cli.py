@@ -27,6 +27,14 @@ class ListCommand(
             help=_("Also show details for every package"),
         )
 
+        p.add_argument(
+            "--all",
+            action=ListFilterAction,
+            nargs=0,
+            dest="filters",
+            help=_("Match and show all packages"),
+        )
+
         # filter expressions
         p.add_argument(
             "--is-installed",

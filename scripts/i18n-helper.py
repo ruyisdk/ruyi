@@ -25,7 +25,7 @@ def main() -> int:
     )
     parser.add_argument(
         "action",
-        choices=["refresh-pot", "init-po", "build-mo"],
+        choices=["refresh-pot", "init-po", "merge-po", "build-mo"],
         help="The action to perform.",
     )
     parser.add_argument(
@@ -47,6 +47,11 @@ def main() -> int:
                 print("fatal error: --locale must be specified for init-po action")
                 return 1
             return _do_init_po(locale)
+        case "merge-po":
+            if locale is None:
+                print("fatal error: --locale must be specified for merge-po action")
+                return 1
+            return _do_merge_po(locale)
         case "build-mo":
             if locale is None:
                 print("fatal error: --locale must be specified for build-mo action")
@@ -161,6 +166,28 @@ def _do_init_po(locale: str) -> int:
             # destination
             "-d",
             "resources/po",
+        ]
+        _invoke_babel(babel_argv)
+    return 0
+
+
+def _do_merge_po(locale: str) -> int:
+    for domain in DOMAINS:
+        babel_argv = [
+            "pybabel",
+            "update",
+            # project metadata
+            f"--domain={domain}",
+            "-l",
+            locale,
+            # same formatting as the POT
+            "--no-wrap",
+            # destination
+            "-d",
+            "resources/po",
+            # input POT file
+            "-i",
+            f"resources/po/{domain}.pot",
         ]
         _invoke_babel(babel_argv)
     return 0
