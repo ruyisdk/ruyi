@@ -26,7 +26,7 @@ def do_list(
         logger.F(_("no filter specified for list operation"))
         logger.I(
             _(
-                "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
+                "for the old behavior of listing all packages, try [yellow]ruyi list --all[/]"
             )
         )
         return 1

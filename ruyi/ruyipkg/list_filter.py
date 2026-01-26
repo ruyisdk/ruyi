@@ -19,6 +19,7 @@ class ListFilterOpKind(enum.Enum):
     NAME_CONTAINS = 3
     RELATED_TO_ENTITY = 4
     IS_INSTALLED = 5
+    ALL = 6
 
 
 class ListFilterOp(NamedTuple):
@@ -35,6 +36,8 @@ class ListFilterExecCtx(NamedTuple):
 
 def _execute_filter_op(op: ListFilterOp, ctx: ListFilterExecCtx) -> bool:
     match op.op:
+        case ListFilterOpKind.ALL:
+            return True
         case ListFilterOpKind.CATEGORY_CONTAINS:
             return op.arg in ctx.category
         case ListFilterOpKind.CATEGORY_IS:
@@ -102,9 +105,9 @@ class ListFilterAction(ArgcompleteAction):
         help: str | None = None,
         metavar: str | tuple[str, ...] | None = None,
     ) -> None:
-        # for now let's just support unary filter ops
-        if nargs != 1:
-            raise ValueError("nargs != 1 not supported")
+        # for now let's just support argument-less and unary filter ops
+        if nargs not in (None, 0, 1):
+            raise ValueError("nargs not supported")
         if const is not None:
             raise ValueError("const not supported")
         if default is not None:
@@ -143,6 +146,8 @@ class ListFilterAction(ArgcompleteAction):
                 self.filter_op_kind = ListFilterOpKind.RELATED_TO_ENTITY
             case "is-installed":
                 self.filter_op_kind = ListFilterOpKind.IS_INSTALLED
+            case "all":
+                self.filter_op_kind = ListFilterOpKind.ALL
             case _:
                 # should never happen
                 self.filter_op_kind = ListFilterOpKind.UNKNOWN
@@ -158,6 +163,11 @@ class ListFilterAction(ArgcompleteAction):
         if not dest:
             dest = ListFilter()
             setattr(namespace, self.dest, dest)
+
+        if self.filter_op_kind == ListFilterOpKind.ALL:
+            # "--all" takes no argument
+            dest.append(ListFilterOp(ListFilterOpKind.ALL, ""))
+            return
 
         val: str
         if isinstance(values, str):

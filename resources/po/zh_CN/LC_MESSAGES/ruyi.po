@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.45.0-alpha.20251230\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-01-16 00:49+0800\n"
+"POT-Creation-Date: 2026-01-26 15:56+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -18,16 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: ruyi/__main__.py:54
+#: ruyi/__main__.py:57
 msgid "refusing to run as super user outside CI without explicit consent"
 msgstr "拒绝在无明示授权的前提下，在 CI 环境以外以超级用户身份运行"
 
-#: ruyi/__main__.py:59
+#: ruyi/__main__.py:62
 #, python-brace-format
 msgid "re-run with environment variable [yellow]{env_var}[/] set to one of [yellow]{choices}[/] to signify consent"
 msgstr "将环境变量 [yellow]{env_var}[/] 设为 [yellow]{choices}[/] 其中之一以明示授权，而后请重新运行"
 
-#: ruyi/__main__.py:72
+#: ruyi/__main__.py:75
 msgid "no argv?"
 msgstr "没有 argv？"
 
@@ -38,10 +38,6 @@ msgstr "子命令"
 #: ruyi/cli/cmd.py:162
 msgid "RuyiSDK Package Manager"
 msgstr "RuyiSDK 包管理器"
-
-#: ruyi/cli/cmd.py:174 ruyi/cli/version_cli.py:15
-msgid "Print version information"
-msgstr "打印版本信息"
 
 #: ruyi/cli/cmd.py:179
 msgid "Give the output in a machine-friendly format if applicable"
@@ -337,6 +333,10 @@ msgstr "可接受的选择：从 1 到 {nr_choices}（含）的整数。"
 msgid "Out-of-range input [yellow]'{user_input}'[/]."
 msgstr "输入 [yellow]'{user_input}'[/] 超出了范围。"
 
+#: ruyi/cli/cmd.py:174 ruyi/cli/version_cli.py:15
+msgid "Print version information"
+msgstr "打印版本信息"
+
 #: ruyi/cli/version_cli.py:32
 #, python-brace-format
 msgid ""
@@ -352,12 +352,12 @@ msgstr ""
 msgid "This Ruyi installation is externally managed."
 msgstr "该 Ruyi 安装由外部管理。"
 
-#: ruyi/config/__init__.py:120
+#: ruyi/config/__init__.py:126
 #, python-brace-format
 msgid "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
 msgstr "配置项 [yellow]{key}[/] 不能从用户配置文件被设置；忽略"
 
-#: ruyi/config/__init__.py:142
+#: ruyi/config/__init__.py:148
 #, python-brace-format
 msgid "the local repo path '{path}' is not absolute; ignoring"
 msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
@@ -762,133 +762,133 @@ msgstr "未找到命令 [yellow]{basename}[/] 对应的已配置目标"
 msgid "this virtual environment has no QEMU-like emulator configured"
 msgstr "此虚拟环境未配置有类似 QEMU 的模拟器"
 
-#: ruyi/mux/venv/maker.py:71
+#: ruyi/mux/venv/maker.py:72
 msgid "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
 msgstr "当前，您必须至少指定一个工具链 atom，例如 [yellow]`-t gnu-plct`[/]"
 
-#: ruyi/mux/venv/maker.py:79
+#: ruyi/mux/venv/maker.py:80
 #, python-brace-format
 msgid "profile '{profile}' not found"
 msgstr "未找到配置文件 '{profile}'"
 
-#: ruyi/mux/venv/maker.py:97 ruyi/mux/venv/maker.py:168
+#: ruyi/mux/venv/maker.py:98 ruyi/mux/venv/maker.py:169
 #, python-brace-format
 msgid "cannot match a toolchain package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到工具链软件包"
 
-#: ruyi/mux/venv/maker.py:103 ruyi/mux/venv/maker.py:176
+#: ruyi/mux/venv/maker.py:104 ruyi/mux/venv/maker.py:177
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not a toolchain"
 msgstr "软件包 [yellow]{atom}[/] 不是工具链"
 
-#: ruyi/mux/venv/maker.py:110 ruyi/mux/venv/maker.py:293
+#: ruyi/mux/venv/maker.py:111 ruyi/mux/venv/maker.py:294
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] does not support all necessary features for the profile [yellow]{profile}[/]"
 msgstr "软件包 [yellow]{atom}[/] 不支持配置文件 [yellow]{profile}[/] 所需的所有特性"
 
-#: ruyi/mux/venv/maker.py:117 ruyi/mux/venv/maker.py:299
+#: ruyi/mux/venv/maker.py:118 ruyi/mux/venv/maker.py:300
 #, python-brace-format
 msgid "quirks needed by profile:   {humanized_list}"
 msgstr "配置文件所需的特殊特性：{humanized_list}"
 
-#: ruyi/mux/venv/maker.py:122 ruyi/mux/venv/maker.py:304
+#: ruyi/mux/venv/maker.py:123 ruyi/mux/venv/maker.py:305
 #, python-brace-format
 msgid "quirks provided by package: {humanized_list}"
 msgstr "软件包所提供的特殊特性：{humanized_list}"
 
-#: ruyi/mux/venv/maker.py:131
+#: ruyi/mux/venv/maker.py:132
 #, python-brace-format
 msgid "the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
 msgstr "目标元组 [yellow]{target_tuple}[/] 已被请求的工具链之一涵盖"
 
-#: ruyi/mux/venv/maker.py:136
+#: ruyi/mux/venv/maker.py:137
 msgid "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
 msgstr "目前，只有目标元组不同的工具链才能在一个虚拟环境中共存"
 
-#: ruyi/mux/venv/maker.py:145
+#: ruyi/mux/venv/maker.py:146
 msgid "cannot find the installed directory for the toolchain"
 msgstr "找不到工具链的安装目录"
 
-#: ruyi/mux/venv/maker.py:157
+#: ruyi/mux/venv/maker.py:158
 msgid "sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given"
 msgstr "请求了 sysroot，但工具链软件包不含 sysroot，且命令行上未给出 [yellow]--sysroot-from[/]"
 
-#: ruyi/mux/venv/maker.py:188
+#: ruyi/mux/venv/maker.py:189
 msgid "cannot find the installed directory for the sysroot package"
 msgstr "找不到 sysroot 软件包的安装目录"
 
-#: ruyi/mux/venv/maker.py:195
+#: ruyi/mux/venv/maker.py:196
 #, python-brace-format
 msgid "sysroot is requested but the package [yellow]{atom}[/] does not contain one"
 msgstr "请求了 sysroot，但软件包 [yellow]{atom}[/] 不含 sysroot"
 
-#: ruyi/mux/venv/maker.py:215
+#: ruyi/mux/venv/maker.py:216
 msgid "cannot find a GCC include & lib directory in the sysroot package"
 msgstr "在 sysroot 软件包中找不到 GCC include 和 lib 目录"
 
-#: ruyi/mux/venv/maker.py:252
+#: ruyi/mux/venv/maker.py:253
 msgid "multiple toolchains specified with differing target architecture"
 msgstr "指定了具有不同目标架构的多个工具链"
 
-#: ruyi/mux/venv/maker.py:254
+#: ruyi/mux/venv/maker.py:255
 #, python-brace-format
 msgid "using the target architecture of the first toolchain: [yellow]{arch}[/]"
 msgstr "将使用第一个工具链的目标架构：[yellow]{arch}[/]"
 
-#: ruyi/mux/venv/maker.py:266
+#: ruyi/mux/venv/maker.py:267
 #, python-brace-format
 msgid "cannot match an emulator package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到模拟器软件包"
 
-#: ruyi/mux/venv/maker.py:272
+#: ruyi/mux/venv/maker.py:273
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not an emulator"
 msgstr "软件包 [yellow]{atom}[/] 不是模拟器"
 
-#: ruyi/mux/venv/maker.py:280
+#: ruyi/mux/venv/maker.py:281
 #, python-brace-format
 msgid "the emulator package [yellow]{atom}[/] does not support the target architecture [yellow]{arch}[/]"
 msgstr "模拟器软件包 [yellow]{atom}[/] 不支持目标架构 [yellow]{arch}[/]"
 
-#: ruyi/mux/venv/maker.py:315
+#: ruyi/mux/venv/maker.py:316
 msgid "cannot find the installed directory for the emulator"
 msgstr "找不到模拟器的安装目录"
 
-#: ruyi/mux/venv/maker.py:331
+#: ruyi/mux/venv/maker.py:332
 #, python-brace-format
 msgid "cannot match an extra command package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到额外命令软件包"
 
-#: ruyi/mux/venv/maker.py:340
+#: ruyi/mux/venv/maker.py:341
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not a binary-providing package"
 msgstr "软件包 [yellow]{atom}[/] 未提供二进制文件"
 
-#: ruyi/mux/venv/maker.py:349
+#: ruyi/mux/venv/maker.py:350
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] does not provide any command for host [yellow]{host}[/], ignoring"
 msgstr "软件包 [yellow]{atom}[/] 未为主机 [yellow]{host}[/] 提供任何命令，将被忽略"
 
-#: ruyi/mux/venv/maker.py:362
+#: ruyi/mux/venv/maker.py:363
 #, python-brace-format
 msgid "cannot find the installed directory for the package [yellow]{pkg}[/]"
 msgstr "找不到软件包 [yellow]{pkg}[/] 的安装目录"
 
-#: ruyi/mux/venv/maker.py:378
+#: ruyi/mux/venv/maker.py:379
 msgid "internal error: resolved command path is outside of the providing package"
 msgstr "内部错误：解析的命令路径落在了提供者软件包之外"
 
-#: ruyi/mux/venv/maker.py:387
+#: ruyi/mux/venv/maker.py:388
 #, python-brace-format
 msgid "Creating a Ruyi virtual environment [cyan]'{name}'[/] at [green]{dest}[/]..."
 msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境 [cyan]'{name}'[/]..."
 
-#: ruyi/mux/venv/maker.py:393
+#: ruyi/mux/venv/maker.py:395
 #, python-brace-format
 msgid "Creating a Ruyi virtual environment at [green]{dest}[/]..."
 msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境..."
 
-#: ruyi/mux/venv/maker.py:613
+#: ruyi/mux/venv/maker.py:618
 #, python-brace-format
 msgid "extra command {cmd} is already provided by another package, overriding it"
 msgstr "额外命令 {cmd} 已由另一个软件包提供，将用当前软件包覆盖它"
@@ -1359,8 +1359,8 @@ msgid "no filter specified for list operation"
 msgstr "未为 list 操作指定过滤器"
 
 #: ruyi/ruyipkg/list.py:29
-msgid "for the old behavior of listing all packages, try [yellow]ruyi list --name-contains ''[/]"
-msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --name-contains ''[/]"
+msgid "for the old behavior of listing all packages, try [yellow]ruyi list --all[/]"
+msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --all[/]"
 
 #: ruyi/ruyipkg/list.py:55
 msgid "List of available packages:\n"
@@ -1464,23 +1464,27 @@ msgstr "列出已配置仓库中的可用软件包"
 msgid "Also show details for every package"
 msgstr "也显示每个软件包的详细信息"
 
-#: ruyi/ruyipkg/list_cli.py:37
+#: ruyi/ruyipkg/list_cli.py:35
+msgid "Match and show all packages"
+msgstr "匹配、显示所有软件包"
+
+#: ruyi/ruyipkg/list_cli.py:45
 msgid "Match packages that are installed (y/true/1) or not installed (n/false/0)"
 msgstr "匹配已安装（y/true/1）或未安装（n/false/0）的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:46
+#: ruyi/ruyipkg/list_cli.py:54
 msgid "Match packages from categories whose names contain the given string"
 msgstr "匹配属于特定类别的软件包，其中类别的名称包含给定字符串"
 
-#: ruyi/ruyipkg/list_cli.py:54
+#: ruyi/ruyipkg/list_cli.py:62
 msgid "Match packages from the given category"
 msgstr "匹配来自给定类别的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:61
+#: ruyi/ruyipkg/list_cli.py:69
 msgid "Match packages whose names contain the given string"
 msgstr "匹配名称包含给定字符串的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:70
+#: ruyi/ruyipkg/list_cli.py:78
 msgid "Match packages related to the given entity"
 msgstr "匹配与给定实体相关的软件包"
 
