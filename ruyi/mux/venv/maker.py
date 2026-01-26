@@ -13,6 +13,7 @@ from ...ruyipkg.atom import Atom
 from ...ruyipkg.pkg_manifest import BoundPackageManifest, EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy
 from ...utils.global_mode import ProvidesGlobalMode
+from ...utils.l10n import match_lang_code
 from ...utils.templating import render_template_str
 from .emulator_cfg import ResolvedEmulatorProg
 
@@ -409,9 +410,11 @@ def do_make_venv(
     )
     maker.provision()
 
+    # TODO: move the template to PO
+    locale = match_lang_code(config.lang_code, avail=("en", "zh_CN"))
     logger.I(
         render_template_str(
-            "prompt.venv-created.txt",
+            f"prompt.venv-created.{locale}.txt",
             {
                 "sysroot": maker.sysroot_destdir(None),
             },
