@@ -1,0 +1,13 @@
+现已创建完成虚拟环境。
+
+您可“source” [green]bin[/] 目录下合适的激活脚本，以激活此虚拟环境；而后可调用 [yellow]ruyi-deactivate[/]
+以离开它。
+{%- if sysroot %}
+
+在此虚拟环境中，亦为您部署了一套新的 sysroot/prefix 在以下路径：
+
+    [green]{{ sysroot }}[/]
+{%- endif %}
+
+此虚拟环境还内置了开箱即用的 CMake 工具链配置文件（CMake toolchain file）与 Meson
+交叉编译文件（Meson cross file）。您可在虚拟环境的根目录找到它们；文件的注释中有使用说明。
