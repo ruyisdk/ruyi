@@ -411,7 +411,8 @@ def do_make_venv(
 
     logger.I(
         render_template_str(
-            "prompt.venv-created.txt",
+            # TODO: i18n
+            "prompt.venv-created.en.txt",
             {
                 "sysroot": maker.sysroot_destdir(None),
             },
