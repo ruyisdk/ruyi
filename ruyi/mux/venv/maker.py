@@ -551,6 +551,12 @@ class VenvMaker:
             template_data,
         )
 
+        self.render_and_write(
+            bindir / "ruyi-activate.fish",
+            "ruyi-activate.fish",
+            template_data,
+        )
+
         qemu_bin: PathLike[Any] | None = None
         profile_emu_env: dict[str, str] | None = None
         if self.emulator_root is not None and self.emulator_progs:
