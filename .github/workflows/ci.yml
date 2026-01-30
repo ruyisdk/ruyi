@@ -355,7 +355,7 @@ jobs:
 
       - name: Upload artifact
         if: success() && !matrix.skip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.upload_artifact_name }}
           path: build/${{ matrix.build_output_name }}
@@ -414,7 +414,7 @@ jobs:
 
       - name: Upload artifact
         if: success() && !matrix.skip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.upload_artifact_name }}
           path: /build/${{ matrix.build_output_name }}
@@ -440,7 +440,7 @@ jobs:
         id: pack_sources
         run: ./scripts/make-reproducible-source-tarball.sh /tmp
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.pack_sources.outputs.artifact_name }}
           path: /tmp/${{ steps.pack_sources.outputs.artifact_name }}
@@ -480,7 +480,7 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Download dist build artifacts for release
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           run-id: ${{ needs.dist-result.outputs.run_id }}
           path: tmp/release
@@ -522,7 +522,7 @@ jobs:
         run: poetry build
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pypi-dist
           path: dist
@@ -541,7 +541,7 @@ jobs:
       id-token: write
     steps:
       - name: Download built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: pypi-dist
           path: ${{ github.workspace }}/dist
