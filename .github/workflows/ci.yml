@@ -49,6 +49,11 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: exit 0
 
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - name: Run dco-check
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: christophebedard/dco-check@0.5.0
@@ -62,6 +67,10 @@ jobs:
     name: license compatibility
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
       - name: Install Poetry
         run: pipx install poetry
@@ -134,6 +143,11 @@ jobs:
             poetry: 1
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
         with:
           submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
@@ -244,6 +258,10 @@ jobs:
     needs:
       - compliance-result
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
@@ -274,6 +292,10 @@ jobs:
     outputs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
@@ -289,6 +311,10 @@ jobs:
     outputs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
@@ -316,6 +342,11 @@ jobs:
       release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
 
       - name: Set up QEMU
@@ -377,6 +408,11 @@ jobs:
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
 
       - name: Install Poetry
@@ -427,6 +463,10 @@ jobs:
     needs:
       - lints-result
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
         with:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
@@ -475,6 +515,10 @@ jobs:
     needs:
       - dist-result
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
@@ -507,6 +551,11 @@ jobs:
     needs:
       - lints-result
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
 
       - name: Install Poetry
@@ -540,6 +589,11 @@ jobs:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
       - name: Download built artifacts
         uses: actions/download-artifact@v7
         with:
