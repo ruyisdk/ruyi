@@ -62,7 +62,7 @@ jobs:
     name: license compatibility
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v5
@@ -134,7 +134,7 @@ jobs:
             poetry: 1
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
 
@@ -244,7 +244,7 @@ jobs:
     needs:
       - compliance-result
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
 
@@ -274,7 +274,7 @@ jobs:
     outputs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py linux
@@ -289,7 +289,7 @@ jobs:
     outputs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py windows
@@ -316,7 +316,7 @@ jobs:
       release_mirror_url: ${{ steps.set_env.outputs.release_mirror_url }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up QEMU
         if: success() && !matrix.skip && matrix.needs_qemu
@@ -377,7 +377,7 @@ jobs:
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.runs_on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Poetry
         if: success() && !matrix.skip
@@ -427,7 +427,7 @@ jobs:
     needs:
       - lints-result
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
           # fetch-tags: true
@@ -475,7 +475,7 @@ jobs:
     needs:
       - dist-result
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version-file: "pyproject.toml"
@@ -507,7 +507,7 @@ jobs:
     needs:
       - lints-result
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Poetry
         run: pipx install poetry
