@@ -52,7 +52,9 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
 
       - name: Run dco-check
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -70,7 +72,11 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            files.pythonhosted.org:443
+            github.com:443
+            pypi.org:443
       - uses: actions/checkout@v6
       - name: Install Poetry
         run: pipx install poetry
@@ -146,7 +152,38 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          # Details about the allowlist, out-of-line because the action seems
+          # to not support comments in the setting, and YAML not recognizing
+          # comments inside the literal:
+          #
+          # * Environment setup
+          #   - azure.archive.ubuntu.com:80
+          #   - esm.ubuntu.com:443
+          #   - files.pythonhosted.org:443
+          #   - github.com:443
+          #   - packages.microsoft.com:443
+          #   - pypi.org:443
+          #   - release-assets.githubusercontent.com:443
+          # * Integration test
+          #   - api.ruyisdk.cn:443
+          #   - fast-mirror.isrc.ac.cn:443
+          #   - mirror.iscas.ac.cn:443
+          #   - wps-linux-personal.wpscdn.cn:443
+          #   - wrong_magic.git:443
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            packages.microsoft.com:443
+            pypi.org:443
+            release-assets.githubusercontent.com:443
+            api.ruyisdk.cn:443
+            fast-mirror.isrc.ac.cn:443
+            mirror.iscas.ac.cn:443
+            wps-linux-personal.wpscdn.cn:443
+            wrong_magic.git:443
 
       - uses: actions/checkout@v6
         with:
@@ -261,7 +298,9 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
       - uses: actions/checkout@v6
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
@@ -295,7 +334,9 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
       - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
@@ -314,7 +355,9 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
       - uses: actions/checkout@v6
       - name: Generate the matrix
         id: gen_matrix
@@ -345,7 +388,13 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            files.pythonhosted.org:443
+            ghcr.io:443
+            github.com:443
+            pkg-containers.githubusercontent.com:443
+            pypi.org:443
 
       - uses: actions/checkout@v6
 
