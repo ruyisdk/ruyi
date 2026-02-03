@@ -63,7 +63,7 @@ def test_api_feature_i18n_v1_dynamic_exposure(
         )
         ev3 = phctx3.make_evaluator()
         feature3 = phctx3.get_from_plugin("i18n-v1", "test_feature")
-        assert not ev3.eval_function(feature3)
+        assert ev3.eval_function(feature3)
 
 
 def test_api_feature_i18n_v1(

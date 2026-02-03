@@ -111,7 +111,7 @@ class RuyiHostAPI:
         # configured for it
         match feature:
             case "i18n-v1":
-                return self._phctx.has_full_i18n_capability()
+                return self._phctx.has_i18n_capability()
         return False
 
     #########################################################################
