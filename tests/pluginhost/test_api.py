@@ -1,10 +1,17 @@
 from contextlib import AbstractContextManager
 from types import TracebackType
+import sys
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 import pytest
 
 from ruyi.log import RuyiLogger
 from ruyi.pluginhost.ctx import PluginHostContext
+from ruyi.ruyipkg.msg import RepoMessageStore
 
 from ..fixtures import RuyiFileFixtureFactory
 
@@ -27,7 +34,16 @@ def test_api_feature_i18n_v1(
     ruyi_logger: RuyiLogger,
 ) -> None:
     with ruyi_file.plugin_suite("api_tests") as plugin_root:
-        phctx = PluginHostContext.new(ruyi_logger, plugin_root, locale="zh_CN")
+        with open(plugin_root / "test-messages.toml", "rb") as f:
+            msgs = tomllib.load(f)
+        rm = RepoMessageStore.from_object(msgs)
+
+        phctx = PluginHostContext.new(
+            ruyi_logger,
+            plugin_root,
+            locale="zh_CN",
+            message_store_factory=lambda: rm,
+        )
         ev = phctx.make_evaluator()
 
         test_feature = phctx.get_from_plugin("i18n-v1", "test_feature")
@@ -38,6 +54,15 @@ def test_api_feature_i18n_v1(
         assert get_locale is not None
         locale = ev.eval_function(get_locale)
         assert locale == "zh_CN"
+
+        test_messages = phctx.get_from_plugin("i18n-v1", "test_messages")
+        assert test_messages is not None
+        msgs_result = ev.eval_function(test_messages)
+        assert msgs_result == {
+            "hello-default": "你好世界！",
+            "hello-en": "Hello world!",
+            "test-format": "123 条消息",
+        }
 
 
 def test_api_with_(

@@ -1,4 +1,5 @@
 from contextlib import AbstractContextManager
+from functools import cached_property
 import pathlib
 import subprocess
 import sys
@@ -112,9 +113,27 @@ class RuyiHostAPI:
 
     # Exported methods for the `i18n-v1` feature
 
+    @cached_property
+    def i18n(self) -> "RuyiPluginI18nAPI":
+        return RuyiPluginI18nAPI(self._phctx)
+
+
+class RuyiPluginI18nAPI:
+    def __init__(
+        self,
+        phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
+    ) -> None:
+        self._phctx = phctx
+
     @property
     def locale(self) -> str:
         return self._phctx.locale
+
+    def msg(self, msgid: str, locale: str | None = None) -> str | None:
+        if not self._phctx.message_store:
+            raise RuntimeError("message store is not available in this context")
+        locale = locale or self.locale
+        return self._phctx.message_store.get_message_template(msgid, locale)
 
 
 def _ensure_str(message: RenderableType) -> None:

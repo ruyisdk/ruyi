@@ -1,0 +1,9 @@
+ruyi-repo-messages = "v1"
+
+[hello]
+en_US = "Hello world!"
+zh_CN = "你好世界！"
+
+[test-format]
+en_US = "{num} message(s)"
+zh_CN = "{num} 条消息"
