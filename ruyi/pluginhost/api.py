@@ -107,12 +107,16 @@ class RuyiHostAPI:
             return cast(U, self._ev.eval_function(fn, obj))
 
     def has_feature(self, feature: str) -> bool:
-        return feature in FIXED_FEATURES
+        # Expose the i18n-v1 feature only if the host context is properly
+        # configured for it
+        match feature:
+            case "i18n-v1":
+                return self._phctx.has_full_i18n_capability()
+        return False
 
     #########################################################################
 
     # Exported methods for the `i18n-v1` feature
-
     @cached_property
     def i18n(self) -> "RuyiPluginI18nAPI":
         return RuyiPluginI18nAPI(self._phctx)

@@ -125,6 +125,13 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
             self._value_cache[plugin_id][key] = v
             return v
 
+    def has_full_i18n_capability(self) -> bool:
+        if not self._locale:
+            return False
+        if self._msg_store_factory is None:
+            return False
+        return True
+
     @property
     def locale(self) -> str:
         return self._locale

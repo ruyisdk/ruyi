@@ -29,6 +29,43 @@ def test_api_has_feature(
         assert not ev.eval_function(nonexistent)
 
 
+def test_api_feature_i18n_v1_dynamic_exposure(
+    ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
+) -> None:
+    with ruyi_file.plugin_suite("api_tests") as plugin_root:
+        phctx1 = PluginHostContext.new(
+            ruyi_logger,
+            plugin_root,
+            # no locale or message store factory
+        )
+        ev1 = phctx1.make_evaluator()
+        feature1 = phctx1.get_from_plugin("i18n-v1", "test_feature")
+        assert not ev1.eval_function(feature1)
+
+        phctx2 = PluginHostContext.new(
+            ruyi_logger,
+            plugin_root,
+            locale="en_US",
+            # no message store factory
+        )
+        ev2 = phctx2.make_evaluator()
+        feature2 = phctx2.get_from_plugin("i18n-v1", "test_feature")
+        assert not ev2.eval_function(feature2)
+
+        with open(plugin_root / "test-messages.toml", "rb") as f:
+            msgs = tomllib.load(f)
+        phctx3 = PluginHostContext.new(
+            ruyi_logger,
+            plugin_root,
+            # no locale
+            message_store_factory=lambda: RepoMessageStore.from_object(msgs),
+        )
+        ev3 = phctx3.make_evaluator()
+        feature3 = phctx3.get_from_plugin("i18n-v1", "test_feature")
+        assert not ev3.eval_function(feature3)
+
+
 def test_api_feature_i18n_v1(
     ruyi_file: RuyiFileFixtureFactory,
     ruyi_logger: RuyiLogger,
