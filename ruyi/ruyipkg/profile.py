@@ -14,7 +14,8 @@ from typing import (
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
-from ..pluginhost.ctx import PluginHostContext, SupportsEvalFunction
+from ..pluginhost.ctx import PluginHostContext
+from ..pluginhost.traits import SupportsEvalFunction
 from .entity_provider import BaseEntityProvider
 from .pkg_manifest import EmulatorFlavor
 

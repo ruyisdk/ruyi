@@ -6,7 +6,6 @@ from typing import (
     Final,
     Generic,
     MutableMapping,
-    Protocol,
     TypeVar,
     TYPE_CHECKING,
 )
@@ -17,22 +16,10 @@ if TYPE_CHECKING:
 from ..log import RuyiLogger
 from . import api
 from . import paths
+from .traits import SupportsEvalFunction, SupportsGetOption
 
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
-
-
-class SupportsGetOption(Protocol):
-    def get_option(self, key: str) -> object: ...
-
-
-class SupportsEvalFunction(Protocol):
-    def eval_function(
-        self,
-        function: object,
-        *args: object,
-        **kwargs: object,
-    ) -> object: ...
 
 
 ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)

@@ -18,7 +18,8 @@ from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 if TYPE_CHECKING:
-    from .ctx import PluginHostContext, SupportsEvalFunction, SupportsGetOption
+    from .ctx import PluginHostContext
+    from .traits import SupportsEvalFunction, SupportsGetOption
 
 T = TypeVar("T")
 U = TypeVar("U")
