@@ -44,11 +44,11 @@ def test_api_with_(
             self.exited += 1
             return None
 
-    with ruyi_file.plugin_suite("with_") as plugin_root:
+    with ruyi_file.plugin_suite("api_tests") as plugin_root:
         phctx = PluginHostContext.new(ruyi_logger, plugin_root)
         ev = phctx.make_evaluator()
 
-        fn1 = phctx.get_from_plugin("foo", "fn1")
+        fn1 = phctx.get_from_plugin("with_", "fn1")
         assert fn1 is not None
         cm1 = MockContextManager()
         ret1 = ev.eval_function(fn1, cm1)
@@ -58,7 +58,7 @@ def test_api_with_(
 
         # even when the plugin side panics, the context manager semantics
         # shall remain enforced
-        fn2 = phctx.get_from_plugin("foo", "fn2")
+        fn2 = phctx.get_from_plugin("with_", "fn2")
         assert fn2 is not None
         cm2 = MockContextManager()
         with pytest.raises((RuntimeError, AttributeError)):
@@ -69,7 +69,7 @@ def test_api_with_(
         def inner_fn3(x: int) -> int:
             return x - 233
 
-        fn3 = phctx.get_from_plugin("foo", "fn3")
+        fn3 = phctx.get_from_plugin("with_", "fn3")
         assert fn3 is not None
         cm3 = MockContextManager()
         ret3 = ev.eval_function(fn3, cm3, inner_fn3)
