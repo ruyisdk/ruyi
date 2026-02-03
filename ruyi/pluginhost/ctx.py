@@ -1,4 +1,5 @@
 import abc
+from functools import cached_property
 import os
 import pathlib
 from typing import (
@@ -6,7 +7,6 @@ from typing import (
     Final,
     Generic,
     MutableMapping,
-    Protocol,
     TypeVar,
     TYPE_CHECKING,
 )
@@ -17,22 +17,10 @@ if TYPE_CHECKING:
 from ..log import RuyiLogger
 from . import api
 from . import paths
+from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStore
 
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
-
-
-class SupportsGetOption(Protocol):
-    def get_option(self, key: str) -> object: ...
-
-
-class SupportsEvalFunction(Protocol):
-    def eval_function(
-        self,
-        function: object,
-        *args: object,
-        **kwargs: object,
-    ) -> object: ...
 
 
 ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
@@ -44,6 +32,9 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def new(
         host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
+        *,
+        locale: str | None = None,
+        message_store_factory: Callable[[], SupportsMessageStore] | None = None,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
@@ -51,7 +42,12 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
         match plugin_backend:
             case "unsandboxed":
-                return UnsandboxedPluginHostContext(host_logger, plugin_root)
+                return UnsandboxedPluginHostContext(
+                    host_logger,
+                    plugin_root,
+                    locale=locale,
+                    message_store_factory=message_store_factory,
+                )
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
 
@@ -59,6 +55,9 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self,
         host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
+        *,
+        locale: str | None = None,
+        message_store_factory: Callable[[], SupportsMessageStore] | None = None,
     ) -> None:
         self._host_logger = host_logger
         self._plugin_root = plugin_root
@@ -68,6 +67,9 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self._loaded_plugins: dict[str, SupportsGetOption] = {}
         # plugin id: {key: value}
         self._value_cache: dict[str, dict[str, object]] = {}
+
+        self._locale = locale or ""
+        self._msg_store_factory = message_store_factory
 
     @abc.abstractmethod
     def make_loader(
@@ -122,6 +124,19 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
             v = self._loaded_plugins[plugin_id].get_option(key)
             self._value_cache[plugin_id][key] = v
             return v
+
+    def has_i18n_capability(self) -> bool:
+        return self._msg_store_factory is not None
+
+    @property
+    def locale(self) -> str:
+        return self._locale
+
+    @cached_property
+    def message_store(self) -> SupportsMessageStore | None:
+        if self._msg_store_factory is None:
+            return None
+        return self._msg_store_factory()
 
 
 class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):

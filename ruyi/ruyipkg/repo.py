@@ -1,4 +1,5 @@
 import glob
+from functools import cached_property
 import itertools
 import os.path
 import pathlib
@@ -226,20 +227,18 @@ class MetadataRepo(ProvidesPackageManifests):
 
         self._cfg: RepoConfig | None = None
         self._cfg_initialized = False
-        self._messages: RepoMessageStore | None = None
         self._pkgs: dict[str, dict[str, BoundPackageManifest]] = {}
         self._categories: dict[str, dict[str, dict[str, BoundPackageManifest]]] = {}
         self._slug_cache: dict[str, BoundPackageManifest] = {}
         self._supported_arches: set[str] | None = None
         self._arch_profile_stores: dict[str, ArchProfileStore] = {}
         self._news_cache: NewsItemStore | None = None
-        self._entity_store: EntityStore = EntityStore(
+        self._plugin_host_ctx = PluginHostContext.new(
             gc.logger,
-            FSEntityProvider(gc.logger, pathlib.Path(self.root) / "entities"),
-            MetadataRepoEntityProvider(self),
-            ProfileEntityProvider(self),
+            self.plugin_root,
+            locale=gc.lang_code,
+            message_store_factory=lambda: self.messages,
         )
-        self._plugin_host_ctx = PluginHostContext.new(gc.logger, self.plugin_root)
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property
@@ -379,11 +378,8 @@ class MetadataRepo(ProvidesPackageManifests):
         self._cfg = RepoConfig.from_object(obj)
         return self._cfg
 
-    @property
+    @cached_property
     def messages(self) -> RepoMessageStore:
-        if self._messages is not None:
-            return self._messages
-
         self.ensure_git_repo()
 
         obj: dict[str, object] = {}
@@ -393,8 +389,7 @@ class MetadataRepo(ProvidesPackageManifests):
         except FileNotFoundError:
             pass
 
-        self._messages = RepoMessageStore.from_object(obj)
-        return self._messages
+        return RepoMessageStore.from_object(obj)
 
     def iter_pkg_manifests(
         self,
@@ -590,7 +585,7 @@ class MetadataRepo(ProvidesPackageManifests):
             )
         )
 
-    def ensure_news_cache(
+    def _ensure_news_cache(
         self,
         ensure_repo: bool = True,
     ) -> None:
@@ -629,7 +624,7 @@ class MetadataRepo(ProvidesPackageManifests):
         ensure_repo: bool = True,
     ) -> NewsItemStore:
         if self._news_cache is None:
-            self.ensure_news_cache(ensure_repo=ensure_repo)
+            self._ensure_news_cache(ensure_repo=ensure_repo)
         assert self._news_cache is not None
         return self._news_cache
 
@@ -658,10 +653,15 @@ class MetadataRepo(ProvidesPackageManifests):
             ret = 1
         return ret
 
-    @property
+    @cached_property
     def entity_store(self) -> EntityStore:
         """Get the entity store for this repository."""
-        return self._entity_store
+        return EntityStore(
+            self.logger,
+            FSEntityProvider(self.logger, pathlib.Path(self.root) / "entities"),
+            MetadataRepoEntityProvider(self),
+            ProfileEntityProvider(self),
+        )
 
     def get_telemetry_api_url(self, scope: TelemetryScopeConfig) -> str | None:
         # do not clone the metadata repo if it is absent, in case the user

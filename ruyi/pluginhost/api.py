@@ -1,9 +1,10 @@
 from contextlib import AbstractContextManager
+from functools import cached_property
 import pathlib
 import subprocess
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Final, TypeVar, cast
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -18,10 +19,16 @@ from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 if TYPE_CHECKING:
-    from .ctx import PluginHostContext, SupportsEvalFunction, SupportsGetOption
+    from .ctx import PluginHostContext
+    from .traits import SupportsEvalFunction, SupportsGetOption
 
 T = TypeVar("T")
 U = TypeVar("U")
+
+
+FIXED_FEATURES: Final = {
+    "i18n-v1",
+}
 
 
 class RuyiHostAPI:
@@ -98,6 +105,39 @@ class RuyiHostAPI:
     ) -> U:
         with cm as obj:
             return cast(U, self._ev.eval_function(fn, obj))
+
+    def has_feature(self, feature: str) -> bool:
+        # Expose the i18n-v1 feature only if the host context is properly
+        # configured for it
+        match feature:
+            case "i18n-v1":
+                return self._phctx.has_i18n_capability()
+        return False
+
+    #########################################################################
+
+    # Exported methods for the `i18n-v1` feature
+    @cached_property
+    def i18n(self) -> "RuyiPluginI18nAPI":
+        return RuyiPluginI18nAPI(self._phctx)
+
+
+class RuyiPluginI18nAPI:
+    def __init__(
+        self,
+        phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
+    ) -> None:
+        self._phctx = phctx
+
+    @property
+    def locale(self) -> str:
+        return self._phctx.locale
+
+    def msg(self, msgid: str, locale: str | None = None) -> str | None:
+        if not self._phctx.message_store:
+            raise RuntimeError("message store is not available in this context")
+        locale = locale or self.locale
+        return self._phctx.message_store.get_message_template(msgid, locale)
 
 
 def _ensure_str(message: RenderableType) -> None:
