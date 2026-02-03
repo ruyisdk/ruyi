@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .news import NewsReadStatusStore
 
 import babel
+
 # not sure why Pyright insists on individual imports
 # otherwise, at the use site (`except babel.core.UnknownLocaleError`):
 #   error: "core" is not a known attribute of module "babel" (reportAttributeAccessIssue)
