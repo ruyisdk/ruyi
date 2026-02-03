@@ -44,6 +44,8 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def new(
         host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
+        *,
+        locale: str | None = None,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
@@ -51,7 +53,11 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
         match plugin_backend:
             case "unsandboxed":
-                return UnsandboxedPluginHostContext(host_logger, plugin_root)
+                return UnsandboxedPluginHostContext(
+                    host_logger,
+                    plugin_root,
+                    locale=locale,
+                )
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
 
@@ -59,6 +65,8 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self,
         host_logger: RuyiLogger,
         plugin_root: pathlib.Path,
+        *,
+        locale: str | None = None,
     ) -> None:
         self._host_logger = host_logger
         self._plugin_root = plugin_root
@@ -68,6 +76,8 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self._loaded_plugins: dict[str, SupportsGetOption] = {}
         # plugin id: {key: value}
         self._value_cache: dict[str, dict[str, object]] = {}
+
+        self._locale = locale or ""
 
     @abc.abstractmethod
     def make_loader(
@@ -122,6 +132,10 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
             v = self._loaded_plugins[plugin_id].get_option(key)
             self._value_cache[plugin_id][key] = v
             return v
+
+    @property
+    def locale(self) -> str:
+        return self._locale
 
 
 class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):

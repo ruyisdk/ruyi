@@ -3,7 +3,7 @@ import pathlib
 import subprocess
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Final, TypeVar, cast
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -22,6 +22,11 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 U = TypeVar("U")
+
+
+FIXED_FEATURES: Final = {
+    "i18n-v1",
+}
 
 
 class RuyiHostAPI:
@@ -100,8 +105,15 @@ class RuyiHostAPI:
             return cast(U, self._ev.eval_function(fn, obj))
 
     def has_feature(self, feature: str) -> bool:
-        # Currently no forward-compatible plugin features
-        return False
+        return feature in FIXED_FEATURES
+
+    #########################################################################
+
+    # Exported methods for the `i18n-v1` feature
+
+    @property
+    def locale(self) -> str:
+        return self._phctx.locale
 
 
 def _ensure_str(message: RenderableType) -> None:

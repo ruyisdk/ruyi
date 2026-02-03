@@ -22,6 +22,24 @@ def test_api_has_feature(
         assert not ev.eval_function(nonexistent)
 
 
+def test_api_feature_i18n_v1(
+    ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
+) -> None:
+    with ruyi_file.plugin_suite("api_tests") as plugin_root:
+        phctx = PluginHostContext.new(ruyi_logger, plugin_root, locale="zh_CN")
+        ev = phctx.make_evaluator()
+
+        test_feature = phctx.get_from_plugin("i18n-v1", "test_feature")
+        assert test_feature is not None
+        assert ev.eval_function(test_feature)
+
+        get_locale = phctx.get_from_plugin("i18n-v1", "test_get_locale")
+        assert get_locale is not None
+        locale = ev.eval_function(get_locale)
+        assert locale == "zh_CN"
+
+
 def test_api_with_(
     ruyi_file: RuyiFileFixtureFactory,
     ruyi_logger: RuyiLogger,

@@ -239,7 +239,11 @@ class MetadataRepo(ProvidesPackageManifests):
             MetadataRepoEntityProvider(self),
             ProfileEntityProvider(self),
         )
-        self._plugin_host_ctx = PluginHostContext.new(gc.logger, self.plugin_root)
+        self._plugin_host_ctx = PluginHostContext.new(
+            gc.logger,
+            self.plugin_root,
+            locale=gc.lang_code,
+        )
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
     @property
