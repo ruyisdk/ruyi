@@ -99,6 +99,10 @@ class RuyiHostAPI:
         with cm as obj:
             return cast(U, self._ev.eval_function(fn, obj))
 
+    def has_feature(self, feature: str) -> bool:
+        # Currently no forward-compatible plugin features
+        return False
+
 
 def _ensure_str(message: RenderableType) -> None:
     if not isinstance(message, str):

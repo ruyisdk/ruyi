@@ -9,6 +9,19 @@ from ruyi.pluginhost.ctx import PluginHostContext
 from ..fixtures import RuyiFileFixtureFactory
 
 
+def test_api_has_feature(
+    ruyi_file: RuyiFileFixtureFactory,
+    ruyi_logger: RuyiLogger,
+) -> None:
+    with ruyi_file.plugin_suite("api_tests") as plugin_root:
+        phctx = PluginHostContext.new(ruyi_logger, plugin_root)
+        ev = phctx.make_evaluator()
+
+        nonexistent = phctx.get_from_plugin("has_feature", "check_nonexistent_feature")
+        assert nonexistent is not None
+        assert not ev.eval_function(nonexistent)
+
+
 def test_api_with_(
     ruyi_file: RuyiFileFixtureFactory,
     ruyi_logger: RuyiLogger,
