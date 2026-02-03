@@ -1,4 +1,5 @@
 import abc
+from functools import cached_property
 import os
 import pathlib
 from typing import (
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 from ..log import RuyiLogger
 from . import api
 from . import paths
-from .traits import SupportsEvalFunction, SupportsGetOption
+from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStore
 
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
@@ -33,6 +34,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         plugin_root: pathlib.Path,
         *,
         locale: str | None = None,
+        message_store_factory: Callable[[], SupportsMessageStore] | None = None,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
@@ -44,6 +46,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
                     host_logger,
                     plugin_root,
                     locale=locale,
+                    message_store_factory=message_store_factory,
                 )
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
@@ -54,6 +57,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         plugin_root: pathlib.Path,
         *,
         locale: str | None = None,
+        message_store_factory: Callable[[], SupportsMessageStore] | None = None,
     ) -> None:
         self._host_logger = host_logger
         self._plugin_root = plugin_root
@@ -65,6 +69,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self._value_cache: dict[str, dict[str, object]] = {}
 
         self._locale = locale or ""
+        self._msg_store_factory = message_store_factory
 
     @abc.abstractmethod
     def make_loader(
@@ -123,6 +128,12 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @property
     def locale(self) -> str:
         return self._locale
+
+    @cached_property
+    def message_store(self) -> SupportsMessageStore | None:
+        if self._msg_store_factory is None:
+            return None
+        return self._msg_store_factory()
 
 
 class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):

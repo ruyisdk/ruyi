@@ -243,6 +243,7 @@ class MetadataRepo(ProvidesPackageManifests):
             gc.logger,
             self.plugin_root,
             locale=gc.lang_code,
+            message_store_factory=lambda: self.messages,
         )
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
