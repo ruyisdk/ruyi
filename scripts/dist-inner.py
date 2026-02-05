@@ -100,6 +100,7 @@ def main() -> None:
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",
+        "--include-package=rich._unicode_data",
         "--include-package=_cffi_backend",  # https://github.com/Nuitka/Nuitka/issues/2505
         "--windows-icon-from-ico=resources/ruyi.ico",
         "--show-scons",
