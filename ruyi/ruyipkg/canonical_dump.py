@@ -150,9 +150,9 @@ def dump_distfile_entry(x: DistfileDeclType) -> Table:
     if v := x.get("unpack"):
         y.add("unpack", string(v))
     y.add("size", x["size"])
-    if s := x.get("strip_components"):
-        if s != 1:
-            y.add("strip_components", s)
+    s = x.get("strip_components")
+    if s is not None and s != 1:
+        y.add("strip_components", s)
     if p := x.get("prefixes_to_unpack"):
         y.add("prefixes_to_unpack", str_array(p, multiline=len(p) > 1))
     if "urls" in x:
