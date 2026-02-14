@@ -20,8 +20,13 @@ class ListProfilesCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .profile import do_list_profiles_porcelain
+
         logger = cfg.logger
         mr = cfg.repo
+
+        if cfg.is_porcelain:
+            return do_list_profiles_porcelain(mr)
 
         for arch in mr.get_supported_arches():
             for p in mr.iter_profiles_for_arch(arch):

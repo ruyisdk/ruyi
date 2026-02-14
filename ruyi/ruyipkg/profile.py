@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 from ..pluginhost.ctx import PluginHostContext
 from ..pluginhost.traits import SupportsEvalFunction
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from .entity_provider import BaseEntityProvider
 from .pkg_manifest import EmulatorFlavor
 
@@ -222,6 +223,20 @@ class ProfileProxy:
     ) -> dict[str, str] | None:
         return self._provider.get_env_config_for_emu_flavor(self._id, flavor, sysroot)
 
+    def to_porcelain(self) -> "PorcelainProfileListOutputV1":
+        return {
+            "ty": PorcelainEntityType.ProfileListOutputV1,
+            "id": self._id,
+            "arch": self._arch,
+            "need_quirks": sorted(self.need_quirks),
+        }
+
+
+class PorcelainProfileListOutputV1(PorcelainEntity):
+    id: str
+    arch: str
+    need_quirks: list[str]
+
 
 #
 # Protocols
@@ -354,3 +369,12 @@ def _load_profile_v1_entities_for_arch(
             "related": relations,
         }
     return result
+
+
+def do_list_profiles_porcelain(provider: ProvidesProfiles) -> int:
+    """Output the list of profiles in porcelain format."""
+    with PorcelainOutput() as po:
+        for arch in provider.get_supported_arches():
+            for p in provider.iter_profiles_for_arch(arch):
+                po.emit(p.to_porcelain())
+    return 0
