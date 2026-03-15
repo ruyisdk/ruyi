@@ -362,10 +362,19 @@ class GlobalConfig:
 
     @cached_property
     def default_repo_dir(self) -> str:
+        # Prefer the new repos/<id> layout if it exists, otherwise fall back
+        # to the legacy packages-index/ path for pre-migration state.
+        new_path = os.path.join(self.cache_root, "repos", "ruyisdk")
+        if os.path.isdir(new_path):
+            return new_path
         return os.path.join(self.cache_root, "packages-index")
 
     def get_repo_dir(self) -> str:
         return self.override_repo_dir or self.default_repo_dir
+
+    def get_repo_dir_for_id(self, repo_id: str) -> str:
+        """Return the local checkout path for a repo identified by ``repo_id``."""
+        return os.path.join(self.cache_root, "repos", repo_id)
 
     @cached_property
     def have_overridden_repo_dir(self) -> bool:
