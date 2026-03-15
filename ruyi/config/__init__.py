@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
     from ..log import RuyiLogger
+    from ..ruyipkg.composite_repo import CompositeRepo
     from ..ruyipkg.repo import MetadataRepo, RepoEntry
     from ..ruyipkg.state import RuyipkgGlobalStateStore
     from ..telemetry.provider import TelemetryProvider
@@ -398,7 +399,16 @@ class GlobalConfig:
         return [RepoEntry.from_legacy_config(self)]
 
     @cached_property
-    def repo(self) -> "MetadataRepo":
+    def repo(self) -> "CompositeRepo":
+        from ..ruyipkg.composite_repo import CompositeRepo
+
+        self._ensure_repo_layout_migrated()
+        return CompositeRepo(self.repo_entries, self)
+
+    @cached_property
+    def default_repo(self) -> "MetadataRepo":
+        """Return the default (ruyisdk) MetadataRepo for code that truly
+        needs a specific MetadataRepo instance."""
         self._ensure_repo_layout_migrated()
         return self.repo_entries[0].make_metadata_repo(self)
 

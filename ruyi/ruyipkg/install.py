@@ -14,7 +14,7 @@ from .atom import Atom
 from .distfile import Distfile
 from .host import RuyiHost
 from .pkg_manifest import BoundPackageManifest
-from .repo import MetadataRepo
+from .composite_repo import CompositeRepo
 from .unpack import ensure_unpack_cmd_for_method
 
 
@@ -27,7 +27,7 @@ def is_root_likely_populated(root: str) -> bool:
 
 def do_extract_atoms(
     cfg: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     atom_strs: set[str],
     *,
     canonicalized_host: str | RuyiHost,
@@ -168,7 +168,7 @@ def _do_extract_pkg(
 
 def do_install_atoms(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     atom_strs: set[str],
     *,
     canonicalized_host: str | RuyiHost,
@@ -251,7 +251,7 @@ def do_install_atoms(
 
 def _do_install_binary_pkg(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pm: BoundPackageManifest,
     canonicalized_host: str | RuyiHost,
     fetch_only: bool,
@@ -337,7 +337,7 @@ def _do_install_binary_pkg(
 
 def _do_install_binary_pkg_to(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pm: BoundPackageManifest,
     canonicalized_host: str | RuyiHost,
     fetch_only: bool,
@@ -385,7 +385,7 @@ def _do_install_binary_pkg_to(
 
 def _do_install_blob_pkg(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pm: BoundPackageManifest,
     fetch_only: bool,
     reinstall: bool,
@@ -469,7 +469,7 @@ def _do_install_blob_pkg(
 
 def _do_install_blob_pkg_to(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pm: BoundPackageManifest,
     fetch_only: bool,
     install_root: str,
@@ -512,7 +512,7 @@ def _do_install_blob_pkg_to(
 
 def do_uninstall_atoms(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     atom_strs: set[str],
     *,
     canonicalized_host: str | RuyiHost,

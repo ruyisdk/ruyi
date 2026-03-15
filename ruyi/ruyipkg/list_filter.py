@@ -7,7 +7,7 @@ from ..utils.global_mode import TRUTHY_ENV_VAR_VALUES
 
 if TYPE_CHECKING:
     from ..config import GlobalConfig
-    from .repo import MetadataRepo
+    from .composite_repo import CompositeRepo
 
 _T = TypeVar("_T")
 
@@ -29,7 +29,7 @@ class ListFilterOp(NamedTuple):
 
 class ListFilterExecCtx(NamedTuple):
     cfg: "GlobalConfig"
-    mr: "MetadataRepo"
+    mr: "CompositeRepo"
     category: str
     pkg_name: str
 
@@ -83,7 +83,7 @@ class ListFilter:
     def check_pkg_name(
         self,
         cfg: "GlobalConfig",
-        mr: "MetadataRepo",
+        mr: "CompositeRepo",
         category: str,
         pkg_name: str,
     ) -> bool:

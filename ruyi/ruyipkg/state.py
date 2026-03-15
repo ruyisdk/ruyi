@@ -10,7 +10,7 @@ from .protocols import ProvidesPackageManifests
 
 if TYPE_CHECKING:
     # for avoiding heavy import
-    from .repo import MetadataRepo
+    from .protocols import ProvidesPackageManifests
 
 
 class PackageInstallationRecord(TypedDict):
@@ -224,7 +224,7 @@ class RuyipkgGlobalStateStore:
 
 
 class BoundInstallationStateStore(ProvidesPackageManifests):
-    def __init__(self, rgs: RuyipkgGlobalStateStore, mr: "MetadataRepo") -> None:
+    def __init__(self, rgs: RuyipkgGlobalStateStore, mr: "ProvidesPackageManifests") -> None:
         self._rgs = rgs
         self._mr = mr
 

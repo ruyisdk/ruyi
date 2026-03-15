@@ -22,7 +22,6 @@ def package_completer_builder(
             cfg,
             cfg.repo,
             ListFilter(),
-            ensure_repo=False,
         )
     )
     if filters is not None:

@@ -25,7 +25,7 @@ class UpdateCommand(
 
         logger = cfg.logger
         mr = cfg.repo
-        mr.sync()
+        mr.sync_all()
 
         # check for upgradable packages
         bis = BoundInstallationStateStore(cfg.ruyipkg_global_state, mr)
