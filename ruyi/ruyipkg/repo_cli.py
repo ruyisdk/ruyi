@@ -198,3 +198,96 @@ class RepoRemoveCommand(
             _("repo '{id}' removed").format(id=repo_id)
         )
         return 0
+
+
+class RepoEnableCommand(
+    RepoCommand,
+    cmd="enable",
+    help=_("Enable a package repository"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument("id", type=str, help=_("repository identifier to enable"))
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+        from ..config.schema import KEY_REPOS_ACTIVE
+
+        logger = cfg.logger
+        repo_id: str = args.id
+
+        with ConfigEditor.work_on_user_local_config(cfg) as editor:
+            if not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: True}):
+                logger.F(
+                    _("no repo with id '{id}' found in user config").format(id=repo_id)
+                )
+                return 1
+            editor.stage()
+
+        logger.I(_("repo '{id}' enabled").format(id=repo_id))
+        return 0
+
+
+class RepoDisableCommand(
+    RepoCommand,
+    cmd="disable",
+    help=_("Disable a package repository"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument("id", type=str, help=_("repository identifier to disable"))
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+        from ..config.schema import KEY_REPOS_ACTIVE
+
+        logger = cfg.logger
+        repo_id: str = args.id
+
+        with ConfigEditor.work_on_user_local_config(cfg) as editor:
+            if not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: False}):
+                logger.F(
+                    _("no repo with id '{id}' found in user config").format(id=repo_id)
+                )
+                return 1
+            editor.stage()
+
+        logger.I(_("repo '{id}' disabled").format(id=repo_id))
+        return 0
+
+
+class RepoSetPriorityCommand(
+    RepoCommand,
+    cmd="set-priority",
+    help=_("Set the priority of a package repository"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument("id", type=str, help=_("repository identifier"))
+        p.add_argument("priority", type=int, help=_("new priority value"))
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from ..config.editor import ConfigEditor
+        from ..config.schema import KEY_REPOS_PRIORITY
+
+        logger = cfg.logger
+        repo_id: str = args.id
+        priority: int = args.priority
+
+        with ConfigEditor.work_on_user_local_config(cfg) as editor:
+            if not editor.update_repos_entry(repo_id, {KEY_REPOS_PRIORITY: priority}):
+                logger.F(
+                    _("no repo with id '{id}' found in user config").format(id=repo_id)
+                )
+                return 1
+            editor.stage()
+
+        logger.I(
+            _("repo '{id}' priority set to {priority}").format(
+                id=repo_id, priority=priority
+            )
+        )
+        return 0
