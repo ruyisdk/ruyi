@@ -395,7 +395,18 @@ class GlobalConfig:
     def repo(self) -> "MetadataRepo":
         from ..ruyipkg.repo import MetadataRepo
 
+        self._ensure_repo_layout_migrated()
         return MetadataRepo.from_global_config(self)
+
+    def _ensure_repo_layout_migrated(self) -> None:
+        """Run the one-time migration from packages-index/ to repos/ruyisdk/
+        if the user has not overridden the repo directory."""
+        if self.override_repo_dir:
+            return
+
+        from ..ruyipkg.migration import migrate_repo_dir
+
+        migrate_repo_dir(str(self.cache_root), self.logger)
 
     def ensure_distfiles_dir(self) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"
