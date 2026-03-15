@@ -212,7 +212,7 @@ msgstr "卸载 Ruyi"
 
 #: ruyi/cli/self_cli.py:169
 msgid "Remove all installed packages and Ruyi-managed remote repo data"
-msgstr "移除所有已安装的软件包和 Ruyi 管理的远程仓库数据"
+msgstr "移除所有已安装的软件包和 Ruyi 管理的远端仓库数据"
 
 #: ruyi/cli/self_cli.py:176
 msgid "Give consent for uninstallation on CLI; do not ask for confirmation"
@@ -365,27 +365,27 @@ msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 #: ruyi/config/__init__.py:205
 #, python-brace-format
 msgid "ignoring [[repos]] entry with invalid id: '{id}'"
-msgstr ""
+msgstr "忽略具有无效 id 的 [[repos]] 条目：'{id}'"
 
 #: ruyi/config/__init__.py:214
 #, python-brace-format
 msgid "ignoring [[repos]] entry with reserved id '{id}'; use [repo] to configure the default repository"
-msgstr ""
+msgstr "忽略具有保留 id '{id}' 的 [[repos]] 条目；请使用 [repo] 来配置默认仓库"
 
 #: ruyi/config/__init__.py:222
 #, python-brace-format
 msgid "ignoring duplicate [[repos]] entry with id '{id}'"
-msgstr ""
+msgstr "忽略具有重复 id '{id}' 的 [[repos]] 条目"
 
 #: ruyi/config/__init__.py:233
 #, python-brace-format
 msgid "ignoring [[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
-msgstr ""
+msgstr "忽略 [[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
 #: ruyi/config/__init__.py:242
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "ignoring [[repos]] entry '{id}': the local path '{path}' is not absolute"
-msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
+msgstr "忽略 [[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
 
 #: ruyi/config/errors.py:13
 #, python-brace-format
@@ -1041,12 +1041,12 @@ msgstr "错误的 {kind} 校验和：期望 {want}，得到 {got}"
 #: ruyi/ruyipkg/composite_repo.py:87 ruyi/ruyipkg/composite_repo.py:96
 #, python-brace-format
 msgid "syncing repo '{id}'"
-msgstr ""
+msgstr "正在同步仓库 '{id}'"
 
 #: ruyi/ruyipkg/composite_repo.py:113
 #, python-brace-format
 msgid "repo '{id}' declares id '{on_disk_id}' in its config.toml; expected '{id}'"
-msgstr ""
+msgstr "仓库 '{id}' 在其 config.toml 中声明了 id '{on_disk_id}'；预期为 '{id}'"
 
 #: ruyi/ruyipkg/distfile.py:17
 msgid ""
@@ -1268,9 +1268,9 @@ msgid "package [green]{pkg}[/] seems already installed; purging and re-installin
 msgstr "软件包 [green]{pkg}[/] 似乎已安装；由于传入了 [yellow]--reinstall[/]，将移除并重新安装它"
 
 #: ruyi/ruyipkg/install.py:332
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "package [green]{pkg}[/]{repo_tag} installed to [yellow]{install_root}[/]"
-msgstr "软件包 [green]{pkg}[/] 已安装到 [yellow]{install_root}[/]"
+msgstr "软件包 [green]{pkg}[/]{repo_tag} 已安装到 [yellow]{install_root}[/]"
 
 #: ruyi/ruyipkg/install.py:360
 #, python-brace-format
@@ -1531,11 +1531,11 @@ msgstr "匹配与给定实体相关的软件包"
 #: ruyi/ruyipkg/migration.py:35
 #, python-brace-format
 msgid "migrating repo directory from [yellow]{old}[/] to [yellow]{new}[/]"
-msgstr ""
+msgstr "正在将仓库目录从 [yellow]{old}[/] 迁移到 [yellow]{new}[/]"
 
 #: ruyi/ruyipkg/migration.py:47
 msgid "repo directory migration complete"
-msgstr ""
+msgstr "仓库目录迁移完成"
 
 #. i18n NOTE: used as news item table title
 #: ruyi/ruyipkg/news.py:19
@@ -1658,7 +1658,7 @@ msgstr "正在从 [cyan link={remote}]{remote}[/] 克隆"
 #: ruyi/ruyipkg/repo.py:434
 #, python-brace-format
 msgid "skipping sync for local-only repo '{id}'"
-msgstr ""
+msgstr "为设置为仅本地的仓库 '{id}' 跳过同步"
 
 #: ruyi/ruyipkg/repo.py:442
 msgid "updating the package repository"
@@ -1683,158 +1683,150 @@ msgid "forcing return code to 1; the plugin should be fixed"
 msgstr "强制返回码为 1；该插件需要被修复"
 
 #: ruyi/ruyipkg/repo_cli.py:17
-#, fuzzy
 msgid "Manage configured package repositories"
-msgstr "从已配置的仓库安装软件包"
+msgstr "管理已配置的软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:31
-#, fuzzy
 msgid "List configured package repositories"
-msgstr "从已配置的仓库安装软件包"
+msgstr "列出已配置的软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:68
-#, fuzzy
 msgid "Add a package repository"
-msgstr "正在更新软件包仓库"
+msgstr "添加一个软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:72
 msgid "unique repository identifier"
-msgstr ""
+msgstr "唯一的仓库标识符"
 
 #: ruyi/ruyipkg/repo_cli.py:74
 msgid "git remote URL"
-msgstr ""
+msgstr "Git 远端 URL"
 
 #: ruyi/ruyipkg/repo_cli.py:77
 msgid "git branch to track"
-msgstr ""
+msgstr "要跟踪的 Git 分支"
 
 #: ruyi/ruyipkg/repo_cli.py:83
 msgid "priority (higher = overrides lower)"
-msgstr ""
+msgstr "优先级（高值 = 覆盖低值）"
 
 #: ruyi/ruyipkg/repo_cli.py:89
 msgid "local path to use instead of or alongside remote"
-msgstr ""
+msgstr "本地路径，用于替代远端路径，或与远端路径一起使用"
 
 #: ruyi/ruyipkg/repo_cli.py:92
 msgid "human-readable name for the repo"
-msgstr ""
+msgstr "仓库的可读名称"
 
 #: ruyi/ruyipkg/repo_cli.py:115
 #, python-brace-format
 msgid "invalid repo id '{id}'"
-msgstr ""
+msgstr "无效的仓库 ID '{id}'"
 
 #: ruyi/ruyipkg/repo_cli.py:121
 #, python-brace-format
 msgid "'{id}' is reserved; use [repo] config to configure the default repository"
-msgstr ""
+msgstr "'{id}' 是保留的；请使用 [repo] 配置来配置默认仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:129
 msgid "at least one of URL or --local must be provided"
-msgstr ""
+msgstr "URL 或 --local 至少需要提供一个"
 
 #: ruyi/ruyipkg/repo_cli.py:133
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "local path '{path}' must be absolute"
-msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
+msgstr "本地路径 '{path}' 必须是绝对路径"
 
 #: ruyi/ruyipkg/repo_cli.py:139
 #, python-brace-format
 msgid "a repo with id '{id}' already exists"
-msgstr ""
+msgstr "已有一个 ID 为 '{id}' 的软件包仓库了"
 
 #: ruyi/ruyipkg/repo_cli.py:159
 #, python-brace-format
 msgid "repo '{id}' added; run 'ruyi update' to sync"
-msgstr ""
+msgstr "已添加软件包仓库 '{id}'；运行 'ruyi update' 以同步"
 
 #: ruyi/ruyipkg/repo_cli.py:166
-#, fuzzy
 msgid "Remove a package repository"
-msgstr "正在更新软件包仓库"
+msgstr "移除一个软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:170
 msgid "repository identifier to remove"
-msgstr ""
+msgstr "要移除的仓库的标识符"
 
 #: ruyi/ruyipkg/repo_cli.py:179
 msgid "also remove cached repo data from disk"
-msgstr ""
+msgstr "同时从磁盘中移除缓存的仓库数据"
 
 #: ruyi/ruyipkg/repo_cli.py:195
 #, python-brace-format
 msgid "cannot remove the default repo '{id}'; use 'repo disable' instead"
-msgstr ""
+msgstr "无法移除默认仓库 '{id}'；请使用 'repo disable' 来禁用它"
 
 #: ruyi/ruyipkg/repo_cli.py:207
 #, python-brace-format
 msgid "cannot remove system-provided repo '{id}'; use 'repo disable' instead"
-msgstr ""
+msgstr "无法移除由系统提供的仓库 '{id}'；请使用 'repo disable' 来禁用它"
 
 #: ruyi/ruyipkg/repo_cli.py:217 ruyi/ruyipkg/repo_cli.py:256
 #: ruyi/ruyipkg/repo_cli.py:289 ruyi/ruyipkg/repo_cli.py:324
 #, python-brace-format
 msgid "no repo with id '{id}' found in user config"
-msgstr ""
+msgstr "在用户配置中未找到 ID 为 '{id}' 的软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:226
 #, python-brace-format
 msgid "purged cached data at '{path}'"
-msgstr ""
+msgstr "已清除 '{path}' 的缓存数据"
 
 #: ruyi/ruyipkg/repo_cli.py:228
 #, python-brace-format
 msgid "repo '{id}' removed"
-msgstr ""
+msgstr "已移除软件包仓库 '{id}'"
 
 #: ruyi/ruyipkg/repo_cli.py:235
-#, fuzzy
 msgid "Enable a package repository"
-msgstr "正在更新软件包仓库"
+msgstr "启用一个软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:239
 msgid "repository identifier to enable"
-msgstr ""
+msgstr "要启用的仓库的标识符"
 
 #: ruyi/ruyipkg/repo_cli.py:261
 #, python-brace-format
 msgid "repo '{id}' enabled"
-msgstr ""
+msgstr "已启用软件包仓库 '{id}'"
 
 #: ruyi/ruyipkg/repo_cli.py:268
-#, fuzzy
 msgid "Disable a package repository"
-msgstr "正在更新软件包仓库"
+msgstr "禁用一个软件包仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:272
 msgid "repository identifier to disable"
-msgstr ""
+msgstr "要禁用的仓库的标识符"
 
 #: ruyi/ruyipkg/repo_cli.py:294
 #, python-brace-format
 msgid "repo '{id}' disabled"
-msgstr ""
+msgstr "已禁用软件包仓库 '{id}'"
 
 #: ruyi/ruyipkg/repo_cli.py:301
-#, fuzzy
 msgid "Set the priority of a package repository"
-msgstr "正在更新软件包仓库"
+msgstr "为一个软件包仓库设置优先级"
 
 #: ruyi/ruyipkg/repo_cli.py:305
-#, fuzzy
 msgid "repository identifier"
-msgstr "软件包仓库已更新"
+msgstr "软件包仓库标识符"
 
 #: ruyi/ruyipkg/repo_cli.py:310
 msgid "new priority value"
-msgstr ""
+msgstr "新的优先级取值"
 
 #: ruyi/ruyipkg/repo_cli.py:330
 #, python-brace-format
 msgid "repo '{id}' priority set to {priority}"
-msgstr ""
+msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
 
 #: ruyi/ruyipkg/unpack.py:197
 #, python-brace-format
@@ -1887,12 +1879,12 @@ msgstr "更新 RuyiSDK 仓库和软件包"
 
 #: ruyi/ruyipkg/update_cli.py:23
 msgid "only sync the repo with this ID"
-msgstr ""
+msgstr "仅同步 ID 为此值的仓库"
 
 #: ruyi/ruyipkg/composite_repo.py:101 ruyi/ruyipkg/update_cli.py:43
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "no active repo with id '{id}'"
-msgstr "没有 ID 为 '{id}' 的新闻条目"
+msgstr "没有 ID 为 '{id}' 的活动仓库"
 
 #: ruyi/ruyipkg/update_cli.py:55
 msgid ""
@@ -1905,7 +1897,7 @@ msgstr ""
 #: ruyi/ruyipkg/update_cli.py:65
 #, python-brace-format
 msgid "package '{category}/{name}' was installed from repo '{repo}' but the latest version is in a different repo"
-msgstr ""
+msgstr "软件包 '{category}/{name}' 是从仓库 '{repo}' 安装的，但最新版本在另一个仓库中"
 
 #: ruyi/ruyipkg/update_cli.py:76
 msgid ""
