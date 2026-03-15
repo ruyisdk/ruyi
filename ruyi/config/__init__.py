@@ -84,10 +84,21 @@ class GlobalConfigTelemetryType(TypedDict):
     pm_telemetry_url: "NotRequired[str]"
 
 
+class GlobalConfigReposEntryType(TypedDict):
+    id: str
+    name: "NotRequired[str]"
+    remote: "NotRequired[str]"
+    branch: "NotRequired[str]"
+    local: "NotRequired[str]"
+    priority: "NotRequired[int]"
+    active: "NotRequired[bool]"
+
+
 class GlobalConfigRootType(TypedDict):
     installation: "NotRequired[GlobalConfigInstallationType]"
     packages: "NotRequired[GlobalConfigPackagesType]"
     repo: "NotRequired[GlobalConfigRepoType]"
+    repos: "NotRequired[list[GlobalConfigReposEntryType]]"
     telemetry: "NotRequired[GlobalConfigTelemetryType]"
 
 
@@ -112,6 +123,8 @@ class GlobalConfig:
         self._telemetry_mode: str | None = None
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
+
+        self._extra_repo_entries: list["RepoEntry"] = []
 
     def _apply_config(
         self,
@@ -165,6 +178,79 @@ class GlobalConfig:
             if consent := tele_cfg.get(schema.KEY_TELEMETRY_UPLOAD_CONSENT, None):
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
+
+        if repos_cfg := config_data.get(schema.SECTION_REPOS):
+            self._parse_repos_config(repos_cfg)
+
+    def _parse_repos_config(
+        self, repos_cfg: "list[GlobalConfigReposEntryType]"
+    ) -> None:
+        from ..ruyipkg.repo import DEFAULT_REPO_ID, DEFAULT_REPO_PRIORITY, REPO_ID_PATTERN, RepoEntry
+
+        seen_ids: set[str] = {e.id for e in self._extra_repo_entries}
+        new_entries: list[RepoEntry] = []
+
+        for entry_data in repos_cfg:
+            repo_id = entry_data.get(schema.KEY_REPOS_ID, "")
+            if not repo_id or not REPO_ID_PATTERN.match(repo_id):
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry with invalid id: '{id}'"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            if repo_id == DEFAULT_REPO_ID:
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry with reserved id '{id}'; "
+                        "use [repo] to configure the default repository"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            if repo_id in seen_ids:
+                self.logger.W(
+                    _(
+                        "ignoring duplicate [[repos]] entry with id '{id}'"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            remote = entry_data.get(schema.KEY_REPOS_REMOTE, "")
+            local_path = entry_data.get(schema.KEY_REPOS_LOCAL, None)
+            if not remote and not local_path:
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry '{id}': "
+                        "at least one of 'remote' or 'local' must be set"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            if local_path and not pathlib.Path(local_path).is_absolute():
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry '{id}': "
+                        "the local path '{path}' is not absolute"
+                    ).format(id=repo_id, path=local_path)
+                )
+                continue
+
+            seen_ids.add(repo_id)
+            new_entries.append(
+                RepoEntry(
+                    id=repo_id,
+                    name=entry_data.get(schema.KEY_REPOS_NAME, repo_id),
+                    remote=remote,
+                    branch=entry_data.get(schema.KEY_REPOS_BRANCH, DEFAULT_REPO_BRANCH),
+                    local_path=local_path,
+                    priority=entry_data.get(schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY),
+                    active=entry_data.get(schema.KEY_REPOS_ACTIVE, True),
+                )
+            )
+
+        self._extra_repo_entries.extend(new_entries)
 
     def get_by_key(self, key: str | Sequence[str]) -> object:
         parsed_key = schema.parse_config_key(key)
@@ -396,7 +482,10 @@ class GlobalConfig:
     def repo_entries(self) -> "list[RepoEntry]":
         from ..ruyipkg.repo import RepoEntry
 
-        return [RepoEntry.from_legacy_config(self)]
+        entries = [RepoEntry.from_legacy_config(self)]
+        entries.extend(self._extra_repo_entries)
+        entries.sort(key=lambda e: e.priority)
+        return entries
 
     @cached_property
     def repo(self) -> "CompositeRepo":

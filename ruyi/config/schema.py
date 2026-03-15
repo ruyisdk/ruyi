@@ -27,6 +27,15 @@ KEY_REPO_BRANCH: Final = "branch"
 KEY_REPO_LOCAL: Final = "local"
 KEY_REPO_REMOTE: Final = "remote"
 
+SECTION_REPOS: Final = "repos"
+KEY_REPOS_ID: Final = "id"
+KEY_REPOS_NAME: Final = "name"
+KEY_REPOS_REMOTE: Final = "remote"
+KEY_REPOS_BRANCH: Final = "branch"
+KEY_REPOS_LOCAL: Final = "local"
+KEY_REPOS_PRIORITY: Final = "priority"
+KEY_REPOS_ACTIVE: Final = "active"
+
 SECTION_TELEMETRY: Final = "telemetry"
 KEY_TELEMETRY_MODE: Final = "mode"
 KEY_TELEMETRY_PM_TELEMETRY_URL: Final = "pm_telemetry_url"
@@ -38,6 +47,7 @@ def validate_section(section: str) -> None:
         SECTION_INSTALLATION,
         SECTION_PACKAGES,
         SECTION_REPO,
+        SECTION_REPOS,
         SECTION_TELEMETRY,
     ):
         raise InvalidConfigSectionError(section)
