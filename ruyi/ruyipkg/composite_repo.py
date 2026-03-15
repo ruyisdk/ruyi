@@ -279,8 +279,21 @@ class CompositeRepo(ProvidesPackageManifests):
                 continue
         raise RuntimeError(f"command plugin '{cmd_name}' not found in any repo")
 
-    def get_telemetry_api_url(self, scope: "TelemetryScopeConfig") -> str | None:
-        """First match wins across repos (highest priority first)."""
+    def get_telemetry_api_url(
+        self,
+        scope: "TelemetryScopeConfig",
+        *,
+        repo_id: str | None = None,
+    ) -> str | None:
+        """Return the telemetry API URL for the given *scope*.
+
+        When *repo_id* is given, only that repo is consulted.  Otherwise
+        the first match wins across repos (highest priority first)."""
+        if repo_id is not None:
+            for repo in self._ensure_repos():
+                if repo.repo_id == repo_id:
+                    return repo.get_telemetry_api_url(scope)
+            return None
         for repo in reversed(self._ensure_repos()):
             if url := repo.get_telemetry_api_url(scope):
                 return url
