@@ -53,10 +53,22 @@ class UpdateCommand(
                     "\nNewer versions are available for some of your installed packages:\n"
                 )
             )
-            for pm, new_ver in upgradable:
+            for pm, new_ver, migrated in upgradable:
                 logger.stdout(
                     f"  - [bold]{pm.category}/{pm.name}[/]: [yellow]{pm.ver}[/] -> [green]{new_ver}[/]"
                 )
+                if migrated:
+                    logger.W(
+                        _(
+                            "package '{category}/{name}' was installed from "
+                            "repo '{repo}' but the latest version is in a "
+                            "different repo"
+                        ).format(
+                            category=pm.category,
+                            name=pm.name,
+                            repo=pm.repo_id,
+                        )
+                    )
             logger.stdout(
                 _(
                     """
