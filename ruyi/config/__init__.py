@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
     from ..log import RuyiLogger
-    from ..ruyipkg.repo import MetadataRepo
+    from ..ruyipkg.repo import MetadataRepo, RepoEntry
     from ..ruyipkg.state import RuyipkgGlobalStateStore
     from ..telemetry.provider import TelemetryProvider
     from ..utils.global_mode import ProvidesGlobalMode
@@ -392,11 +392,15 @@ class GlobalConfig:
         return self.override_repo_branch or DEFAULT_REPO_BRANCH
 
     @cached_property
-    def repo(self) -> "MetadataRepo":
-        from ..ruyipkg.repo import MetadataRepo
+    def repo_entries(self) -> "list[RepoEntry]":
+        from ..ruyipkg.repo import RepoEntry
 
+        return [RepoEntry.from_legacy_config(self)]
+
+    @cached_property
+    def repo(self) -> "MetadataRepo":
         self._ensure_repo_layout_migrated()
-        return MetadataRepo.from_global_config(self)
+        return self.repo_entries[0].make_metadata_repo(self)
 
     def _ensure_repo_layout_migrated(self) -> None:
         """Run the one-time migration from packages-index/ to repos/ruyisdk/

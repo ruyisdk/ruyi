@@ -93,6 +93,18 @@ class RepoEntry:
             active=True,
         )
 
+    def make_metadata_repo(self, gc: "GlobalConfig") -> "MetadataRepo":
+        """Construct a MetadataRepo from this entry's fields."""
+        root = self.resolve_root(str(gc.cache_root))
+        return MetadataRepo(
+            gc,
+            root=root,
+            remote=self.remote or "",
+            branch=self.branch,
+            repo_id=self.id,
+            repo_name=self.name,
+        )
+
 
 class RepoConfigV0Type(TypedDict):
     dist: str
