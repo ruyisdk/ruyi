@@ -48,7 +48,11 @@ class RepoListCommand(
 
             source = entry.remote or ""
             if entry.local_path:
-                source = entry.local_path if not source else f"{source} (local: {entry.local_path})"
+                source = (
+                    entry.local_path
+                    if not source
+                    else f"{source} (local: {entry.local_path})"
+                )
 
             logger.stdout(
                 f"  {active_marker} [bold]{entry.id}[/]{default_marker}{system_marker}  "
@@ -66,11 +70,27 @@ class RepoAddCommand(
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
         p.add_argument("id", type=str, help=_("unique repository identifier"))
-        p.add_argument("url", type=str, nargs="?", default=None, help=_("git remote URL"))
-        p.add_argument("--branch", type=str, default=None, help=_("git branch to track"))
-        p.add_argument("--priority", type=int, default=0, help=_("priority (higher = overrides lower)"))
-        p.add_argument("--local", type=str, default=None, help=_("local path to use instead of or alongside remote"))
-        p.add_argument("--name", type=str, default=None, help=_("human-readable name for the repo"))
+        p.add_argument(
+            "url", type=str, nargs="?", default=None, help=_("git remote URL")
+        )
+        p.add_argument(
+            "--branch", type=str, default=None, help=_("git branch to track")
+        )
+        p.add_argument(
+            "--priority",
+            type=int,
+            default=0,
+            help=_("priority (higher = overrides lower)"),
+        )
+        p.add_argument(
+            "--local",
+            type=str,
+            default=None,
+            help=_("local path to use instead of or alongside remote"),
+        )
+        p.add_argument(
+            "--name", type=str, default=None, help=_("human-readable name for the repo")
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -92,14 +112,14 @@ class RepoAddCommand(
         local: str | None = args.local
 
         if not REPO_ID_PATTERN.match(repo_id):
-            logger.F(
-                _("invalid repo id '{id}'").format(id=repo_id)
-            )
+            logger.F(_("invalid repo id '{id}'").format(id=repo_id))
             return 1
 
         if repo_id == DEFAULT_REPO_ID:
             logger.F(
-                _("'{id}' is reserved; use [repo] config to configure the default repository").format(
+                _(
+                    "'{id}' is reserved; use [repo] config to configure the default repository"
+                ).format(
                     id=DEFAULT_REPO_ID,
                 )
             )
@@ -110,17 +130,13 @@ class RepoAddCommand(
             return 1
 
         if local and not pathlib.Path(local).is_absolute():
-            logger.F(
-                _("local path '{path}' must be absolute").format(path=local)
-            )
+            logger.F(_("local path '{path}' must be absolute").format(path=local))
             return 1
 
         # Check for conflict with existing entries.
         for entry in cfg.repo_entries:
             if entry.id == repo_id:
-                logger.F(
-                    _("a repo with id '{id}' already exists").format(id=repo_id)
-                )
+                logger.F(_("a repo with id '{id}' already exists").format(id=repo_id))
                 return 1
 
         entry_data: dict[str, object] = {KEY_REPOS_ID: repo_id}
@@ -140,9 +156,7 @@ class RepoAddCommand(
             editor.add_repos_entry(entry_data)
             editor.stage()
 
-        logger.I(
-            _("repo '{id}' added; run 'ruyi update' to sync").format(id=repo_id)
-        )
+        logger.I(_("repo '{id}' added; run 'ruyi update' to sync").format(id=repo_id))
         return 0
 
 
@@ -177,7 +191,9 @@ class RepoRemoveCommand(
 
         if repo_id == DEFAULT_REPO_ID:
             logger.F(
-                _("cannot remove the default repo '{id}'; use 'repo disable' instead").format(
+                _(
+                    "cannot remove the default repo '{id}'; use 'repo disable' instead"
+                ).format(
                     id=DEFAULT_REPO_ID,
                 )
             )
@@ -187,7 +203,9 @@ class RepoRemoveCommand(
         for entry in cfg.repo_entries:
             if entry.id == repo_id and entry.is_system:
                 logger.F(
-                    _("cannot remove system-provided repo '{id}'; use 'repo disable' instead").format(
+                    _(
+                        "cannot remove system-provided repo '{id}'; use 'repo disable' instead"
+                    ).format(
                         id=repo_id,
                     )
                 )
@@ -205,13 +223,9 @@ class RepoRemoveCommand(
             repo_dir = cfg.get_repo_dir_for_id(repo_id)
             if pathlib.Path(repo_dir).exists():
                 shutil.rmtree(repo_dir)
-                logger.I(
-                    _("purged cached data at '{path}'").format(path=repo_dir)
-                )
+                logger.I(_("purged cached data at '{path}'").format(path=repo_dir))
 
-        logger.I(
-            _("repo '{id}' removed").format(id=repo_id)
-        )
+        logger.I(_("repo '{id}' removed").format(id=repo_id))
         return 0
 
 

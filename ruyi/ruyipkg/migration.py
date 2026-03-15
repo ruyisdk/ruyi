@@ -32,9 +32,9 @@ def migrate_repo_dir(cache_root: str, logger: "RuyiLogger") -> None:
         return
 
     logger.I(
-        _(
-            "migrating repo directory from [yellow]{old}[/] to [yellow]{new}[/]"
-        ).format(old=legacy_path, new=new_path)
+        _("migrating repo directory from [yellow]{old}[/] to [yellow]{new}[/]").format(
+            old=legacy_path, new=new_path
+        )
     )
 
     new_path.parent.mkdir(parents=True, exist_ok=True)

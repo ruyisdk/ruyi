@@ -130,7 +130,9 @@ active = false
             if "disabled-repo" in line:
                 # Should not start with *
                 stripped = line.lstrip()
-                assert not stripped.startswith("*"), f"disabled repo should not have *: {line}"
+                assert not stripped.startswith(
+                    "*"
+                ), f"disabled repo should not have *: {line}"
 
 
 class TestRepoAddRemoveRoundTrip:
@@ -140,9 +142,12 @@ class TestRepoAddRemoveRoundTrip:
         self, ruyi_cli_runner: IntegrationTestHarness
     ) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "my-overlay",
+            "repo",
+            "add",
+            "my-overlay",
             "https://example.invalid/overlay.git",
-            "--priority", "10",
+            "--priority",
+            "10",
         )
         assert result.exit_code == 0
         assert "my-overlay" in result.stderr
@@ -153,17 +158,19 @@ class TestRepoAddRemoveRoundTrip:
         assert "my-overlay" in result.stdout
         assert "priority=10" in result.stdout
 
-    def test_add_duplicate_fails(
-        self, ruyi_cli_runner: IntegrationTestHarness
-    ) -> None:
+    def test_add_duplicate_fails(self, ruyi_cli_runner: IntegrationTestHarness) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "dup-repo",
+            "repo",
+            "add",
+            "dup-repo",
             "https://example.invalid/dup.git",
         )
         assert result.exit_code == 0
 
         result = ruyi_cli_runner(
-            "repo", "add", "dup-repo",
+            "repo",
+            "add",
+            "dup-repo",
             "https://example.invalid/dup2.git",
         )
         assert result.exit_code == 1
@@ -173,7 +180,9 @@ class TestRepoAddRemoveRoundTrip:
         self, ruyi_cli_runner: IntegrationTestHarness
     ) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "ruyisdk",
+            "repo",
+            "add",
+            "ruyisdk",
             "https://example.invalid/ruyisdk.git",
         )
         assert result.exit_code == 1
@@ -183,7 +192,9 @@ class TestRepoAddRemoveRoundTrip:
         self, ruyi_cli_runner: IntegrationTestHarness
     ) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "INVALID_ID!",
+            "repo",
+            "add",
+            "INVALID_ID!",
             "https://example.invalid/bad.git",
         )
         assert result.exit_code == 1
@@ -195,12 +206,12 @@ class TestRepoAddRemoveRoundTrip:
         result = ruyi_cli_runner("repo", "add", "orphan-repo")
         assert result.exit_code == 1
 
-    def test_remove_repo(
-        self, ruyi_cli_runner: IntegrationTestHarness
-    ) -> None:
+    def test_remove_repo(self, ruyi_cli_runner: IntegrationTestHarness) -> None:
         # Add then remove
         result = ruyi_cli_runner(
-            "repo", "add", "to-remove",
+            "repo",
+            "add",
+            "to-remove",
             "https://example.invalid/to-remove.git",
         )
         assert result.exit_code == 0
@@ -226,12 +237,12 @@ class TestRepoAddRemoveRoundTrip:
         result = ruyi_cli_runner("repo", "remove", "no-such-repo")
         assert result.exit_code == 1
 
-    def test_remove_with_purge(
-        self, ruyi_cli_runner: IntegrationTestHarness
-    ) -> None:
+    def test_remove_with_purge(self, ruyi_cli_runner: IntegrationTestHarness) -> None:
         repo_root = _make_repo_dir(ruyi_cli_runner, "purge-me")
         result = ruyi_cli_runner(
-            "repo", "add", "purge-me",
+            "repo",
+            "add",
+            "purge-me",
             "https://example.invalid/purge-me.git",
         )
         assert result.exit_code == 0
@@ -245,11 +256,11 @@ class TestRepoAddRemoveRoundTrip:
 class TestRepoEnableDisable:
     """Enable and disable repos via CLI."""
 
-    def test_disable_and_enable(
-        self, ruyi_cli_runner: IntegrationTestHarness
-    ) -> None:
+    def test_disable_and_enable(self, ruyi_cli_runner: IntegrationTestHarness) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "toggle-repo",
+            "repo",
+            "add",
+            "toggle-repo",
             "https://example.invalid/toggle.git",
         )
         assert result.exit_code == 0
@@ -280,13 +291,14 @@ class TestRepoEnableDisable:
 class TestRepoSetPriority:
     """Set priority on repos via CLI."""
 
-    def test_set_priority(
-        self, ruyi_cli_runner: IntegrationTestHarness
-    ) -> None:
+    def test_set_priority(self, ruyi_cli_runner: IntegrationTestHarness) -> None:
         result = ruyi_cli_runner(
-            "repo", "add", "pri-repo",
+            "repo",
+            "add",
+            "pri-repo",
             "https://example.invalid/pri.git",
-            "--priority", "5",
+            "--priority",
+            "5",
         )
         assert result.exit_code == 0
 

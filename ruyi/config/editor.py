@@ -159,9 +159,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
                 return True
         return False
 
-    def update_repos_entry(
-        self, repo_id: str, updates: dict[str, object]
-    ) -> bool:
+    def update_repos_entry(self, repo_id: str, updates: dict[str, object]) -> bool:
         """Update fields of the ``[[repos]]`` entry with the given *repo_id*.
 
         Returns True if the entry was found and updated, False otherwise."""

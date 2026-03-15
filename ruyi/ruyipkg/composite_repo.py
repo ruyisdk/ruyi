@@ -26,9 +26,9 @@ class CompositeRepo(ProvidesPackageManifests):
         self._repos: list[MetadataRepo] | None = None
 
         # Merged package caches (populated lazily).
-        self._merged_categories: dict[
-            str, dict[str, dict[str, BoundPackageManifest]]
-        ] | None = None
+        self._merged_categories: (
+            dict[str, dict[str, dict[str, BoundPackageManifest]]] | None
+        ) = None
         self._merged_pkgs: dict[str, dict[str, BoundPackageManifest]] | None = None
         self._merged_slugs: dict[str, BoundPackageManifest] | None = None
 
@@ -83,9 +83,7 @@ class CompositeRepo(ProvidesPackageManifests):
         """Sync all active repos."""
         repos = self._ensure_repos()
         for repo in repos:
-            self._gc.logger.I(
-                _("syncing repo '{id}'").format(id=repo.repo_id)
-            )
+            self._gc.logger.I(_("syncing repo '{id}'").format(id=repo.repo_id))
             repo.sync()
             self._validate_repo_identity(repo)
         self._invalidate_merged_cache()
@@ -94,16 +92,12 @@ class CompositeRepo(ProvidesPackageManifests):
         """Sync a single repo identified by *repo_id*."""
         for repo in self._ensure_repos():
             if repo.repo_id == repo_id:
-                self._gc.logger.I(
-                    _("syncing repo '{id}'").format(id=repo.repo_id)
-                )
+                self._gc.logger.I(_("syncing repo '{id}'").format(id=repo.repo_id))
                 repo.sync()
                 self._validate_repo_identity(repo)
                 self._invalidate_merged_cache()
                 return
-        raise ValueError(
-            _("no active repo with id '{id}'").format(id=repo_id)
-        )
+        raise ValueError(_("no active repo with id '{id}'").format(id=repo_id))
 
     def _validate_repo_identity(self, repo: MetadataRepo) -> None:
         """Warn if the repo's on-disk config.toml declares an id that does

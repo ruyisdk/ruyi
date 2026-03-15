@@ -40,9 +40,7 @@ class UpdateCommand(
             try:
                 mr.sync_one(repo_id)
             except ValueError:
-                logger.F(
-                    _("no active repo with id '{id}'").format(id=repo_id)
-                )
+                logger.F(_("no active repo with id '{id}'").format(id=repo_id))
                 return 1
         else:
             mr.sync_all()

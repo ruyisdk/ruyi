@@ -188,7 +188,12 @@ class GlobalConfig:
         *,
         is_system: bool = False,
     ) -> None:
-        from ..ruyipkg.repo import DEFAULT_REPO_ID, DEFAULT_REPO_PRIORITY, REPO_ID_PATTERN, RepoEntry
+        from ..ruyipkg.repo import (
+            DEFAULT_REPO_ID,
+            DEFAULT_REPO_PRIORITY,
+            REPO_ID_PATTERN,
+            RepoEntry,
+        )
 
         seen_ids: set[str] = {e.id for e in self._extra_repo_entries}
         new_entries: list[RepoEntry] = []
@@ -197,9 +202,9 @@ class GlobalConfig:
             repo_id = entry_data.get(schema.KEY_REPOS_ID, "")
             if not repo_id or not REPO_ID_PATTERN.match(repo_id):
                 self.logger.W(
-                    _(
-                        "ignoring [[repos]] entry with invalid id: '{id}'"
-                    ).format(id=repo_id)
+                    _("ignoring [[repos]] entry with invalid id: '{id}'").format(
+                        id=repo_id
+                    )
                 )
                 continue
 
@@ -214,9 +219,9 @@ class GlobalConfig:
 
             if repo_id in seen_ids:
                 self.logger.W(
-                    _(
-                        "ignoring duplicate [[repos]] entry with id '{id}'"
-                    ).format(id=repo_id)
+                    _("ignoring duplicate [[repos]] entry with id '{id}'").format(
+                        id=repo_id
+                    )
                 )
                 continue
 
@@ -248,7 +253,9 @@ class GlobalConfig:
                     remote=remote,
                     branch=entry_data.get(schema.KEY_REPOS_BRANCH, DEFAULT_REPO_BRANCH),
                     local_path=local_path,
-                    priority=entry_data.get(schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY),
+                    priority=entry_data.get(
+                        schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY
+                    ),
                     active=entry_data.get(schema.KEY_REPOS_ACTIVE, True),
                     is_system=is_system,
                 )

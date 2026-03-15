@@ -224,7 +224,9 @@ class RuyipkgGlobalStateStore:
 
 
 class BoundInstallationStateStore(ProvidesPackageManifests):
-    def __init__(self, rgs: RuyipkgGlobalStateStore, mr: "ProvidesPackageManifests") -> None:
+    def __init__(
+        self, rgs: RuyipkgGlobalStateStore, mr: "ProvidesPackageManifests"
+    ) -> None:
         self._rgs = rgs
         self._mr = mr
 

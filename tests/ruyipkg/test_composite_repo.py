@@ -55,11 +55,13 @@ def _write_manifest(
     ]
     if slug is not None:
         lines.append(f'slug = "{slug}"')
-    lines.extend([
-        "",
-        "[metadata.vendor]",
-        'name = "test-vendor"',
-    ])
+    lines.extend(
+        [
+            "",
+            "[metadata.vendor]",
+            'name = "test-vendor"',
+        ]
+    )
     (pkg_dir / f"{ver}.toml").write_text("\n".join(lines) + "\n")
 
 
@@ -174,9 +176,7 @@ class TestCompositeRepoMultiEntryMerge:
         _write_manifest(overlay_root, "toolchain", "gcc", "14.0.0")
         _write_manifest(overlay_root, "source", "some-lib", "1.0.0", slug="some-lib")
 
-        base_entry = _make_entry(
-            repo_id="base", priority=0, local_path=str(base_root)
-        )
+        base_entry = _make_entry(repo_id="base", priority=0, local_path=str(base_root))
         overlay_entry = _make_entry(
             repo_id="overlay", priority=100, local_path=str(overlay_root)
         )
@@ -190,9 +190,7 @@ class TestCompositeRepoMultiEntryMerge:
         ruyi_logger: "RuyiLogger",
     ) -> None:
         composite = self._make_composite(tmp_path, mock_gm, ruyi_logger)
-        pkgs = {
-            (cat, name): vers for cat, name, vers in composite.iter_pkgs()
-        }
+        pkgs = {(cat, name): vers for cat, name, vers in composite.iter_pkgs()}
 
         # gcc should have 3 versions merged
         assert ("toolchain", "gcc") in pkgs
@@ -343,20 +341,26 @@ class TestCompositeRepoMultiEntryMerge:
         base_root = tmp_path / "slug-base"
         _init_repo_dir(base_root)
         _write_manifest(
-            base_root, "toolchain", "pkg-a", "1.0.0",
-            slug="shared-slug", desc="from base",
+            base_root,
+            "toolchain",
+            "pkg-a",
+            "1.0.0",
+            slug="shared-slug",
+            desc="from base",
         )
 
         overlay_root = tmp_path / "slug-overlay"
         _init_repo_dir(overlay_root)
         _write_manifest(
-            overlay_root, "toolchain", "pkg-b", "2.0.0",
-            slug="shared-slug", desc="from overlay",
+            overlay_root,
+            "toolchain",
+            "pkg-b",
+            "2.0.0",
+            slug="shared-slug",
+            desc="from overlay",
         )
 
-        base_entry = _make_entry(
-            repo_id="base", priority=0, local_path=str(base_root)
-        )
+        base_entry = _make_entry(repo_id="base", priority=0, local_path=str(base_root))
         overlay_entry = _make_entry(
             repo_id="overlay", priority=100, local_path=str(overlay_root)
         )

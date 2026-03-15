@@ -67,7 +67,9 @@ def _do_list_non_verbose(
                 comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
-            logger.stdout(f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{repo_str}")
+            logger.stdout(
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{repo_str}"
+            )
 
     return 0
 
@@ -87,7 +89,9 @@ def _print_pkg_detail(
     multi_repo: bool = False,
 ) -> None:
     repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
-    logger.stdout(f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/]{repo_tag}[/]\n")
+    logger.stdout(
+        f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/]{repo_tag}[/]\n"
+    )
 
     if pm.slug is not None:
         logger.stdout(_("* Slug: [yellow]{slug}[/]").format(slug=pm.slug))
