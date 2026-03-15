@@ -5,6 +5,17 @@ if TYPE_CHECKING:
     from ..config import GlobalConfig
 
 
+def repo_id_completer_builder(
+    cfg: "GlobalConfig",
+) -> "DynamicCompleter":
+    repo_ids = [entry.id for entry in cfg.repo_entries]
+
+    def f(prefix: str, parsed_args: object, **kwargs: Any) -> list[str]:
+        return [rid for rid in repo_ids if rid.startswith(prefix)]
+
+    return f
+
+
 def package_completer_builder(
     cfg: "GlobalConfig",
     filters: list[Callable[[str], bool]] | None = None,

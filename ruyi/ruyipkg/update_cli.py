@@ -16,12 +16,16 @@ class UpdateCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument(
+        a = p.add_argument(
             "--repo",
             type=str,
             default=None,
             help=_("only sync the repo with this ID"),
         )
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:

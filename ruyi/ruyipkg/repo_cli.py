@@ -153,7 +153,11 @@ class RepoRemoveCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument("id", type=str, help=_("repository identifier to remove"))
+        a = p.add_argument("id", type=str, help=_("repository identifier to remove"))
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
         p.add_argument(
             "--purge",
             action="store_true",
@@ -218,7 +222,11 @@ class RepoEnableCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument("id", type=str, help=_("repository identifier to enable"))
+        a = p.add_argument("id", type=str, help=_("repository identifier to enable"))
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -247,7 +255,11 @@ class RepoDisableCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument("id", type=str, help=_("repository identifier to disable"))
+        a = p.add_argument("id", type=str, help=_("repository identifier to disable"))
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -276,7 +288,11 @@ class RepoSetPriorityCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        p.add_argument("id", type=str, help=_("repository identifier"))
+        a = p.add_argument("id", type=str, help=_("repository identifier"))
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
         p.add_argument("priority", type=int, help=_("new priority value"))
 
     @classmethod
