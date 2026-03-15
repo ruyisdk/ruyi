@@ -180,10 +180,13 @@ class GlobalConfig:
                     self._telemetry_upload_consent = consent
 
         if repos_cfg := config_data.get(schema.SECTION_REPOS):
-            self._parse_repos_config(repos_cfg)
+            self._parse_repos_config(repos_cfg, is_system=is_global_scope)
 
     def _parse_repos_config(
-        self, repos_cfg: "list[GlobalConfigReposEntryType]"
+        self,
+        repos_cfg: "list[GlobalConfigReposEntryType]",
+        *,
+        is_system: bool = False,
     ) -> None:
         from ..ruyipkg.repo import DEFAULT_REPO_ID, DEFAULT_REPO_PRIORITY, REPO_ID_PATTERN, RepoEntry
 
@@ -247,6 +250,7 @@ class GlobalConfig:
                     local_path=local_path,
                     priority=entry_data.get(schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY),
                     active=entry_data.get(schema.KEY_REPOS_ACTIVE, True),
+                    is_system=is_system,
                 )
             )
 

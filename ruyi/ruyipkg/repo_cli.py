@@ -44,13 +44,14 @@ class RepoListCommand(
         for entry in sorted(entries, key=lambda e: -e.priority):
             active_marker = "*" if entry.active else " "
             default_marker = " (default)" if entry.id == DEFAULT_REPO_ID else ""
+            system_marker = " (system)" if entry.is_system else ""
 
             source = entry.remote or ""
             if entry.local_path:
                 source = entry.local_path if not source else f"{source} (local: {entry.local_path})"
 
             logger.stdout(
-                f"  {active_marker} [bold]{entry.id}[/]{default_marker}  "
+                f"  {active_marker} [bold]{entry.id}[/]{default_marker}{system_marker}  "
                 f"priority={entry.priority}  {source}"
             )
 
@@ -177,6 +178,16 @@ class RepoRemoveCommand(
                 )
             )
             return 1
+
+        # Check if entry is system-provided
+        for entry in cfg.repo_entries:
+            if entry.id == repo_id and entry.is_system:
+                logger.F(
+                    _("cannot remove system-provided repo '{id}'; use 'repo disable' instead").format(
+                        id=repo_id,
+                    )
+                )
+                return 1
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
             if not editor.remove_repos_entry(repo_id):

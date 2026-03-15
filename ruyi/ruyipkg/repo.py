@@ -70,6 +70,7 @@ class RepoEntry:
     local_path: str | None
     priority: int
     active: bool
+    is_system: bool = False
 
     def resolve_root(self, cache_root: str) -> str:
         """Return the local checkout path for this repo entry."""
