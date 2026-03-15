@@ -16,7 +16,12 @@ class UpdateCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        pass
+        p.add_argument(
+            "--repo",
+            type=str,
+            default=None,
+            help=_("only sync the repo with this ID"),
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -25,7 +30,18 @@ class UpdateCommand(
 
         logger = cfg.logger
         mr = cfg.repo
-        mr.sync_all()
+
+        repo_id: str | None = args.repo
+        if repo_id is not None:
+            try:
+                mr.sync_one(repo_id)
+            except ValueError:
+                logger.F(
+                    _("no active repo with id '{id}'").format(id=repo_id)
+                )
+                return 1
+        else:
+            mr.sync_all()
 
         # check for upgradable packages
         bis = BoundInstallationStateStore(cfg.ruyipkg_global_state, mr)

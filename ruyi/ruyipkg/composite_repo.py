@@ -81,8 +81,50 @@ class CompositeRepo(ProvidesPackageManifests):
 
     def sync_all(self) -> None:
         """Sync all active repos."""
-        for repo in self._ensure_repos():
+        repos = self._ensure_repos()
+        for repo in repos:
+            self._gc.logger.I(
+                _("syncing repo '{id}'").format(id=repo.repo_id)
+            )
             repo.sync()
+            self._validate_repo_identity(repo)
+        self._invalidate_merged_cache()
+
+    def sync_one(self, repo_id: str) -> None:
+        """Sync a single repo identified by *repo_id*."""
+        for repo in self._ensure_repos():
+            if repo.repo_id == repo_id:
+                self._gc.logger.I(
+                    _("syncing repo '{id}'").format(id=repo.repo_id)
+                )
+                repo.sync()
+                self._validate_repo_identity(repo)
+                self._invalidate_merged_cache()
+                return
+        raise ValueError(
+            _("no active repo with id '{id}'").format(id=repo_id)
+        )
+
+    def _validate_repo_identity(self, repo: MetadataRepo) -> None:
+        """Warn if the repo's on-disk config.toml declares an id that does
+        not match the configured RepoEntry.id."""
+        cfg = repo.maybe_config
+        if cfg is None:
+            return
+        on_disk_id = cfg.repo_id
+        if on_disk_id and on_disk_id != repo.repo_id:
+            self._gc.logger.W(
+                _(
+                    "repo '{id}' declares id '{on_disk_id}' in its "
+                    "config.toml; expected '{id}'"
+                ).format(id=repo.repo_id, on_disk_id=on_disk_id)
+            )
+
+    def _invalidate_merged_cache(self) -> None:
+        """Clear the merged caches so they are rebuilt on the next access."""
+        self._merged_categories = None
+        self._merged_pkgs = None
+        self._merged_slugs = None
 
     # --- ProvidesPackageManifests implementation ---
 
