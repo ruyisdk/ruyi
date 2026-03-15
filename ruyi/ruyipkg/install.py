@@ -326,9 +326,11 @@ def _do_install_binary_pkg(
             install_path=install_root,
         )
 
+    repo_tag = f" [dim]\\[{pm.repo_id}][/]" if len(config.repo_entries) > 1 else ""
     logger.I(
-        _("package [green]{pkg}[/] installed to [yellow]{install_root}[/]").format(
+        _("package [green]{pkg}[/]{repo_tag} installed to [yellow]{install_root}[/]").format(
             pkg=pkg_name,
+            repo_tag=repo_tag,
             install_root=install_root,
         )
     )
