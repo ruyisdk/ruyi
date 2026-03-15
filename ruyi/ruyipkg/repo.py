@@ -414,6 +414,17 @@ class MetadataRepo(ProvidesPackageManifests):
         return self.repo
 
     def sync(self) -> None:
+        if not self.remote:
+            # Local-only repo: no git remote to sync from; just reload metadata.
+            self._gc.logger.D(
+                _("skipping sync for local-only repo '{id}'").format(
+                    id=self._repo_id,
+                )
+            )
+            self._cfg_initialized = False
+            self._read_config(False)
+            return
+
         self._gc.logger.I(_("updating the package repository"))
 
         repo = self.ensure_git_repo()

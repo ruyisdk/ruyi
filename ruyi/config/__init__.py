@@ -460,7 +460,15 @@ class GlobalConfig:
         return self.override_repo_dir or self.default_repo_dir
 
     def get_repo_dir_for_id(self, repo_id: str) -> str:
-        """Return the local checkout path for a repo identified by ``repo_id``."""
+        """Return the local checkout path for a repo identified by ``repo_id``.
+
+        If the matching ``RepoEntry`` has a ``local_path`` set, that path is
+        returned directly; otherwise the default ``<cache>/repos/<id>/``
+        location is used.
+        """
+        for entry in self.repo_entries:
+            if entry.id == repo_id:
+                return entry.resolve_root(self.cache_root)
         return os.path.join(self.cache_root, "repos", repo_id)
 
     @cached_property
