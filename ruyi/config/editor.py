@@ -12,7 +12,9 @@ from tomlkit.items import Table
 from .errors import MalformedConfigFileError, ProtectedGlobalConfigError
 from .schema import (
     SECTION_INSTALLATION,
+    SECTION_REPOS,
     KEY_INSTALLATION_EXTERNALLY_MANAGED,
+    KEY_REPOS_ID,
     ensure_valid_config_kv,
     parse_config_key,
     validate_section,
@@ -121,3 +123,57 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
         validate_section(section)
         if section in self._stage:
             self._stage.pop(section)
+
+    def add_repos_entry(self, entry: dict[str, object]) -> None:
+        """Append a ``[[repos]]`` table-array entry to the staged config."""
+        tbl = tomlkit.table()
+        for k, v in entry.items():
+            tbl.append(k, v)
+
+        if SECTION_REPOS in self._stage:
+            existing = self._stage[SECTION_REPOS]
+            if isinstance(existing, tomlkit.items.AoT):
+                existing.append(tbl)
+            else:
+                raise MalformedConfigFileError(self._path)
+        else:
+            aot = tomlkit.aot()
+            aot.append(tbl)
+            self._stage.append(SECTION_REPOS, aot)
+
+    def remove_repos_entry(self, repo_id: str) -> bool:
+        """Remove the ``[[repos]]`` entry with the given *repo_id*.
+
+        Returns True if an entry was removed, False if not found."""
+        if SECTION_REPOS not in self._stage:
+            return False
+        existing = self._stage[SECTION_REPOS]
+        if not isinstance(existing, tomlkit.items.AoT):
+            raise MalformedConfigFileError(self._path)
+
+        for i, tbl in enumerate(existing):
+            if tbl.get(KEY_REPOS_ID) == repo_id:
+                del existing[i]
+                if len(existing) == 0:
+                    self._stage.pop(SECTION_REPOS)
+                return True
+        return False
+
+    def update_repos_entry(
+        self, repo_id: str, updates: dict[str, object]
+    ) -> bool:
+        """Update fields of the ``[[repos]]`` entry with the given *repo_id*.
+
+        Returns True if the entry was found and updated, False otherwise."""
+        if SECTION_REPOS not in self._stage:
+            return False
+        existing = self._stage[SECTION_REPOS]
+        if not isinstance(existing, tomlkit.items.AoT):
+            raise MalformedConfigFileError(self._path)
+
+        for tbl in existing:
+            if tbl.get(KEY_REPOS_ID) == repo_id:
+                for k, v in updates.items():
+                    tbl[k] = v
+                return True
+        return False
