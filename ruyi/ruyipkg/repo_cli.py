@@ -143,3 +143,58 @@ class RepoAddCommand(
             _("repo '{id}' added; run 'ruyi update' to sync").format(id=repo_id)
         )
         return 0
+
+
+class RepoRemoveCommand(
+    RepoCommand,
+    cmd="remove",
+    help=_("Remove a package repository"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument("id", type=str, help=_("repository identifier to remove"))
+        p.add_argument(
+            "--purge",
+            action="store_true",
+            default=False,
+            help=_("also remove cached repo data from disk"),
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        import shutil
+
+        from ..config.editor import ConfigEditor
+        from .repo import DEFAULT_REPO_ID
+
+        logger = cfg.logger
+        repo_id: str = args.id
+
+        if repo_id == DEFAULT_REPO_ID:
+            logger.F(
+                _("cannot remove the default repo '{id}'; use 'repo disable' instead").format(
+                    id=DEFAULT_REPO_ID,
+                )
+            )
+            return 1
+
+        with ConfigEditor.work_on_user_local_config(cfg) as editor:
+            if not editor.remove_repos_entry(repo_id):
+                logger.F(
+                    _("no repo with id '{id}' found in user config").format(id=repo_id)
+                )
+                return 1
+            editor.stage()
+
+        if args.purge:
+            repo_dir = cfg.get_repo_dir_for_id(repo_id)
+            if pathlib.Path(repo_dir).exists():
+                shutil.rmtree(repo_dir)
+                logger.I(
+                    _("purged cached data at '{path}'").format(path=repo_dir)
+                )
+
+        logger.I(
+            _("repo '{id}' removed").format(id=repo_id)
+        )
+        return 0
