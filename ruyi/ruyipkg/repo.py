@@ -277,11 +277,22 @@ class ArchProfileStore:
 
 
 class MetadataRepo(ProvidesPackageManifests):
-    def __init__(self, gc: "GlobalConfig") -> None:
+    def __init__(
+        self,
+        gc: "GlobalConfig",
+        *,
+        root: str,
+        remote: str,
+        branch: str,
+        repo_id: str = DEFAULT_REPO_ID,
+        repo_name: str = DEFAULT_REPO_NAME,
+    ) -> None:
         self._gc = gc
-        self.root = gc.get_repo_dir()
-        self.remote = gc.get_repo_url()
-        self.branch = gc.get_repo_branch()
+        self.root = root
+        self.remote = remote
+        self.branch = branch
+        self._repo_id = repo_id
+        self._repo_name = repo_name
         self.repo: Repository | None = None
 
         self._cfg: RepoConfig | None = None
@@ -300,15 +311,26 @@ class MetadataRepo(ProvidesPackageManifests):
         )
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
+    @classmethod
+    def from_global_config(cls, gc: "GlobalConfig") -> "MetadataRepo":
+        """Factory that preserves the current single-repo construction path.
+
+        All existing call sites that used ``MetadataRepo(gc)`` should use
+        this instead."""
+        return cls(
+            gc,
+            root=gc.get_repo_dir(),
+            remote=gc.get_repo_url(),
+            branch=gc.get_repo_branch(),
+        )
+
     @property
     def repo_id(self) -> str:
-        # TODO: read from config after multi-repo support is complete
-        return "ruyisdk"
+        return self._repo_id
 
     @property
     def repo_name(self) -> str:
-        # TODO: read from config after multi-repo support is complete
-        return "RuyiSDK official repository"
+        return self._repo_name
 
     @property
     def logger(self) -> RuyiLogger:

@@ -386,7 +386,7 @@ class GlobalConfig:
     def repo(self) -> "MetadataRepo":
         from ..ruyipkg.repo import MetadataRepo
 
-        return MetadataRepo(self)
+        return MetadataRepo.from_global_config(self)
 
     def ensure_distfiles_dir(self) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"
