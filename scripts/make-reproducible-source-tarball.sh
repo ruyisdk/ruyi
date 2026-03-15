@@ -36,14 +36,16 @@ reproducible_gzip() {
 }
 
 main() {
-    local version source_epoch staging_dirname dest_dir
+    local version staging_dirname dest_dir
 
     cd "$REPO_ROOT"
     version="$(git describe)"
-    source_epoch="$(get_repo_commit_time)"
     staging_dirname="ruyi-$version"
     artifact_name="$staging_dirname.tar.gz"
     dest_dir="${1:=$REPO_ROOT/tmp}"
+
+    SOURCE_EPOCH="$(get_repo_commit_time)"
+    export SOURCE_EPOCH
 
     TMPDIR="$(mktemp -d)"
     trap _cleanup EXIT
@@ -53,7 +55,7 @@ main() {
     # remove Git metadata
     find . -name .git -exec rm -rf '{}' '+'
     # set all file timestamps to $SOURCE_EPOCH
-    find . -exec touch -md "$source_epoch" '{}' '+'
+    find . -exec touch -md "$SOURCE_EPOCH" '{}' '+'
     popd > /dev/null
 
     pushd "$TMPDIR" > /dev/null
