@@ -1,8 +1,10 @@
 import glob
+from dataclasses import dataclass
 from functools import cached_property
 import itertools
 import os.path
 import pathlib
+import re
 import sys
 from typing import (
     Any,
@@ -49,6 +51,47 @@ if TYPE_CHECKING:
 
     # for avoiding circular import
     from ..config import GlobalConfig
+
+
+REPO_ID_PATTERN: Final = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+DEFAULT_REPO_ID: Final = "ruyisdk"
+DEFAULT_REPO_NAME: Final = "RuyiSDK official repository"
+DEFAULT_REPO_PRIORITY: Final = 0
+
+
+@dataclass(frozen=True)
+class RepoEntry:
+    """A configured pointer to a single metadata repository."""
+
+    id: str
+    name: str
+    remote: str | None
+    branch: str
+    local_path: str | None
+    priority: int
+    active: bool
+
+    def resolve_root(self, cache_root: str) -> str:
+        """Return the local checkout path for this repo entry."""
+        if self.local_path is not None:
+            return self.local_path
+        return os.path.join(cache_root, "repos", self.id)
+
+    @classmethod
+    def from_legacy_config(cls, gc: "GlobalConfig") -> "RepoEntry":
+        """Construct the default RepoEntry from the existing GlobalConfig
+        repo fields (backward-compatible single-repo path)."""
+        from ..config import DEFAULT_REPO_URL, DEFAULT_REPO_BRANCH
+
+        return cls(
+            id=DEFAULT_REPO_ID,
+            name=DEFAULT_REPO_NAME,
+            remote=gc.override_repo_url or DEFAULT_REPO_URL,
+            branch=gc.override_repo_branch or DEFAULT_REPO_BRANCH,
+            local_path=gc.override_repo_dir,
+            priority=DEFAULT_REPO_PRIORITY,
+            active=True,
+        )
 
 
 class RepoConfigV0Type(TypedDict):
