@@ -2,6 +2,7 @@ import glob
 from dataclasses import dataclass
 from functools import cached_property
 import itertools
+import os
 import os.path
 import pathlib
 import re
@@ -72,7 +73,7 @@ class RepoEntry:
     active: bool
     is_system: bool = False
 
-    def resolve_root(self, cache_root: str) -> str:
+    def resolve_root(self, cache_root: str | os.PathLike[str]) -> str:
         """Return the local checkout path for this repo entry."""
         if self.local_path is not None:
             return self.local_path

@@ -367,7 +367,7 @@ def _do_install_binary_pkg_to(
     for df_name in distfiles_for_host:
         df_decl = dfs[df_name]
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-        df = Distfile(df_decl, mr)
+        df = Distfile(df_decl, pm.repo)
         df.ensure(logger)
 
         if fetch_only:
@@ -494,7 +494,7 @@ def _do_install_blob_pkg_to(
     for df_name in distfile_names:
         df_decl = dfs[df_name]
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
-        df = Distfile(df_decl, mr)
+        df = Distfile(df_decl, pm.repo)
         df.ensure(logger)
 
         if fetch_only:

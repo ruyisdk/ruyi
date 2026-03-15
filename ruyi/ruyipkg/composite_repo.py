@@ -264,6 +264,26 @@ class CompositeRepo(ProvidesPackageManifests):
             arches.update(repo.get_supported_arches())
         return list(arches)
 
+    def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
+        """Priority-ordered plugin value lookup."""
+        for repo in reversed(self._ensure_repos()):
+            try:
+                return repo.get_from_plugin(plugin_id, key)
+            except (FileNotFoundError, NotADirectoryError, RuntimeError):
+                continue
+        raise RuntimeError(f"plugin '{plugin_id}' not found in any repo")
+
+    def eval_plugin_fn(
+        self,
+        function: object,
+        *args: object,
+        **kwargs: object,
+    ) -> object:
+        repos = self._ensure_repos()
+        if not repos:
+            raise RuntimeError("no active repo available for plugin evaluation")
+        return repos[-1].eval_plugin_fn(function, *args, **kwargs)
+
     def run_plugin_cmd(self, cmd_name: str, args: list[str]) -> int:
         """Priority-ordered plugin dispatch."""
         # Try highest priority first
