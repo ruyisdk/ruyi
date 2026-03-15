@@ -1,12 +1,14 @@
 import pathlib
-from typing import cast
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING
 
 import pygit2
-import pytest
 
 from ruyi.ruyipkg.composite_repo import CompositeRepo
-from ruyi.ruyipkg.repo import DEFAULT_REPO_ID, RepoEntry
+from ruyi.ruyipkg.repo import RepoEntry
+
+if TYPE_CHECKING:
+    from tests.fixtures import MockGlobalModeProvider
+    from ruyi.log import RuyiLogger
 
 
 def _make_entry(

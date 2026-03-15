@@ -11,6 +11,7 @@ from .repo import MetadataRepo, RepoEntry
 if TYPE_CHECKING:
     from ..config import GlobalConfig
     from ..telemetry.scope import TelemetryScopeConfig
+    from .msg import RepoMessageStore
 
 
 class CompositeRepo(ProvidesPackageManifests):

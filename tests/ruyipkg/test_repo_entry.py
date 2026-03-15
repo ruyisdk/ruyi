@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from ruyi.ruyipkg.repo import (
@@ -6,6 +8,10 @@ from ruyi.ruyipkg.repo import (
     DEFAULT_REPO_PRIORITY,
     RepoEntry,
 )
+
+if TYPE_CHECKING:
+    from tests.fixtures import MockGlobalModeProvider
+    from ruyi.log import RuyiLogger
 
 
 class TestRepoEntry:

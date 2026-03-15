@@ -2,8 +2,6 @@
 
 from typing import TYPE_CHECKING
 
-import pytest
-
 from ruyi.config import GlobalConfig
 
 if TYPE_CHECKING:
