@@ -329,7 +329,20 @@ class MetadataRepo(ProvidesPackageManifests):
         """Factory that preserves the current single-repo construction path.
 
         All existing call sites that used ``MetadataRepo(gc)`` should use
-        this instead."""
+        this instead.
+
+        .. deprecated::
+            Use ``RepoEntry.make_metadata_repo()`` or the CompositeRepo
+            via ``GlobalConfig.repo`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "MetadataRepo.from_global_config() is deprecated; "
+            "use RepoEntry.make_metadata_repo() or GlobalConfig.repo instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return cls(
             gc,
             root=gc.get_repo_dir(),

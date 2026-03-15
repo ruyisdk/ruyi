@@ -461,6 +461,13 @@ class GlobalConfig:
         return os.path.join(self.cache_root, "packages-index")
 
     def get_repo_dir(self) -> str:
+        import warnings
+
+        warnings.warn(
+            "get_repo_dir() is deprecated; use get_repo_dir_for_id(repo_id) instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.override_repo_dir or self.default_repo_dir
 
     def get_repo_dir_for_id(self, repo_id: str) -> str:
@@ -509,7 +516,19 @@ class GlobalConfig:
     @cached_property
     def default_repo(self) -> "MetadataRepo":
         """Return the default (ruyisdk) MetadataRepo for code that truly
-        needs a specific MetadataRepo instance."""
+        needs a specific MetadataRepo instance.
+
+        .. deprecated::
+            Use ``self.repo`` (CompositeRepo) instead for multi-repo-aware
+            access, or iterate ``self.repo_entries`` for specific repos.
+        """
+        import warnings
+
+        warnings.warn(
+            "default_repo is deprecated; use the CompositeRepo via .repo instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._ensure_repo_layout_migrated()
         return self.repo_entries[0].make_metadata_repo(self)
 
