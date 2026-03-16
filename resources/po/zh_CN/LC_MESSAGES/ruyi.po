@@ -1638,12 +1638,12 @@ msgstr "列出所有可用配置文件"
 #: ruyi/ruyipkg/profile_cli.py:30
 #, python-brace-format
 msgid "{profile_id} (arch: [green]{arch}[/])"
-msgstr ""
+msgstr "{profile_id}（架构：[green]{arch}[/]）"
 
 #: ruyi/ruyipkg/profile_cli.py:39
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{profile_id} (arch: [green]{arch}[/], needs quirks: [yellow]{need_quirks}[/])"
-msgstr "{profile_id}（需要特殊特性：{need_quirks}）"
+msgstr "{profile_id}（架构：[green]{arch}[/]，需要特殊特性：[yellow]{need_quirks}[/]）"
 
 #: ruyi/ruyipkg/repo.py:246
 #, python-brace-format
