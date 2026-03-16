@@ -15,7 +15,7 @@ from ..ruyipkg.pkg_manifest import (
     PartitionKind,
     PartitionMapDecl,
 )
-from ..ruyipkg.repo import MetadataRepo
+from ..ruyipkg.composite_repo import CompositeRepo
 from ..utils import mounts, prereqs
 
 if TYPE_CHECKING:
@@ -120,7 +120,7 @@ configuration does not allow so.
 
 def maybe_render_postinst_msg(
     logger: RuyiLogger,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     combo: BaseEntity,
     lang_code: str,
 ) -> bool:
@@ -135,7 +135,7 @@ def maybe_render_postinst_msg(
 
 def do_provision_combo_interactive(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     dev_decl: BaseEntity,
     variant_decl: BaseEntity,
     combo: BaseEntity,
@@ -385,7 +385,7 @@ class PackageProvisionStrategy:
     def __init__(
         self,
         decl: PackageProvisionStrategyDecl,
-        mr: MetadataRepo,
+        mr: CompositeRepo,
     ) -> None:
         self._d = decl
         self._mr = mr
@@ -426,7 +426,7 @@ class PackageProvisionStrategy:
 
 
 class ProvisionStrategyProvider:
-    def __init__(self, mr: MetadataRepo) -> None:
+    def __init__(self, mr: CompositeRepo) -> None:
         self._mr = mr
         self._strats: dict[str, PackageProvisionStrategy] = {}
 
@@ -458,7 +458,7 @@ class ProvisionStrategyProvider:
 
 def get_pkg_provision_strategy(
     strat_provider: ProvisionStrategyProvider,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     atom: str,
 ) -> PackageProvisionStrategy:
     a = Atom.parse(atom)
@@ -472,7 +472,7 @@ def get_pkg_provision_strategy(
 
 def make_pkg_part_map(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     atom: str,
 ) -> PartitionMapDecl:
     a = Atom.parse(atom)
@@ -487,7 +487,7 @@ def make_pkg_part_map(
 
 def is_package_version_customization_possible(
     gc: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pkg_atoms: list[str],
 ) -> bool:
     """
@@ -509,7 +509,7 @@ def is_package_version_customization_possible(
 
 def customize_package_versions(
     config: GlobalConfig,
-    mr: MetadataRepo,
+    mr: CompositeRepo,
     pkg_atoms: list[str],
 ) -> list[str] | None:
     """

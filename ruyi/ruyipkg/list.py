@@ -32,18 +32,19 @@ def do_list(
         return 1
 
     augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
+    multi_repo = len(cfg.repo_entries) > 1
 
     if cfg.is_porcelain:
         return _do_list_porcelain(augmented_pkgs)
 
     if not verbose:
-        return _do_list_non_verbose(logger, augmented_pkgs)
+        return _do_list_non_verbose(logger, augmented_pkgs, multi_repo)
 
     for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
         if i > 0:
             logger.stdout("\n")
 
-        _print_pkg_detail(logger, ver.pm, cfg.lang_code)
+        _print_pkg_detail(logger, ver.pm, cfg.lang_code, multi_repo)
 
     return 0
 
@@ -51,6 +52,7 @@ def do_list(
 def _do_list_non_verbose(
     logger: RuyiLogger,
     augmented_pkgs: list[AugmentedPkg],
+    multi_repo: bool = False,
 ) -> int:
     logger.stdout(_("List of available packages:\n"))
 
@@ -64,7 +66,10 @@ def _do_list_non_verbose(
             else:
                 comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
-            logger.stdout(f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}")
+            repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
+            logger.stdout(
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{repo_str}"
+            )
 
     return 0
 
@@ -81,8 +86,12 @@ def _print_pkg_detail(
     logger: RuyiLogger,
     pm: BoundPackageManifest,
     lang_code: str,
+    multi_repo: bool = False,
 ) -> None:
-    logger.stdout(f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/][/]\n")
+    repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
+    logger.stdout(
+        f"[bold]## [green]{pm.category}/{pm.name}[/] [blue]{pm.ver}[/]{repo_tag}[/]\n"
+    )
 
     if pm.slug is not None:
         logger.stdout(_("* Slug: [yellow]{slug}[/]").format(slug=pm.slug))

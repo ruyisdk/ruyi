@@ -58,6 +58,7 @@ CURRENT_ALLOWLIST = {
     "ruyi.ruyipkg.list_filter",  # part of the argparse machinery
     "ruyi.ruyipkg.news_cli",
     "ruyi.ruyipkg.profile_cli",
+    "ruyi.ruyipkg.repo_cli",
     "ruyi.ruyipkg.update_cli",
     "ruyi.telemetry",
     "ruyi.telemetry.telemetry_cli",

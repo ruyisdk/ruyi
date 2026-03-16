@@ -12,7 +12,7 @@ from .distfile import Distfile
 from .host import get_native_host
 from .list_filter import ListFilter
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
-from .repo import MetadataRepo
+from .composite_repo import CompositeRepo
 
 
 if sys.version_info >= (3, 11):
@@ -117,15 +117,13 @@ class AugmentedPkg:
     def yield_from_repo(
         cls,
         cfg: GlobalConfig,
-        mr: MetadataRepo,
+        mr: CompositeRepo,
         filters: ListFilter,
-        *,
-        ensure_repo: bool = True,
     ) -> "Iterable[Self]":
         rgs = cfg.ruyipkg_global_state
         native_host = str(get_native_host())
 
-        for category, pkg_name, pkg_vers in mr.iter_pkgs(ensure_repo=ensure_repo):
+        for category, pkg_name, pkg_vers in mr.iter_pkgs():
             if not filters.check_pkg_name(cfg, mr, category, pkg_name):
                 continue
 

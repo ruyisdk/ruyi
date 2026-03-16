@@ -11,7 +11,8 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
 
     from ..log import RuyiLogger
-    from ..ruyipkg.repo import MetadataRepo
+    from ..ruyipkg.composite_repo import CompositeRepo
+    from ..ruyipkg.repo import MetadataRepo, RepoEntry
     from ..ruyipkg.state import RuyipkgGlobalStateStore
     from ..telemetry.provider import TelemetryProvider
     from ..utils.global_mode import ProvidesGlobalMode
@@ -83,10 +84,21 @@ class GlobalConfigTelemetryType(TypedDict):
     pm_telemetry_url: "NotRequired[str]"
 
 
+class GlobalConfigReposEntryType(TypedDict):
+    id: str
+    name: "NotRequired[str]"
+    remote: "NotRequired[str]"
+    branch: "NotRequired[str]"
+    local: "NotRequired[str]"
+    priority: "NotRequired[int]"
+    active: "NotRequired[bool]"
+
+
 class GlobalConfigRootType(TypedDict):
     installation: "NotRequired[GlobalConfigInstallationType]"
     packages: "NotRequired[GlobalConfigPackagesType]"
     repo: "NotRequired[GlobalConfigRepoType]"
+    repos: "NotRequired[list[GlobalConfigReposEntryType]]"
     telemetry: "NotRequired[GlobalConfigTelemetryType]"
 
 
@@ -111,6 +123,8 @@ class GlobalConfig:
         self._telemetry_mode: str | None = None
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
+
+        self._extra_repo_entries: list["RepoEntry"] = []
 
     def _apply_config(
         self,
@@ -164,6 +178,90 @@ class GlobalConfig:
             if consent := tele_cfg.get(schema.KEY_TELEMETRY_UPLOAD_CONSENT, None):
                 if isinstance(consent, datetime.datetime):
                     self._telemetry_upload_consent = consent
+
+        if repos_cfg := config_data.get(schema.SECTION_REPOS):
+            self._parse_repos_config(repos_cfg, is_system=is_global_scope)
+
+    def _parse_repos_config(
+        self,
+        repos_cfg: "list[GlobalConfigReposEntryType]",
+        *,
+        is_system: bool = False,
+    ) -> None:
+        from ..ruyipkg.repo import (
+            DEFAULT_REPO_ID,
+            DEFAULT_REPO_PRIORITY,
+            REPO_ID_PATTERN,
+            RepoEntry,
+        )
+
+        seen_ids: set[str] = {e.id for e in self._extra_repo_entries}
+        new_entries: list[RepoEntry] = []
+
+        for entry_data in repos_cfg:
+            repo_id = entry_data.get(schema.KEY_REPOS_ID, "")
+            if not repo_id or not REPO_ID_PATTERN.match(repo_id):
+                self.logger.W(
+                    _("ignoring [[repos]] entry with invalid id: '{id}'").format(
+                        id=repo_id
+                    )
+                )
+                continue
+
+            if repo_id == DEFAULT_REPO_ID:
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry with reserved id '{id}'; "
+                        "use [repo] to configure the default repository"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            if repo_id in seen_ids:
+                self.logger.W(
+                    _("ignoring duplicate [[repos]] entry with id '{id}'").format(
+                        id=repo_id
+                    )
+                )
+                continue
+
+            remote = entry_data.get(schema.KEY_REPOS_REMOTE, "")
+            local_path = entry_data.get(schema.KEY_REPOS_LOCAL, None)
+            if not remote and not local_path:
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry '{id}': "
+                        "at least one of 'remote' or 'local' must be set"
+                    ).format(id=repo_id)
+                )
+                continue
+
+            if local_path and not pathlib.Path(local_path).is_absolute():
+                self.logger.W(
+                    _(
+                        "ignoring [[repos]] entry '{id}': "
+                        "the local path '{path}' is not absolute"
+                    ).format(id=repo_id, path=local_path)
+                )
+                continue
+
+            seen_ids.add(repo_id)
+            new_entries.append(
+                RepoEntry(
+                    id=repo_id,
+                    name=entry_data.get(schema.KEY_REPOS_NAME, repo_id),
+                    remote=remote,
+                    branch=entry_data.get(schema.KEY_REPOS_BRANCH, DEFAULT_REPO_BRANCH),
+                    local_path=local_path,
+                    priority=entry_data.get(
+                        schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY
+                    ),
+                    active=entry_data.get(schema.KEY_REPOS_ACTIVE, True),
+                    is_system=is_system,
+                )
+            )
+
+        self._extra_repo_entries.extend(new_entries)
 
     def get_by_key(self, key: str | Sequence[str]) -> object:
         parsed_key = schema.parse_config_key(key)
@@ -362,10 +460,34 @@ class GlobalConfig:
 
     @cached_property
     def default_repo_dir(self) -> str:
+        # Prefer the new repos/<id> layout if it exists, otherwise fall back
+        # to the legacy packages-index/ path for pre-migration state.
+        new_path = os.path.join(self.cache_root, "repos", "ruyisdk")
+        if os.path.isdir(new_path):
+            return new_path
         return os.path.join(self.cache_root, "packages-index")
 
     def get_repo_dir(self) -> str:
+        import warnings
+
+        warnings.warn(
+            "get_repo_dir() is deprecated; use get_repo_dir_for_id(repo_id) instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.override_repo_dir or self.default_repo_dir
+
+    def get_repo_dir_for_id(self, repo_id: str) -> str:
+        """Return the local checkout path for a repo identified by ``repo_id``.
+
+        If the matching ``RepoEntry`` has a ``local_path`` set, that path is
+        returned directly; otherwise the default ``<cache>/repos/<id>/``
+        location is used.
+        """
+        for entry in self.repo_entries:
+            if entry.id == repo_id:
+                return entry.resolve_root(self.cache_root)
+        return os.path.join(self.cache_root, "repos", repo_id)
 
     @cached_property
     def have_overridden_repo_dir(self) -> bool:
@@ -383,10 +505,49 @@ class GlobalConfig:
         return self.override_repo_branch or DEFAULT_REPO_BRANCH
 
     @cached_property
-    def repo(self) -> "MetadataRepo":
-        from ..ruyipkg.repo import MetadataRepo
+    def repo_entries(self) -> "list[RepoEntry]":
+        from ..ruyipkg.repo import RepoEntry
 
-        return MetadataRepo(self)
+        entries = [RepoEntry.from_legacy_config(self)]
+        entries.extend(self._extra_repo_entries)
+        entries.sort(key=lambda e: e.priority)
+        return entries
+
+    @cached_property
+    def repo(self) -> "CompositeRepo":
+        from ..ruyipkg.composite_repo import CompositeRepo
+
+        self._ensure_repo_layout_migrated()
+        return CompositeRepo(self.repo_entries, self)
+
+    @cached_property
+    def default_repo(self) -> "MetadataRepo":
+        """Return the default (ruyisdk) MetadataRepo for code that truly
+        needs a specific MetadataRepo instance.
+
+        .. deprecated::
+            Use ``self.repo`` (CompositeRepo) instead for multi-repo-aware
+            access, or iterate ``self.repo_entries`` for specific repos.
+        """
+        import warnings
+
+        warnings.warn(
+            "default_repo is deprecated; use the CompositeRepo via .repo instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._ensure_repo_layout_migrated()
+        return self.repo_entries[0].make_metadata_repo(self)
+
+    def _ensure_repo_layout_migrated(self) -> None:
+        """Run the one-time migration from packages-index/ to repos/ruyisdk/
+        if the user has not overridden the repo directory."""
+        if self.override_repo_dir:
+            return
+
+        from ..ruyipkg.migration import migrate_repo_dir
+
+        migrate_repo_dir(str(self.cache_root), self.logger)
 
     def ensure_distfiles_dir(self) -> str:
         path = pathlib.Path(self.ensure_cache_dir()) / "distfiles"

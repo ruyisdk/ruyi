@@ -19,3 +19,5 @@
 * [设备、系统镜像的命名约定](./naming-of-devices-and-images.md)
 * [RuyiSDK 软件源的软件包版本约定](./repo-pkg-versioning-convention.md)
 * [Ruyi 软件源结构定义](./repo-structure.md)
+    * [多软件源支持（Overlay 架构）设计文档](./multi-repo-design.md)
+    * [多软件源支持（用户文档）](./multi-repo.md)

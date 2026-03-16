@@ -10,7 +10,7 @@ from .protocols import ProvidesPackageManifests
 
 if TYPE_CHECKING:
     # for avoiding heavy import
-    from .repo import MetadataRepo
+    from .protocols import ProvidesPackageManifests
 
 
 class PackageInstallationRecord(TypedDict):
@@ -224,7 +224,9 @@ class RuyipkgGlobalStateStore:
 
 
 class BoundInstallationStateStore(ProvidesPackageManifests):
-    def __init__(self, rgs: RuyipkgGlobalStateStore, mr: "MetadataRepo") -> None:
+    def __init__(
+        self, rgs: RuyipkgGlobalStateStore, mr: "ProvidesPackageManifests"
+    ) -> None:
         self._rgs = rgs
         self._mr = mr
 
@@ -338,7 +340,12 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
     def iter_upgradable_pkgs(
         self,
         include_prereleases: bool = False,
-    ) -> Iterator[tuple[BoundPackageManifest, str]]:
+    ) -> Iterator[tuple[BoundPackageManifest, str, bool]]:
+        """Iterate over installed packages that have newer versions available.
+
+        Yields ``(installed_pm, new_version_str, repo_migrated)`` tuples.
+        ``repo_migrated`` is True when the latest version comes from a
+        different repo than the installed version."""
         for installed_pm in self.iter_pkg_manifests():
             latest_pm: BoundPackageManifest
             try:
@@ -352,4 +359,5 @@ class BoundInstallationStateStore(ProvidesPackageManifests):
                 continue
 
             if latest_pm.semver > installed_pm.semver:
-                yield (installed_pm, str(latest_pm.semver))
+                migrated = latest_pm.repo_id != installed_pm.repo_id
+                yield (installed_pm, str(latest_pm.semver), migrated)

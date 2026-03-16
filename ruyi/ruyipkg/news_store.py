@@ -64,6 +64,20 @@ class NewsItemStore:
             ni.add_lang(md, post)
             self._buf_news_by_ids[md.id] = ni
 
+    def add_item(
+        self,
+        news_id: str,
+        md: NewsItemNameMetadata,
+        post: frontmatter.Post,
+    ) -> None:
+        """Add a pre-parsed news item entry, used for cross-repo merging."""
+        if ni := self._buf_news_by_ids.get(news_id):
+            ni.add_lang(md, post)
+        else:
+            ni = NewsItem(news_id)
+            ni.add_lang(md, post)
+            self._buf_news_by_ids[news_id] = ni
+
     def finalize(self) -> None:
         self._newsitems = list(self._buf_news_by_ids.values())
         # sort in intended display order
@@ -114,6 +128,11 @@ class NewsItem:
     def id(self) -> str:
         return self._id
 
+    @property
+    def langs(self) -> dict[str, "NewsItemContent"]:
+        """Language-keyed content map."""
+        return self._content_by_lang
+
     def __contains__(self, lang: str) -> bool:
         return lang in self._content_by_lang
 
@@ -152,6 +171,16 @@ class NewsItemContent:
     @property
     def lang(self) -> str:
         return self._md.lang
+
+    @property
+    def post(self) -> frontmatter.Post:
+        """The parsed frontmatter post."""
+        return self._post
+
+    @property
+    def metadata(self) -> NewsItemNameMetadata:
+        """The filename-derived metadata."""
+        return self._md
 
     @property
     def display_title(self) -> str:

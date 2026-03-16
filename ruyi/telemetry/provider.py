@@ -158,8 +158,10 @@ class TelemetryProvider:
 
         # create the PM store
         self.init_store(TelemetryScope(None))
-        # TODO: add real multi-repo support
-        self.init_store(TelemetryScope("ruyisdk"))
+        # create per-repo stores for all active repos
+        for entry in gc.repo_entries:
+            if entry.active:
+                self.init_store(TelemetryScope(entry.id))
 
     @property
     def logger(self) -> RuyiLogger:
@@ -181,14 +183,14 @@ class TelemetryProvider:
     def init_store(self, scope: TelemetryScope) -> None:
         store_root = self.state_root
         api_url_fn: Callable[[], str | None] | None = None
-        if repo_name := scope.repo_name:
-            if repo_name != "ruyisdk":
-                raise NotImplementedError("multi-repo support not implemented yet")
-            store_root = store_root / "repos" / repo_name
+        repo_name = scope.repo_name
+        if repo_name is not None:
+            repo_name_str: str = repo_name
+            store_root = store_root / "repos" / repo_name_str
 
-            def _f() -> str | None:
+            def _f(rn: str = repo_name_str) -> str | None:
                 # access the repo attribute lazily to speed up CLI startup
-                return self._gc.repo.get_telemetry_api_url("repo")
+                return self._gc.repo.get_telemetry_api_url("repo", repo_id=rn)
 
             api_url_fn = _f
         else:

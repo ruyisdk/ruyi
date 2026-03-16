@@ -92,6 +92,10 @@ url = "https://test.example.ruyisdk.org/v1/analytics/repo/ruyisdk"
 其中：
 
 * `repo.doc_uri` 字段含义同旧版配置的 `doc_uri` 字段。
+* `repo.id` 是可选的仓库标识字符串。当通过 `[[repos]]` 配置使用多仓库时，
+  此字段的值应与用户配置中指定的 `id` 一致；如果不一致，`ruyi` 会在同步时发出警告。
+  如未提供，则默认为 `ruyisdk`。
+* `repo.name` 是可选的仓库人类可读名称。
 * `mirror` 是镜像源定义，其中 ID 为 `ruyi-dist` 的镜像具备特殊含义：其
   `urls` 字段含义是旧版配置的 `dist` 字段含义的超集。
 * `telemetry` 是遥测服务端配置，其中 `scope` 的含义为：

@@ -1,8 +1,11 @@
 import glob
+from dataclasses import dataclass
 from functools import cached_property
 import itertools
+import os
 import os.path
 import pathlib
+import re
 import sys
 from typing import (
     Any,
@@ -51,6 +54,60 @@ if TYPE_CHECKING:
     from ..config import GlobalConfig
 
 
+REPO_ID_PATTERN: Final = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+DEFAULT_REPO_ID: Final = "ruyisdk"
+DEFAULT_REPO_NAME: Final = "RuyiSDK official repository"
+DEFAULT_REPO_PRIORITY: Final = 0
+
+
+@dataclass(frozen=True)
+class RepoEntry:
+    """A configured pointer to a single metadata repository."""
+
+    id: str
+    name: str
+    remote: str | None
+    branch: str
+    local_path: str | None
+    priority: int
+    active: bool
+    is_system: bool = False
+
+    def resolve_root(self, cache_root: str | os.PathLike[str]) -> str:
+        """Return the local checkout path for this repo entry."""
+        if self.local_path is not None:
+            return self.local_path
+        return os.path.join(cache_root, "repos", self.id)
+
+    @classmethod
+    def from_legacy_config(cls, gc: "GlobalConfig") -> "RepoEntry":
+        """Construct the default RepoEntry from the existing GlobalConfig
+        repo fields (backward-compatible single-repo path)."""
+        from ..config import DEFAULT_REPO_URL, DEFAULT_REPO_BRANCH
+
+        return cls(
+            id=DEFAULT_REPO_ID,
+            name=DEFAULT_REPO_NAME,
+            remote=gc.override_repo_url or DEFAULT_REPO_URL,
+            branch=gc.override_repo_branch or DEFAULT_REPO_BRANCH,
+            local_path=gc.override_repo_dir,
+            priority=DEFAULT_REPO_PRIORITY,
+            active=True,
+        )
+
+    def make_metadata_repo(self, gc: "GlobalConfig") -> "MetadataRepo":
+        """Construct a MetadataRepo from this entry's fields."""
+        root = self.resolve_root(str(gc.cache_root))
+        return MetadataRepo(
+            gc,
+            root=root,
+            remote=self.remote or "",
+            branch=self.branch,
+            repo_id=self.id,
+            repo_name=self.name,
+        )
+
+
 class RepoConfigV0Type(TypedDict):
     dist: str
     doc_uri: "NotRequired[str]"
@@ -70,6 +127,8 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
 
 class RepoConfigV1Repo(TypedDict):
     doc_uri: "NotRequired[str]"
+    id: "NotRequired[str]"
+    name: "NotRequired[str]"
 
 
 class RepoConfigV1Mirror(TypedDict):
@@ -145,7 +204,9 @@ class RepoConfig:
 
         v1_repo: RepoConfigV1Repo | None = None
         if "doc_uri" in obj:
-            v1_repo = {"doc_uri": obj["doc_uri"]}
+            v1_repo = {
+                "doc_uri": obj["doc_uri"],
+            }
 
         return cls(v1_mirrors, v1_repo, None)
 
@@ -155,6 +216,18 @@ class RepoConfig:
             # TODO: more detail in the error message
             raise RuntimeError("malformed v1 repo config")
         return cls(obj["mirrors"], obj.get("repo"), obj.get("telemetry"))
+
+    @property
+    def repo_id(self) -> str:
+        if self.repo is not None and "id" in self.repo:
+            return self.repo["id"]
+        return "ruyisdk"
+
+    @property
+    def repo_name(self) -> str:
+        if self.repo is not None and "name" in self.repo:
+            return self.repo["name"]
+        return "RuyiSDK official repository"
 
     def get_dist_urls_for_file(self, logger: RuyiLogger, url: str) -> list[str]:
         u = parse.urlparse(url)
@@ -218,11 +291,22 @@ class ArchProfileStore:
 
 
 class MetadataRepo(ProvidesPackageManifests):
-    def __init__(self, gc: "GlobalConfig") -> None:
+    def __init__(
+        self,
+        gc: "GlobalConfig",
+        *,
+        root: str,
+        remote: str,
+        branch: str,
+        repo_id: str = DEFAULT_REPO_ID,
+        repo_name: str = DEFAULT_REPO_NAME,
+    ) -> None:
         self._gc = gc
-        self.root = gc.get_repo_dir()
-        self.remote = gc.get_repo_url()
-        self.branch = gc.get_repo_branch()
+        self.root = root
+        self.remote = remote
+        self.branch = branch
+        self._repo_id = repo_id
+        self._repo_name = repo_name
         self.repo: Repository | None = None
 
         self._cfg: RepoConfig | None = None
@@ -241,10 +325,39 @@ class MetadataRepo(ProvidesPackageManifests):
         )
         self._plugin_fn_evaluator = self._plugin_host_ctx.make_evaluator()
 
+    @classmethod
+    def from_global_config(cls, gc: "GlobalConfig") -> "MetadataRepo":
+        """Factory that preserves the current single-repo construction path.
+
+        All existing call sites that used ``MetadataRepo(gc)`` should use
+        this instead.
+
+        .. deprecated::
+            Use ``RepoEntry.make_metadata_repo()`` or the CompositeRepo
+            via ``GlobalConfig.repo`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "MetadataRepo.from_global_config() is deprecated; "
+            "use RepoEntry.make_metadata_repo() or GlobalConfig.repo instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls(
+            gc,
+            root=gc.get_repo_dir(),
+            remote=gc.get_repo_url(),
+            branch=gc.get_repo_branch(),
+        )
+
     @property
     def repo_id(self) -> str:
-        # TODO: proper multi-repo support
-        return "ruyisdk"
+        return self._repo_id
+
+    @property
+    def repo_name(self) -> str:
+        return self._repo_name
 
     @property
     def logger(self) -> RuyiLogger:
@@ -316,6 +429,17 @@ class MetadataRepo(ProvidesPackageManifests):
         return self.repo
 
     def sync(self) -> None:
+        if not self.remote:
+            # Local-only repo: no git remote to sync from; just reload metadata.
+            self._gc.logger.D(
+                _("skipping sync for local-only repo '{id}'").format(
+                    id=self._repo_id,
+                )
+            )
+            self._cfg_initialized = False
+            self._read_config(False)
+            return
+
         self._gc.logger.I(_("updating the package repository"))
 
         repo = self.ensure_git_repo()

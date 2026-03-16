@@ -16,7 +16,16 @@ class UpdateCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
-        pass
+        a = p.add_argument(
+            "--repo",
+            type=str,
+            default=None,
+            help=_("only sync the repo with this ID"),
+        )
+        if gc.is_cli_autocomplete:
+            from .cli_completion import repo_id_completer_builder
+
+            a.completer = repo_id_completer_builder(gc)
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -25,7 +34,16 @@ class UpdateCommand(
 
         logger = cfg.logger
         mr = cfg.repo
-        mr.sync()
+
+        repo_id: str | None = args.repo
+        if repo_id is not None:
+            try:
+                mr.sync_one(repo_id)
+            except ValueError:
+                logger.F(_("no active repo with id '{id}'").format(id=repo_id))
+                return 1
+        else:
+            mr.sync_all()
 
         # check for upgradable packages
         bis = BoundInstallationStateStore(cfg.ruyipkg_global_state, mr)
@@ -37,10 +55,22 @@ class UpdateCommand(
                     "\nNewer versions are available for some of your installed packages:\n"
                 )
             )
-            for pm, new_ver in upgradable:
+            for pm, new_ver, migrated in upgradable:
                 logger.stdout(
                     f"  - [bold]{pm.category}/{pm.name}[/]: [yellow]{pm.ver}[/] -> [green]{new_ver}[/]"
                 )
+                if migrated:
+                    logger.W(
+                        _(
+                            "package '{category}/{name}' was installed from "
+                            "repo '{repo}' but the latest version is in a "
+                            "different repo"
+                        ).format(
+                            category=pm.category,
+                            name=pm.name,
+                            repo=pm.repo_id,
+                        )
+                    )
             logger.stdout(
                 _(
                     """
