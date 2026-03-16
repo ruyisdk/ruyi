@@ -26,13 +26,21 @@ class ListProfilesCommand(
         for arch in mr.get_supported_arches():
             for p in mr.iter_profiles_for_arch(arch):
                 if not p.need_quirks:
-                    logger.stdout(p.id)
+                    logger.stdout(
+                        _("{profile_id} (arch: [green]{arch}[/])").format(
+                            profile_id=p.id,
+                            arch=arch,
+                        )
+                    )
                     continue
 
                 logger.stdout(
-                    _("{profile_id} (needs quirks: {need_quirks})").format(
+                    _(
+                        "{profile_id} (arch: [green]{arch}[/], needs quirks: [yellow]{need_quirks}[/])"
+                    ).format(
                         profile_id=p.id,
-                        need_quirks=p.need_quirks,
+                        arch=arch,
+                        need_quirks=", ".join(sorted(p.need_quirks)),
                     )
                 )
 
