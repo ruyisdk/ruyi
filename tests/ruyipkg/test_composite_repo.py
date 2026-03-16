@@ -430,6 +430,8 @@ class TestCompositeRepoMultiEntryMerge:
         )
         composite = CompositeRepo([broken_entry, base_entry], gc)
 
+        assert composite.get_supported_arches() == ["riscv64"]
+
         profiles = list(composite.iter_profiles_for_arch("riscv64"))
         assert [p.id for p in profiles] == ["milkv-duo"]
         assert profiles[0].need_quirks == {"xthead"}
@@ -483,4 +485,9 @@ class TestCompositeRepoMultiEntryMerge:
         assert [p.id for p in profiles] == ["high-profile"]
         assert profiles[0].need_quirks == {"xthead"}
 
+        profile = composite.get_profile("high-profile")
+        assert profile is not None
+        assert profile.id == "high-profile"
+
+        assert composite.get_profile("low-profile") is None
         assert composite.get_profile_for_arch("riscv64", "low-profile") is None
