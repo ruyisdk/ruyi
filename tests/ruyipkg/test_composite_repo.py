@@ -67,6 +67,29 @@ def _write_manifest(
     (pkg_dir / f"{ver}.toml").write_text("\n".join(lines) + "\n")
 
 
+def _write_profile_plugin(
+    root: pathlib.Path,
+    arch: str,
+    profile_ids: list[str],
+    *,
+    quirks_by_profile: dict[str, list[str]] | None = None,
+) -> None:
+    plugin_dir = root / "plugins" / f"ruyi-profile-{arch}"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+
+    plugin_text = "\n".join(
+        [
+            "def list_all_profile_ids_v1():",
+            f"    return {profile_ids!r}",
+            "",
+            "def list_needed_quirks_v1(profile_id):",
+            f"    return {quirks_by_profile or {}!r}.get(profile_id, [])",
+            "",
+        ]
+    )
+    (plugin_dir / "mod.star").write_text(plugin_text, encoding="utf-8")
+
+
 class TestCompositeRepoSingleEntry:
     def test_iter_repos_single(
         self,
@@ -372,3 +395,92 @@ class TestCompositeRepoMultiEntryMerge:
         assert pm is not None
         assert pm.desc == "from overlay"
         assert pm.repo_id == "overlay"
+
+    def test_profile_queries_skip_broken_repo(
+        self,
+        tmp_path: pathlib.Path,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        from ruyi.config import GlobalConfig
+
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+
+        base_root = tmp_path / "profile-base"
+        _init_repo_dir(base_root)
+        _write_profile_plugin(
+            base_root,
+            "riscv64",
+            ["milkv-duo"],
+            quirks_by_profile={"milkv-duo": ["xthead"]},
+        )
+
+        broken_root = tmp_path / "profile-broken"
+        _init_repo_dir(broken_root)
+        (broken_root / "plugins" / "ruyi-profile-riscv64").mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        base_entry = _make_entry(repo_id="base", priority=0, local_path=str(base_root))
+        broken_entry = _make_entry(
+            repo_id="broken",
+            priority=100,
+            local_path=str(broken_root),
+        )
+        composite = CompositeRepo([broken_entry, base_entry], gc)
+
+        profiles = list(composite.iter_profiles_for_arch("riscv64"))
+        assert [p.id for p in profiles] == ["milkv-duo"]
+        assert profiles[0].need_quirks == {"xthead"}
+
+        profile = composite.get_profile("milkv-duo")
+        assert profile is not None
+        assert profile.id == "milkv-duo"
+
+        arch_profile = composite.get_profile_for_arch("riscv64", "milkv-duo")
+        assert arch_profile is not None
+        assert arch_profile.id == "milkv-duo"
+
+    def test_profile_plugin_first_valid_repo_wins_per_arch(
+        self,
+        tmp_path: pathlib.Path,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        from ruyi.config import GlobalConfig
+
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+
+        low_root = tmp_path / "profile-low"
+        _init_repo_dir(low_root)
+        _write_profile_plugin(
+            low_root,
+            "riscv64",
+            ["low-profile"],
+        )
+
+        high_root = tmp_path / "profile-high"
+        _init_repo_dir(high_root)
+        _write_profile_plugin(
+            high_root,
+            "riscv64",
+            ["high-profile"],
+            quirks_by_profile={"high-profile": ["xthead"]},
+        )
+
+        low_entry = _make_entry(repo_id="low", priority=0, local_path=str(low_root))
+        high_entry = _make_entry(
+            repo_id="high",
+            priority=100,
+            local_path=str(high_root),
+        )
+        composite = CompositeRepo([high_entry, low_entry], gc)
+
+        assert composite.get_supported_arches() == ["riscv64"]
+
+        profiles = list(composite.iter_profiles_for_arch("riscv64"))
+        assert [p.id for p in profiles] == ["high-profile"]
+        assert profiles[0].need_quirks == {"xthead"}
+
+        assert composite.get_profile_for_arch("riscv64", "low-profile") is None

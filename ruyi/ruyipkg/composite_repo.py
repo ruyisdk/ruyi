@@ -233,36 +233,67 @@ class CompositeRepo(ProvidesPackageManifests):
         merged.finalize()
         return merged
 
+    def _get_profile_repo_for_arch(self, arch: str) -> MetadataRepo | None:
+        """Return the highest-priority repo with a loadable profile plugin.
+
+        Profile plugins are resolved per arch in priority order. The first repo
+        with a loadable ``ruyi-profile-{arch}`` plugin owns the whole arch; lower
+        priority repos are not consulted for the same arch.
+        """
+        for repo in reversed(self._ensure_repos()):
+            if arch not in repo.get_supported_arches():
+                continue
+
+            try:
+                repo.ensure_profile_store_for_arch(arch)
+            except (FileNotFoundError, NotADirectoryError, RuntimeError):
+                continue
+
+            return repo
+
+        return None
+
     def get_profile(self, name: str) -> ProfileProxy | None:
         """Priority-ordered profile lookup."""
-        for repo in reversed(self._ensure_repos()):
-            if p := repo.get_profile(name):
+        for arch in self.get_supported_arches():
+            if p := self.get_profile_for_arch(arch, name):
                 return p
         return None
 
     def get_profile_for_arch(self, arch: str, name: str) -> ProfileProxy | None:
         """Priority-ordered profile lookup for a specific arch."""
-        for repo in reversed(self._ensure_repos()):
-            if p := repo.get_profile_for_arch(arch, name):
-                return p
-        return None
+        repo = self._get_profile_repo_for_arch(arch)
+        if repo is None:
+            return None
+        return repo.get_profile_for_arch(arch, name)
 
     def iter_profiles_for_arch(self, arch: str) -> Iterable[ProfileProxy]:
         """Priority-ordered profile iteration for a specific arch."""
-        seen: set[str] = set()
-        # Descending priority: higher priority profiles shadow lower ones
-        for repo in reversed(self._ensure_repos()):
-            for p in repo.iter_profiles_for_arch(arch):
-                if p.id not in seen:
-                    seen.add(p.id)
-                    yield p
+        repo = self._get_profile_repo_for_arch(arch)
+        if repo is None:
+            return
+
+        yield from repo.iter_profiles_for_arch(arch)
 
     def get_supported_arches(self) -> list[str]:
-        """Merged set of supported architectures across all repos."""
-        arches: set[str] = set()
-        for repo in self._ensure_repos():
-            arches.update(repo.get_supported_arches())
-        return list(arches)
+        """Architectures with a loadable profile plugin in priority order."""
+        arches: list[str] = []
+        seen: set[str] = set()
+
+        for repo in reversed(self._ensure_repos()):
+            for arch in repo.get_supported_arches():
+                if arch in seen:
+                    continue
+
+                try:
+                    repo.ensure_profile_store_for_arch(arch)
+                except (FileNotFoundError, NotADirectoryError, RuntimeError):
+                    continue
+
+                seen.add(arch)
+                arches.append(arch)
+
+        return arches
 
     def get_from_plugin(self, plugin_id: str, key: str) -> object | None:
         """Priority-ordered plugin value lookup."""
