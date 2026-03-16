@@ -40,7 +40,7 @@ class ListProfilesCommand(
                     ).format(
                         profile_id=p.id,
                         arch=arch,
-                        need_quirks=", ".join(p.need_quirks),
+                        need_quirks=", ".join(sorted(p.need_quirks)),
                     )
                 )
 
