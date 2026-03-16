@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 import tomlkit
-from tomlkit.items import Table
+from tomlkit.items import AoT, Table
 
 from .errors import MalformedConfigFileError, ProtectedGlobalConfigError
 from .schema import (
@@ -132,7 +132,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
 
         if SECTION_REPOS in self._stage:
             existing = self._stage[SECTION_REPOS]
-            if isinstance(existing, tomlkit.items.AoT):
+            if isinstance(existing, AoT):
                 existing.append(tbl)
             else:
                 raise MalformedConfigFileError(self._path)
@@ -148,7 +148,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
         if SECTION_REPOS not in self._stage:
             return False
         existing = self._stage[SECTION_REPOS]
-        if not isinstance(existing, tomlkit.items.AoT):
+        if not isinstance(existing, AoT):
             raise MalformedConfigFileError(self._path)
 
         for i, tbl in enumerate(existing):
@@ -166,7 +166,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
         if SECTION_REPOS not in self._stage:
             return False
         existing = self._stage[SECTION_REPOS]
-        if not isinstance(existing, tomlkit.items.AoT):
+        if not isinstance(existing, AoT):
             raise MalformedConfigFileError(self._path)
 
         for tbl in existing:
