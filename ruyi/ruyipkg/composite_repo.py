@@ -246,7 +246,12 @@ class CompositeRepo(ProvidesPackageManifests):
 
             try:
                 repo.ensure_profile_store_for_arch(arch)
-            except (FileNotFoundError, NotADirectoryError, RuntimeError):
+            except RuntimeError as e:
+                self._gc.logger.D(
+                    f"skipping repo '{repo.repo_id}' for profile arch '{arch}': {e}"
+                )
+                continue
+            except (FileNotFoundError, NotADirectoryError):
                 continue
 
             return repo
@@ -287,7 +292,12 @@ class CompositeRepo(ProvidesPackageManifests):
 
                 try:
                     repo.ensure_profile_store_for_arch(arch)
-                except (FileNotFoundError, NotADirectoryError, RuntimeError):
+                except RuntimeError as e:
+                    self._gc.logger.D(
+                        f"skipping repo '{repo.repo_id}' for profile arch '{arch}': {e}"
+                    )
+                    continue
+                except (FileNotFoundError, NotADirectoryError):
                     continue
 
                 seen.add(arch)
