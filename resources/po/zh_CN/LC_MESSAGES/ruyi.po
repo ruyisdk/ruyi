@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.45.0-alpha.20251230\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-03-16 01:42+0800\n"
+"POT-Creation-Date: 2026-03-16 21:48+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -1635,50 +1635,55 @@ msgstr "要阅读的新闻条目的序号或 ID"
 msgid "List all available profiles"
 msgstr "列出所有可用配置文件"
 
-#: ruyi/ruyipkg/profile_cli.py:33
+#: ruyi/ruyipkg/profile_cli.py:30
 #, python-brace-format
-msgid "{profile_id} (needs quirks: {need_quirks})"
+msgid "{profile_id} (arch: [green]{arch}[/])"
+msgstr ""
+
+#: ruyi/ruyipkg/profile_cli.py:39
+#, fuzzy, python-brace-format
+msgid "{profile_id} (arch: [green]{arch}[/], needs quirks: [yellow]{need_quirks}[/])"
 msgstr "{profile_id}（需要特殊特性：{need_quirks}）"
 
-#: ruyi/ruyipkg/repo.py:245
+#: ruyi/ruyipkg/repo.py:246
 #, python-brace-format
 msgid "unrecognized dist URL scheme: {scheme}"
 msgstr "未识别的分发 URL 协议：{scheme}"
 
-#: ruyi/ruyipkg/repo.py:403
+#: ruyi/ruyipkg/repo.py:404
 #, python-brace-format
 msgid "the package repository does not exist at [yellow]{root}[/]"
 msgstr "软件包仓库不存在于 [yellow]{root}[/]"
 
-#: ruyi/ruyipkg/repo.py:408
+#: ruyi/ruyipkg/repo.py:409
 #, python-brace-format
 msgid "cloning from [cyan link={remote}]{remote}[/]"
 msgstr "正在从 [cyan link={remote}]{remote}[/] 克隆"
 
-#: ruyi/ruyipkg/repo.py:434
+#: ruyi/ruyipkg/repo.py:435
 #, python-brace-format
 msgid "skipping sync for local-only repo '{id}'"
 msgstr "为设置为仅本地的仓库 '{id}' 跳过同步"
 
-#: ruyi/ruyipkg/repo.py:442
+#: ruyi/ruyipkg/repo.py:443
 msgid "updating the package repository"
 msgstr "正在更新软件包仓库"
 
-#: ruyi/ruyipkg/repo.py:459
+#: ruyi/ruyipkg/repo.py:460
 msgid "package repository is updated"
 msgstr "软件包仓库已更新"
 
-#: ruyi/ruyipkg/repo.py:733
+#: ruyi/ruyipkg/repo.py:734
 #, python-brace-format
 msgid "UnicodeDecodeError: {path}"
 msgstr "Unicode 解码错误：{path}"
 
-#: ruyi/ruyipkg/repo.py:769
+#: ruyi/ruyipkg/repo.py:770
 #, python-brace-format
 msgid "unexpected return type of cmd plugin '{plugin_id}': {type} is not int."
 msgstr "命令插件 '{plugin_id}' 的返回类型非预期：{type} 不是 int。"
 
-#: ruyi/ruyipkg/repo.py:775
+#: ruyi/ruyipkg/repo.py:776
 msgid "forcing return code to 1; the plugin should be fixed"
 msgstr "强制返回码为 1；该插件需要被修复"
 
@@ -1984,65 +1989,65 @@ msgstr "现已禁用遥测数据收集"
 msgid "you can re-enable telemetry data uploads at any time by running [yellow]ruyi telemetry consent[/]"
 msgstr "您可以随时通过运行 [yellow]ruyi telemetry consent[/] 重新启用遥测数据上传"
 
-#: ruyi/telemetry/provider.py:331
+#: ruyi/telemetry/provider.py:333
 #, python-brace-format
 msgid "scope {scope}: usage information has already been uploaded today at {last_upload_time_str}"
 msgstr "{scope} 范畴：使用信息已于今天 {last_upload_time_str} 上传"
 
-#: ruyi/telemetry/provider.py:340
+#: ruyi/telemetry/provider.py:342
 #, python-brace-format
 msgid "scope {scope}: usage information has already been uploaded sometime today"
 msgstr "{scope} 范畴：使用信息已于今天上传"
 
-#: ruyi/telemetry/provider.py:348
+#: ruyi/telemetry/provider.py:350
 #, python-brace-format
 msgid "scope {scope}: the next upload will happen [bold green]today[/] if not already"
 msgstr "{scope} 范畴：下次上传将在[bold green]今天[/]进行（如果尚未上传）"
 
-#: ruyi/telemetry/provider.py:355
+#: ruyi/telemetry/provider.py:357
 msgid "the next upload will happen anytime [yellow]ruyi[/] is executed:"
 msgstr "下次上传将在执行 [yellow]ruyi[/] 时进行："
 
-#: ruyi/telemetry/provider.py:359
+#: ruyi/telemetry/provider.py:361
 #, python-brace-format
 msgid "  - between [bold green]{time_start}[/] and [bold green]{time_end}[/]"
 msgstr "  - 在 [bold green]{time_start}[/] 和 [bold green]{time_end}[/] 之间"
 
-#: ruyi/telemetry/provider.py:365
+#: ruyi/telemetry/provider.py:367
 msgid "  - or if the last upload is more than a week ago"
 msgstr "  - 或者如果上次上传是一周之前"
 
-#: ruyi/telemetry/provider.py:372
+#: ruyi/telemetry/provider.py:374
 msgid "telemetry mode is [green]off[/]: nothing is collected or uploaded after the first run"
 msgstr "遥测模式为 [green]off[/]：首次运行后，不会收集或上传任何内容"
 
-#: ruyi/telemetry/provider.py:392
+#: ruyi/telemetry/provider.py:394
 msgid "telemetry mode is [green]local[/]: local usage collection only, no usage uploads except if requested"
 msgstr "遥测模式为 [green]local[/]：仅本地使用收集，除非明确请求否则不会上传"
 
-#: ruyi/telemetry/provider.py:404
+#: ruyi/telemetry/provider.py:406
 msgid "telemetry mode is [green]on[/]: usage data is collected and periodically uploaded"
 msgstr "遥测模式为 [green]on[/]：使用数据会被收集并定期上传"
 
-#: ruyi/telemetry/provider.py:409
+#: ruyi/telemetry/provider.py:411
 #, python-brace-format
 msgid "non-tracking usage information will be uploaded to RuyiSDK-managed servers [bold green]every {weekday}[/]"
 msgstr "无法用来追踪用户身份的使用信息将于[bold green]每{weekday}[/]上传到 RuyiSDK 管理的服务器"
 
-#: ruyi/telemetry/provider.py:417
+#: ruyi/telemetry/provider.py:419
 #, python-brace-format
 msgid "this [yellow]ruyi[/] installation has telemetry mode set to [yellow]on[/], and [bold]will upload non-tracking usage information to RuyiSDK-managed servers[/] [bold green]every {weekday}[/]"
 msgstr "本 [yellow]ruyi[/] 安装的遥测模式被设置为 [yellow]on[/]，[bold]将于[bold green]每{weekday}[/]上传无法用来追踪用户身份的使用信息到 RuyiSDK 管理的服务器[/]"
 
-#: ruyi/telemetry/provider.py:426
+#: ruyi/telemetry/provider.py:428
 msgid "in order to hide this banner:"
 msgstr "要隐藏此横幅："
 
-#: ruyi/telemetry/provider.py:427
+#: ruyi/telemetry/provider.py:429
 msgid " - opt out with [yellow]ruyi telemetry optout[/]"
 msgstr " - 使用 [yellow]ruyi telemetry optout[/] 退出遥测"
 
-#: ruyi/telemetry/provider.py:429
+#: ruyi/telemetry/provider.py:431
 msgid " - or give consent with [yellow]ruyi telemetry consent[/]"
 msgstr " - 或使用 [yellow]ruyi telemetry consent[/] 明确同意"
 
