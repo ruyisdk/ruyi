@@ -55,8 +55,10 @@ class VenvCommand(
             help=_("Do not include a sysroot inside the new virtual environment"),
         )
         p.add_argument(
+            "--copy-sysroot-from-pkg",
             "--sysroot-from",
             type=str,
+            dest="copy_sysroot_from_pkg",
             help=_("Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable"),
         )
         p.add_argument(
@@ -77,7 +79,7 @@ class VenvCommand(
         override_name: str | None = args.name
         tc_atoms_str: list[str] | None = args.toolchain
         emu_atom_str: str | None = args.emulator
-        sysroot_atom_str: str | None = args.sysroot_from
+        sysroot_atom_str: str | None = args.copy_sysroot_from_pkg
         extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
         host = str(get_native_host())
 

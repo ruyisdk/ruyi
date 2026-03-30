@@ -835,8 +835,8 @@ msgid "cannot find the installed directory for the toolchain"
 msgstr "找不到工具链的安装目录"
 
 #: ruyi/mux/venv/maker.py:158
-msgid "sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given"
-msgstr "请求了 sysroot，但工具链软件包不含 sysroot，且命令行上未给出 [yellow]--sysroot-from[/]"
+msgid "sysroot is requested but the toolchain package does not include one, and [yellow]--copy-sysroot-from-pkg[/] is not given"
+msgstr "请求了 sysroot，但工具链软件包不含 sysroot，且命令行上未给出 [yellow]--copy-sysroot-from-pkg[/]"
 
 #: ruyi/mux/venv/maker.py:189
 msgid "cannot find the installed directory for the sysroot package"

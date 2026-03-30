@@ -155,7 +155,7 @@ def do_make_venv(
             else:
                 if sysroot_atom_str is None:
                     logger.F(
-                        _("sysroot is requested but the toolchain package does not include one, and [yellow]--sysroot-from[/] is not given")
+                        _("sysroot is requested but the toolchain package does not include one, and [yellow]--copy-sysroot-from-pkg[/] is not given")
                     )
                     return 1
 
