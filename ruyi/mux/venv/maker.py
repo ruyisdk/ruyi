@@ -28,6 +28,86 @@ class ConfiguredTargetTuple(TypedDict):
     gcc_install_dir: PathLike[Any] | None
 
 
+class ResolvedSysrootPkgSource(TypedDict):
+    sysroot_dir: PathLike[Any]
+    pkg_manifest: BoundPackageManifest
+    gcc_install_dir: PathLike[Any] | None
+
+
+def _resolve_sysroot_pkg_source(
+    config: GlobalConfig,
+    host: str,
+    sysroot_atom_str: str,
+) -> ResolvedSysrootPkgSource | int:
+    """Resolve a sysroot package source from an atom string.
+
+    Returns ResolvedSysrootPkgSource on success, or an error exit code (int).
+    """
+    logger = config.logger
+    mr = config.repo
+
+    gcc_pkg_atom = Atom.parse(sysroot_atom_str)
+    gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
+    if gcc_pkg_pm is None:
+        logger.F(
+            _("cannot match a toolchain package with [yellow]{atom}[/]").format(
+                atom=sysroot_atom_str,
+            )
+        )
+        return 1
+
+    if gcc_pkg_pm.toolchain_metadata is None:
+        logger.F(
+            _("the package [yellow]{atom}[/] is not a toolchain").format(
+                atom=sysroot_atom_str,
+            )
+        )
+        return 1
+
+    gcc_pkg_root = config.lookup_binary_install_dir(
+        host,
+        gcc_pkg_pm.name_for_installation,
+    )
+    if gcc_pkg_root is None:
+        logger.F(
+            _("cannot find the installed directory for the sysroot package")
+        )
+        return 1
+
+    tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
+    if tc_sysroot_relpath is None:
+        logger.F(
+            _("sysroot is requested but the package [yellow]{atom}[/] does not contain one").format(
+                atom=sysroot_atom_str,
+            )
+        )
+        return 1
+
+    sysroot_dir = pathlib.Path(gcc_pkg_root) / tc_sysroot_relpath
+
+    # also figure the GCC include/libs path out for Clang to be able to
+    # locate them
+    gcc_install_dir = find_gcc_install_dir(
+        gcc_pkg_root,
+        # we should use the GCC-providing package's target tuple as that's
+        # not guaranteed to be the same as llvm's
+        gcc_pkg_pm.toolchain_metadata.target,
+    )
+
+    # for now, require this directory to be present (or clang would barely work)
+    if gcc_install_dir is None:
+        logger.F(
+            _("cannot find a GCC include & lib directory in the sysroot package")
+        )
+        return 1
+
+    return ResolvedSysrootPkgSource(
+        sysroot_dir=sysroot_dir,
+        pkg_manifest=gcc_pkg_pm,
+        gcc_install_dir=gcc_install_dir,
+    )
+
+
 class VenvPackageInfo(TypedDict):
     repo_id: str
     category: str
@@ -159,65 +239,13 @@ def do_make_venv(
                     )
                     return 1
 
-                # try extracting from the sysroot package
-                # for now only GCC toolchain packages can provide sysroots, so this is
-                # okay
-                gcc_pkg_atom = Atom.parse(sysroot_atom_str)
-                gcc_pkg_pm = gcc_pkg_atom.match_in_repo(mr, config.include_prereleases)
-                if gcc_pkg_pm is None:
-                    logger.F(
-                        _("cannot match a toolchain package with [yellow]{atom}[/]").format(
-                            atom=sysroot_atom_str,
-                        )
-                    )
-                    return 1
+                result = _resolve_sysroot_pkg_source(config, host, sysroot_atom_str)
+                if isinstance(result, int):
+                    return result
 
-                if gcc_pkg_pm.toolchain_metadata is None:
-                    logger.F(
-                        _("the package [yellow]{atom}[/] is not a toolchain").format(
-                            atom=sysroot_atom_str,
-                        )
-                    )
-                    return 1
-
-                gcc_pkg_root = config.lookup_binary_install_dir(
-                    host,
-                    gcc_pkg_pm.name_for_installation,
-                )
-                if gcc_pkg_root is None:
-                    logger.F(
-                        _("cannot find the installed directory for the sysroot package")
-                    )
-                    return 1
-
-                tc_sysroot_relpath = gcc_pkg_pm.toolchain_metadata.included_sysroot
-                if tc_sysroot_relpath is None:
-                    logger.F(
-                        _("sysroot is requested but the package [yellow]{atom}[/] does not contain one").format(
-                            atom=sysroot_atom_str,
-                        )
-                    )
-                    return 1
-
-                tc_sysroot_dir = pathlib.Path(gcc_pkg_root) / tc_sysroot_relpath
-
-                # also figure the GCC include/libs path out for Clang to be able to
-                # locate them
-                gcc_install_dir = find_gcc_install_dir(
-                    gcc_pkg_root,
-                    # we should use the GCC-providing package's target tuple as that's
-                    # not guaranteed to be the same as llvm's
-                    gcc_pkg_pm.toolchain_metadata.target,
-                )
-
-                # for now, require this directory to be present (or clang would barely work)
-                if gcc_install_dir is None:
-                    logger.F(
-                        _("cannot find a GCC include & lib directory in the sysroot package")
-                    )
-                    return 1
-
-                venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(gcc_pkg_pm)
+                tc_sysroot_dir = result["sysroot_dir"]
+                gcc_install_dir = result["gcc_install_dir"]
+                venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(result["pkg_manifest"])
 
         # derive flags for (the quirks of) this toolchain
         tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.quirks)
