@@ -141,9 +141,44 @@ def do_make_venv(
     tc_atoms_str: list[str] | None = None,
     emu_atom_str: str | None = None,
     sysroot_atom_str: str | None = None,
+    copy_sysroot_dir_str: str | None = None,
+    symlink_sysroot_dir_str: str | None = None,
     extra_cmd_atoms_str: list[str] | None = None,
 ) -> int:
     logger = config.logger
+
+    explicit_sysroot_dir: pathlib.Path | None = None
+    explicit_sysroot_gcc_install_dir: PathLike[Any] | None = None
+    explicit_sysroot_pkg: VenvPackageInfo | None = None
+    symlink_sysroot = False
+
+    if sysroot_atom_str is not None:
+        result = _resolve_sysroot_pkg_source(config, host, sysroot_atom_str)
+        if isinstance(result, int):
+            return result
+
+        explicit_sysroot_dir = pathlib.Path(result["sysroot_dir"])
+        explicit_sysroot_gcc_install_dir = result["gcc_install_dir"]
+        explicit_sysroot_pkg = _venv_pkg_info_from_pkg(result["pkg_manifest"])
+    elif copy_sysroot_dir_str is not None:
+        explicit_sysroot_dir = pathlib.Path(copy_sysroot_dir_str).resolve()
+        if not explicit_sysroot_dir.is_dir():
+            logger.F(
+                _("the sysroot directory [yellow]{path}[/] does not exist").format(
+                    path=copy_sysroot_dir_str,
+                )
+            )
+            return 1
+    elif symlink_sysroot_dir_str is not None:
+        explicit_sysroot_dir = pathlib.Path(symlink_sysroot_dir_str).resolve()
+        if not explicit_sysroot_dir.is_dir():
+            logger.F(
+                _("the sysroot directory [yellow]{path}[/] does not exist").format(
+                    path=symlink_sysroot_dir_str,
+                )
+            )
+            return 1
+        symlink_sysroot = True
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache
@@ -229,23 +264,19 @@ def do_make_venv(
         tc_sysroot_dir: PathLike[Any] | None = None
         gcc_install_dir: PathLike[Any] | None = None
         if with_sysroot:
-            if tc_sysroot_relpath := tc_pm.toolchain_metadata.included_sysroot:
+            if explicit_sysroot_dir is not None:
+                tc_sysroot_dir = explicit_sysroot_dir
+                gcc_install_dir = explicit_sysroot_gcc_install_dir
+                if explicit_sysroot_pkg is not None:
+                    venv_metadata["sysroot_pkg"] = explicit_sysroot_pkg
+            elif tc_sysroot_relpath := tc_pm.toolchain_metadata.included_sysroot:
                 tc_sysroot_dir = pathlib.Path(toolchain_root) / tc_sysroot_relpath
                 venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(tc_pm)
             else:
-                if sysroot_atom_str is None:
-                    logger.F(
-                        _("sysroot is requested but the toolchain package does not include one, and [yellow]--copy-sysroot-from-pkg[/] is not given")
-                    )
-                    return 1
-
-                result = _resolve_sysroot_pkg_source(config, host, sysroot_atom_str)
-                if isinstance(result, int):
-                    return result
-
-                tc_sysroot_dir = result["sysroot_dir"]
-                gcc_install_dir = result["gcc_install_dir"]
-                venv_metadata["sysroot_pkg"] = _venv_pkg_info_from_pkg(result["pkg_manifest"])
+                logger.F(
+                    _("sysroot is requested but the toolchain package does not include one, and no explicit sysroot source is given")
+                )
+                return 1
 
         # derive flags for (the quirks of) this toolchain
         tc_flags = profile.get_common_flags(tc_pm.toolchain_metadata.quirks)
@@ -435,6 +466,7 @@ def do_make_venv(
         extra_cmds,
         venv_metadata,
         override_name,
+        symlink_sysroot,
     )
     maker.provision()
 
@@ -483,6 +515,7 @@ class VenvMaker:
         extra_cmds: dict[str, str] | None,
         metadata: VenvMetadata,
         override_name: str | None = None,
+        symlink_sysroot: bool = False,
     ) -> None:
         self.gc = gc
         self.profile = profile
@@ -493,6 +526,7 @@ class VenvMaker:
         self.extra_cmds = extra_cmds or {}
         self.metadata = metadata
         self.override_name = override_name
+        self.symlink_sysroot = symlink_sysroot
 
         self.bindir = self.venv_root / "bin"
 
@@ -679,14 +713,19 @@ class VenvMaker:
         if sysroot_destdir := self.sysroot_destdir(target_tuple):
             sysroot_srcdir = tgt["toolchain_sysroot"]
             assert sysroot_srcdir is not None
+            sysroot_srcdir = pathlib.Path(sysroot_srcdir)
 
-            self.logger.D(f"copying sysroot for {target_tuple}")
-            shutil.copytree(
-                sysroot_srcdir,
-                sysroot_destdir,
-                symlinks=True,
-                ignore_dangling_symlinks=True,
-            )
+            if self.symlink_sysroot:
+                self.logger.D(f"symlinking sysroot for {target_tuple}")
+                os.symlink(sysroot_srcdir, sysroot_destdir)
+            else:
+                self.logger.D(f"copying sysroot for {target_tuple}")
+                shutil.copytree(
+                    sysroot_srcdir,
+                    sysroot_destdir,
+                    symlinks=True,
+                    ignore_dangling_symlinks=True,
+                )
 
             if is_primary:
                 self.logger.D("symlinking primary sysroot into place")

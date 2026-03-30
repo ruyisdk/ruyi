@@ -10,6 +10,7 @@ from typing import Generator, cast
 from pygit2 import Repository
 import pytest
 
+from ruyi.cli.completion import ArgumentParser
 from ruyi.cli.main import main as ruyi_main
 from ruyi.config import GlobalConfig
 from ruyi.log import RuyiConsoleLogger, RuyiLogger
@@ -174,6 +175,24 @@ class CLIRunResult:
     stderr: str
 
 
+@dataclass
+class CLICommandContext:
+    argv: list[str]
+    gm: EnvGlobalModeProvider
+    gc: GlobalConfig
+    stdout: io.StringIO
+    stderr: io.StringIO
+
+    @property
+    def fatal_messages(self) -> list[str]:
+        prefix = "fatal error: "
+        return [
+            line[len(prefix) :]
+            for line in self.stderr.getvalue().splitlines()
+            if line.startswith(prefix)
+        ]
+
+
 class MockRepository:
     def __init__(self, root: pathlib.Path) -> None:
         self.workdir = root
@@ -196,20 +215,31 @@ class IntegrationTestHarness:
     def __call__(self, *args: str) -> CLIRunResult:
         return self.run(*args)
 
-    def run(self, *args: str) -> CLIRunResult:
+    def make_parser(self) -> ArgumentParser:
+        return ArgumentParser()
+
+    def make_command_context(self, *args: str) -> CLICommandContext:
         argv = ["ruyi", *args]
         stdout_io = io.StringIO()
         stderr_io = io.StringIO()
-        with redirect_stdout(stdout_io), redirect_stderr(stderr_io):
-            gm = EnvGlobalModeProvider(self._env, argv)
-            gm.record_self_exe(argv[0], __file__, argv[0])
-            logger = RuyiConsoleLogger(gm, stdout=stdout_io, stderr=stderr_io)
-            gc = GlobalConfig.load_from_config(gm, logger)
-            gc.override_repo_dir = str(self.repo_root)
-            gc.override_repo_url = self.repo_url
-            gc.override_repo_branch = self.repo_branch
-            exit_code = ruyi_main(gm, gc, argv)
-        return CLIRunResult(exit_code, stdout_io.getvalue(), stderr_io.getvalue())
+        gm = EnvGlobalModeProvider(self._env, argv)
+        gm.record_self_exe(argv[0], __file__, argv[0])
+        logger = RuyiConsoleLogger(gm, stdout=stdout_io, stderr=stderr_io)
+        gc = GlobalConfig.load_from_config(gm, logger)
+        gc.override_repo_dir = str(self.repo_root)
+        gc.override_repo_url = self.repo_url
+        gc.override_repo_branch = self.repo_branch
+        return CLICommandContext(argv, gm, gc, stdout_io, stderr_io)
+
+    def run(self, *args: str) -> CLIRunResult:
+        ctx = self.make_command_context(*args)
+        with redirect_stdout(ctx.stdout), redirect_stderr(ctx.stderr):
+            exit_code = ruyi_main(ctx.gm, ctx.gc, ctx.argv)
+        return CLIRunResult(
+            exit_code,
+            ctx.stdout.getvalue(),
+            ctx.stderr.getvalue(),
+        )
 
     def add_package(
         self,
