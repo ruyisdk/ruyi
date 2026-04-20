@@ -79,10 +79,12 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 DOCKEREOF
 
-COPY ./build-python.sh /tmp/
+# Python 3.14.4 + Nuitka 2.8.10 produces ruyi binaries that segfault during
+# apply_config
+COPY --link ./build-python.sh /tmp/
 RUN /tmp/build-python.sh
 
-COPY ./prepare-poetry.sh /tmp/prepare-poetry.sh
+COPY --link ./prepare-poetry.sh /tmp/prepare-poetry.sh
 RUN /tmp/prepare-poetry.sh
 
 USER $BUILDER_UID:$BUILDER_GID

@@ -1,7 +1,7 @@
 #!/bin/bash
 # this file is meant to be sourced
 
-_COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20260418"
+_COMMON_DIST_IMAGE_TAG="ghcr.io/ruyisdk/ruyi-python-dist:20260419"
 
 # Map of `uname -m` outputs to Debian arch name convention which Ruyi adopts
 #
