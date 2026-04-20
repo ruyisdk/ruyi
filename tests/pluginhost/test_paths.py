@@ -148,3 +148,121 @@ def test_double_slash_prefix_rejected(plugin_root: pathlib.Path) -> None:
     originating = plugin_root / "alpha" / "mod.star"
     with pytest.raises(RuntimeError, match="'//' is not allowed"):
         resolve_ruyi_load_path("//evil", plugin_root, False, originating, False)
+
+
+# --- ruyi-build:// / ruyi-build-data:// ---------------------------------
+
+
+@pytest.fixture
+def recipe_project(tmp_path: pathlib.Path) -> pathlib.Path:
+    root = tmp_path / "recipes_proj"
+    (root / "lib").mkdir(parents=True)
+    (root / "lib" / "docker.star").write_text("")
+    (root / "cfg.toml").write_text("")
+    (root / "recipes").mkdir()
+    (root / "recipes" / "pkg.star").write_text("")
+    return root
+
+
+def test_ruyi_build_resolves_against_project_root(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    resolved = resolve_ruyi_load_path(
+        "ruyi-build://lib/docker.star",
+        plugin_root,
+        False,
+        originating,
+        False,
+        recipe_project_root=recipe_project,
+    )
+    assert resolved == (recipe_project / "lib" / "docker.star").resolve()
+
+
+def test_ruyi_build_rejected_outside_recipe_context(
+    plugin_root: pathlib.Path,
+) -> None:
+    originating = plugin_root / "alpha" / "mod.star"
+    with pytest.raises(RuntimeError, match="only available when loading"):
+        resolve_ruyi_load_path(
+            "ruyi-build://lib/docker.star",
+            plugin_root,
+            False,
+            originating,
+            False,
+        )
+
+
+def test_ruyi_build_rejects_traversal(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    with pytest.raises(RuntimeError, match="escapes recipe project root"):
+        resolve_ruyi_load_path(
+            "ruyi-build://../../etc/passwd",
+            plugin_root,
+            False,
+            originating,
+            False,
+            recipe_project_root=recipe_project,
+        )
+
+
+def test_ruyi_build_rejects_data_context(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    with pytest.raises(RuntimeError, match="ruyi-build protocol"):
+        resolve_ruyi_load_path(
+            "ruyi-build://cfg.toml",
+            plugin_root,
+            True,
+            originating,
+            False,
+            recipe_project_root=recipe_project,
+        )
+
+
+def test_ruyi_build_data_resolves(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    resolved = resolve_ruyi_load_path(
+        "ruyi-build-data://cfg.toml",
+        plugin_root,
+        True,
+        originating,
+        False,
+        recipe_project_root=recipe_project,
+    )
+    assert resolved == (recipe_project / "cfg.toml").resolve()
+
+
+def test_ruyi_build_data_rejects_non_data_context(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    with pytest.raises(RuntimeError, match="ruyi-build-data protocol"):
+        resolve_ruyi_load_path(
+            "ruyi-build-data://cfg.toml",
+            plugin_root,
+            False,
+            originating,
+            False,
+            recipe_project_root=recipe_project,
+        )
+
+
+def test_ruyi_build_rejects_empty_path(
+    plugin_root: pathlib.Path, recipe_project: pathlib.Path
+) -> None:
+    originating = recipe_project / "recipes" / "pkg.star"
+    with pytest.raises(RuntimeError, match="empty path"):
+        resolve_ruyi_load_path(
+            "ruyi-build://",
+            plugin_root,
+            False,
+            originating,
+            False,
+            recipe_project_root=recipe_project,
+        )

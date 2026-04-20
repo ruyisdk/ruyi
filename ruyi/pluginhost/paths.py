@@ -1,7 +1,7 @@
 import pathlib
 import re
 from typing import Final
-from urllib.parse import unquote, urlparse
+from urllib.parse import ParseResult, unquote, urlparse
 
 PLUGIN_ENTRYPOINT_FILENAME: Final = "mod.star"
 PLUGIN_DATA_DIR: Final = "data"
@@ -24,6 +24,7 @@ def resolve_ruyi_load_path(
     is_for_data: bool,
     originating_file: pathlib.Path,
     allow_host_fs_access: bool,
+    recipe_project_root: pathlib.Path | None = None,
 ) -> pathlib.Path:
     parsed = urlparse(path)
     if parsed.params or parsed.query or parsed.fragment:
@@ -98,10 +99,57 @@ def resolve_ruyi_load_path(
 
             return pathlib.Path(parsed.path)
 
+        case "ruyi-build":
+            if is_for_data:
+                raise RuntimeError(
+                    "the ruyi-build protocol is not allowed in this context"
+                )
+            return _resolve_ruyi_build(parsed, recipe_project_root)
+
+        case "ruyi-build-data":
+            if not is_for_data:
+                raise RuntimeError(
+                    "the ruyi-build-data protocol is not allowed in this context"
+                )
+            return _resolve_ruyi_build(parsed, recipe_project_root)
+
         case _:
             raise RuntimeError(
                 f"unsupported Ruyi Starlark load path scheme {parsed.scheme}"
             )
+
+
+def _resolve_ruyi_build(
+    parsed: ParseResult,
+    recipe_project_root: pathlib.Path | None,
+) -> pathlib.Path:
+    if recipe_project_root is None:
+        raise RuntimeError(
+            f"the {parsed.scheme} protocol is only available when loading "
+            f"a build recipe"
+        )
+    if not parsed.netloc and not parsed.path:
+        raise RuntimeError(
+            f"empty path is not allowed for {parsed.scheme}:// load paths"
+        )
+
+    # Reconstruct the repo-relative path. urlparse of "ruyi-build://lib/x.star"
+    # puts "lib" in netloc and "/x.star" in path; reassemble them.
+    combined = parsed.netloc + parsed.path
+    rel = combined.lstrip("/")
+    if not rel:
+        raise RuntimeError(
+            f"empty path is not allowed for {parsed.scheme}:// load paths"
+        )
+
+    root_resolved = recipe_project_root.resolve()
+    joined = (root_resolved / pathlib.PurePosixPath(rel)).resolve()
+    if not joined.is_relative_to(root_resolved):
+        raise RuntimeError(
+            f"{parsed.scheme}:// load path {combined!r} escapes "
+            f"recipe project root {root_resolved}"
+        )
+    return joined
 
 
 def resolve_plain_load_path(

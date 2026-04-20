@@ -120,7 +120,9 @@ def _parse_marker(root: pathlib.Path, marker: pathlib.Path) -> RecipeProject:
         )
 
     extra_raw = project_section.get("extra_artifact_roots", [])
-    if not isinstance(extra_raw, list) or not all(isinstance(x, str) for x in extra_raw):
+    if not isinstance(extra_raw, list) or not all(
+        isinstance(x, str) for x in extra_raw
+    ):
         raise RecipeProjectError(
             f"{marker}: project.extra_artifact_roots must be a list of strings"
         )

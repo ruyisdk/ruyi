@@ -94,7 +94,9 @@ def test_discover_absolute_output_dir_rejected(tmp_path: pathlib.Path) -> None:
     )
     recipe = tmp_path / "x.star"
     recipe.write_text("")
-    with pytest.raises(RecipeProjectError, match="output_dir must be a project-relative"):
+    with pytest.raises(
+        RecipeProjectError, match="output_dir must be a project-relative"
+    ):
         discover_recipe_project(recipe)
 
 
