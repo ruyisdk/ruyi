@@ -21,3 +21,7 @@
 * [Ruyi 软件源结构定义](./repo-structure.md)
     * [多软件源支持（Overlay 架构）设计文档](./multi-repo-design.md)
     * [多软件源支持（用户文档）](./multi-repo.md)
+
+## 软件包构建
+
+* [构建配方（Build Recipe）设计文档](./build-recipes-design.md)
