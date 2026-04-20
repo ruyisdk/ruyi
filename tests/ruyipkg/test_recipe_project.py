@@ -164,3 +164,53 @@ def test_recipe_project_marker_path(tmp_path: pathlib.Path) -> None:
     rp = discover_recipe_project(recipe)
     assert isinstance(rp, RecipeProject)
     assert rp.marker_path == tmp_path.resolve() / MARKER_FILENAME
+
+
+def test_discover_invalid_project_not_table(tmp_path: pathlib.Path) -> None:
+    _write_marker(tmp_path, 'format = "v1"\nproject = 1\n')
+    recipe = tmp_path / "x.star"
+    recipe.write_text("")
+    with pytest.raises(RecipeProjectError, match=r"\[project\] must be a table"):
+        discover_recipe_project(recipe)
+
+
+def test_discover_invalid_project_name_empty(tmp_path: pathlib.Path) -> None:
+    _write_marker(tmp_path, 'format = "v1"\n[project]\nname = ""\n')
+    recipe = tmp_path / "x.star"
+    recipe.write_text("")
+    with pytest.raises(RecipeProjectError, match="project.name"):
+        discover_recipe_project(recipe)
+
+
+def test_discover_invalid_project_name_non_string(tmp_path: pathlib.Path) -> None:
+    _write_marker(tmp_path, 'format = "v1"\n[project]\nname = 123\n')
+    recipe = tmp_path / "x.star"
+    recipe.write_text("")
+    with pytest.raises(RecipeProjectError, match="project.name"):
+        discover_recipe_project(recipe)
+
+
+def test_discover_invalid_extra_artifact_roots_non_list(
+    tmp_path: pathlib.Path,
+) -> None:
+    _write_marker(
+        tmp_path,
+        'format = "v1"\n[project]\nextra_artifact_roots = "scratch"\n',
+    )
+    recipe = tmp_path / "x.star"
+    recipe.write_text("")
+    with pytest.raises(RecipeProjectError, match="extra_artifact_roots"):
+        discover_recipe_project(recipe)
+
+
+def test_discover_invalid_extra_artifact_roots_non_string_item(
+    tmp_path: pathlib.Path,
+) -> None:
+    _write_marker(
+        tmp_path,
+        'format = "v1"\n[project]\nextra_artifact_roots = ["/ok", 1]\n',
+    )
+    recipe = tmp_path / "x.star"
+    recipe.write_text("")
+    with pytest.raises(RecipeProjectError, match="extra_artifact_roots"):
+        discover_recipe_project(recipe)

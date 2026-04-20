@@ -152,6 +152,18 @@ def test_ctx_artifact_absolute_root_outside_allowlist_rejected(
         ctx.artifact("*.tar.zst", root="/etc")
 
 
+def test_ctx_artifact_absolute_root_subdir_of_allowlist_entry_accepted(
+    tmp_path: pathlib.Path,
+) -> None:
+    # extra_artifact_roots acts as a subtree allow-list per the design
+    # doc: subdirectories of an allowed root should be accepted.
+    ctx = _make_ctx(tmp_path)
+    sub = tmp_path / "scratch" / "sub"
+    sub.mkdir(parents=True)
+    a = ctx.artifact("*.tar.zst", root=str(sub))
+    assert a.root == sub.resolve()
+
+
 def test_ctx_artifact_relative_traversal_rejected(tmp_path: pathlib.Path) -> None:
     ctx = _make_ctx(tmp_path)
     with pytest.raises(RuntimeError, match="escapes recipe project root"):

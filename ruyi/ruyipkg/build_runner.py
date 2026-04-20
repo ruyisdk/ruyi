@@ -41,8 +41,7 @@ if TYPE_CHECKING:
 class ArtifactReport:
     path: pathlib.Path
     size: int
-    sha256: str
-    sha512: str
+    checksums: Mapping[str, str]
 
 
 @dataclass(frozen=True)
@@ -141,16 +140,8 @@ def _make_recipe_phctx(
 def _load_recipe_module(
     phctx: "PluginHostContext[Any, Any]", recipe_file: pathlib.Path
 ) -> list[ScheduledBuild]:
-    from ..pluginhost.ctx import PluginLoadMode
-
     resolved = recipe_file.resolve(strict=True)
-    loader = phctx.make_loader(
-        resolved,
-        phctx._module_cache,
-        PluginLoadMode.BUILD_RECIPE,
-    )
-    loader.load_this_plugin()
-    return list(phctx.scheduled_builds_for(resolved))
+    return phctx.load_recipe(resolved)
 
 
 def _filter_by_name(
@@ -260,7 +251,9 @@ def _run_invocation(logger: RuyiLogger, inv: Invocation) -> int:
 def _resolve_artifacts(
     invocations: Iterable[Invocation],
 ) -> list[ArtifactReport]:
-    import hashlib
+    import os
+
+    from . import checksum
 
     reports: list[ArtifactReport] = []
     for inv in invocations:
@@ -273,13 +266,16 @@ def _resolve_artifacts(
             for match in matches:
                 if not match.is_file():
                     continue
-                data = match.read_bytes()
+                with open(match, "rb") as fp:
+                    size = os.stat(fp.fileno()).st_size
+                    csums = checksum.Checksummer(fp, {}).compute(
+                        kinds=checksum.SUPPORTED_CHECKSUM_KINDS,
+                    )
                 reports.append(
                     ArtifactReport(
                         path=match,
-                        size=len(data),
-                        sha256=hashlib.sha256(data).hexdigest(),
-                        sha512=hashlib.sha512(data).hexdigest(),
+                        size=size,
+                        checksums=csums,
                     )
                 )
     return reports
@@ -306,6 +302,6 @@ def format_build_report(report: BuildReport) -> str:
         lines.append("[[artifacts]]")
         lines.append(f'path = "{art.path}"')
         lines.append(f"size = {art.size}")
-        lines.append(f'sha256 = "{art.sha256}"')
-        lines.append(f'sha512 = "{art.sha512}"')
+        for kind in sorted(art.checksums):
+            lines.append(f'{kind} = "{art.checksums[kind]}"')
     return "\n".join(lines) + "\n"

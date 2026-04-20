@@ -197,7 +197,11 @@ class RecipeBuildCtx:
             root_path = pathlib.Path(root)
             if root_path.is_absolute():
                 resolved_root = root_path.resolve()
-                if resolved_root not in self._project.extra_artifact_roots and (
+                allowed_by_extras = any(
+                    resolved_root == extra or resolved_root.is_relative_to(extra)
+                    for extra in self._project.extra_artifact_roots
+                )
+                if not allowed_by_extras and (
                     not resolved_root.is_relative_to(self._project.root.resolve())
                 ):
                     raise RuntimeError(

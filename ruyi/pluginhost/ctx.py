@@ -157,6 +157,23 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def all_scheduled_builds(self) -> dict[pathlib.Path, list[ScheduledBuild]]:
         return self._scheduled_builds
 
+    def load_recipe(self, recipe_file: pathlib.Path) -> list[ScheduledBuild]:
+        """Load a build-recipe ``.star`` file via a fresh loader using the
+        host context's shared module cache, then return the list of
+        :class:`ScheduledBuild` entries registered during the load.
+
+        Intended for callers outside the pluginhost package so they can
+        drive recipe loading without reaching into private state.
+        """
+
+        loader = self.make_loader(
+            recipe_file,
+            self._module_cache,
+            PluginLoadMode.BUILD_RECIPE,
+        )
+        loader.load_this_plugin()
+        return list(self.scheduled_builds_for(recipe_file))
+
     def load_plugin(self, plugin_id: str, load_mode: PluginLoadMode) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
 

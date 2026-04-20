@@ -92,6 +92,21 @@ def test_schedule_build_accepts_lambda(
     assert phctx.scheduled_builds_for(recipe_file)[0].name == "<lambda>"
 
 
+def test_schedule_build_rejects_callable_without_derivable_name(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    class CallableWithoutName:
+        def __call__(self, ctx: Any) -> None:
+            pass
+
+    phctx = _make_recipe_phctx(tmp_path, ruyi_logger)
+    recipe_file = tmp_path / "recipes_proj" / "pkg.star"
+    api = RuyiBuildRecipeAPI(phctx, recipe_file)
+
+    with pytest.raises(RuntimeError, match="could not derive a name"):
+        api.schedule_build(CallableWithoutName())
+
+
 def test_schedule_build_rejects_duplicate_name(
     tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
 ) -> None:
