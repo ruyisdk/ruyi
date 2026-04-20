@@ -240,7 +240,7 @@ def _run_invocation(logger: RuyiLogger, inv: Invocation) -> int:
     # project, and the invocation takes an argv list with no shell expansion,
     # which is the documented threat model.
     proc = subprocess.run(
-        list(inv.argv),
+        list(inv.argv),  # sourcery skip: dangerous-subprocess-use-audit
         cwd=str(inv.cwd),
         env=merged_env,
         check=False,
