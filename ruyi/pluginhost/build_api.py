@@ -167,9 +167,7 @@ class RecipeBuildCtx:
         if not all(isinstance(x, str) for x in argv):
             raise RuntimeError("ctx.subprocess: argv entries must be strings")
 
-        resolved_cwd = (
-            self._project.root if cwd is None else pathlib.Path(cwd)
-        )
+        resolved_cwd = self._project.root if cwd is None else pathlib.Path(cwd)
         env_map = dict(env) if env is not None else {}
         produces_tuple = tuple(produces)
         for a in produces_tuple:

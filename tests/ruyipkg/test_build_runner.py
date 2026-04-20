@@ -26,9 +26,7 @@ def _make_project(tmp_path: pathlib.Path, recipe_body: str) -> pathlib.Path:
     return recipe
 
 
-def test_run_recipe_dry_run(
-    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
-) -> None:
+def test_run_recipe_dry_run(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -> None:
     recipe = _make_project(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
@@ -69,9 +67,7 @@ def test_run_recipe_name_filter_selects(
         "RUYI.build.schedule_build(build_a)\n"
         "RUYI.build.schedule_build(build_b)\n",
     )
-    reports = run_recipe(
-        ruyi_logger, recipe, dry_run=True, selected_names=["build_b"]
-    )
+    reports = run_recipe(ruyi_logger, recipe, dry_run=True, selected_names=["build_b"])
     assert [r.build_name for r in reports] == ["build_b"]
 
 
@@ -86,14 +82,10 @@ def test_run_recipe_name_filter_missing_errors(
         "RUYI.build.schedule_build(build_a)\n",
     )
     with pytest.raises(RuntimeError, match="does not define the requested"):
-        run_recipe(
-            ruyi_logger, recipe, dry_run=True, selected_names=["nope"]
-        )
+        run_recipe(ruyi_logger, recipe, dry_run=True, selected_names=["nope"])
 
 
-def test_run_recipe_user_vars(
-    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
-) -> None:
+def test_run_recipe_user_vars(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -> None:
     recipe = _make_project(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"

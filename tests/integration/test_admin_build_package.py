@@ -31,9 +31,7 @@ def test_admin_build_package_dry_run(
         "RUYI.build.schedule_build(build_it)\n",
     )
 
-    result = ruyi_cli_runner(
-        "admin", "build-package", "--dry-run", str(recipe)
-    )
+    result = ruyi_cli_runner("admin", "build-package", "--dry-run", str(recipe))
     assert result.exit_code == 0, result.stderr
     assert "build_it" in result.stdout
 

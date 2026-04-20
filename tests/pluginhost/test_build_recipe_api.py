@@ -130,7 +130,9 @@ def test_build_namespace_gated_on_capability(
         this_plugin_dir=tmp_path,
         allow_host_fs_access=False,
     )
-    with pytest.raises(RuntimeError, match="only available when loading a build recipe"):
+    with pytest.raises(
+        RuntimeError, match="only available when loading a build recipe"
+    ):
         _ = host_api.build
 
 
@@ -162,4 +164,3 @@ def test_call_subprocess_rejected_in_recipe_context(
     )
     with pytest.raises(RuntimeError, match="call_subprocess_argv is not available"):
         host_api.call_subprocess_argv(["/bin/true"])
-

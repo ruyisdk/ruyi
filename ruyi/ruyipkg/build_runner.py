@@ -59,9 +59,7 @@ class BuildFailure(RuntimeError):
     """Raised when an Invocation exits non-zero."""
 
     def __init__(self, build_name: str, exit_code: int) -> None:
-        super().__init__(
-            f"build {build_name!r} failed with exit code {exit_code}"
-        )
+        super().__init__(f"build {build_name!r} failed with exit code {exit_code}")
         self.build_name = build_name
         self.exit_code = exit_code
 
@@ -216,9 +214,7 @@ def _execute_one_build(
     )
 
 
-def _normalize_invocations(
-    build_name: str, result: object
-) -> list[Invocation]:
+def _normalize_invocations(build_name: str, result: object) -> list[Invocation]:
     if isinstance(result, Invocation):
         return [result]
     if isinstance(result, (list, tuple)):

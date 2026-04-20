@@ -181,10 +181,10 @@ class AdminBuildPackageCommand(
         for r in reports:
             logger.I(
                 _("build {name!r} completed: {n} artifact(s)").format(
-                    name=r.build_name, n=len(r.artifacts),
+                    name=r.build_name,
+                    n=len(r.artifacts),
                 )
             )
             print(format_build_report(r))
 
         return 0
-
