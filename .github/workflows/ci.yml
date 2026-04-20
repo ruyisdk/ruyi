@@ -60,7 +60,7 @@ jobs:
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: christophebedard/dco-check@0.5.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           args: "--verbose"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -111,7 +111,7 @@ jobs:
           echo "All compliance checks passed."
 
   lint:
-    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.poetry == 1 && ', Poetry 1.0.7' || '' }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
+    name: "lint & typecheck & test (Python ${{ matrix.python }}${{ matrix.poetry == 1 && ', Poetry 1.8.2' || '' }}${{ matrix.baseline && ', baseline deps' || '' }}${{ matrix.experimental && ', experimental' || '' }})"
     runs-on: ${{ matrix.runs_on }}
     needs:
       - compliance-result
@@ -120,7 +120,6 @@ jobs:
       fail-fast: true
       matrix:
         python:
-          - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
@@ -135,17 +134,17 @@ jobs:
           #  baseline: false
           #  experimental: true
           #  runs_on: ubuntu-latest
-          - python: "3.10"
+          - python: "3.11"
             baseline: true
             experimental: false
-            runs_on: ubuntu-22.04
+            runs_on: ubuntu-24.04
             poetry: 2
           # Poetry 1.x
           # run on baseline versions for mimicking the packaging environment
-          - python: "3.10"
+          - python: "3.11"
             experimental: false
             baseline: false
-            runs_on: ubuntu-22.04
+            runs_on: ubuntu-24.04
             poetry: 1
 
     steps:
@@ -193,13 +192,9 @@ jobs:
         if: success() && !matrix.baseline
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq llvm-15-tools pipx schroot wget
+          sudo apt-get install -y jq llvm-20-tools pipx schroot wget yq
           sudo apt-get clean
-          sudo ln -s /usr/bin/FileCheck-15 /usr/local/bin/FileCheck
-
-          # Ubuntu 22.04 does not have yq in archive
-          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod a+x /usr/local/bin/yq
+          sudo ln -s /usr/bin/FileCheck-20 /usr/local/bin/FileCheck
 
           export PIPX_BIN_DIR=/usr/local/bin
           sudo PIPX_BIN_DIR=/usr/local/bin pipx install lit
@@ -219,7 +214,7 @@ jobs:
 
       - name: Install Poetry
         if: success() && !matrix.baseline
-        run: pipx install ${{ matrix.poetry == 2 && 'poetry' || '"poetry==1.0.7"' }}
+        run: pipx install ${{ matrix.poetry == 2 && 'poetry' || '"poetry==1.8.2"' }}
 
       - name: Swap in Poetry 1.x metadata
         if: success() && !matrix.baseline && matrix.poetry == 1
@@ -286,7 +281,7 @@ jobs:
           sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           sed -i 's@arpy certifi jinja2@arpy babel certifi jinja2@' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
           export PIPX_BIN_DIR=/usr/local/bin
-          export RUYI_VERSION=0.45.0
+          export RUYI_VERSION=0.47.0
           ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha
 
   shellcheck:
@@ -424,7 +419,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           registry: ghcr.io
-          image: ghcr.io/ruyisdk/ruyi-python-dist:20251024
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20260419
           options: |
             --user root
             --platform linux/${{ matrix.arch }}
@@ -650,4 +645,4 @@ jobs:
           path: ${{ github.workspace }}/dist
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+        uses: pypa/gh-action-pypi-publish@v1.14.0

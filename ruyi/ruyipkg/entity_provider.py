@@ -2,13 +2,8 @@ import abc
 import json
 import os
 import pathlib
-import sys
+import tomllib
 from typing import Any, Mapping, Sequence
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 from ..i18n import _
 from ..log import RuyiLogger

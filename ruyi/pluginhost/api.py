@@ -2,14 +2,9 @@ from contextlib import AbstractContextManager
 from functools import cached_property
 import pathlib
 import subprocess
-import sys
 import time
+import tomllib
 from typing import TYPE_CHECKING, Any, Callable, Final, TypeVar, cast
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 from rich.console import Console, RenderableType
 

@@ -8,21 +8,12 @@ from typing import BinaryIO, TypedDict, TYPE_CHECKING
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-if sys.version_info >= (3, 11):
 
-    class PorcelainEntityType(enum.StrEnum):
-        LogV1 = "log-v1"
-        NewsItemV1 = "newsitem-v1"
-        PkgListOutputV1 = "pkglistoutput-v1"
-        EntityListOutputV1 = "entitylistoutput-v1"
-
-else:
-
-    class PorcelainEntityType(str, enum.Enum):
-        LogV1 = "log-v1"
-        NewsItemV1 = "newsitem-v1"
-        PkgListOutputV1 = "pkglistoutput-v1"
-        EntityListOutputV1 = "entitylistoutput-v1"
+class PorcelainEntityType(enum.StrEnum):
+    LogV1 = "log-v1"
+    NewsItemV1 = "newsitem-v1"
+    PkgListOutputV1 = "pkglistoutput-v1"
+    EntityListOutputV1 = "entitylistoutput-v1"
 
 
 class PorcelainEntity(TypedDict):

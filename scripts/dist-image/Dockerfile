@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG TARGETARCH
 ARG BUILDER_UID=1000
@@ -8,8 +8,14 @@ ARG BUILDER_GID=1000
 SHELL ["/bin/bash", "-c"]
 
 RUN <<DOCKEREOF
-groupadd -g "$BUILDER_GID" b
-useradd -d /home/b -m -g "$BUILDER_GID" -u "$BUILDER_UID" -s /bin/bash b
+_getent_result="$(getent passwd "$BUILDER_UID")"
+
+if [[ -n $_getent_result ]]; then
+    ln -s "/home/${_getent_result%%:*}" /home/b
+else
+    groupadd -g "$BUILDER_GID" b
+    useradd -d /home/b -m -g "$BUILDER_GID" -u "$BUILDER_UID" -s /bin/bash b
+fi
 DOCKEREOF
 
 RUN <<DOCKEREOF
@@ -17,7 +23,8 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 
 # HTTPS needs ca-certificates to work
-sed -E -i 's@http://(archive|ports)\.ubuntu\.com/@http://mirrors.tuna.tsinghua.edu.cn/@g' /etc/apt/sources.list
+# Ubuntu 24.04+ uses deb822 files under /etc/apt/sources.list.d/
+sed -E -i 's@http://(archive|ports)\.ubuntu\.com/@http://mirrors.huaweicloud.com/@g' /etc/apt/sources.list.d/*
 
 # Non-interactive configuration of tzdata
 debconf-set-selections <<EOF
@@ -35,7 +42,7 @@ package_list=(
     git         # for GHA checkout action
 
     # for pulling in build deps only
-    python3.11-dev
+    python3.12-dev
 
     # Python library deps
     # cffi
@@ -55,30 +62,29 @@ package_list=(
 
     # for ruyi-litester
     jq
-    llvm-15-tools
+    llvm-20-tools
     pipx
     schroot
     # wget
+    yq
 )
 
 apt-get update
 apt-get upgrade -qqy
 apt-get install -qqy "${package_list[@]}"
 
-ln -s /usr/bin/FileCheck-15 /usr/local/bin/FileCheck
-
-# Ubuntu 22.04 does not have yq in archive
-wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_$TARGETARCH
-chmod a+x /usr/local/bin/yq
+ln -s /usr/bin/FileCheck-20 /usr/local/bin/FileCheck
 
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 DOCKEREOF
 
-COPY ./build-python.sh /tmp/
+# Python 3.14.4 + Nuitka 2.8.10 produces ruyi binaries that segfault during
+# apply_config
+COPY --link ./build-python.sh /tmp/
 RUN /tmp/build-python.sh
 
-COPY ./prepare-poetry.sh /tmp/prepare-poetry.sh
+COPY --link ./prepare-poetry.sh /tmp/prepare-poetry.sh
 RUN /tmp/prepare-poetry.sh
 
 USER $BUILDER_UID:$BUILDER_GID

@@ -1,5 +1,4 @@
 import enum
-import sys
 from typing import Iterable, TypedDict, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,63 +14,32 @@ from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .composite_repo import CompositeRepo
 
 
-if sys.version_info >= (3, 11):
+class PkgRemark(enum.StrEnum):
+    Latest = "latest"
+    LatestPreRelease = "latest-prerelease"
+    NoBinaryForCurrentHost = "no-binary-for-current-host"
+    PreRelease = "prerelease"
+    HasKnownIssue = "known-issue"
+    Downloaded = "downloaded"
+    Installed = "installed"
 
-    class PkgRemark(enum.StrEnum):
-        Latest = "latest"
-        LatestPreRelease = "latest-prerelease"
-        NoBinaryForCurrentHost = "no-binary-for-current-host"
-        PreRelease = "prerelease"
-        HasKnownIssue = "known-issue"
-        Downloaded = "downloaded"
-        Installed = "installed"
-
-        def as_rich_markup(self) -> str:
-            match self:
-                case self.Latest:
-                    return _("latest")
-                case self.LatestPreRelease:
-                    return _("latest-prerelease")
-                case self.NoBinaryForCurrentHost:
-                    return _("[red]no binary for current host[/]")
-                case self.PreRelease:
-                    return _("prerelease")
-                case self.HasKnownIssue:
-                    return _("[yellow]has known issue[/]")
-                case self.Downloaded:
-                    return _("[green]downloaded[/]")
-                case self.Installed:
-                    return _("[green]installed[/]")
-            return ""
-
-else:
-
-    class PkgRemark(str, enum.Enum):
-        Latest = "latest"
-        LatestPreRelease = "latest-prerelease"
-        NoBinaryForCurrentHost = "no-binary-for-current-host"
-        PreRelease = "prerelease"
-        HasKnownIssue = "known-issue"
-        Downloaded = "downloaded"
-        Installed = "installed"
-
-        def as_rich_markup(self) -> str:
-            match self:
-                case self.Latest:
-                    return _("latest")
-                case self.LatestPreRelease:
-                    return _("latest-prerelease")
-                case self.NoBinaryForCurrentHost:
-                    return _("[red]no binary for current host[/]")
-                case self.PreRelease:
-                    return _("prerelease")
-                case self.HasKnownIssue:
-                    return _("[yellow]has known issue[/]")
-                case self.Downloaded:
-                    return _("[green]downloaded[/]")
-                case self.Installed:
-                    return _("[green]installed[/]")
-            return ""
+    def as_rich_markup(self) -> str:
+        match self:
+            case self.Latest:
+                return _("latest")
+            case self.LatestPreRelease:
+                return _("latest-prerelease")
+            case self.NoBinaryForCurrentHost:
+                return _("[red]no binary for current host[/]")
+            case self.PreRelease:
+                return _("prerelease")
+            case self.HasKnownIssue:
+                return _("[yellow]has known issue[/]")
+            case self.Downloaded:
+                return _("[green]downloaded[/]")
+            case self.Installed:
+                return _("[green]installed[/]")
+        return ""
 
 
 class AugmentedPkgManifest:

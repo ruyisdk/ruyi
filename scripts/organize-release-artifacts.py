@@ -4,11 +4,7 @@ import os
 import pathlib
 import shutil
 import sys
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+import tomllib
 
 
 def main(argv: list[str]) -> int:

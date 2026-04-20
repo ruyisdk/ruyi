@@ -303,25 +303,6 @@ files = [
 ]
 
 [[package]]
-name = "exceptiongroup"
-version = "1.3.1"
-description = "Backport of PEP 654 (exception groups)"
-optional = false
-python-versions = ">=3.7"
-groups = ["dev"]
-markers = "python_version == \"3.10\""
-files = [
-    {file = "exceptiongroup-1.3.1-py3-none-any.whl", hash = "sha256:a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598"},
-    {file = "exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219"},
-]
-
-[package.dependencies]
-typing-extensions = {version = ">=4.6.0", markers = "python_version < \"3.13\""}
-
-[package.extras]
-test = ["pytest (>=6)"]
-
-[[package]]
 name = "fastjsonschema"
 version = "2.21.2"
 description = "Fastest Python implementation of JSON schema"
@@ -675,7 +656,6 @@ files = [
 librt = {version = ">=0.8.0", markers = "platform_python_implementation != \"PyPy\""}
 mypy_extensions = ">=1.0.0"
 pathspec = ">=1.0.0"
-tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing_extensions = ">=4.6.0"
 
 [package.extras]
@@ -825,63 +805,11 @@ files = [
 
 [[package]]
 name = "pygit2"
-version = "1.18.2"
-description = "Python bindings for libgit2."
-optional = false
-python-versions = ">=3.10"
-groups = ["main"]
-markers = "python_version == \"3.10\""
-files = [
-    {file = "pygit2-1.18.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a84fbc62b0d2103059559b5af7e939289a0f3fc7d0a7ad84d822eaa97a6db687"},
-    {file = "pygit2-1.18.2-cp310-cp310-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c84aa50acba5a2c6bb36863fbcc1d772dc00199f9ea41bb5cac73c5fdad42bce"},
-    {file = "pygit2-1.18.2-cp310-cp310-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:d7b8570f0df4f0a854c3d3bdcec4a5767b50b0acb13ef163f6b96db593e3611f"},
-    {file = "pygit2-1.18.2-cp310-cp310-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cccceadab2c772a52081eac4680c3664d2ff21966171d339fee6aaf303ccbe23"},
-    {file = "pygit2-1.18.2-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:c51e0b4a733e72212c86c8b3890a4c3572b1cae6d381e56b4d53ba3dafbeecf2"},
-    {file = "pygit2-1.18.2-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:970e9214e9146c893249acb9610fda9220fe048ae76c80fd7f36d0ec3381676b"},
-    {file = "pygit2-1.18.2-cp310-cp310-win32.whl", hash = "sha256:546f9b8e7bf9d88d77008a82d7d989c624f5756c4fba26af1b8985019985dc8a"},
-    {file = "pygit2-1.18.2-cp310-cp310-win_amd64.whl", hash = "sha256:5383cdfc1315e7d49d7a59a9aa37c4f0f60d08c4de3137f31d20e4be2055ad47"},
-    {file = "pygit2-1.18.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3fc89da1426793227e06f2dec5f2df98a0c6806fb4024eec6a125fb7a5042bbf"},
-    {file = "pygit2-1.18.2-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:da6ab37a87b58032c596c37bcd0e3926cc6071748230f6f0911b7fe398e021ae"},
-    {file = "pygit2-1.18.2-cp311-cp311-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:d9642f57943703de3651906f81b9535cb257b3cbe45ecca8f97cf475f1cb6b5f"},
-    {file = "pygit2-1.18.2-cp311-cp311-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1aa3efba6459e10608900fe26679e3b52ea566761f3e7ef9c0805d69a5548631"},
-    {file = "pygit2-1.18.2-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:25957ccf70e37f3e8020748724a14faf4731ceac69ed00ccbb422f99de0a80cc"},
-    {file = "pygit2-1.18.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:6c9cdbad0888d664b80f30efda055c4c5b8fdae22c709bd57b1060daf8bde055"},
-    {file = "pygit2-1.18.2-cp311-cp311-win32.whl", hash = "sha256:91bde9503ad35be55c95251c9a90cfe33cd608042dcc08d3991ed188f41ebec2"},
-    {file = "pygit2-1.18.2-cp311-cp311-win_amd64.whl", hash = "sha256:840d01574e164d9d2428d36d9d32d377091ac592a4b1a3aa3452a5342a3f6175"},
-    {file = "pygit2-1.18.2-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:5eaf2855d78c5ad2a6c2ebf840f8717a8980c93567a91fbc0fc91650747454a4"},
-    {file = "pygit2-1.18.2-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ee5dd227e4516577d9edc2b476462db9f0428d3cc1ad5de32e184458f25046ee"},
-    {file = "pygit2-1.18.2-cp312-cp312-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:07e5c39ed67e07dac4eb99bfc33d7ccc105cd7c4e09916751155e7da3e07b6bc"},
-    {file = "pygit2-1.18.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:12ae4ed05b48bb9f08690c3bb9f96a37a193ed44e1a9a993509a6f1711bb22ae"},
-    {file = "pygit2-1.18.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:00919a2eafd975a63025d211e1c1a521bf593f6c822bc61f18c1bc661cbffd42"},
-    {file = "pygit2-1.18.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3f96a168bafb99e99b95f59b0090171396ad2fb07713e5505ad3e4c16a41d56a"},
-    {file = "pygit2-1.18.2-cp312-cp312-win32.whl", hash = "sha256:ff1c99f2f342c3a3ec1847182d236088f1eb32bc6c4f93fbb5cb2514ccbe29f3"},
-    {file = "pygit2-1.18.2-cp312-cp312-win_amd64.whl", hash = "sha256:507b5ea151cb963b77995af0c4fb51333f02f15a05c0b36c33cd3f5518134ceb"},
-    {file = "pygit2-1.18.2-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:f65d6114d96cb7a21cc09e8cb0622d0388619adf9cdb5d77d94589a41996b0a8"},
-    {file = "pygit2-1.18.2-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9367df01958f7e538bc3fc665ace55de0d5b72da5b6b5f95c44ae916c39a6f51"},
-    {file = "pygit2-1.18.2-cp313-cp313-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:eb2993e44aaafac5bcd801c2926dcf87c3f8939ff1c5fb9fe0549a81acd27a03"},
-    {file = "pygit2-1.18.2-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:63d5dc116d6054cb4e970160c09440da7ded36acfbc4f06ef8e0d38ac275ee12"},
-    {file = "pygit2-1.18.2-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:3b87e7ab87da09145cb45434e6ad0402695ca72ffb764487ecc09d28abef5507"},
-    {file = "pygit2-1.18.2-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a0aa809fd5572c8b1123270263720e458afc9e2069e8d0c1079feebc930e6813"},
-    {file = "pygit2-1.18.2-cp313-cp313-win32.whl", hash = "sha256:8c4423b08786d0fcea0c523b82bc5ec52039b01500a3391472786e89cadf1069"},
-    {file = "pygit2-1.18.2-cp313-cp313-win_amd64.whl", hash = "sha256:aeba6398d5c689c90c133e07f698aeb9f9693cfbb5707fccffd18f2d67d37c6d"},
-    {file = "pygit2-1.18.2-pp310-pypy310_pp73-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bd82d37cf5ce474a74388a04b9fb3c28670f44bc7fe970cabbb477a4d1cb871f"},
-    {file = "pygit2-1.18.2-pp310-pypy310_pp73-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:991fe6bcbe914507abfe81be1c96bd5039ec315354e4132efffcb03eb8b363fb"},
-    {file = "pygit2-1.18.2-pp311-pypy311_pp73-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d801d272f6331e067bd0d560671311d1ce4bb8f81536675706681ed44cc0d7dc"},
-    {file = "pygit2-1.18.2-pp311-pypy311_pp73-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2e1ff2d60420c98e6e25fd188069cddf8fa7b0417db7405ce7677a2f546e6b03"},
-    {file = "pygit2-1.18.2.tar.gz", hash = "sha256:eca87e0662c965715b7f13491d5e858df2c0908341dee9bde2bc03268e460f55"},
-]
-
-[package.dependencies]
-cffi = ">=1.17.0"
-
-[[package]]
-name = "pygit2"
 version = "1.19.2"
 description = "Python bindings for libgit2."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "python_version >= \"3.11\""
 files = [
     {file = "pygit2-1.19.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:70c7efc426bdae6b67465a03729b79277e7757a29a7d6550b40c18ed36cb7232"},
     {file = "pygit2-1.19.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7b96d6ed7251eef70cfd4126269f1044fa47bc6da6367300027c5e5d74789f7f"},
@@ -1036,12 +964,10 @@ files = [
 
 [package.dependencies]
 colorama = {version = ">=0.4", markers = "sys_platform == \"win32\""}
-exceptiongroup = {version = ">=1", markers = "python_version < \"3.11\""}
 iniconfig = ">=1.0.1"
 packaging = ">=22"
 pluggy = ">=1.5,<2"
 pygments = ">=2.7.2"
-tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 
 [package.extras]
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests", "setuptools", "xmlschema"]
@@ -1208,64 +1134,6 @@ groups = ["main"]
 files = [
     {file = "semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746"},
     {file = "semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602"},
-]
-
-[[package]]
-name = "tomli"
-version = "2.4.1"
-description = "A lil' TOML parser"
-optional = false
-python-versions = ">=3.8"
-groups = ["main", "dev"]
-markers = "python_version == \"3.10\""
-files = [
-    {file = "tomli-2.4.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:f8f0fc26ec2cc2b965b7a3b87cd19c5c6b8c5e5f436b984e85f486d652285c30"},
-    {file = "tomli-2.4.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4ab97e64ccda8756376892c53a72bd1f964e519c77236368527f758fbc36a53a"},
-    {file = "tomli-2.4.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:96481a5786729fd470164b47cdb3e0e58062a496f455ee41b4403be77cb5a076"},
-    {file = "tomli-2.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5a881ab208c0baf688221f8cecc5401bd291d67e38a1ac884d6736cbcd8247e9"},
-    {file = "tomli-2.4.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:47149d5bd38761ac8be13a84864bf0b7b70bc051806bc3669ab1cbc56216b23c"},
-    {file = "tomli-2.4.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:ec9bfaf3ad2df51ace80688143a6a4ebc09a248f6ff781a9945e51937008fcbc"},
-    {file = "tomli-2.4.1-cp311-cp311-win32.whl", hash = "sha256:ff2983983d34813c1aeb0fa89091e76c3a22889ee83ab27c5eeb45100560c049"},
-    {file = "tomli-2.4.1-cp311-cp311-win_amd64.whl", hash = "sha256:5ee18d9ebdb417e384b58fe414e8d6af9f4e7a0ae761519fb50f721de398dd4e"},
-    {file = "tomli-2.4.1-cp311-cp311-win_arm64.whl", hash = "sha256:c2541745709bad0264b7d4705ad453b76ccd191e64aa6f0fc66b69a293a45ece"},
-    {file = "tomli-2.4.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:c742f741d58a28940ce01d58f0ab2ea3ced8b12402f162f4d534dfe18ba1cd6a"},
-    {file = "tomli-2.4.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7f86fd587c4ed9dd76f318225e7d9b29cfc5a9d43de44e5754db8d1128487085"},
-    {file = "tomli-2.4.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ff18e6a727ee0ab0388507b89d1bc6a22b138d1e2fa56d1ad494586d61d2eae9"},
-    {file = "tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:136443dbd7e1dee43c68ac2694fde36b2849865fa258d39bf822c10e8068eac5"},
-    {file = "tomli-2.4.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:5e262d41726bc187e69af7825504c933b6794dc3fbd5945e41a79bb14c31f585"},
-    {file = "tomli-2.4.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:5cb41aa38891e073ee49d55fbc7839cfdb2bc0e600add13874d048c94aadddd1"},
-    {file = "tomli-2.4.1-cp312-cp312-win32.whl", hash = "sha256:da25dc3563bff5965356133435b757a795a17b17d01dbc0f42fb32447ddfd917"},
-    {file = "tomli-2.4.1-cp312-cp312-win_amd64.whl", hash = "sha256:52c8ef851d9a240f11a88c003eacb03c31fc1c9c4ec64a99a0f922b93874fda9"},
-    {file = "tomli-2.4.1-cp312-cp312-win_arm64.whl", hash = "sha256:f758f1b9299d059cc3f6546ae2af89670cb1c4d48ea29c3cacc4fe7de3058257"},
-    {file = "tomli-2.4.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:36d2bd2ad5fb9eaddba5226aa02c8ec3fa4f192631e347b3ed28186d43be6b54"},
-    {file = "tomli-2.4.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:eb0dc4e38e6a1fd579e5d50369aa2e10acfc9cace504579b2faabb478e76941a"},
-    {file = "tomli-2.4.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c7f2c7f2b9ca6bdeef8f0fa897f8e05085923eb091721675170254cbc5b02897"},
-    {file = "tomli-2.4.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f3c6818a1a86dd6dca7ddcaaf76947d5ba31aecc28cb1b67009a5877c9a64f3f"},
-    {file = "tomli-2.4.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:d312ef37c91508b0ab2cee7da26ec0b3ed2f03ce12bd87a588d771ae15dcf82d"},
-    {file = "tomli-2.4.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:51529d40e3ca50046d7606fa99ce3956a617f9b36380da3b7f0dd3dd28e68cb5"},
-    {file = "tomli-2.4.1-cp313-cp313-win32.whl", hash = "sha256:2190f2e9dd7508d2a90ded5ed369255980a1bcdd58e52f7fe24b8162bf9fedbd"},
-    {file = "tomli-2.4.1-cp313-cp313-win_amd64.whl", hash = "sha256:8d65a2fbf9d2f8352685bc1364177ee3923d6baf5e7f43ea4959d7d8bc326a36"},
-    {file = "tomli-2.4.1-cp313-cp313-win_arm64.whl", hash = "sha256:4b605484e43cdc43f0954ddae319fb75f04cc10dd80d830540060ee7cd0243cd"},
-    {file = "tomli-2.4.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:fd0409a3653af6c147209d267a0e4243f0ae46b011aa978b1080359fddc9b6cf"},
-    {file = "tomli-2.4.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:a120733b01c45e9a0c34aeef92bf0cf1d56cfe81ed9d47d562f9ed591a9828ac"},
-    {file = "tomli-2.4.1-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:559db847dc486944896521f68d8190be1c9e719fced785720d2216fe7022b662"},
-    {file = "tomli-2.4.1-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:01f520d4f53ef97964a240a035ec2a869fe1a37dde002b57ebc4417a27ccd853"},
-    {file = "tomli-2.4.1-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:7f94b27a62cfad8496c8d2513e1a222dd446f095fca8987fceef261225538a15"},
-    {file = "tomli-2.4.1-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:ede3e6487c5ef5d28634ba3f31f989030ad6af71edfb0055cbbd14189ff240ba"},
-    {file = "tomli-2.4.1-cp314-cp314-win32.whl", hash = "sha256:3d48a93ee1c9b79c04bb38772ee1b64dcf18ff43085896ea460ca8dec96f35f6"},
-    {file = "tomli-2.4.1-cp314-cp314-win_amd64.whl", hash = "sha256:88dceee75c2c63af144e456745e10101eb67361050196b0b6af5d717254dddf7"},
-    {file = "tomli-2.4.1-cp314-cp314-win_arm64.whl", hash = "sha256:b8c198f8c1805dc42708689ed6864951fd2494f924149d3e4bce7710f8eb5232"},
-    {file = "tomli-2.4.1-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:d4d8fe59808a54658fcc0160ecfb1b30f9089906c50b23bcb4c69eddc19ec2b4"},
-    {file = "tomli-2.4.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:7008df2e7655c495dd12d2a4ad038ff878d4ca4b81fccaf82b714e07eae4402c"},
-    {file = "tomli-2.4.1-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1d8591993e228b0c930c4bb0db464bdad97b3289fb981255d6c9a41aedc84b2d"},
-    {file = "tomli-2.4.1-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:734e20b57ba95624ecf1841e72b53f6e186355e216e5412de414e3c51e5e3c41"},
-    {file = "tomli-2.4.1-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:8a650c2dbafa08d42e51ba0b62740dae4ecb9338eefa093aa5c78ceb546fcd5c"},
-    {file = "tomli-2.4.1-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:504aa796fe0569bb43171066009ead363de03675276d2d121ac1a4572397870f"},
-    {file = "tomli-2.4.1-cp314-cp314t-win32.whl", hash = "sha256:b1d22e6e9387bf4739fbe23bfa80e93f6b0373a7f1b96c6227c32bef95a4d7a8"},
-    {file = "tomli-2.4.1-cp314-cp314t-win_amd64.whl", hash = "sha256:2c1c351919aca02858f740c6d33adea0c5deea37f9ecca1cc1ef9e884a619d26"},
-    {file = "tomli-2.4.1-cp314-cp314t-win_arm64.whl", hash = "sha256:eab21f45c7f66c13f2a9e0e1535309cee140182a9cdae1e041d02e47291e8396"},
-    {file = "tomli-2.4.1-py3-none-any.whl", hash = "sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe"},
-    {file = "tomli-2.4.1.tar.gz", hash = "sha256:7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f"},
 ]
 
 [[package]]
@@ -1525,5 +1393,5 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.10"
-content-hash = "20177232752517a634ecfb8b3e8f863dbfec801cc70c854579e2c712670199a4"
+python-versions = ">=3.11"
+content-hash = "f98bb846e39a799bb0c30a89ea52ad86fb44198f651927babdba9996dbb769da"

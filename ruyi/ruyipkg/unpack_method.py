@@ -1,6 +1,5 @@
 import enum
 import re
-import sys
 from typing import Final
 
 from ..i18n import _
@@ -8,53 +7,27 @@ from ..i18n import _
 RE_TARBALL: Final = re.compile(r"\.tar(?:\.gz|\.bz2|\.lz4|\.xz|\.zst)?$")
 
 
-if sys.version_info >= (3, 11):
+class UnpackMethod(enum.StrEnum):
+    UNKNOWN = ""
+    AUTO = "auto"
+    TAR_AUTO = "tar.auto"
 
-    class UnpackMethod(enum.StrEnum):
-        UNKNOWN = ""
-        AUTO = "auto"
-        TAR_AUTO = "tar.auto"
+    RAW = "raw"
+    GZ = "gz"
+    BZ2 = "bz2"
+    LZ4 = "lz4"
+    XZ = "xz"
+    ZST = "zst"
 
-        RAW = "raw"
-        GZ = "gz"
-        BZ2 = "bz2"
-        LZ4 = "lz4"
-        XZ = "xz"
-        ZST = "zst"
+    TAR = "tar"
+    TAR_GZ = "tar.gz"
+    TAR_BZ2 = "tar.bz2"
+    TAR_LZ4 = "tar.lz4"
+    TAR_XZ = "tar.xz"
+    TAR_ZST = "tar.zst"
 
-        TAR = "tar"
-        TAR_GZ = "tar.gz"
-        TAR_BZ2 = "tar.bz2"
-        TAR_LZ4 = "tar.lz4"
-        TAR_XZ = "tar.xz"
-        TAR_ZST = "tar.zst"
-
-        ZIP = "zip"
-        DEB = "deb"
-
-else:
-
-    class UnpackMethod(str, enum.Enum):
-        UNKNOWN = ""
-        AUTO = "auto"
-        TAR_AUTO = "tar.auto"
-
-        RAW = "raw"
-        GZ = "gz"
-        BZ2 = "bz2"
-        LZ4 = "lz4"
-        XZ = "xz"
-        ZST = "zst"
-
-        TAR = "tar"
-        TAR_GZ = "tar.gz"
-        TAR_BZ2 = "tar.bz2"
-        TAR_LZ4 = "tar.lz4"
-        TAR_XZ = "tar.xz"
-        TAR_ZST = "tar.zst"
-
-        ZIP = "zip"
-        DEB = "deb"
+    ZIP = "zip"
+    DEB = "deb"
 
 
 class UnrecognizedPackFormatError(Exception):

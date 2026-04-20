@@ -18,7 +18,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -31,23 +30,19 @@ classifiers = [
 include = ["ruyi/py.typed"]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.11"
 argcomplete = ">=2.0.0"
 arpy = "*"
-babel = ">=2.8.0"
-fastjsonschema = ">=2.15.1"
-jinja2 = "^3"
-# cannot represent multiple pygit2's with different python version markers
-pygit2 = ">=1.6"
-pyyaml = ">=5.4"
-requests = "^2"
+babel = ">=2.10.3"
+fastjsonschema = ">=2.16.3"
+jinja2 = "^3.0.3"
+pygit2 = ">=1.11.1"
+pyyaml = ">=6.0"
+requests = "^2.25.1"
 rich = ">=11.2.0"
 semver = ">=2.10"
 tomlkit = ">=0.9"
-tomli = { version = ">=1.2", python = "<3.11" }
 tzdata = { version = "*", platform = "win32" }
-# markupsafe 3.0.3's pyproject.toml causes MixedArrayTypesError for Poetry 1.0.7
-markupsafe = "<3.0.3"
 
 [tool.poetry.scripts]
 ruyi = "ruyi.__main__:entrypoint"
