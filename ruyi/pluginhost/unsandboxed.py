@@ -3,7 +3,6 @@ import builtins
 import inspect
 import os
 import pathlib
-import sys
 from types import CodeType
 from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cast
 
@@ -205,10 +204,8 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
     def visit_Try(self, node: ast.Try) -> ast.Try:
         return node
 
-    if sys.version_info >= (3, 11):
-
-        def visit_TryStar(self, node: ast.TryStar) -> ast.TryStar:
-            return node
+    def visit_TryStar(self, node: ast.TryStar) -> ast.TryStar:
+        return node
 
     def visit_With(self, node: ast.With) -> ast.With:
         return node

@@ -26,7 +26,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -36,21 +35,19 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Typing :: Typed",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "argcomplete>=2.0.0",
   "arpy",
-  "babel>=2.8.0",
-  "fastjsonschema>=2.15.1",
-  "jinja2 (>=3, <4)",
-  "pygit2 (>=1.6, <1.19); python_version<'3.11'",
-  "pygit2>=1.6; python_version>='3.11'",
-  "pyyaml>=5.4",
-  "requests (>=2, <3)",
+  "babel>=2.10.3",
+  "fastjsonschema>=2.16.3",
+  "jinja2 (>=3.0.3, <4)",
+  "pygit2>=1.11.1",
+  "pyyaml>=6.0",
+  "requests (>=2.25.1, <3)",
   "rich>=11.2.0",
   "semver>=2.10",
   "tomlkit>=0.9",
-  "tomli>=1.2; python_version<'3.11'",
   "tzdata; sys_platform=='win32'",
 ]
 

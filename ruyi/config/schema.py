@@ -1,5 +1,4 @@
 import datetime
-import sys
 from typing import Final, Sequence, TypeGuard
 
 from .errors import (
@@ -252,10 +251,7 @@ def _decode_single_type_value(
     elif expected_type is str:
         return val
     elif expected_type is datetime.datetime:
-        if sys.version_info < (3, 11) and val.endswith("Z"):
-            # datetime.fromisoformat() did not support the 'Z' suffix until
-            # Python 3.11
-            val = f"{val[:-1]}+00:00"
+        # datetime.fromisoformat() has supported the 'Z' suffix since Python 3.11
         v = datetime.datetime.fromisoformat(val)
         return v.astimezone() if v.tzinfo is None else v
     else:

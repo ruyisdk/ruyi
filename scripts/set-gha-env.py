@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import sys
+import tomllib
 from typing import cast
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 
 def main() -> None:

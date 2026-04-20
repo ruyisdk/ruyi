@@ -1,13 +1,8 @@
 import copy
 import os.path
 import pathlib
-import sys
+import tomllib
 from typing import Any, TypedDict, TYPE_CHECKING, cast
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Self
