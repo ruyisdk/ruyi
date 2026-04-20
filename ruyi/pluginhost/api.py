@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 import time
 import tomllib
-from typing import TYPE_CHECKING, Any, Callable, Final, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
 from rich.console import Console, RenderableType
 
@@ -14,16 +14,12 @@ from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 if TYPE_CHECKING:
-    from .ctx import PluginHostContext
+    from .build_api import RuyiBuildRecipeAPI
+    from .ctx import PluginHostContext, PluginLoadMode
     from .traits import SupportsEvalFunction, SupportsGetOption
 
 T = TypeVar("T")
 U = TypeVar("U")
-
-
-FIXED_FEATURES: Final = {
-    "i18n-v1",
-}
 
 
 class RuyiHostAPI:
@@ -59,6 +55,7 @@ class RuyiHostAPI:
             True,
             self._this_file,
             self._allow_host_fs_access,
+            recipe_project_root=self._phctx.recipe_project_root,
         )
         with open(resolved_path, "rb") as f:
             return tomllib.load(f)
@@ -87,7 +84,10 @@ class RuyiHostAPI:
         self,
         argv: list[str],
     ) -> int:
-        # TODO: restrictions on this
+        if "call-subprocess-v1" not in self._phctx.capabilities:
+            raise RuntimeError(
+                "call_subprocess_argv is not available in this plugin context"
+            )
         return subprocess.call(argv)
 
     def sleep(self, seconds: float, /) -> None:
@@ -102,12 +102,7 @@ class RuyiHostAPI:
             return cast(U, self._ev.eval_function(fn, obj))
 
     def has_feature(self, feature: str) -> bool:
-        # Expose the i18n-v1 feature only if the host context is properly
-        # configured for it
-        match feature:
-            case "i18n-v1":
-                return self._phctx.has_i18n_capability()
-        return False
+        return feature in self._phctx.capabilities
 
     #########################################################################
 
@@ -115,6 +110,19 @@ class RuyiHostAPI:
     @cached_property
     def i18n(self) -> "RuyiPluginI18nAPI":
         return RuyiPluginI18nAPI(self._phctx)
+
+    #########################################################################
+
+    # Exported methods for the `build-recipe-v1` feature
+    @cached_property
+    def build(self) -> "RuyiBuildRecipeAPI":
+        if "build-recipe-v1" not in self._phctx.capabilities:
+            raise RuntimeError(
+                "RUYI.build is only available when loading a build recipe"
+            )
+        from .build_api import RuyiBuildRecipeAPI
+
+        return RuyiBuildRecipeAPI(self._phctx, self._this_file)
 
 
 class RuyiPluginI18nAPI:
@@ -227,10 +235,9 @@ def make_ruyi_plugin_api_for_module(
     phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
     this_file: pathlib.Path,
     this_plugin_dir: pathlib.Path,
-    is_cmd: bool,
+    load_mode: "PluginLoadMode",
 ) -> Callable[[object], RuyiHostAPI]:
-    # Only allow access to host FS when we're being loaded as a command plugin
-    allow_host_fs_access = is_cmd
+    allow_host_fs_access = load_mode.allow_host_fs_access
 
     return lambda rev: _ruyi_plugin_rev(
         phctx,

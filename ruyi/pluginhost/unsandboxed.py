@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from typing_extensions import Buffer
 
 from .api import RuyiHostAPI
-from .ctx import PluginHostContext, BasePluginLoader
+from .ctx import PluginHostContext, BasePluginLoader, PluginLoadMode
 
 
 class UnsandboxedModuleDict(dict[str, object]):
@@ -74,9 +74,11 @@ class UnsandboxedPluginHostContext(
         self,
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, UnsandboxedModuleDict],
-        is_cmd: bool,
+        load_mode: PluginLoadMode,
     ) -> BasePluginLoader[UnsandboxedModuleDict]:
-        return UnsandboxedRuyiPluginLoader(self, originating_file, module_cache, is_cmd)
+        return UnsandboxedRuyiPluginLoader(
+            self, originating_file, module_cache, load_mode
+        )
 
     def make_evaluator(self) -> UnsandboxedTrivialEvaluator:
         return UnsandboxedTrivialEvaluator()

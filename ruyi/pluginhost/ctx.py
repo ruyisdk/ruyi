@@ -1,4 +1,5 @@
 import abc
+import enum
 from functools import cached_property
 import os
 import pathlib
@@ -17,10 +18,38 @@ if TYPE_CHECKING:
 from ..log import RuyiLogger
 from . import api
 from . import paths
+from .build_api import ScheduledBuild
 from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStore
 
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
+
+
+class PluginLoadMode(enum.Enum):
+    """The context in which a Starlark module is being loaded.
+
+    The mode controls which host API surfaces are exposed to the loaded
+    module and what file system accesses are permitted.
+
+    * ``PACKAGE_PLUGIN``: an ordinary plugin shipped inside a packages-index
+      repository (profile plugins, device-provisioner strategies, ...).
+      These have no access to the host filesystem outside of their plugin
+      directory.
+    * ``COMMAND_PLUGIN``: a ``ruyi-cmd-*`` plugin implementing a user-facing
+      ``ruyi`` subcommand. Allowed to reach into the host filesystem via
+      the ``host://`` load path scheme.
+    * ``BUILD_RECIPE``: a ``ruyi admin build-package`` recipe. Rooted at a
+      ``ruyi-build-recipes.toml`` project root; may register scheduled
+      builds but has no host-FS access through load paths.
+    """
+
+    PACKAGE_PLUGIN = "package-plugin"
+    COMMAND_PLUGIN = "command-plugin"
+    BUILD_RECIPE = "build-recipe"
+
+    @property
+    def allow_host_fs_access(self) -> bool:
+        return self is PluginLoadMode.COMMAND_PLUGIN
 
 
 ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
@@ -35,6 +64,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         *,
         locale: str | None = None,
         message_store_factory: Callable[[], SupportsMessageStore] | None = None,
+        recipe_project_root: pathlib.Path | None = None,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
@@ -47,6 +77,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
                     plugin_root,
                     locale=locale,
                     message_store_factory=message_store_factory,
+                    recipe_project_root=recipe_project_root,
                 )
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
@@ -58,6 +89,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         *,
         locale: str | None = None,
         message_store_factory: Callable[[], SupportsMessageStore] | None = None,
+        recipe_project_root: pathlib.Path | None = None,
     ) -> None:
         self._host_logger = host_logger
         self._plugin_root = plugin_root
@@ -70,13 +102,28 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
         self._locale = locale or ""
         self._msg_store_factory = message_store_factory
+        self._recipe_project_root = recipe_project_root
+
+        capabilities: set[str] = {"call-subprocess-v1"}
+        if self.has_i18n_capability():
+            # Expose the i18n-v1 feature only if the host context is properly
+            # configured for it
+            capabilities.add("i18n-v1")
+        if recipe_project_root is not None:
+            capabilities.add("build-recipe-v1")
+            capabilities.discard("call-subprocess-v1")
+        self._capabilities: frozenset[str] = frozenset(capabilities)
+
+        # Scheduled builds, populated by RUYI.build.schedule_build during
+        # load of a build-recipe module. Keyed by recipe file path.
+        self._scheduled_builds: dict[pathlib.Path, list["ScheduledBuild"]] = {}
 
     @abc.abstractmethod
     def make_loader(
         self,
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
-        is_cmd: bool,
+        load_mode: PluginLoadMode,
     ) -> "BasePluginLoader[ModuleTy]":
         raise NotImplementedError
 
@@ -92,13 +139,48 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def plugin_root(self) -> pathlib.Path:
         return self._plugin_root
 
-    def load_plugin(self, plugin_id: str, is_cmd: bool) -> None:
+    @property
+    def recipe_project_root(self) -> pathlib.Path | None:
+        return self._recipe_project_root
+
+    def scheduled_builds_for(
+        self,
+        recipe_file: pathlib.Path,
+    ) -> list[ScheduledBuild]:
+        """Return (creating if needed) the scheduled-build registry for
+        the given recipe file. Shared by all ``RUYI.build.schedule_build``
+        calls within the same module load.
+        """
+
+        return self._scheduled_builds.setdefault(recipe_file, [])
+
+    def all_scheduled_builds(self) -> dict[pathlib.Path, list[ScheduledBuild]]:
+        return self._scheduled_builds
+
+    def load_recipe(self, recipe_file: pathlib.Path) -> list[ScheduledBuild]:
+        """Load a build-recipe ``.star`` file via a fresh loader using the
+        host context's shared module cache, then return the list of
+        :class:`ScheduledBuild` entries registered during the load.
+
+        Intended for callers outside the pluginhost package so they can
+        drive recipe loading without reaching into private state.
+        """
+
+        loader = self.make_loader(
+            recipe_file,
+            self._module_cache,
+            PluginLoadMode.BUILD_RECIPE,
+        )
+        loader.load_this_plugin()
+        return list(self.scheduled_builds_for(recipe_file))
+
+    def load_plugin(self, plugin_id: str, load_mode: PluginLoadMode) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
 
         loader = self.make_loader(
             plugin_dir / paths.PLUGIN_ENTRYPOINT_FILENAME,
             self._module_cache,
-            is_cmd,
+            load_mode,
         )
         loaded_plugin = loader.load_this_plugin()
         self._loaded_plugins[plugin_id] = loaded_plugin
@@ -113,7 +195,12 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         is_cmd_plugin: bool = False,
     ) -> object | None:
         if not self.is_plugin_loaded(plugin_id):
-            self.load_plugin(plugin_id, is_cmd_plugin)
+            load_mode = (
+                PluginLoadMode.COMMAND_PLUGIN
+                if is_cmd_plugin
+                else PluginLoadMode.PACKAGE_PLUGIN
+            )
+            self.load_plugin(plugin_id, load_mode)
 
         if plugin_id not in self._value_cache:
             self._value_cache[plugin_id] = {}
@@ -127,6 +214,10 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
     def has_i18n_capability(self) -> bool:
         return self._msg_store_factory is not None
+
+    @property
+    def capabilities(self) -> frozenset[str]:
+        return self._capabilities
 
     @property
     def locale(self) -> str:
@@ -157,12 +248,12 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         phctx: PluginHostContext[ModuleTy, SupportsEvalFunction],
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
-        is_cmd: bool,
+        load_mode: PluginLoadMode,
     ) -> None:
         self._phctx = phctx
         self.originating_file = originating_file
         self.module_cache = module_cache
-        self.is_cmd = is_cmd
+        self.load_mode = load_mode
 
     @property
     def host_logger(self) -> RuyiLogger:
@@ -177,7 +268,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
             self._phctx,
             originating_file,
             self.module_cache,
-            self.is_cmd,
+            self.load_mode,
         )
 
     def load_this_plugin(self) -> ModuleTy:
@@ -196,20 +287,30 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
                 self.root,
                 False,
                 self.originating_file,
-                self.is_cmd,
+                self.load_mode.allow_host_fs_access,
+                recipe_project_root=self._phctx.recipe_project_root,
             )
         resolved_path_str = str(resolved_path)
         if resolved_path_str in self.module_cache:
             return self.module_cache[resolved_path_str]
 
-        plugin_id = resolved_path.relative_to(self.root).parts[0]
-        plugin_dir = self.root / plugin_id
+        if self.load_mode is PluginLoadMode.BUILD_RECIPE:
+            recipe_root = self._phctx.recipe_project_root
+            if recipe_root is None:
+                raise RuntimeError(
+                    "BUILD_RECIPE load mode requires a recipe_project_root on "
+                    "the host context"
+                )
+            plugin_dir = recipe_root
+        else:
+            plugin_id = resolved_path.relative_to(self.root).parts[0]
+            plugin_dir = self.root / plugin_id
 
         host_bridge = api.make_ruyi_plugin_api_for_module(
             self._phctx,
             resolved_path,
             plugin_dir,
-            self.is_cmd,
+            self.load_mode,
         )
 
         mod = self.do_load_module(
