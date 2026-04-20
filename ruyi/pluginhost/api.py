@@ -82,7 +82,10 @@ class RuyiHostAPI:
         self,
         argv: list[str],
     ) -> int:
-        # TODO: restrictions on this
+        if "call-subprocess-v1" not in self._phctx.capabilities:
+            raise RuntimeError(
+                "call_subprocess_argv is not available in this plugin context"
+            )
         return subprocess.call(argv)
 
     def sleep(self, seconds: float, /) -> None:

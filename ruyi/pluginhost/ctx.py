@@ -99,7 +99,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self._locale = locale or ""
         self._msg_store_factory = message_store_factory
 
-        capabilities: set[str] = set()
+        capabilities: set[str] = {"call-subprocess-v1"}
         if self.has_i18n_capability():
             # Expose the i18n-v1 feature only if the host context is properly
             # configured for it
