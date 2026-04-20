@@ -14,7 +14,7 @@ from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 if TYPE_CHECKING:
-    from .ctx import PluginHostContext
+    from .ctx import PluginHostContext, PluginLoadMode
     from .traits import SupportsEvalFunction, SupportsGetOption
 
 T = TypeVar("T")
@@ -227,10 +227,9 @@ def make_ruyi_plugin_api_for_module(
     phctx: "PluginHostContext[SupportsGetOption, SupportsEvalFunction]",
     this_file: pathlib.Path,
     this_plugin_dir: pathlib.Path,
-    is_cmd: bool,
+    load_mode: "PluginLoadMode",
 ) -> Callable[[object], RuyiHostAPI]:
-    # Only allow access to host FS when we're being loaded as a command plugin
-    allow_host_fs_access = is_cmd
+    allow_host_fs_access = load_mode.allow_host_fs_access
 
     return lambda rev: _ruyi_plugin_rev(
         phctx,

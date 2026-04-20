@@ -1,4 +1,5 @@
 import abc
+import enum
 from functools import cached_property
 import os
 import pathlib
@@ -21,6 +22,33 @@ from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStor
 
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
+
+
+class PluginLoadMode(enum.Enum):
+    """The context in which a Starlark module is being loaded.
+
+    The mode controls which host API surfaces are exposed to the loaded
+    module and what file system accesses are permitted.
+
+    * ``PACKAGE_PLUGIN``: an ordinary plugin shipped inside a packages-index
+      repository (profile plugins, device-provisioner strategies, ...).
+      These have no access to the host filesystem outside of their plugin
+      directory.
+    * ``COMMAND_PLUGIN``: a ``ruyi-cmd-*`` plugin implementing a user-facing
+      ``ruyi`` subcommand. Allowed to reach into the host filesystem via
+      the ``host://`` load path scheme.
+    * ``BUILD_RECIPE``: a ``ruyi admin build-package`` recipe. Rooted at a
+      ``ruyi-build-recipes.toml`` project root; may register scheduled
+      builds but has no host-FS access through load paths.
+    """
+
+    PACKAGE_PLUGIN = "package-plugin"
+    COMMAND_PLUGIN = "command-plugin"
+    BUILD_RECIPE = "build-recipe"
+
+    @property
+    def allow_host_fs_access(self) -> bool:
+        return self is PluginLoadMode.COMMAND_PLUGIN
 
 
 ModuleTy = TypeVar("ModuleTy", bound=SupportsGetOption, covariant=True)
@@ -76,7 +104,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self,
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
-        is_cmd: bool,
+        load_mode: PluginLoadMode,
     ) -> "BasePluginLoader[ModuleTy]":
         raise NotImplementedError
 
@@ -92,13 +120,13 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     def plugin_root(self) -> pathlib.Path:
         return self._plugin_root
 
-    def load_plugin(self, plugin_id: str, is_cmd: bool) -> None:
+    def load_plugin(self, plugin_id: str, load_mode: PluginLoadMode) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
 
         loader = self.make_loader(
             plugin_dir / paths.PLUGIN_ENTRYPOINT_FILENAME,
             self._module_cache,
-            is_cmd,
+            load_mode,
         )
         loaded_plugin = loader.load_this_plugin()
         self._loaded_plugins[plugin_id] = loaded_plugin
@@ -113,7 +141,12 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         is_cmd_plugin: bool = False,
     ) -> object | None:
         if not self.is_plugin_loaded(plugin_id):
-            self.load_plugin(plugin_id, is_cmd_plugin)
+            load_mode = (
+                PluginLoadMode.COMMAND_PLUGIN
+                if is_cmd_plugin
+                else PluginLoadMode.PACKAGE_PLUGIN
+            )
+            self.load_plugin(plugin_id, load_mode)
 
         if plugin_id not in self._value_cache:
             self._value_cache[plugin_id] = {}
@@ -157,12 +190,12 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         phctx: PluginHostContext[ModuleTy, SupportsEvalFunction],
         originating_file: pathlib.Path,
         module_cache: MutableMapping[str, ModuleTy],
-        is_cmd: bool,
+        load_mode: PluginLoadMode,
     ) -> None:
         self._phctx = phctx
         self.originating_file = originating_file
         self.module_cache = module_cache
-        self.is_cmd = is_cmd
+        self.load_mode = load_mode
 
     @property
     def host_logger(self) -> RuyiLogger:
@@ -177,7 +210,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
             self._phctx,
             originating_file,
             self.module_cache,
-            self.is_cmd,
+            self.load_mode,
         )
 
     def load_this_plugin(self) -> ModuleTy:
@@ -196,7 +229,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
                 self.root,
                 False,
                 self.originating_file,
-                self.is_cmd,
+                self.load_mode.allow_host_fs_access,
             )
         resolved_path_str = str(resolved_path)
         if resolved_path_str in self.module_cache:
@@ -209,7 +242,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
             self._phctx,
             resolved_path,
             plugin_dir,
-            self.is_cmd,
+            self.load_mode,
         )
 
         mod = self.do_load_module(
