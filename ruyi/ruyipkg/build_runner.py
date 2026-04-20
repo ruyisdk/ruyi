@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import pathlib
-from typing import TYPE_CHECKING, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Sequence
 
 from ..log import RuyiLogger
 from ..pluginhost.build_api import (
@@ -127,7 +127,7 @@ def _with_output_dir(
 
 def _make_recipe_phctx(
     logger: RuyiLogger, project: RecipeProject
-) -> "PluginHostContext":
+) -> "PluginHostContext[Any, Any]":
     # Local import: keeps heavy module-load chains out of CLI startup.
     from ..pluginhost.ctx import PluginHostContext
 
@@ -139,14 +139,14 @@ def _make_recipe_phctx(
 
 
 def _load_recipe_module(
-    phctx: "PluginHostContext", recipe_file: pathlib.Path
+    phctx: "PluginHostContext[Any, Any]", recipe_file: pathlib.Path
 ) -> list[ScheduledBuild]:
     from ..pluginhost.ctx import PluginLoadMode
 
     resolved = recipe_file.resolve(strict=True)
     loader = phctx.make_loader(
         resolved,
-        phctx._module_cache,  # type: ignore[attr-defined]
+        phctx._module_cache,
         PluginLoadMode.BUILD_RECIPE,
     )
     loader.load_this_plugin()
@@ -167,7 +167,7 @@ def _filter_by_name(
 
 def _execute_one_build(
     logger: RuyiLogger,
-    phctx: "PluginHostContext",
+    phctx: "PluginHostContext[Any, Any]",
     project: RecipeProject,
     sb: ScheduledBuild,
     *,

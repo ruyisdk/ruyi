@@ -78,7 +78,7 @@ def test_ctx_var_missing_no_default_errors(tmp_path: pathlib.Path) -> None:
 def test_ctx_var_non_string_default_rejected(tmp_path: pathlib.Path) -> None:
     ctx = _make_ctx(tmp_path)
     with pytest.raises(RuntimeError, match="must be a string"):
-        ctx.var("arch", default=42)  # type: ignore[arg-type]
+        ctx.var("arch", default=42)
 
 
 def test_ctx_subprocess_returns_plan(tmp_path: pathlib.Path) -> None:

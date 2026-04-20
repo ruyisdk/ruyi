@@ -1,6 +1,7 @@
 """Tests for RuyiBuildRecipeAPI (B5)."""
 
 import pathlib
+from typing import Any
 
 import pytest
 
@@ -13,7 +14,7 @@ from ruyi.pluginhost.ctx import PluginHostContext
 def _make_recipe_phctx(
     tmp_path: pathlib.Path,
     ruyi_logger: RuyiLogger,
-) -> PluginHostContext:
+) -> PluginHostContext[Any, Any]:
     plugin_root = tmp_path / "plugins"
     plugin_root.mkdir()
     recipe_root = tmp_path / "recipes_proj"
@@ -28,7 +29,7 @@ def _make_recipe_phctx(
 def _make_plain_phctx(
     tmp_path: pathlib.Path,
     ruyi_logger: RuyiLogger,
-) -> PluginHostContext:
+) -> PluginHostContext[Any, Any]:
     plugin_root = tmp_path / "plugins"
     plugin_root.mkdir()
     return PluginHostContext.new(ruyi_logger, plugin_root)
@@ -77,7 +78,7 @@ def test_schedule_build_rejects_non_callable(
     api = RuyiBuildRecipeAPI(phctx, recipe_file)
 
     with pytest.raises(RuntimeError, match="expected a callable"):
-        api.schedule_build("not a function")  # type: ignore[arg-type]
+        api.schedule_build("not a function")
 
 
 def test_schedule_build_accepts_lambda(
