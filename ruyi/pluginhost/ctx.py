@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 from ..log import RuyiLogger
 from . import api
 from . import paths
+from .build_api import ScheduledBuild
 from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStore
 
 
@@ -108,7 +109,14 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
             # Expose the i18n-v1 feature only if the host context is properly
             # configured for it
             capabilities.add("i18n-v1")
+        if recipe_project_root is not None:
+            capabilities.add("build-recipe-v1")
+            capabilities.discard("call-subprocess-v1")
         self._capabilities: frozenset[str] = frozenset(capabilities)
+
+        # Scheduled builds, populated by RUYI.build.schedule_build during
+        # load of a build-recipe module. Keyed by recipe file path.
+        self._scheduled_builds: dict[pathlib.Path, list["ScheduledBuild"]] = {}
 
     @abc.abstractmethod
     def make_loader(
@@ -134,6 +142,20 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @property
     def recipe_project_root(self) -> pathlib.Path | None:
         return self._recipe_project_root
+
+    def scheduled_builds_for(
+        self,
+        recipe_file: pathlib.Path,
+    ) -> list[ScheduledBuild]:
+        """Return (creating if needed) the scheduled-build registry for
+        the given recipe file. Shared by all ``RUYI.build.schedule_build``
+        calls within the same module load.
+        """
+
+        return self._scheduled_builds.setdefault(recipe_file, [])
+
+    def all_scheduled_builds(self) -> dict[pathlib.Path, list[ScheduledBuild]]:
+        return self._scheduled_builds
 
     def load_plugin(self, plugin_id: str, load_mode: PluginLoadMode) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)

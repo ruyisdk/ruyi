@@ -14,6 +14,7 @@ from ..version import RUYI_SEMVER
 from .paths import resolve_ruyi_load_path
 
 if TYPE_CHECKING:
+    from .build_api import RuyiBuildRecipeAPI
     from .ctx import PluginHostContext, PluginLoadMode
     from .traits import SupportsEvalFunction, SupportsGetOption
 
@@ -109,6 +110,19 @@ class RuyiHostAPI:
     @cached_property
     def i18n(self) -> "RuyiPluginI18nAPI":
         return RuyiPluginI18nAPI(self._phctx)
+
+    #########################################################################
+
+    # Exported methods for the `build-recipe-v1` feature
+    @cached_property
+    def build(self) -> "RuyiBuildRecipeAPI":
+        if "build-recipe-v1" not in self._phctx.capabilities:
+            raise RuntimeError(
+                "RUYI.build is only available when loading a build recipe"
+            )
+        from .build_api import RuyiBuildRecipeAPI
+
+        return RuyiBuildRecipeAPI(self._phctx, self._this_file)
 
 
 class RuyiPluginI18nAPI:
