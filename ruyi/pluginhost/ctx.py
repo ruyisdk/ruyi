@@ -277,8 +277,17 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
         if resolved_path_str in self.module_cache:
             return self.module_cache[resolved_path_str]
 
-        plugin_id = resolved_path.relative_to(self.root).parts[0]
-        plugin_dir = self.root / plugin_id
+        if self.load_mode is PluginLoadMode.BUILD_RECIPE:
+            recipe_root = self._phctx.recipe_project_root
+            if recipe_root is None:
+                raise RuntimeError(
+                    "BUILD_RECIPE load mode requires a recipe_project_root on "
+                    "the host context"
+                )
+            plugin_dir = recipe_root
+        else:
+            plugin_id = resolved_path.relative_to(self.root).parts[0]
+            plugin_dir = self.root / plugin_id
 
         host_bridge = api.make_ruyi_plugin_api_for_module(
             self._phctx,
