@@ -54,6 +54,7 @@ class RuyiHostAPI:
             True,
             self._this_file,
             self._allow_host_fs_access,
+            recipe_project_root=self._phctx.recipe_project_root,
         )
         with open(resolved_path, "rb") as f:
             return tomllib.load(f)

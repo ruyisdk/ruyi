@@ -63,6 +63,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         *,
         locale: str | None = None,
         message_store_factory: Callable[[], SupportsMessageStore] | None = None,
+        recipe_project_root: pathlib.Path | None = None,
     ) -> "PluginHostContext[SupportsGetOption, SupportsEvalFunction]":
         plugin_backend = os.environ.get("RUYI_PLUGIN_BACKEND", "")
         if not plugin_backend:
@@ -75,6 +76,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
                     plugin_root,
                     locale=locale,
                     message_store_factory=message_store_factory,
+                    recipe_project_root=recipe_project_root,
                 )
             case _:
                 raise RuntimeError(f"unsupported plugin backend: {plugin_backend}")
@@ -86,6 +88,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         *,
         locale: str | None = None,
         message_store_factory: Callable[[], SupportsMessageStore] | None = None,
+        recipe_project_root: pathlib.Path | None = None,
     ) -> None:
         self._host_logger = host_logger
         self._plugin_root = plugin_root
@@ -98,6 +101,7 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
         self._locale = locale or ""
         self._msg_store_factory = message_store_factory
+        self._recipe_project_root = recipe_project_root
 
         capabilities: set[str] = {"call-subprocess-v1"}
         if self.has_i18n_capability():
@@ -126,6 +130,10 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
     @property
     def plugin_root(self) -> pathlib.Path:
         return self._plugin_root
+
+    @property
+    def recipe_project_root(self) -> pathlib.Path | None:
+        return self._recipe_project_root
 
     def load_plugin(self, plugin_id: str, load_mode: PluginLoadMode) -> None:
         plugin_dir = paths.get_plugin_dir(plugin_id, self._plugin_root)
@@ -241,6 +249,7 @@ class BasePluginLoader(Generic[ModuleTy], metaclass=abc.ABCMeta):
                 False,
                 self.originating_file,
                 self.load_mode.allow_host_fs_access,
+                recipe_project_root=self._phctx.recipe_project_root,
             )
         resolved_path_str = str(resolved_path)
         if resolved_path_str in self.module_cache:
