@@ -125,6 +125,10 @@ def _do_refresh_ruyi_pot() -> int:
 
 
 def _do_refresh_argparse_pot() -> int:
+    import re
+
+    outpath = "resources/po/argparse.pot"
+
     babel_argv = [
         "pybabel",
         "extract",
@@ -134,12 +138,25 @@ def _do_refresh_argparse_pot() -> int:
         # no project metadata for argparse which is Python stdlib
         # output file
         "-o",
-        "resources/po/argparse.pot",
+        outpath,
         # add source file
         # for now this is only one file
         argparse.__file__,
     ]
     _invoke_babel(babel_argv)
+
+    # pybabel computes location references relative to CWD, so
+    # argparse.__file__ (an absolute path) produces deeply-prefixed
+    # entries like "#: ../../../../../../usr/lib/python3.14/argparse.py:242".
+    # Extract just the filename so the POT gets clean references like
+    # "#: argparse.py:242".
+    _POT_LOCATION_RE = re.compile(r"^(#\:\s*)(?:\S+/)*([^\s/]+:\d+)$", re.MULTILINE)
+    with open(outpath, "r", encoding="utf-8") as fp:
+        content = fp.read()
+    content = _POT_LOCATION_RE.sub(r"\1\2", content)
+    with open(outpath, "w", encoding="utf-8") as fp:
+        fp.write(content)
+
     return 0
 
 
