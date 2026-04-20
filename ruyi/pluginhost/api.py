@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 import time
 import tomllib
-from typing import TYPE_CHECKING, Any, Callable, Final, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
 from rich.console import Console, RenderableType
 
@@ -19,11 +19,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 U = TypeVar("U")
-
-
-FIXED_FEATURES: Final = {
-    "i18n-v1",
-}
 
 
 class RuyiHostAPI:
@@ -102,12 +97,7 @@ class RuyiHostAPI:
             return cast(U, self._ev.eval_function(fn, obj))
 
     def has_feature(self, feature: str) -> bool:
-        # Expose the i18n-v1 feature only if the host context is properly
-        # configured for it
-        match feature:
-            case "i18n-v1":
-                return self._phctx.has_i18n_capability()
-        return False
+        return feature in self._phctx.capabilities
 
     #########################################################################
 

@@ -99,6 +99,13 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
         self._locale = locale or ""
         self._msg_store_factory = message_store_factory
 
+        capabilities: set[str] = set()
+        if self.has_i18n_capability():
+            # Expose the i18n-v1 feature only if the host context is properly
+            # configured for it
+            capabilities.add("i18n-v1")
+        self._capabilities: frozenset[str] = frozenset(capabilities)
+
     @abc.abstractmethod
     def make_loader(
         self,
@@ -160,6 +167,10 @@ class PluginHostContext(Generic[ModuleTy, EvalTy], metaclass=abc.ABCMeta):
 
     def has_i18n_capability(self) -> bool:
         return self._msg_store_factory is not None
+
+    @property
+    def capabilities(self) -> frozenset[str]:
+        return self._capabilities
 
     @property
     def locale(self) -> str:
