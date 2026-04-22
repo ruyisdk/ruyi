@@ -25,6 +25,13 @@ def test_slice_in_value_position_passes() -> None:
     _lint("xs[ys[1:3]] = 0\n")
 
 
+def test_starred_in_call_and_rhs_passes() -> None:
+    # ``*args`` / ``**kwargs`` in call arguments and starred elements on
+    # the RHS of an assignment are valid Starlark and must not be gated.
+    _lint("f(*args, **kwargs)\n")
+    _lint("xs = [*a, *b]\n")
+
+
 @pytest.mark.parametrize(
     ("src", "expected_feature"),
     [
@@ -68,6 +75,9 @@ def test_slice_in_value_position_passes() -> None:
         ("def f():\n    while True:\n        pass\n", "while"),
         ("xs[1:3] = [0]\n", "slice as assignment target"),
         ("xs[1:3] += [0]\n", "slice as assignment target"),
+        ("a, *rest = xs\n", "starred assignment target"),
+        ("for *a, b in xs:\n    pass\n", "starred loop variable"),
+        ("y = [x for *a, b in xs]\n", "starred loop variable"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway

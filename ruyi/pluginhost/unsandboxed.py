@@ -331,6 +331,26 @@ def _find_slice_assign_target(target: ast.expr) -> ast.Subscript | None:
     return None
 
 
+def _find_starred_in_target(target: ast.expr) -> ast.Starred | None:
+    """Return the offending ``Starred`` node if ``target`` is, or
+    contains anywhere within a tuple/list unpacking spine, a starred
+    expression. Return ``None`` otherwise.
+
+    Starlark's ``LoopVariables`` and ``AssignStmt`` LHS grammars do not
+    permit ``*x`` unpacking; a starred target would have no portable
+    equivalent. Starred expressions on the *right-hand side* or inside
+    call arguments (``f(*args)``) are a separate grammatical position
+    and are not checked here.
+    """
+    if isinstance(target, ast.Starred):
+        return target
+    if isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            if (found := _find_starred_in_target(elt)) is not None:
+                return found
+    return None
+
+
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
     """Reject Python syntax that has no Starlark analogue.
 
@@ -432,6 +452,9 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # Starlark forbids a slice expression on the LHS of an assignment.
         if (bad := _find_slice_assign_target(node.target)) is not None:
             raise _GatedFeatureError(bad, "slice as assignment target")
+        # Starlark does not permit ``*x`` unpacking in an assignment LHS.
+        if (starred := _find_starred_in_target(node.target)) is not None:
+            raise _GatedFeatureError(starred, "starred assignment target")
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -439,6 +462,26 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         for target in node.targets:
             if (bad := _find_slice_assign_target(target)) is not None:
                 raise _GatedFeatureError(bad, "slice as assignment target")
+            if (starred := _find_starred_in_target(target)) is not None:
+                raise _GatedFeatureError(starred, "starred assignment target")
+        self.generic_visit(node)
+
+    def visit_For(self, node: ast.For) -> None:
+        # Starlark's LoopVariables grammar permits no ``*x`` unpacking.
+        if (starred := _find_starred_in_target(node.target)) is not None:
+            raise _GatedFeatureError(starred, "starred loop variable")
+        self.generic_visit(node)
+
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        for gen in node.generators:
+            if (starred := _find_starred_in_target(gen.target)) is not None:
+                raise _GatedFeatureError(starred, "starred loop variable")
+        self.generic_visit(node)
+
+    def visit_DictComp(self, node: ast.DictComp) -> None:
+        for gen in node.generators:
+            if (starred := _find_starred_in_target(gen.target)) is not None:
+                raise _GatedFeatureError(starred, "starred loop variable")
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
