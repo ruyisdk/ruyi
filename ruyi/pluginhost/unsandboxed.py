@@ -397,6 +397,15 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
             raise _GatedFeatureError(node, "matrix-multiplication assignment (`@=`)")
         self.generic_visit(node)
 
+    def visit_Compare(self, node: ast.Compare) -> None:
+        # Starlark spec: "Comparison operators, ``in``, and ``not in`` are
+        # non-associative, so the parser will not accept ``0 <= i < n``."
+        # Reject chained comparisons (more than one operator in a single
+        # Compare node) accordingly.
+        if len(node.ops) > 1:
+            raise _GatedFeatureError(node, "chained comparison")
+        self.generic_visit(node)
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 

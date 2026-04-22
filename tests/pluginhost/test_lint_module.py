@@ -56,6 +56,7 @@ def test_plain_module_passes() -> None:
         ("x = [1]\ndel x\n", "del"),
         ("x = a @ b\n", "matrix-multiplication operator"),
         ("a @= b\n", "matrix-multiplication assignment"),
+        ("ok = 0 <= i < n\n", "chained comparison"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway
