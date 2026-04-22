@@ -286,7 +286,7 @@ class _GatedFeatureError(Exception):
     bare node type.
     """
 
-    def __init__(self, node: ast.stmt | ast.expr, feature: str) -> None:
+    def __init__(self, node: ast.stmt | ast.expr | ast.arg, feature: str) -> None:
         super().__init__(feature)
         self.node = node
         self.feature = feature
@@ -355,6 +355,12 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         if node.returns is not None:
             raise _GatedFeatureError(node.returns, "return type annotation")
         _reject_annotated_args(node.args)
+        # Starlark's Parameter grammar has no ``/`` marker (PEP 570), so
+        # positional-only parameters have no way to be expressed there.
+        if node.args.posonlyargs:
+            raise _GatedFeatureError(
+                node.args.posonlyargs[0], "positional-only parameter (`/`)"
+            )
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
