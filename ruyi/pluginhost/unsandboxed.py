@@ -361,6 +361,24 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
     runtime later. Rejected constructs include, among others:
 
     * ``NamedExpr`` (walrus) -- not in Starlark.
+    * Decorators, return type annotations, parameter annotations and
+      positional-only parameters on ``FunctionDef`` -- none of these
+      have a production in Starlark's ``DefStmt`` or Parameter grammar.
+    * ``AnnAssign`` (variable type annotations) -- no analogue.
+    * ``JoinedStr`` (f-strings) -- Starlark has only plain string and
+      bytes literals.
+    * ``Set`` / ``SetComp`` -- Starlark has no set type or set
+      comprehensions.
+    * ``GeneratorExp`` -- Starlark has no generators.
+    * ``Delete`` (``del`` statement) -- not in Starlark.
+    * ``BinOp`` / ``AugAssign`` with ``MatMult`` (``@``, ``@=``) --
+      not in Starlark's operator list.
+    * ``Compare`` with more than one operator (chained comparisons) --
+      Starlark's comparison operators are non-associative.
+    * ``While`` -- not in Starlark's Statement grammar.
+    * Slice expressions in assignment targets, and starred expressions
+      in assignment / loop-variable targets -- forbidden by Starlark's
+      ``AssignStmt`` and ``LoopVariables`` grammars respectively.
     * ``Raise``, ``Assert`` -- Starlark uses ``fail()`` for errors.
     * ``Import`` / ``ImportFrom`` -- Starlark uses ``load()``; see
       ``_load_stmt_helper``.
