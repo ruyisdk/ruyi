@@ -374,6 +374,11 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # DictComp; set comprehensions have no equivalent.
         raise _GatedFeatureError(node, "set comprehension")
 
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> None:
+        # Starlark has no generators and no generator-expression
+        # production in its grammar.
+        raise _GatedFeatureError(node, "generator expression")
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 
