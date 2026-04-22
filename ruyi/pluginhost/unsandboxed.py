@@ -326,6 +326,14 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
     def visit_NamedExpr(self, node: ast.NamedExpr) -> None:
         raise _GatedFeatureError(node, "walrus operator (`:=`)")
 
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        # Decorators have no analogue in the Starlark ``DefStmt`` grammar.
+        # Reject them, but continue recursing into the body so that other
+        # gated constructs inside the function are still reported.
+        if node.decorator_list:
+            raise _GatedFeatureError(node.decorator_list[0], "decorator")
+        self.generic_visit(node)
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 
