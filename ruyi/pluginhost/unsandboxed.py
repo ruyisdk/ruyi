@@ -379,6 +379,11 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # production in its grammar.
         raise _GatedFeatureError(node, "generator expression")
 
+    def visit_Delete(self, node: ast.Delete) -> None:
+        # Starlark's spec explicitly states that it does not have a
+        # ``del`` statement.
+        raise _GatedFeatureError(node, "`del` statement")
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 

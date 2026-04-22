@@ -53,6 +53,7 @@ def test_plain_module_passes() -> None:
         ("x = {1, 2, 3}\n", "set display"),
         ("x = {i for i in range(3)}\n", "set comprehension"),
         ("x = sum(i for i in range(3))\n", "generator expression"),
+        ("x = [1]\ndel x\n", "del"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway
