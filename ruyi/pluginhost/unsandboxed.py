@@ -390,6 +390,13 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # ``del`` statement.
         raise _GatedFeatureError(node, "`del` statement")
 
+    def visit_While(self, node: ast.While) -> None:
+        # Starlark's Statement grammar only has DefStmt, IfStmt, ForStmt
+        # and SimpleStmt; ``while`` is listed among the reserved-but-
+        # unused keywords. Rejecting it here also keeps plugin loops
+        # bounded in the same way Starlark intends.
+        raise _GatedFeatureError(node, "`while` loop")
+
     def visit_BinOp(self, node: ast.BinOp) -> None:
         # ``@`` (matrix multiplication) is not in Starlark's binary
         # operator list. Other binary operators are fine.

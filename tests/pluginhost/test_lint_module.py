@@ -58,6 +58,7 @@ def test_plain_module_passes() -> None:
         ("a @= b\n", "matrix-multiplication assignment"),
         ("ok = 0 <= i < n\n", "chained comparison"),
         ("def f(a, /, b):\n    return a + b\n", "positional-only parameter"),
+        ("def f():\n    while True:\n        pass\n", "while"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway
