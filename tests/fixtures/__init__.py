@@ -248,7 +248,7 @@ class IntegrationTestHarness:
         version: str,
         manifest_toml: str,
     ) -> pathlib.Path:
-        pkg_dir = self.repo_root / "manifests" / category / name
+        pkg_dir = self.repo_root / "packages" / category / name
         pkg_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = pkg_dir / f"{version}.toml"
         manifest_path.write_text(manifest_toml, encoding="utf-8")
@@ -285,7 +285,7 @@ size = 0
 sha256 = "{sha_stub}"
 """
 
-    manifest_dir = repo_root / "manifests" / "dev-tools" / "sample-cli"
+    manifest_dir = repo_root / "packages" / "dev-tools" / "sample-cli"
     manifest_dir.mkdir(parents=True, exist_ok=True)
     (manifest_dir / "1.0.0.toml").write_text(manifest_text + "\n", encoding="utf-8")
 

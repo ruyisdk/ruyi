@@ -56,7 +56,7 @@ def _add_manifest(
     desc: str = "test package",
 ) -> None:
     """Write a minimal package manifest into a repo directory."""
-    pkg_dir = repo_root / "manifests" / category / name
+    pkg_dir = repo_root / "packages" / category / name
     pkg_dir.mkdir(parents=True, exist_ok=True)
     manifest = f"""\
 format = "v1"

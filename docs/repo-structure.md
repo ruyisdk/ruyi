@@ -14,14 +14,14 @@ Ruyi 软件源承担两种职能，从而也由两部分构成：
 ```plain
 packages-index
 ├── config.toml
-├── manifests
-│   └── toolchain
-│       └── plct
-│           └── 0.20231026.0.toml
 ├── messages.toml
 ├── news
 │   ├── YYYY-MM-DD-news-title.en_US.md
 │   └── YYYY-MM-DD-news-title.zh_CN.md
+├── packages
+│   └── toolchain
+│       └── plct
+│           └── 0.20231026.0.toml
 ├── plugins
 │   ├── ruyi-cmd-foo-bar
 │   │   └── mod.star
@@ -135,7 +135,7 @@ zh_CN = "一条 Jinja 格式的文案模板"
 en_US = "Another message"
 ```
 
-### `manifests`
+### `packages`
 
 此目录内含 0 或多个子目录，子目录对应软件包类别（category），目录名为类别名。
 

@@ -44,7 +44,7 @@ def _write_manifest(
     desc: str = "test package",
 ) -> None:
     """Write a minimal package manifest TOML file into a repo tree."""
-    pkg_dir = root / "manifests" / category / name
+    pkg_dir = root / "packages" / category / name
     pkg_dir.mkdir(parents=True, exist_ok=True)
 
     lines = [

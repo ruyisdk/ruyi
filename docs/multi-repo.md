@@ -144,7 +144,7 @@ urls = ["https://example.com/dist/"]
 其中 `[repo].id` 应与用户配置中 `[[repos]]` 条目的 `id` 一致。如果两者不一致，
 `ruyi update` 会发出警告。
 
-2. 一个 `manifests/` 目录，内部包含符合标准[软件源结构定义](repo-structure.md)的软件包定义。
+2. 一个 `packages/` 目录，内部包含符合标准[软件源结构定义](repo-structure.md)的软件包定义。
 
 ## 迁移说明
 
