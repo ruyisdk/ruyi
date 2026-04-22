@@ -360,6 +360,11 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         raise _GatedFeatureError(node, "variable type annotation")
 
+    def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
+        # Starlark's lexical grammar offers only plain string and bytes
+        # literals. Reject f-strings so that plugin sources stay portable.
+        raise _GatedFeatureError(node, "f-string")
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 
