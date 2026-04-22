@@ -1,3 +1,76 @@
+"""Unsandboxed Python plugin host.
+
+Rationale
+---------
+
+Ruyi plugins were originally authored in Starlark and executed through
+``xingque`` (a binding to ``starlark-rust``), which provided genuine
+language-level isolation. That backend was dropped in October 2024;
+see commits ``bc458ce`` (the introduction of this file), ``a9d66bd``
+(making it the default), and ``2b7c24d`` / ``9e5abe1`` (removal of the
+Starlark backend).
+
+The stated reason in ``bc458ce`` is that the plugin surface was
+restricted to standard Python 3 rather than any dialect of it. The
+underlying project-level goal is broader: the whole of RuyiSDK is kept
+to Python and shell so that onboarding is trivial, so that loss of
+project staff is survivable, and so that third-party commercial
+partners can take over maintenance of their own forks without being
+blocked by any non-trivial piece of code in a less widely known
+language. Reintroducing Starlark -- or any other embedded language or
+Rust-backed sandbox -- would reintroduce exactly the kind of
+specialist-knowledge cliff this policy exists to avoid, and is
+therefore not on the table regardless of its technical merits.
+
+Threat model and non-goals
+--------------------------
+
+This module is intentionally *not* a sandbox. Plugin sources are
+parsed, AST-linted, compiled, and ``exec``-ed in the host interpreter
+with a curated ``__builtins__`` mapping. A malicious plugin can escape
+trivially.
+
+The original justification, as recorded in ``bc458ce`` in 2024, was:
+
+    No "outsiders" are involved in plugin creation yet, and attacks
+    from "insiders" are not going to be thwarted by code-level
+    sandboxing alone.
+
+That premise has since lapsed and the quote should be read as
+historical rather than current. Third-party addon repositories are a
+supported feature, which means plugin code loaded by Ruyi can now
+originate from authors outside the project. An unsandboxed Python
+runtime provides no meaningful defence against a hostile or
+compromised third-party addon; in particular, the capability set in
+``PluginHostContext`` (``call-subprocess-v1``, ``build-recipe-v1``,
+``i18n-v1``, ...) is an API-shape boundary, not a security boundary,
+and is trivially escapable from in-process Python.
+
+The present mitigations against this are operational rather than
+technical: a prominent warning and explicit user confirmation on
+``ruyi repo add``, and the expectation that users extend trust to
+third-party repos on the same footing as any other third-party code
+they choose to run. Revisiting this with an actual sandbox (process
+isolation, a reintroduced Starlark backend, or another mechanism) is
+out of scope of this module and currently gated on project-level
+decisions rather than technical ones; see
+https://github.com/ruyisdk/ruyi/issues/444 for tracking.
+
+Recursion detection, resource limits, timeouts, and filesystem or
+network isolation are likewise out of scope here; they are not
+soundly achievable with pure AST inspection plus ``exec`` in CPython.
+
+What the module does enforce, and why, is documented on the
+individual enforcement points themselves: ``BUILTINS_TO_EXPOSE``,
+``GatedLanguageFeaturesPass``, and ``_load_stmt_helper`` below, plus
+the ``PluginHostContext`` capability set in ``api.py`` /
+``build_api.py``. The unifying goal of those checks is not security
+but *Starlark portability*: keeping plugin sources close to the shape
+of the original Starlark subset so that a future move back to a real
+Starlark runtime -- should the project-level policy above ever shift
+-- would not require rewriting every in-tree plugin.
+"""
+
 import ast
 import builtins
 import inspect
@@ -30,6 +103,15 @@ class UnsandboxedTrivialEvaluator:
         raise RuntimeError(f"the Python value {function!r} is not callable")
 
 
+# The set of Python builtins exposed to plugin code in place of the real
+# ``builtins`` module. Membership criterion: the name must either exist in
+# Starlark or map cleanly onto a Starlark equivalent, so that keeping a
+# plugin portable to a future Starlark backend does not require giving up
+# any builtin listed here. Introspection / reflection / dynamic-eval
+# builtins (``eval``, ``exec``, ``compile``, ``globals``, ``locals``,
+# ``vars``, ``__import__``, ``open``, ...) are deliberately absent for the
+# same reason: they have no Starlark counterpart. This is a portability
+# fence, not a security boundary -- see the module docstring.
 BUILTINS_TO_EXPOSE: Final = {
     k: getattr(builtins, k)
     for k in [
@@ -110,6 +192,20 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
             *values_to_bind: str,
             **renamed_values_to_bind: str,
         ) -> None:
+            """Starlark-style ``load()`` exposed to plugins.
+
+            This is deliberately *not* a wrapper over Python ``import``:
+            it mirrors Starlark's ``load()`` statement so that plugin
+            sources remain portable to a real Starlark backend. In
+            particular, it binds names by injection into the caller's
+            frame (matching Starlark semantics), and it refuses to bind
+            names beginning with ``_``, matching Starlark's rule that
+            underscore-prefixed symbols are module-private.
+
+            ``import`` / ``from ... import ...`` are separately rejected
+            by ``GatedLanguageFeaturesPass`` so that ``load()`` is the
+            only way for plugins to pull in other modules.
+            """
             mod = sub_loader.load(spec)
 
             curr_frame = inspect.currentframe()
@@ -165,11 +261,50 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
 
 
 def lint_module(mod: ast.Module) -> None:
+    """Run best-effort parse-time lints over a plugin module AST.
+
+    Currently this runs only ``GatedLanguageFeaturesPass``; additional
+    best-effort static checks (for example a call-graph pass flagging
+    obvious direct or mutual recursion) may be layered in over time.
+    Anything added here should be understood as a lint, not a soundness
+    guarantee -- see the module docstring for why real enforcement is
+    out of scope.
+    """
     if node := GatedLanguageFeaturesPass().visit(mod):
         raise RuntimeError(f"line {node.lineno}: language feature is gated")
 
 
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
+    """Reject Python syntax that has no Starlark analogue.
+
+    Each ``visit_*`` override below names one construct that is gated
+    at parse time. The selection criterion is *Starlark portability*,
+    not safety: a feature is gated if accepting it would make it
+    materially harder to move plugin sources back to a real Starlark
+    runtime later. Rejected constructs include, among others:
+
+    * ``NamedExpr`` (walrus) -- not in Starlark.
+    * ``Raise``, ``Assert`` -- Starlark uses ``fail()`` for errors.
+    * ``Import`` / ``ImportFrom`` -- Starlark uses ``load()``; see
+      ``_load_stmt_helper``.
+    * ``Try`` / ``TryStar`` / ``With`` -- no Starlark equivalents.
+    * ``Match`` -- not in Starlark.
+    * ``Yield`` / ``YieldFrom`` -- Starlark has no generators.
+    * ``Global`` / ``Nonlocal`` -- Starlark's scoping rules differ.
+    * ``ClassDef`` -- Starlark has no user-defined classes.
+    * ``AsyncFunctionDef`` / ``Await`` / ``AsyncFor`` / ``AsyncWith``
+      -- Starlark has no async model.
+
+    The gate is necessarily best-effort: CPython's grammar is larger
+    than Starlark's and evolves between releases. When a new language
+    feature lands in CPython, the default choice should be to add it
+    here -- anything not already required by an existing plugin is
+    cheaper to forbid now than to un-ship later.
+
+    This is a portability fence, not a security boundary; see the
+    module docstring.
+    """
+
     def visit(self, node: ast.AST) -> ast.expr | ast.stmt | None:
         return cast(ast.expr | ast.stmt | None, super().visit(node))
 
