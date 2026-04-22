@@ -509,6 +509,14 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # Compare node) accordingly.
         if len(node.ops) > 1:
             raise _GatedFeatureError(node, "chained comparison")
+        # Starlark's comparison operator list is ``==``, ``!=``, ``<``,
+        # ``>``, ``<=``, ``>=``, ``in`` and ``not in``; there are no
+        # identity operators.
+        for op in node.ops:
+            if isinstance(op, ast.Is):
+                raise _GatedFeatureError(node, "`is` operator")
+            if isinstance(op, ast.IsNot):
+                raise _GatedFeatureError(node, "`is not` operator")
         self.generic_visit(node)
 
     def visit_Raise(self, node: ast.Raise) -> None:

@@ -71,6 +71,8 @@ def test_starred_in_call_and_rhs_passes() -> None:
         ("x = a @ b\n", "matrix-multiplication operator"),
         ("a @= b\n", "matrix-multiplication assignment"),
         ("ok = 0 <= i < n\n", "chained comparison"),
+        ("ok = a is b\n", "`is` operator"),
+        ("ok = a is not b\n", "`is not` operator"),
         ("def f(a, /, b):\n    return a + b\n", "positional-only parameter"),
         ("def f():\n    while True:\n        pass\n", "while"),
         ("xs[1:3] = [0]\n", "slice as assignment target"),
