@@ -50,6 +50,8 @@ def test_plain_module_passes() -> None:
         ("def f() -> int:\n    return 1\n", "return type annotation"),
         ("def f(x: int):\n    return x\n", "parameter type annotation"),
         ("x = f'hello {name}'\n", "f-string"),
+        ("x = {1, 2, 3}\n", "set display"),
+        ("x = {i for i in range(3)}\n", "set comprehension"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway

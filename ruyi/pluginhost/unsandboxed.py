@@ -365,6 +365,15 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # literals. Reject f-strings so that plugin sources stay portable.
         raise _GatedFeatureError(node, "f-string")
 
+    def visit_Set(self, node: ast.Set) -> None:
+        # Starlark has no set type and therefore no set-display syntax.
+        raise _GatedFeatureError(node, "set display")
+
+    def visit_SetComp(self, node: ast.SetComp) -> None:
+        # Starlark's comprehension grammar offers only ListComp and
+        # DictComp; set comprehensions have no equivalent.
+        raise _GatedFeatureError(node, "set comprehension")
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 
