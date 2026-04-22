@@ -18,6 +18,13 @@ def test_plain_module_passes() -> None:
     )
 
 
+def test_slice_in_value_position_passes() -> None:
+    # Slicing on the RHS of an assignment, and as a subexpression on the
+    # LHS but not as the outermost Subscript's slice, is legal Starlark.
+    _lint("a = xs[1:3]\n")
+    _lint("xs[ys[1:3]] = 0\n")
+
+
 @pytest.mark.parametrize(
     ("src", "expected_feature"),
     [
@@ -59,6 +66,8 @@ def test_plain_module_passes() -> None:
         ("ok = 0 <= i < n\n", "chained comparison"),
         ("def f(a, /, b):\n    return a + b\n", "positional-only parameter"),
         ("def f():\n    while True:\n        pass\n", "while"),
+        ("xs[1:3] = [0]\n", "slice as assignment target"),
+        ("xs[1:3] += [0]\n", "slice as assignment target"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway

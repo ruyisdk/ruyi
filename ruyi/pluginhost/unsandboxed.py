@@ -310,6 +310,27 @@ def _reject_annotated_args(args: ast.arguments) -> None:
             raise _GatedFeatureError(arg.annotation, "parameter type annotation")
 
 
+def _find_slice_assign_target(target: ast.expr) -> ast.Subscript | None:
+    """Return the offending ``Subscript`` node if ``target`` is, or
+    directly contains within a top-level tuple/list unpacking, a
+    subscript whose slice is an ``ast.Slice``. Return ``None`` otherwise.
+
+    The check is deliberately shallow: Starlark's spec says "Starlark
+    does not allow a slice expression to be the target of an assignment,
+    although it may appear as a subexpression in the target," and
+    forms like ``a[b[c:d]] = x`` are explicitly legal. We therefore
+    only inspect the target spine itself (tuple/list unpacking), not
+    arbitrary sub-expressions underneath a Subscript's value.
+    """
+    if isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
+        return target
+    if isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            if (found := _find_slice_assign_target(elt)) is not None:
+                return found
+    return None
+
+
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
     """Reject Python syntax that has no Starlark analogue.
 
@@ -408,6 +429,16 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # Same reasoning for the in-place form ``@=``.
         if isinstance(node.op, ast.MatMult):
             raise _GatedFeatureError(node, "matrix-multiplication assignment (`@=`)")
+        # Starlark forbids a slice expression on the LHS of an assignment.
+        if (bad := _find_slice_assign_target(node.target)) is not None:
+            raise _GatedFeatureError(bad, "slice as assignment target")
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        # Starlark forbids a slice expression on the LHS of an assignment.
+        for target in node.targets:
+            if (bad := _find_slice_assign_target(target)) is not None:
+                raise _GatedFeatureError(bad, "slice as assignment target")
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
