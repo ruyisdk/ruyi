@@ -77,9 +77,12 @@ def test_starred_in_call_and_rhs_passes() -> None:
         ("def f():\n    while True:\n        pass\n", "while"),
         ("xs[1:3] = [0]\n", "slice as assignment target"),
         ("xs[1:3] += [0]\n", "slice as assignment target"),
+        ("(xs[1:3], y[0]) = (0, 1)\n", "slice as assignment target"),
+        ("[xs[1:3], y[0]] = [0, 1]\n", "slice as assignment target"),
         ("a, *rest = xs\n", "starred assignment target"),
         ("for *a, b in xs:\n    pass\n", "starred loop variable"),
         ("y = [x for *a, b in xs]\n", "starred loop variable"),
+        ("y = {k: v for *a, (k, v) in xs}\n", "starred loop variable"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway
@@ -93,3 +96,27 @@ def test_gated_feature_is_rejected(src: str, expected_feature: str) -> None:
     assert "is not allowed in plugin code" in msg
     assert expected_feature in msg
     assert "line " in msg
+
+
+@pytest.mark.parametrize(
+    ("src", "expected_line", "expected_feature"),
+    [
+        # Walrus on the third line of the module.
+        ("x = 1\ny = 2\nz = (w := 3)\n", 3, "walrus"),
+        # ``del`` on line 2.
+        ("x = [1]\ndel x\n", 2, "del"),
+        # Decorator declared on line 1, its function header on line 2;
+        # the gate reports the decorator's own line.
+        ("@staticmethod\ndef f():\n    return 1\n", 1, "decorator"),
+        # Nested gated construct: the inner ``while`` is on line 3.
+        ("def f():\n    x = 1\n    while x:\n        x = 0\n", 3, "while"),
+    ],
+)
+def test_gated_feature_reports_correct_line(
+    src: str, expected_line: int, expected_feature: str
+) -> None:
+    with pytest.raises(RuntimeError) as excinfo:
+        _lint(src)
+    msg = str(excinfo.value)
+    assert f"line {expected_line}:" in msg
+    assert expected_feature in msg
