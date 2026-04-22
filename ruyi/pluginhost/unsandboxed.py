@@ -77,7 +77,7 @@ import inspect
 import os
 import pathlib
 from types import CodeType
-from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cast
+from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -270,8 +270,26 @@ def lint_module(mod: ast.Module) -> None:
     guarantee -- see the module docstring for why real enforcement is
     out of scope.
     """
-    if node := GatedLanguageFeaturesPass().visit(mod):
-        raise RuntimeError(f"line {node.lineno}: language feature is gated")
+    try:
+        GatedLanguageFeaturesPass().visit(mod)
+    except _GatedFeatureError as e:
+        raise RuntimeError(
+            f"line {e.node.lineno}: {e.feature} is not allowed in plugin code"
+        ) from e
+
+
+class _GatedFeatureError(Exception):
+    """Internal signal raised by ``GatedLanguageFeaturesPass`` when it
+    encounters a gated construct. Carries the offending AST node (for
+    its line number) and a short human-readable name of the feature,
+    so ``lint_module`` can surface a useful diagnostic instead of the
+    bare node type.
+    """
+
+    def __init__(self, node: ast.stmt | ast.expr, feature: str) -> None:
+        super().__init__(feature)
+        self.node = node
+        self.feature = feature
 
 
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
@@ -305,76 +323,56 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
     module docstring.
     """
 
-    def visit(self, node: ast.AST) -> ast.expr | ast.stmt | None:
-        return cast(ast.expr | ast.stmt | None, super().visit(node))
+    def visit_NamedExpr(self, node: ast.NamedExpr) -> None:
+        raise _GatedFeatureError(node, "walrus operator (`:=`)")
 
-    def generic_visit(self, node: ast.AST) -> ast.expr | ast.stmt | None:
-        """Traverses all types of nodes, bailing if non-minimal language
-        features are found."""
+    def visit_Raise(self, node: ast.Raise) -> None:
+        raise _GatedFeatureError(node, "`raise` statement")
 
-        for _, value in ast.iter_fields(node):
-            if isinstance(value, list):
-                for item in value:
-                    if isinstance(item, ast.AST):
-                        if x := self.visit(item):
-                            return x
-            elif isinstance(value, ast.AST):
-                if x := self.visit(value):
-                    return x
-        return None
+    def visit_Assert(self, node: ast.Assert) -> None:
+        raise _GatedFeatureError(node, "`assert` statement")
 
-    def visit_NamedExpr(self, node: ast.NamedExpr) -> ast.NamedExpr:
-        return node
+    def visit_Import(self, node: ast.Import) -> None:
+        raise _GatedFeatureError(node, "`import` statement")
 
-    def visit_Raise(self, node: ast.Raise) -> ast.Raise:
-        return node
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        raise _GatedFeatureError(node, "`from ... import ...` statement")
 
-    def visit_Assert(self, node: ast.Assert) -> ast.Assert:
-        return node
+    def visit_Try(self, node: ast.Try) -> None:
+        raise _GatedFeatureError(node, "`try` statement")
 
-    def visit_Import(self, node: ast.Import) -> ast.Import:
-        return node
+    def visit_TryStar(self, node: ast.TryStar) -> None:
+        raise _GatedFeatureError(node, "`try ... except*` statement")
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.ImportFrom:
-        return node
+    def visit_With(self, node: ast.With) -> None:
+        raise _GatedFeatureError(node, "`with` statement")
 
-    def visit_Try(self, node: ast.Try) -> ast.Try:
-        return node
+    def visit_Match(self, node: ast.Match) -> None:
+        raise _GatedFeatureError(node, "`match` statement")
 
-    def visit_TryStar(self, node: ast.TryStar) -> ast.TryStar:
-        return node
+    def visit_Yield(self, node: ast.Yield) -> None:
+        raise _GatedFeatureError(node, "`yield` expression")
 
-    def visit_With(self, node: ast.With) -> ast.With:
-        return node
+    def visit_YieldFrom(self, node: ast.YieldFrom) -> None:
+        raise _GatedFeatureError(node, "`yield from` expression")
 
-    def visit_Match(self, node: ast.Match) -> ast.Match:
-        return node
+    def visit_Global(self, node: ast.Global) -> None:
+        raise _GatedFeatureError(node, "`global` statement")
 
-    def visit_Yield(self, node: ast.Yield) -> ast.Yield:
-        return node
+    def visit_Nonlocal(self, node: ast.Nonlocal) -> None:
+        raise _GatedFeatureError(node, "`nonlocal` statement")
 
-    def visit_YieldFrom(self, node: ast.YieldFrom) -> ast.YieldFrom:
-        return node
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        raise _GatedFeatureError(node, "`class` definition")
 
-    def visit_Global(self, node: ast.Global) -> ast.Global:
-        return node
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        raise _GatedFeatureError(node, "`async def` function")
 
-    def visit_Nonlocal(self, node: ast.Nonlocal) -> ast.Nonlocal:
-        return node
+    def visit_Await(self, node: ast.Await) -> None:
+        raise _GatedFeatureError(node, "`await` expression")
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
-        return node
+    def visit_AsyncFor(self, node: ast.AsyncFor) -> None:
+        raise _GatedFeatureError(node, "`async for` loop")
 
-    def visit_AsyncFunctionDef(
-        self, node: ast.AsyncFunctionDef
-    ) -> ast.AsyncFunctionDef:
-        return node
-
-    def visit_Await(self, node: ast.Await) -> ast.Await:
-        return node
-
-    def visit_AsyncFor(self, node: ast.AsyncFor) -> ast.AsyncFor:
-        return node
-
-    def visit_AsyncWith(self, node: ast.AsyncWith) -> ast.AsyncWith:
-        return node
+    def visit_AsyncWith(self, node: ast.AsyncWith) -> None:
+        raise _GatedFeatureError(node, "`async with` statement")
