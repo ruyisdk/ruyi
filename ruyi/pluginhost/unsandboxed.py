@@ -292,6 +292,24 @@ class _GatedFeatureError(Exception):
         self.feature = feature
 
 
+def _reject_annotated_args(args: ast.arguments) -> None:
+    """Raise ``_GatedFeatureError`` if any parameter in ``args`` carries
+    a type annotation. Starlark's Parameter grammar has no annotation
+    production, so annotations on any category of parameter -- regular,
+    positional-only, keyword-only, ``*args``, or ``**kwargs`` -- are
+    rejected uniformly.
+    """
+    for arg in (
+        *args.posonlyargs,
+        *args.args,
+        *args.kwonlyargs,
+        *((args.vararg,) if args.vararg is not None else ()),
+        *((args.kwarg,) if args.kwarg is not None else ()),
+    ):
+        if arg.annotation is not None:
+            raise _GatedFeatureError(arg.annotation, "parameter type annotation")
+
+
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
     """Reject Python syntax that has no Starlark analogue.
 
@@ -332,7 +350,15 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # gated constructs inside the function are still reported.
         if node.decorator_list:
             raise _GatedFeatureError(node.decorator_list[0], "decorator")
+        # Starlark's parameter grammar has no annotation syntax, and its
+        # function headers have no return-type annotation. Reject both.
+        if node.returns is not None:
+            raise _GatedFeatureError(node.returns, "return type annotation")
+        _reject_annotated_args(node.args)
         self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        raise _GatedFeatureError(node, "variable type annotation")
 
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")

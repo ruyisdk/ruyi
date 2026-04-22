@@ -46,6 +46,9 @@ def test_plain_module_passes() -> None:
         ("class C:\n    pass\n", "class"),
         ("async def g():\n    pass\n", "async def"),
         ("@staticmethod\ndef f():\n    pass\n", "decorator"),
+        ("x: int = 1\n", "variable type annotation"),
+        ("def f() -> int:\n    return 1\n", "return type annotation"),
+        ("def f(x: int):\n    return x\n", "parameter type annotation"),
         # `await`, `async for`, `async with` can only occur syntactically
         # inside an `async def`, so they are shadowed by the `async def`
         # rejection above; they have their own ``visit_*`` overrides anyway
