@@ -1,10 +1,83 @@
+"""Unsandboxed Python plugin host.
+
+Rationale
+---------
+
+Ruyi plugins were originally authored in Starlark and executed through
+``xingque`` (a binding to ``starlark-rust``), which provided genuine
+language-level isolation. That backend was dropped in October 2024;
+see commits ``bc458ce`` (the introduction of this file), ``a9d66bd``
+(making it the default), and ``2b7c24d`` / ``9e5abe1`` (removal of the
+Starlark backend).
+
+The stated reason in ``bc458ce`` is that the plugin surface was
+restricted to standard Python 3 rather than any dialect of it. The
+underlying project-level goal is broader: the whole of RuyiSDK is kept
+to Python and shell so that onboarding is trivial, so that loss of
+project staff is survivable, and so that third-party commercial
+partners can take over maintenance of their own forks without being
+blocked by any non-trivial piece of code in a less widely known
+language. Reintroducing Starlark -- or any other embedded language or
+Rust-backed sandbox -- would reintroduce exactly the kind of
+specialist-knowledge cliff this policy exists to avoid, and is
+therefore not on the table regardless of its technical merits.
+
+Threat model and non-goals
+--------------------------
+
+This module is intentionally *not* a sandbox. Plugin sources are
+parsed, AST-linted, compiled, and ``exec``-ed in the host interpreter
+with a curated ``__builtins__`` mapping. A malicious plugin can escape
+trivially.
+
+The original justification, as recorded in ``bc458ce`` in 2024, was:
+
+    No "outsiders" are involved in plugin creation yet, and attacks
+    from "insiders" are not going to be thwarted by code-level
+    sandboxing alone.
+
+That premise has since lapsed and the quote should be read as
+historical rather than current. Third-party addon repositories are a
+supported feature, which means plugin code loaded by Ruyi can now
+originate from authors outside the project. An unsandboxed Python
+runtime provides no meaningful defence against a hostile or
+compromised third-party addon; in particular, the capability set in
+``PluginHostContext`` (``call-subprocess-v1``, ``build-recipe-v1``,
+``i18n-v1``, ...) is an API-shape boundary, not a security boundary,
+and is trivially escapable from in-process Python.
+
+The present mitigations against this are operational rather than
+technical: a prominent warning and explicit user confirmation on
+``ruyi repo add``, and the expectation that users extend trust to
+third-party repos on the same footing as any other third-party code
+they choose to run. Revisiting this with an actual sandbox (process
+isolation, a reintroduced Starlark backend, or another mechanism) is
+out of scope of this module and currently gated on project-level
+decisions rather than technical ones; see
+https://github.com/ruyisdk/ruyi/issues/444 for tracking.
+
+Recursion detection, resource limits, timeouts, and filesystem or
+network isolation are likewise out of scope here; they are not
+soundly achievable with pure AST inspection plus ``exec`` in CPython.
+
+What the module does enforce, and why, is documented on the
+individual enforcement points themselves: ``BUILTINS_TO_EXPOSE``,
+``GatedLanguageFeaturesPass``, and ``_load_stmt_helper`` below, plus
+the ``PluginHostContext`` capability set in ``api.py`` /
+``build_api.py``. The unifying goal of those checks is not security
+but *Starlark portability*: keeping plugin sources close to the shape
+of the original Starlark subset so that a future move back to a real
+Starlark runtime -- should the project-level policy above ever shift
+-- would not require rewriting every in-tree plugin.
+"""
+
 import ast
 import builtins
 import inspect
 import os
 import pathlib
 from types import CodeType
-from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING, cast
+from typing import Callable, Final, MutableMapping, NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -30,6 +103,15 @@ class UnsandboxedTrivialEvaluator:
         raise RuntimeError(f"the Python value {function!r} is not callable")
 
 
+# The set of Python builtins exposed to plugin code in place of the real
+# ``builtins`` module. Membership criterion: the name must either exist in
+# Starlark or map cleanly onto a Starlark equivalent, so that keeping a
+# plugin portable to a future Starlark backend does not require giving up
+# any builtin listed here. Introspection / reflection / dynamic-eval
+# builtins (``eval``, ``exec``, ``compile``, ``globals``, ``locals``,
+# ``vars``, ``__import__``, ``open``, ...) are deliberately absent for the
+# same reason: they have no Starlark counterpart. This is a portability
+# fence, not a security boundary -- see the module docstring.
 BUILTINS_TO_EXPOSE: Final = {
     k: getattr(builtins, k)
     for k in [
@@ -110,6 +192,20 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
             *values_to_bind: str,
             **renamed_values_to_bind: str,
         ) -> None:
+            """Starlark-style ``load()`` exposed to plugins.
+
+            This is deliberately *not* a wrapper over Python ``import``:
+            it mirrors Starlark's ``load()`` statement so that plugin
+            sources remain portable to a real Starlark backend. In
+            particular, it binds names by injection into the caller's
+            frame (matching Starlark semantics), and it refuses to bind
+            names beginning with ``_``, matching Starlark's rule that
+            underscore-prefixed symbols are module-private.
+
+            ``import`` / ``from ... import ...`` are separately rejected
+            by ``GatedLanguageFeaturesPass`` so that ``load()`` is the
+            only way for plugins to pull in other modules.
+            """
             mod = sub_loader.load(spec)
 
             curr_frame = inspect.currentframe()
@@ -165,81 +261,311 @@ class UnsandboxedRuyiPluginLoader(BasePluginLoader[UnsandboxedModuleDict]):
 
 
 def lint_module(mod: ast.Module) -> None:
-    if node := GatedLanguageFeaturesPass().visit(mod):
-        raise RuntimeError(f"line {node.lineno}: language feature is gated")
+    """Run best-effort parse-time lints over a plugin module AST.
+
+    Currently this runs only ``GatedLanguageFeaturesPass``; additional
+    best-effort static checks (for example a call-graph pass flagging
+    obvious direct or mutual recursion) may be layered in over time.
+    Anything added here should be understood as a lint, not a soundness
+    guarantee -- see the module docstring for why real enforcement is
+    out of scope.
+    """
+    try:
+        GatedLanguageFeaturesPass().visit(mod)
+    except _GatedFeatureError as e:
+        raise RuntimeError(
+            f"line {e.node.lineno}: {e.feature} is not allowed in plugin code"
+        ) from e
+
+
+class _GatedFeatureError(Exception):
+    """Internal signal raised by ``GatedLanguageFeaturesPass`` when it
+    encounters a gated construct. Carries the offending AST node (for
+    its line number) and a short human-readable name of the feature,
+    so ``lint_module`` can surface a useful diagnostic instead of the
+    bare node type.
+    """
+
+    def __init__(self, node: ast.stmt | ast.expr | ast.arg, feature: str) -> None:
+        super().__init__(feature)
+        self.node = node
+        self.feature = feature
+
+
+def _reject_annotated_args(args: ast.arguments) -> None:
+    """Raise ``_GatedFeatureError`` if any parameter in ``args`` carries
+    a type annotation. Starlark's Parameter grammar has no annotation
+    production, so annotations on any category of parameter -- regular,
+    positional-only, keyword-only, ``*args``, or ``**kwargs`` -- are
+    rejected uniformly.
+    """
+    for arg in (
+        *args.posonlyargs,
+        *args.args,
+        *args.kwonlyargs,
+        *((args.vararg,) if args.vararg is not None else ()),
+        *((args.kwarg,) if args.kwarg is not None else ()),
+    ):
+        if arg.annotation is not None:
+            raise _GatedFeatureError(arg.annotation, "parameter type annotation")
+
+
+def _find_slice_assign_target(target: ast.expr) -> ast.Subscript | None:
+    """Return the offending ``Subscript`` node if ``target`` is, or
+    directly contains within a top-level tuple/list unpacking, a
+    subscript whose slice is an ``ast.Slice``. Return ``None`` otherwise.
+
+    The check is deliberately shallow: Starlark's spec says "Starlark
+    does not allow a slice expression to be the target of an assignment,
+    although it may appear as a subexpression in the target," and
+    forms like ``a[b[c:d]] = x`` are explicitly legal. We therefore
+    only inspect the target spine itself (tuple/list unpacking), not
+    arbitrary sub-expressions underneath a Subscript's value.
+    """
+    if isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
+        return target
+    if isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            if (found := _find_slice_assign_target(elt)) is not None:
+                return found
+    return None
+
+
+def _find_starred_in_target(target: ast.expr) -> ast.Starred | None:
+    """Return the offending ``Starred`` node if ``target`` is, or
+    contains anywhere within a tuple/list unpacking spine, a starred
+    expression. Return ``None`` otherwise.
+
+    Starlark's ``LoopVariables`` and ``AssignStmt`` LHS grammars do not
+    permit ``*x`` unpacking; a starred target would have no portable
+    equivalent. Starred expressions on the *right-hand side* or inside
+    call arguments (``f(*args)``) are a separate grammatical position
+    and are not checked here.
+    """
+    if isinstance(target, ast.Starred):
+        return target
+    if isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            if (found := _find_starred_in_target(elt)) is not None:
+                return found
+    return None
 
 
 class GatedLanguageFeaturesPass(ast.NodeVisitor):
-    def visit(self, node: ast.AST) -> ast.expr | ast.stmt | None:
-        return cast(ast.expr | ast.stmt | None, super().visit(node))
+    """Reject Python syntax that has no Starlark analogue.
 
-    def generic_visit(self, node: ast.AST) -> ast.expr | ast.stmt | None:
-        """Traverses all types of nodes, bailing if non-minimal language
-        features are found."""
+    Each ``visit_*`` override below names one construct that is gated
+    at parse time. The selection criterion is *Starlark portability*,
+    not safety: a feature is gated if accepting it would make it
+    materially harder to move plugin sources back to a real Starlark
+    runtime later. Rejected constructs include, among others:
 
-        for _, value in ast.iter_fields(node):
-            if isinstance(value, list):
-                for item in value:
-                    if isinstance(item, ast.AST):
-                        if x := self.visit(item):
-                            return x
-            elif isinstance(value, ast.AST):
-                if x := self.visit(value):
-                    return x
-        return None
+    * ``NamedExpr`` (walrus) -- not in Starlark.
+    * Decorators, return type annotations, parameter annotations and
+      positional-only parameters on ``FunctionDef`` -- none of these
+      have a production in Starlark's ``DefStmt`` or Parameter grammar.
+    * ``AnnAssign`` (variable type annotations) -- no analogue.
+    * ``JoinedStr`` (f-strings) -- Starlark has only plain string and
+      bytes literals.
+    * ``Set`` / ``SetComp`` -- Starlark has no set type or set
+      comprehensions.
+    * ``GeneratorExp`` -- Starlark has no generators.
+    * ``Delete`` (``del`` statement) -- not in Starlark.
+    * ``BinOp`` / ``AugAssign`` with ``MatMult`` (``@``, ``@=``) --
+      not in Starlark's operator list.
+    * ``Compare`` with more than one operator (chained comparisons) --
+      Starlark's comparison operators are non-associative.
+    * ``While`` -- not in Starlark's Statement grammar.
+    * Slice expressions in assignment targets, and starred expressions
+      in assignment / loop-variable targets -- forbidden by Starlark's
+      ``AssignStmt`` and ``LoopVariables`` grammars respectively.
+    * ``Raise``, ``Assert`` -- Starlark uses ``fail()`` for errors.
+    * ``Import`` / ``ImportFrom`` -- Starlark uses ``load()``; see
+      ``_load_stmt_helper``.
+    * ``Try`` / ``TryStar`` / ``With`` -- no Starlark equivalents.
+    * ``Match`` -- not in Starlark.
+    * ``Yield`` / ``YieldFrom`` -- Starlark has no generators.
+    * ``Global`` / ``Nonlocal`` -- Starlark's scoping rules differ.
+    * ``ClassDef`` -- Starlark has no user-defined classes.
+    * ``AsyncFunctionDef`` / ``Await`` / ``AsyncFor`` / ``AsyncWith``
+      -- Starlark has no async model.
 
-    def visit_NamedExpr(self, node: ast.NamedExpr) -> ast.NamedExpr:
-        return node
+    The gate is necessarily best-effort: CPython's grammar is larger
+    than Starlark's and evolves between releases. When a new language
+    feature lands in CPython, the default choice should be to add it
+    here -- anything not already required by an existing plugin is
+    cheaper to forbid now than to un-ship later.
 
-    def visit_Raise(self, node: ast.Raise) -> ast.Raise:
-        return node
+    This is a portability fence, not a security boundary; see the
+    module docstring.
+    """
 
-    def visit_Assert(self, node: ast.Assert) -> ast.Assert:
-        return node
+    def visit_NamedExpr(self, node: ast.NamedExpr) -> None:
+        raise _GatedFeatureError(node, "walrus operator (`:=`)")
 
-    def visit_Import(self, node: ast.Import) -> ast.Import:
-        return node
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        # Decorators have no analogue in the Starlark ``DefStmt`` grammar.
+        # Reject them, but continue recursing into the body so that other
+        # gated constructs inside the function are still reported.
+        if node.decorator_list:
+            raise _GatedFeatureError(node.decorator_list[0], "decorator")
+        # Starlark's parameter grammar has no annotation syntax, and its
+        # function headers have no return-type annotation. Reject both.
+        if node.returns is not None:
+            raise _GatedFeatureError(node.returns, "return type annotation")
+        _reject_annotated_args(node.args)
+        # Starlark's Parameter grammar has no ``/`` marker (PEP 570), so
+        # positional-only parameters have no way to be expressed there.
+        if node.args.posonlyargs:
+            raise _GatedFeatureError(
+                node.args.posonlyargs[0], "positional-only parameter (`/`)"
+            )
+        self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.ImportFrom:
-        return node
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        raise _GatedFeatureError(node, "variable type annotation")
 
-    def visit_Try(self, node: ast.Try) -> ast.Try:
-        return node
+    def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
+        # Starlark's lexical grammar offers only plain string and bytes
+        # literals. Reject f-strings so that plugin sources stay portable.
+        raise _GatedFeatureError(node, "f-string")
 
-    def visit_TryStar(self, node: ast.TryStar) -> ast.TryStar:
-        return node
+    def visit_Set(self, node: ast.Set) -> None:
+        # Starlark has no set type and therefore no set-display syntax.
+        raise _GatedFeatureError(node, "set display")
 
-    def visit_With(self, node: ast.With) -> ast.With:
-        return node
+    def visit_SetComp(self, node: ast.SetComp) -> None:
+        # Starlark's comprehension grammar offers only ListComp and
+        # DictComp; set comprehensions have no equivalent.
+        raise _GatedFeatureError(node, "set comprehension")
 
-    def visit_Match(self, node: ast.Match) -> ast.Match:
-        return node
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> None:
+        # Starlark has no generators and no generator-expression
+        # production in its grammar.
+        raise _GatedFeatureError(node, "generator expression")
 
-    def visit_Yield(self, node: ast.Yield) -> ast.Yield:
-        return node
+    def visit_Delete(self, node: ast.Delete) -> None:
+        # Starlark's spec explicitly states that it does not have a
+        # ``del`` statement.
+        raise _GatedFeatureError(node, "`del` statement")
 
-    def visit_YieldFrom(self, node: ast.YieldFrom) -> ast.YieldFrom:
-        return node
+    def visit_While(self, node: ast.While) -> None:
+        # Starlark's Statement grammar only has DefStmt, IfStmt, ForStmt
+        # and SimpleStmt; ``while`` is listed among the reserved-but-
+        # unused keywords. Rejecting it here also keeps plugin loops
+        # bounded in the same way Starlark intends.
+        raise _GatedFeatureError(node, "`while` loop")
 
-    def visit_Global(self, node: ast.Global) -> ast.Global:
-        return node
+    def visit_BinOp(self, node: ast.BinOp) -> None:
+        # ``@`` (matrix multiplication) is not in Starlark's binary
+        # operator list. Other binary operators are fine.
+        if isinstance(node.op, ast.MatMult):
+            raise _GatedFeatureError(node, "matrix-multiplication operator (`@`)")
+        self.generic_visit(node)
 
-    def visit_Nonlocal(self, node: ast.Nonlocal) -> ast.Nonlocal:
-        return node
+    def visit_AugAssign(self, node: ast.AugAssign) -> None:
+        # Same reasoning for the in-place form ``@=``.
+        if isinstance(node.op, ast.MatMult):
+            raise _GatedFeatureError(node, "matrix-multiplication assignment (`@=`)")
+        # Starlark forbids a slice expression on the LHS of an assignment.
+        if (bad := _find_slice_assign_target(node.target)) is not None:
+            raise _GatedFeatureError(bad, "slice as assignment target")
+        # Starlark does not permit ``*x`` unpacking in an assignment LHS.
+        if (starred := _find_starred_in_target(node.target)) is not None:
+            raise _GatedFeatureError(starred, "starred assignment target")
+        self.generic_visit(node)
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
-        return node
+    def visit_Assign(self, node: ast.Assign) -> None:
+        # Starlark forbids a slice expression on the LHS of an assignment.
+        for target in node.targets:
+            if (bad := _find_slice_assign_target(target)) is not None:
+                raise _GatedFeatureError(bad, "slice as assignment target")
+            if (starred := _find_starred_in_target(target)) is not None:
+                raise _GatedFeatureError(starred, "starred assignment target")
+        self.generic_visit(node)
 
-    def visit_AsyncFunctionDef(
-        self, node: ast.AsyncFunctionDef
-    ) -> ast.AsyncFunctionDef:
-        return node
+    def visit_For(self, node: ast.For) -> None:
+        # Starlark's LoopVariables grammar permits no ``*x`` unpacking.
+        if (starred := _find_starred_in_target(node.target)) is not None:
+            raise _GatedFeatureError(starred, "starred loop variable")
+        self.generic_visit(node)
 
-    def visit_Await(self, node: ast.Await) -> ast.Await:
-        return node
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        for gen in node.generators:
+            if (starred := _find_starred_in_target(gen.target)) is not None:
+                raise _GatedFeatureError(starred, "starred loop variable")
+        self.generic_visit(node)
 
-    def visit_AsyncFor(self, node: ast.AsyncFor) -> ast.AsyncFor:
-        return node
+    def visit_DictComp(self, node: ast.DictComp) -> None:
+        for gen in node.generators:
+            if (starred := _find_starred_in_target(gen.target)) is not None:
+                raise _GatedFeatureError(starred, "starred loop variable")
+        self.generic_visit(node)
 
-    def visit_AsyncWith(self, node: ast.AsyncWith) -> ast.AsyncWith:
-        return node
+    def visit_Compare(self, node: ast.Compare) -> None:
+        # Starlark spec: "Comparison operators, ``in``, and ``not in`` are
+        # non-associative, so the parser will not accept ``0 <= i < n``."
+        # Reject chained comparisons (more than one operator in a single
+        # Compare node) accordingly.
+        if len(node.ops) > 1:
+            raise _GatedFeatureError(node, "chained comparison")
+        # Starlark's comparison operator list is ``==``, ``!=``, ``<``,
+        # ``>``, ``<=``, ``>=``, ``in`` and ``not in``; there are no
+        # identity operators.
+        for op in node.ops:
+            if isinstance(op, ast.Is):
+                raise _GatedFeatureError(node, "`is` operator")
+            if isinstance(op, ast.IsNot):
+                raise _GatedFeatureError(node, "`is not` operator")
+        self.generic_visit(node)
+
+    def visit_Raise(self, node: ast.Raise) -> None:
+        raise _GatedFeatureError(node, "`raise` statement")
+
+    def visit_Assert(self, node: ast.Assert) -> None:
+        raise _GatedFeatureError(node, "`assert` statement")
+
+    def visit_Import(self, node: ast.Import) -> None:
+        raise _GatedFeatureError(node, "`import` statement")
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        raise _GatedFeatureError(node, "`from ... import ...` statement")
+
+    def visit_Try(self, node: ast.Try) -> None:
+        raise _GatedFeatureError(node, "`try` statement")
+
+    def visit_TryStar(self, node: ast.TryStar) -> None:
+        raise _GatedFeatureError(node, "`try ... except*` statement")
+
+    def visit_With(self, node: ast.With) -> None:
+        raise _GatedFeatureError(node, "`with` statement")
+
+    def visit_Match(self, node: ast.Match) -> None:
+        raise _GatedFeatureError(node, "`match` statement")
+
+    def visit_Yield(self, node: ast.Yield) -> None:
+        raise _GatedFeatureError(node, "`yield` expression")
+
+    def visit_YieldFrom(self, node: ast.YieldFrom) -> None:
+        raise _GatedFeatureError(node, "`yield from` expression")
+
+    def visit_Global(self, node: ast.Global) -> None:
+        raise _GatedFeatureError(node, "`global` statement")
+
+    def visit_Nonlocal(self, node: ast.Nonlocal) -> None:
+        raise _GatedFeatureError(node, "`nonlocal` statement")
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        raise _GatedFeatureError(node, "`class` definition")
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        raise _GatedFeatureError(node, "`async def` function")
+
+    def visit_Await(self, node: ast.Await) -> None:
+        raise _GatedFeatureError(node, "`await` expression")
+
+    def visit_AsyncFor(self, node: ast.AsyncFor) -> None:
+        raise _GatedFeatureError(node, "`async for` loop")
+
+    def visit_AsyncWith(self, node: ast.AsyncWith) -> None:
+        raise _GatedFeatureError(node, "`async with` statement")
