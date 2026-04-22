@@ -384,6 +384,19 @@ class GatedLanguageFeaturesPass(ast.NodeVisitor):
         # ``del`` statement.
         raise _GatedFeatureError(node, "`del` statement")
 
+    def visit_BinOp(self, node: ast.BinOp) -> None:
+        # ``@`` (matrix multiplication) is not in Starlark's binary
+        # operator list. Other binary operators are fine.
+        if isinstance(node.op, ast.MatMult):
+            raise _GatedFeatureError(node, "matrix-multiplication operator (`@`)")
+        self.generic_visit(node)
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> None:
+        # Same reasoning for the in-place form ``@=``.
+        if isinstance(node.op, ast.MatMult):
+            raise _GatedFeatureError(node, "matrix-multiplication assignment (`@=`)")
+        self.generic_visit(node)
+
     def visit_Raise(self, node: ast.Raise) -> None:
         raise _GatedFeatureError(node, "`raise` statement")
 
