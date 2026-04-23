@@ -60,7 +60,7 @@ add_builder_user() {
     _getent_result="$(getent passwd "$BUILDER_UID")"
 
     if [[ -n $_getent_result ]]; then
-        ln -s "/home/${_getent_result%%:*}" /home/b
+        ln -s "$(cut -f6 -d: <<<"$_getent_result")" /home/b
     else
         groupadd -g "$BUILDER_GID" b
         useradd -d /home/b -m -g "$BUILDER_GID" -u "$BUILDER_UID" -s /bin/bash b
