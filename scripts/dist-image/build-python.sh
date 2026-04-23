@@ -8,6 +8,8 @@ set -e
 #
 # See: https://github.com/Nuitka/Nuitka/commit/54f2a2222abedf92d45b8f397233cfb3bef340c5
 
+# Python 3.14.4 + Nuitka 2.8.10 produces ruyi binaries that segfault during
+# apply_config (ruyi init time)
 PYTHON_V=3.13.13
 pushd /tmp
 wget "https://www.python.org/ftp/python/${PYTHON_V}/Python-${PYTHON_V}.tar.xz"

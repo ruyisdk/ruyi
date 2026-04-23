@@ -419,7 +419,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           registry: ghcr.io
-          image: ghcr.io/ruyisdk/ruyi-python-dist:20260419
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20260423
           options: |
             --user root
             --platform linux/${{ matrix.arch }}
