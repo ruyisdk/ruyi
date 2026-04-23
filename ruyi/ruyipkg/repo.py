@@ -517,13 +517,23 @@ class MetadataRepo(ProvidesPackageManifests):
         if ensure_repo:
             self.ensure_git_repo()
 
-        manifests_dir = os.path.join(self.root, "manifests")
-        try:
-            for f in os.scandir(manifests_dir):
+        # Try the name "packages" first, because it's possible that some
+        # non-manifest things will arrive in the package directories in the
+        # future. Keep probing the old "manifests" name until 0.51.0.
+        #
+        # TODO: remove the "manifests" alias after 0.50.0 branch is cut.
+        for pkg_dir_name in ("packages", "manifests"):
+            manifests_dir = os.path.join(self.root, pkg_dir_name)
+            try:
+                manifests_dir_iter = os.scandir(manifests_dir)
+            except FileNotFoundError:
+                continue
+
+            for f in manifests_dir_iter:
                 if not f.is_dir():
                     continue
                 yield from self._iter_pkg_manifests_from_category(f.path)
-        except FileNotFoundError:
+            # Only process the first matched directory
             return
 
     def _iter_pkg_manifests_from_category(
