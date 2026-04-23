@@ -93,6 +93,7 @@ def main() -> None:
         "--no-deployment-flag=self-execution",
         f"--product-version={vers['nuitka_ver']}",
         f"--onefile-tempdir-spec={{CACHE_DIR}}/ruyi/progcache/{vers['semver']}/{target_host}",
+        "--include-package=charset_normalizer",
         "--include-package=pygments.formatters",
         "--include-package=pygments.lexers",
         "--include-package=pygments.styles",
