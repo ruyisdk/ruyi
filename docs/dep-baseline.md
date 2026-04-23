@@ -11,20 +11,20 @@ RuyiSDK 所承诺的平台兼容性，在代码层面需要考虑的各项依赖
 <!-- markdownlint-capture -->
 <!-- markdownlint-disable MD013 -->
 
-| 发行版版本              | Python | pygit2 | pyyaml                 |
-|-------------------------|--------|--------|------------------------|
-| Debian 12               | 3.11   | 1.11.1 | 6.0   [^debian-pyyaml] |
-| Debian 13[^deb13]       | 3.13   | 1.17.0 | 6.0.2 [^debian-pyyaml] |
-| Fedora 39               | 3.12   | 1.14.0 | 6.0.1                  |
-| Fedora 40               | 3.12   | 1.14.0 | 6.0.1                  |
-| Fedora 41               | 3.13   | 1.15.1 | 6.0.1                  |
-| Fedora 42               | 3.13   | 1.17.0 | 6.0.2                  |
-| OpenCloudOS 9.4         | 3.11   | 1.12.2 | 6.0.1                  |
-| openEuler 24.03 LTS     | 3.11   | :x:    | 6.0.1                  |
-| openEuler 24.03 LTS SP2 | 3.11   | :x:    | 6.0.1                  |
-| openEuler 25.03         | 3.11   | :x:    | 6.0.2                  |
-| openKylin 2.0           | 3.12   | :x:    | 6.0.1 [^debian-pyyaml] |
-| Ubuntu 24.04 LTS        | 3.12   | 1.14.1 | 6.0.1 [^debian-pyyaml] |
+| 发行版版本              | 年代 | glibc | Python | pygit2 | pyyaml                 |
+|-------------------------|------|-------|--------|--------|------------------------|
+| Debian 12               | 2023 | 2.36  | 3.11   | 1.11.1 | 6.0   [^debian-pyyaml] |
+| Debian 13[^deb13]       | 2025 | 2.41  | 3.13   | 1.17.0 | 6.0.2 [^debian-pyyaml] |
+| Fedora 39               | 2023 | 2.38  | 3.12   | 1.14.0 | 6.0.1                  |
+| Fedora 40               | 2024 | 2.39  | 3.12   | 1.14.0 | 6.0.1                  |
+| Fedora 41               | 2024 | 2.40  | 3.13   | 1.15.1 | 6.0.1                  |
+| Fedora 42               | 2025 | 2.41  | 3.13   | 1.17.0 | 6.0.2                  |
+| OpenCloudOS 9.4         | 2025 | 2.38  | 3.11   | 1.12.2 | 6.0.1                  |
+| openEuler 24.03 LTS     | 2024 | 2.38  | 3.11   | :x:    | 6.0.1                  |
+| openEuler 24.03 LTS SP2 | 2025 | 2.38  | 3.11   | :x:    | 6.0.1                  |
+| openEuler 25.03         | 2025 | 2.38  | 3.11   | :x:    | 6.0.2                  |
+| openKylin 2.0           | 2024 | 2.38  | 3.12   | :x:    | 6.0.1 [^debian-pyyaml] |
+| Ubuntu 24.04 LTS        | 2024 | 2.39  | 3.12   | 1.14.1 | 6.0.1 [^debian-pyyaml] |
 
 <!-- markdownlint-restore -->
 
