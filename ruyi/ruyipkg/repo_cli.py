@@ -36,30 +36,8 @@ class RepoListCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        from .repo import DEFAULT_REPO_ID
-
-        entries = cfg.repo_entries
-        logger = cfg.logger
-
-        for entry in sorted(entries, key=lambda e: -e.priority):
-            active_marker = "*" if entry.active else " "
-            default_marker = " (default)" if entry.id == DEFAULT_REPO_ID else ""
-            system_marker = " (system)" if entry.is_system else ""
-
-            source = entry.remote or ""
-            if entry.local_path:
-                source = (
-                    entry.local_path
-                    if not source
-                    else f"{source} (local: {entry.local_path})"
-                )
-
-            logger.stdout(
-                f"  {active_marker} [bold]{entry.id}[/]{default_marker}{system_marker}  "
-                f"priority={entry.priority}  {source}"
-            )
-
-        return 0
+        from .repo import do_repo_list
+        return do_repo_list(cfg, args)
 
 
 class RepoAddCommand(
