@@ -1,3 +1,4 @@
+import argparse
 import glob
 from dataclasses import dataclass
 from functools import cached_property
@@ -28,6 +29,7 @@ from ..log import RuyiLogger
 from ..pluginhost.ctx import PluginHostContext
 from ..telemetry.scope import TelemetryScopeConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
 from .entity_provider import BaseEntityProvider, FSEntityProvider
@@ -102,6 +104,19 @@ class RepoEntry:
             repo_name=self.name,
         )
 
+    def to_porcelain(self) -> "PorcelainRepoEntryV1":
+        return {
+            "ty": PorcelainEntityType.RepoEntryV1,
+            "id": self.id,
+            "name": self.name,
+            "remote": self.remote,
+            "branch": self.branch,
+            "local_path": self.local_path,
+            "priority": self.priority,
+            "active": self.active,
+            "is_system": self.is_system,
+        }
+
 
 class RepoConfigV0Type(TypedDict):
     dist: str
@@ -118,6 +133,37 @@ def validate_repo_config_v0(x: object) -> TypeGuard[RepoConfigV0Type]:
     if "doc_uri" in x and not isinstance(x["doc_uri"], str):
         return False
     return True
+
+
+def do_repo_list(cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+    entries = cfg.repo_entries
+    logger = cfg.logger
+
+    if cfg.is_porcelain:
+        with PorcelainOutput() as po:
+            for entry in entries:
+                po.emit(entry.to_porcelain())
+        return 0
+
+    for entry in sorted(entries, key=lambda e: -e.priority):
+        active_marker = "*" if entry.active else " "
+        default_marker = " (default)" if entry.id == DEFAULT_REPO_ID else ""
+        system_marker = " (system)" if entry.is_system else ""
+
+        source = entry.remote or ""
+        if entry.local_path:
+            source = (
+                entry.local_path
+                if not source
+                else f"{source} (local: {entry.local_path})"
+            )
+
+        logger.stdout(
+            f"  {active_marker} [bold]{entry.id}[/]{default_marker}{system_marker}  "
+            f"priority={entry.priority}  {source}"
+        )
+
+    return 0
 
 
 class RepoConfigV1Repo(TypedDict):
@@ -912,3 +958,14 @@ class MetadataRepoEntityProvider(BaseEntityProvider):
                 "related": relations,
             }
         return result
+
+class PorcelainRepoEntryV1(PorcelainEntity):
+    id: str
+    name: str
+    remote: str | None
+    branch: str
+    local_path: str | None
+    priority: int
+    active: bool
+    is_system: bool
+

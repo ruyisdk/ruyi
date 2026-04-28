@@ -14,6 +14,7 @@ class PorcelainEntityType(enum.StrEnum):
     NewsItemV1 = "newsitem-v1"
     PkgListOutputV1 = "pkglistoutput-v1"
     EntityListOutputV1 = "entitylistoutput-v1"
+    RepoEntryV1 = "repoentry-v1"
 
 
 class PorcelainEntity(TypedDict):
