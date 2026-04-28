@@ -28,6 +28,7 @@ from ..log import RuyiLogger
 from ..pluginhost.ctx import PluginHostContext
 from ..telemetry.scope import TelemetryScopeConfig
 from ..utils.git import RemoteGitProgressIndicator, pull_ff_or_die
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from ..utils.url import urljoin_for_sure
 from .entity import EntityStore
 from .entity_provider import BaseEntityProvider, FSEntityProvider
@@ -101,6 +102,19 @@ class RepoEntry:
             repo_id=self.id,
             repo_name=self.name,
         )
+
+    def to_porcelain(self) -> "PorcelainRepoEntryV1":
+        return {
+            "ty": PorcelainEntityType.RepoEntryV1,
+            "id": self.id,
+            "name": self.name,
+            "remote": self.remote,
+            "branch": self.branch,
+            "local_path": self.local_path,
+            "priority": self.priority,
+            "active": self.active,
+            "is_system": self.is_system,
+        }
 
 
 class RepoConfigV0Type(TypedDict):
@@ -912,3 +926,14 @@ class MetadataRepoEntityProvider(BaseEntityProvider):
                 "related": relations,
             }
         return result
+
+
+class PorcelainRepoEntryV1(PorcelainEntity):
+    id: str
+    name: str
+    remote: str | None
+    branch: str
+    local_path: str | None
+    priority: int
+    active: bool
+    is_system: bool

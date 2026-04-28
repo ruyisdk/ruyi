@@ -37,9 +37,16 @@ class RepoListCommand(
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         from .repo import DEFAULT_REPO_ID
+        from ..utils.porcelain import PorcelainOutput
 
         entries = cfg.repo_entries
         logger = cfg.logger
+
+        if cfg.is_porcelain:
+            with PorcelainOutput() as po:
+                for entry in entries:
+                    po.emit(entry.to_porcelain())
+            return 0
 
         for entry in sorted(entries, key=lambda e: -e.priority):
             active_marker = "*" if entry.active else " "
