@@ -271,7 +271,6 @@ urls = ["https://example.invalid/dist/"]
     sha_stub = "0" * 64
     manifest_text = f"""\
 format = "v1"
-kind = ["source"]
 
 [metadata]
 desc = "Sample integration package"
@@ -283,11 +282,14 @@ size = 0
 
 [distfiles.checksums]
 sha256 = "{sha_stub}"
+
+[source]
+distfiles = ["sample-src.tar.zst"]
 """
 
     manifest_dir = repo_root / "packages" / "dev-tools" / "sample-cli"
     manifest_dir.mkdir(parents=True, exist_ok=True)
-    (manifest_dir / "1.0.0.toml").write_text(manifest_text + "\n", encoding="utf-8")
+    (manifest_dir / "1.0.0.toml").write_text(manifest_text, encoding="utf-8")
 
 
 @pytest.fixture

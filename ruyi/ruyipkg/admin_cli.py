@@ -10,6 +10,74 @@ if TYPE_CHECKING:
     from ..config import GlobalConfig
 
 
+class AdminCheckCommand(
+    AdminCommand,
+    cmd="check",
+    help=_("Check package manifests and metadata repositories"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        input_group = p.add_mutually_exclusive_group(required=True)
+        input_group.add_argument(
+            "-f",
+            "--file",
+            action="append",
+            default=None,
+            metavar="MANIFEST.toml",
+            help=_("Path to a package manifest to check (repeatable)"),
+        )
+        input_group.add_argument(
+            "--repo",
+            type=str,
+            default=None,
+            metavar="REPO_ROOT",
+            help=_("Path to a metadata repository root to check"),
+        )
+        p.add_argument(
+            "--check",
+            action="append",
+            choices=["format", "parse"],
+            default=None,
+            help=_("Check to run (repeatable; defaults to all checks)"),
+        )
+        p.add_argument(
+            "--only-packages",
+            nargs=argparse.REMAINDER,
+            default=None,
+            metavar="RUYI_LIST_FILTER",
+            help=_(
+                "Only check packages matching trailing ruyi list filters; "
+                "valid only with --repo"
+            ),
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .check import CheckUsageError
+        from .check_cli import do_admin_check
+
+        files: list[str] | None = args.file
+        repo: str | None = args.repo
+        checks: list[str] | None = args.check
+        only_packages: list[str] | None = args.only_packages
+
+        if only_packages is not None and repo is None:
+            cfg.logger.F(_("--only-packages is only valid with --repo"))
+            return 1
+
+        try:
+            return do_admin_check(
+                cfg,
+                files=files,
+                repo=repo,
+                checks=checks,
+                only_packages=only_packages,
+            )
+        except CheckUsageError as exc:
+            cfg.logger.F(str(exc))
+            return 1
+
+
 class AdminChecksumCommand(
     AdminCommand,
     cmd="checksum",
@@ -69,15 +137,13 @@ class AdminFormatManifestCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        from .canonical_dump import dumps_canonical_package_manifest_toml
-        from .pkg_manifest import PackageManifest
+        from .manifest_io import dump_canonical_package_manifest_from_path
 
         files = args.file
 
         for f in files:
             p = pathlib.Path(f)
-            pm = PackageManifest.load_from_path(p)
-            d = dumps_canonical_package_manifest_toml(pm)
+            d = dump_canonical_package_manifest_from_path(p)
 
             dest_path = p.with_suffix(".toml")
             with open(dest_path, "w", encoding="utf-8") as fp:
