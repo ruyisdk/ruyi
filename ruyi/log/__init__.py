@@ -159,7 +159,9 @@ class RuyiConsoleLogger(RuyiLogger):
 
     @cached_property
     def _porcelain_sink(self) -> PorcelainOutput:
-        return PorcelainOutput(self._stderr.buffer)
+        if isinstance(self._stderr, io.TextIOWrapper):
+            return PorcelainOutput(binary_out=self._stderr.buffer)
+        return PorcelainOutput(text_out=self._stderr)
 
     @property
     def log_console(self) -> "Console":
