@@ -273,45 +273,6 @@ def check_repo_config(repo_root: pathlib.Path) -> list[CheckDiagnostic]:
     return []
 
 
-def format_check_diagnostic(diagnostic: CheckDiagnostic) -> str:
-    location = str(diagnostic.path)
-    if diagnostic.line is not None:
-        location += f":{diagnostic.line}"
-        if diagnostic.column is not None:
-            location += f":{diagnostic.column}"
-
-    result = (
-        f"{location}: {diagnostic.severity.value} {diagnostic.code}: "
-        f"{diagnostic.message}"
-    )
-    if diagnostic.hint is not None:
-        result += f"\nhint: {diagnostic.hint}"
-    return result
-
-
-def count_diagnostics(
-    diagnostics: Iterable[CheckDiagnostic],
-) -> tuple[int, int]:
-    errors = 0
-    warnings = 0
-    for diagnostic in diagnostics:
-        match diagnostic.severity:
-            case CheckSeverity.ERROR:
-                errors += 1
-            case CheckSeverity.WARNING:
-                warnings += 1
-    return errors, warnings
-
-
-def format_check_summary(diagnostics: Iterable[CheckDiagnostic]) -> str:
-    errors, warnings = count_diagnostics(diagnostics)
-    return f"{errors} error(s), {warnings} warning(s)"
-
-
-def has_error_diagnostic(diagnostics: Iterable[CheckDiagnostic]) -> bool:
-    return any(diagnostic.severity == CheckSeverity.ERROR for diagnostic in diagnostics)
-
-
 def _read_manifest_text(
     path: pathlib.Path,
     diagnostics: list[CheckDiagnostic],
