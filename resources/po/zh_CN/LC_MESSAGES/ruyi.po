@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ruyi 0.45.0-alpha.20251230\n"
+"Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-03-16 21:48+0800\n"
+"POT-Creation-Date: 2026-05-19 02:52+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -741,22 +741,22 @@ msgstr ""
 "\n"
 "收到键盘中断，正在退出。"
 
-#: ruyi/log/__init__.py:221
+#: ruyi/log/__init__.py:223
 #, python-brace-format
 msgid "[bold red]fatal error:[/] {message}"
 msgstr "[bold red]致命错误：[/]{message}"
 
-#: ruyi/log/__init__.py:238
+#: ruyi/log/__init__.py:240
 #, python-brace-format
 msgid "[bold green]info:[/] {message}"
 msgstr "[bold green]信息：[/]{message}"
 
-#: ruyi/log/__init__.py:255
+#: ruyi/log/__init__.py:257
 #, python-brace-format
 msgid "[bold yellow]warn:[/] {message}"
 msgstr "[bold yellow]警告：[/]{message}"
 
-#: ruyi/log/__init__.py:270
+#: ruyi/log/__init__.py:272
 msgid "(none)"
 msgstr "（无）"
 
@@ -787,50 +787,68 @@ msgstr "未找到命令 [yellow]{basename}[/] 对应的已配置目标"
 msgid "this virtual environment has no QEMU-like emulator configured"
 msgstr "此虚拟环境未配置有类似 QEMU 的模拟器"
 
-#: ruyi/mux/venv/maker.py:72
-msgid "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
-msgstr "当前，您必须至少指定一个工具链 atom，例如 [yellow]`-t gnu-plct`[/]"
-
-#: ruyi/mux/venv/maker.py:80
-#, python-brace-format
-msgid "profile '{profile}' not found"
-msgstr "未找到配置文件 '{profile}'"
-
-#: ruyi/mux/venv/maker.py:98 ruyi/mux/venv/maker.py:169
+#: ruyi/mux/venv/maker.py:53 ruyi/mux/venv/maker.py:213
 #, python-brace-format
 msgid "cannot match a toolchain package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到工具链软件包"
 
-#: ruyi/mux/venv/maker.py:104 ruyi/mux/venv/maker.py:177
+#: ruyi/mux/venv/maker.py:61 ruyi/mux/venv/maker.py:219
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not a toolchain"
 msgstr "软件包 [yellow]{atom}[/] 不是工具链"
 
-#: ruyi/mux/venv/maker.py:111 ruyi/mux/venv/maker.py:294
+#: ruyi/mux/venv/maker.py:73
+msgid "cannot find the installed directory for the sysroot package"
+msgstr "找不到 sysroot 软件包的安装目录"
+
+#: ruyi/mux/venv/maker.py:80
+#, python-brace-format
+msgid "sysroot is requested but the package [yellow]{atom}[/] does not contain one"
+msgstr "请求了 sysroot，但软件包 [yellow]{atom}[/] 不含 sysroot"
+
+#: ruyi/mux/venv/maker.py:100
+msgid "cannot find a GCC include & lib directory in the sysroot package"
+msgstr "在 sysroot 软件包中找不到 GCC include 和 lib 目录"
+
+#: ruyi/mux/venv/maker.py:167 ruyi/mux/venv/maker.py:176
+#, python-brace-format
+msgid "the sysroot directory [yellow]{path}[/] does not exist"
+msgstr "sysroot 目录 [yellow]{path}[/] 不存在"
+
+#: ruyi/mux/venv/maker.py:187
+msgid "You have to specify at least one toolchain atom for now, e.g. [yellow]`-t gnu-plct`[/]"
+msgstr "当前，您必须至少指定一个工具链 atom，例如 [yellow]`-t gnu-plct`[/]"
+
+#: ruyi/mux/venv/maker.py:195
+#, python-brace-format
+msgid "profile '{profile}' not found"
+msgstr "未找到配置文件 '{profile}'"
+
+#: ruyi/mux/venv/maker.py:226 ruyi/mux/venv/maker.py:353
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] does not support all necessary features for the profile [yellow]{profile}[/]"
 msgstr "软件包 [yellow]{atom}[/] 不支持配置文件 [yellow]{profile}[/] 所需的所有特性"
 
-#: ruyi/mux/venv/maker.py:118 ruyi/mux/venv/maker.py:300
+#: ruyi/mux/venv/maker.py:233 ruyi/mux/venv/maker.py:359
 #, python-brace-format
 msgid "quirks needed by profile:   {humanized_list}"
 msgstr "配置文件所需的特殊特性：{humanized_list}"
 
-#: ruyi/mux/venv/maker.py:123 ruyi/mux/venv/maker.py:305
+#: ruyi/mux/venv/maker.py:238 ruyi/mux/venv/maker.py:364
 #, python-brace-format
 msgid "quirks provided by package: {humanized_list}"
 msgstr "软件包所提供的特殊特性：{humanized_list}"
 
-#: ruyi/mux/venv/maker.py:132
+#: ruyi/mux/venv/maker.py:247
 #, python-brace-format
 msgid "the target tuple [yellow]{target_tuple}[/] is already covered by one of the requested toolchains"
 msgstr "目标元组 [yellow]{target_tuple}[/] 已被请求的工具链之一涵盖"
 
-#: ruyi/mux/venv/maker.py:137
+#: ruyi/mux/venv/maker.py:252
 msgid "for now, only toolchains with differing target tuples can co-exist in one virtual environment"
 msgstr "目前，只有目标元组不同的工具链才能在一个虚拟环境中共存"
 
-#: ruyi/mux/venv/maker.py:146
+#: ruyi/mux/venv/maker.py:261
 msgid "cannot find the installed directory for the toolchain"
 msgstr "找不到工具链的安装目录"
 
@@ -838,86 +856,69 @@ msgstr "找不到工具链的安装目录"
 msgid "sysroot is requested but the toolchain package does not include one, and no explicit sysroot source is given"
 msgstr "请求了 sysroot，但工具链软件包不含 sysroot，且未给出显式的 sysroot 来源"
 
-#: ruyi/mux/venv/maker.py:167
-msgid "the sysroot directory [yellow]{path}[/] does not exist"
-msgstr "sysroot 目录 [yellow]{path}[/] 不存在"
-
-#: ruyi/mux/venv/maker.py:189
-msgid "cannot find the installed directory for the sysroot package"
-msgstr "找不到 sysroot 软件包的安装目录"
-
-#: ruyi/mux/venv/maker.py:196
-#, python-brace-format
-msgid "sysroot is requested but the package [yellow]{atom}[/] does not contain one"
-msgstr "请求了 sysroot，但软件包 [yellow]{atom}[/] 不含 sysroot"
-
-#: ruyi/mux/venv/maker.py:216
-msgid "cannot find a GCC include & lib directory in the sysroot package"
-msgstr "在 sysroot 软件包中找不到 GCC include 和 lib 目录"
-
-#: ruyi/mux/venv/maker.py:253
+#: ruyi/mux/venv/maker.py:312
 msgid "multiple toolchains specified with differing target architecture"
 msgstr "指定了具有不同目标架构的多个工具链"
 
-#: ruyi/mux/venv/maker.py:255
+#: ruyi/mux/venv/maker.py:314
 #, python-brace-format
 msgid "using the target architecture of the first toolchain: [yellow]{arch}[/]"
 msgstr "将使用第一个工具链的目标架构：[yellow]{arch}[/]"
 
-#: ruyi/mux/venv/maker.py:267
+#: ruyi/mux/venv/maker.py:326
 #, python-brace-format
 msgid "cannot match an emulator package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到模拟器软件包"
 
-#: ruyi/mux/venv/maker.py:273
+#: ruyi/mux/venv/maker.py:332
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not an emulator"
 msgstr "软件包 [yellow]{atom}[/] 不是模拟器"
 
-#: ruyi/mux/venv/maker.py:281
+#: ruyi/mux/venv/maker.py:340
 #, python-brace-format
 msgid "the emulator package [yellow]{atom}[/] does not support the target architecture [yellow]{arch}[/]"
 msgstr "模拟器软件包 [yellow]{atom}[/] 不支持目标架构 [yellow]{arch}[/]"
 
-#: ruyi/mux/venv/maker.py:316
+#: ruyi/mux/venv/maker.py:375
 msgid "cannot find the installed directory for the emulator"
 msgstr "找不到模拟器的安装目录"
 
-#: ruyi/mux/venv/maker.py:332
+#: ruyi/mux/venv/maker.py:391
 #, python-brace-format
 msgid "cannot match an extra command package with [yellow]{atom}[/]"
 msgstr "无法将 [yellow]{atom}[/] 匹配到额外命令软件包"
 
-#: ruyi/mux/venv/maker.py:341
+#: ruyi/mux/venv/maker.py:400
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] is not a binary-providing package"
 msgstr "软件包 [yellow]{atom}[/] 未提供二进制文件"
 
-#: ruyi/mux/venv/maker.py:350
+#: ruyi/mux/venv/maker.py:409
 #, python-brace-format
 msgid "the package [yellow]{atom}[/] does not provide any command for host [yellow]{host}[/], ignoring"
 msgstr "软件包 [yellow]{atom}[/] 未为主机 [yellow]{host}[/] 提供任何命令，将被忽略"
 
-#: ruyi/mux/venv/maker.py:363
+#: ruyi/mux/venv/maker.py:422
 #, python-brace-format
 msgid "cannot find the installed directory for the package [yellow]{pkg}[/]"
 msgstr "找不到软件包 [yellow]{pkg}[/] 的安装目录"
 
-#: ruyi/mux/venv/maker.py:379
+#: ruyi/mux/venv/maker.py:438
 msgid "internal error: resolved command path is outside of the providing package"
 msgstr "内部错误：解析的命令路径落在了提供者软件包之外"
 
-#: ruyi/mux/venv/maker.py:388
+#: ruyi/mux/venv/maker.py:447
 #, python-brace-format
 msgid "Creating a Ruyi virtual environment [cyan]'{name}'[/] at [green]{dest}[/]..."
 msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境 [cyan]'{name}'[/]..."
 
-#: ruyi/mux/venv/maker.py:395
+#: ruyi/mux/venv/maker.py:454
 #, python-brace-format
 msgid "Creating a Ruyi virtual environment at [green]{dest}[/]..."
 msgstr "正在在 [green]{dest}[/] 创建 Ruyi 虚拟环境..."
 
-#: ruyi/mux/venv/maker.py:624
+#: ruyi/mux/venv/maker.py:686
 #, python-brace-format
 msgid "extra command {cmd} is already provided by another package, overriding it"
 msgstr "额外命令 {cmd} 已由另一个软件包提供，将用当前软件包覆盖它"
@@ -954,19 +955,19 @@ msgstr "在新虚拟环境内准备一个全新的 sysroot（默认）"
 msgid "Do not include a sysroot inside the new virtual environment"
 msgstr "不在新虚拟环境内准备任何 sysroot"
 
-#: ruyi/mux/venv/venv_cli.py:60
+#: ruyi/mux/venv/venv_cli.py:62
 msgid "Specifier (atom) of the sysroot package to use, in favor of the toolchain-included one if applicable"
 msgstr "要使用的 sysroot 软件包的指示表达式（atom），如工具链软件包也内置了 sysroot 则优先于它"
 
-#: ruyi/mux/venv/venv_cli.py:66
+#: ruyi/mux/venv/venv_cli.py:67
 msgid "Copy the sysroot from the given directory into the virtual environment"
 msgstr "将给定目录中的 sysroot 复制到虚拟环境中"
 
-#: ruyi/mux/venv/venv_cli.py:70
+#: ruyi/mux/venv/venv_cli.py:72
 msgid "Symlink the virtual environment's sysroot to the given existing directory"
 msgstr "将虚拟环境的 sysroot 符号链接到给定的现有目录"
 
-#: ruyi/mux/venv/venv_cli.py:74
+#: ruyi/mux/venv/venv_cli.py:78
 msgid "Specifier(s) (atoms) of extra package(s) to add commands to the new virtual environment"
 msgstr "要向新虚拟环境添加额外命令，这些命令的提供者软件包的指示表达式（atoms）"
 
@@ -996,55 +997,117 @@ msgid "invalid restrict kinds given: {restrict}"
 msgstr "给出了无效的 restrict 类型：{restrict}"
 
 #: ruyi/ruyipkg/admin_cli.py:16
+msgid "Check package manifests and metadata repositories"
+msgstr "检查软件包清单文件和元数据仓库"
+
+#: ruyi/ruyipkg/admin_cli.py:27
+msgid "Path to a package manifest to check (repeatable)"
+msgstr "要检查的软件包清单文件的路径（可重复）"
+
+#: ruyi/ruyipkg/admin_cli.py:34
+msgid "Path to a metadata repository root to check"
+msgstr "要检查的元数据仓库根路径"
+
+#: ruyi/ruyipkg/admin_cli.py:41
+msgid "Check to run (repeatable; defaults to all checks)"
+msgstr "要运行的检查（可重复；默认为所有检查）"
+
+#: ruyi/ruyipkg/admin_cli.py:49
+msgid "Only check packages matching trailing ruyi list filters; valid only with --repo"
+msgstr "仅检查与后接的 ruyi list 过滤器匹配的软件包；仅能配合 --repo 指定"
+
+#: ruyi/ruyipkg/admin_cli.py:65
+msgid "--only-packages is only valid with --repo"
+msgstr "--only-packages 仅能配合 --repo 指定"
+
+#: ruyi/ruyipkg/admin_cli.py:84
 msgid "Generate a checksum section for a manifest file for the distfiles given"
 msgstr "为给定的分发文件生成清单文件的校验和章节"
 
-#: ruyi/ruyipkg/admin_cli.py:26
+#: ruyi/ruyipkg/admin_cli.py:94
 msgid "Format of checksum section to generate in"
 msgstr "要生成的校验和章节的格式"
 
-#: ruyi/ruyipkg/admin_cli.py:33
+#: ruyi/ruyipkg/admin_cli.py:101
 msgid "the 'restrict' field to use for all mentioned distfiles, separated with comma"
 msgstr "所有提及的分发文件使用的 'restrict' 字段，用逗号分隔"
 
-#: ruyi/ruyipkg/admin_cli.py:40
+#: ruyi/ruyipkg/admin_cli.py:108
 msgid "Path to the distfile(s) to checksum"
 msgstr "要计算校验和的分发文件的路径"
 
-#: ruyi/ruyipkg/admin_cli.py:59
+#: ruyi/ruyipkg/admin_cli.py:127
 msgid "Format the given package manifests into canonical TOML representation"
 msgstr "将给定的软件包清单文件格式化为规范的 TOML 表示"
 
-#: ruyi/ruyipkg/admin_cli.py:67
+#: ruyi/ruyipkg/admin_cli.py:135
 msgid "Path to the distfile(s) to generate manifest for"
 msgstr "要为其生成清单文件的分发文件的路径"
 
-#: ruyi/ruyipkg/augmented_pkg.py:32 ruyi/ruyipkg/augmented_pkg.py:61
+#: ruyi/ruyipkg/admin_cli.py:158
+msgid "Build a package from a recipe file"
+msgstr "从一个配方文件构建软件包"
+
+#: ruyi/ruyipkg/admin_cli.py:165
+msgid "Path to the recipe .star file"
+msgstr "配方 .star 文件的路径"
+
+#: ruyi/ruyipkg/admin_cli.py:173
+msgid "Set a user variable for the recipe (repeatable)"
+msgstr "为构建配方设置用户变量（可重复）"
+
+#: ruyi/ruyipkg/admin_cli.py:182
+msgid "Select a specific scheduled build by name (repeatable); by default all scheduled builds are executed"
+msgstr "按名称选择特定的计划构建任务（可重复）；默认情况下执行所有计划构建任务"
+
+#: ruyi/ruyipkg/admin_cli.py:189
+msgid "Print the build plan without executing it"
+msgstr "打印构建计划而不执行它"
+
+#: ruyi/ruyipkg/admin_cli.py:195
+msgid "Override the recipe project's output directory"
+msgstr "覆盖构建配方项目的输出目录"
+
+#: ruyi/ruyipkg/admin_cli.py:220
+#, python-brace-format
+msgid "invalid --var spec {spec!r}: expected KEY=VALUE"
+msgstr "无效的 --var 规范 {spec!r}：预期格式为 KEY=VALUE"
+
+#: ruyi/ruyipkg/admin_cli.py:227
+#, python-brace-format
+msgid "invalid --var spec {spec!r}: empty key"
+msgstr "无效的 --var 规范 {spec!r}：键为空"
+
+#: ruyi/ruyipkg/admin_cli.py:249
+#, python-brace-format
+msgid "build {name!r} completed: {n} artifact(s)"
+msgstr "构建任务 {name!r} 完成：{n} 个构建产物"
+
+#: ruyi/ruyipkg/augmented_pkg.py:29
 msgid "latest"
 msgstr "最新"
 
-#: ruyi/ruyipkg/augmented_pkg.py:34 ruyi/ruyipkg/augmented_pkg.py:63
+#: ruyi/ruyipkg/augmented_pkg.py:31
 msgid "latest-prerelease"
 msgstr "最新预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:36 ruyi/ruyipkg/augmented_pkg.py:65
+#: ruyi/ruyipkg/augmented_pkg.py:33
 msgid "[red]no binary for current host[/]"
 msgstr "[red]无适用当前主机的二进制文件[/]"
 
-#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:38
-#: ruyi/ruyipkg/augmented_pkg.py:67
+#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:35
 msgid "prerelease"
 msgstr "预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:40 ruyi/ruyipkg/augmented_pkg.py:69
+#: ruyi/ruyipkg/augmented_pkg.py:37
 msgid "[yellow]has known issue[/]"
 msgstr "[yellow]有已知问题[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:42 ruyi/ruyipkg/augmented_pkg.py:71
+#: ruyi/ruyipkg/augmented_pkg.py:39
 msgid "[green]downloaded[/]"
 msgstr "[green]已下载[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:44 ruyi/ruyipkg/augmented_pkg.py:73
+#: ruyi/ruyipkg/augmented_pkg.py:41
 msgid "[green]installed[/]"
 msgstr "[green]已安装[/]"
 
@@ -1062,6 +1125,11 @@ msgstr "错误的 {kind} 校验和：期望 {want}，得到 {got}"
 #, python-brace-format
 msgid "syncing repo '{id}'"
 msgstr "正在同步仓库 '{id}'"
+
+#: ruyi/ruyipkg/composite_repo.py:101 ruyi/ruyipkg/update_cli.py:43
+#, python-brace-format
+msgid "no active repo with id '{id}'"
+msgstr "没有 ID 为 '{id}' 的活动仓库"
 
 #: ruyi/ruyipkg/composite_repo.py:113
 #, python-brace-format
@@ -1193,12 +1261,12 @@ msgstr "列出实体"
 msgid "List entities of this type. Can be passed multiple times to list multiple types."
 msgstr "列出此类型的实体。可以多次传递该参数以列出多种类型。"
 
-#: ruyi/ruyipkg/entity_provider.py:212
+#: ruyi/ruyipkg/entity_provider.py:207
 #, python-brace-format
 msgid "failed to access entity schemas directory {dir}: {reason}"
 msgstr "访问实体格式定义目录 {dir} 失败：{reason}"
 
-#: ruyi/ruyipkg/entity_provider.py:267
+#: ruyi/ruyipkg/entity_provider.py:262
 #, python-brace-format
 msgid "failed to load entity from {path}: {reason}"
 msgstr "从 {path} 加载实体失败：{reason}"
@@ -1665,45 +1733,45 @@ msgstr "{profile_id}（架构：[green]{arch}[/]）"
 msgid "{profile_id} (arch: [green]{arch}[/], needs quirks: [yellow]{need_quirks}[/])"
 msgstr "{profile_id}（架构：[green]{arch}[/]，需要特殊特性：[yellow]{need_quirks}[/]）"
 
-#: ruyi/ruyipkg/repo.py:246
+#: ruyi/ruyipkg/repo.py:255
 #, python-brace-format
 msgid "unrecognized dist URL scheme: {scheme}"
 msgstr "未识别的分发 URL 协议：{scheme}"
 
-#: ruyi/ruyipkg/repo.py:404
+#: ruyi/ruyipkg/repo.py:413
 #, python-brace-format
 msgid "the package repository does not exist at [yellow]{root}[/]"
 msgstr "软件包仓库不存在于 [yellow]{root}[/]"
 
-#: ruyi/ruyipkg/repo.py:409
+#: ruyi/ruyipkg/repo.py:418
 #, python-brace-format
 msgid "cloning from [cyan link={remote}]{remote}[/]"
 msgstr "正在从 [cyan link={remote}]{remote}[/] 克隆"
 
-#: ruyi/ruyipkg/repo.py:435
+#: ruyi/ruyipkg/repo.py:444
 #, python-brace-format
 msgid "skipping sync for local-only repo '{id}'"
 msgstr "为设置为仅本地的仓库 '{id}' 跳过同步"
 
-#: ruyi/ruyipkg/repo.py:443
+#: ruyi/ruyipkg/repo.py:452
 msgid "updating the package repository"
 msgstr "正在更新软件包仓库"
 
-#: ruyi/ruyipkg/repo.py:460
+#: ruyi/ruyipkg/repo.py:469
 msgid "package repository is updated"
 msgstr "软件包仓库已更新"
 
-#: ruyi/ruyipkg/repo.py:734
+#: ruyi/ruyipkg/repo.py:753
 #, python-brace-format
 msgid "UnicodeDecodeError: {path}"
 msgstr "Unicode 解码错误：{path}"
 
-#: ruyi/ruyipkg/repo.py:770
+#: ruyi/ruyipkg/repo.py:789
 #, python-brace-format
 msgid "unexpected return type of cmd plugin '{plugin_id}': {type} is not int."
 msgstr "命令插件 '{plugin_id}' 的返回类型非预期：{type} 不是 int。"
 
-#: ruyi/ruyipkg/repo.py:776
+#: ruyi/ruyipkg/repo.py:795
 msgid "forcing return code to 1; the plugin should be fixed"
 msgstr "强制返回码为 1；该插件需要被修复"
 
@@ -1715,140 +1783,140 @@ msgstr "管理已配置的软件包仓库"
 msgid "List configured package repositories"
 msgstr "列出已配置的软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:68
+#: ruyi/ruyipkg/repo_cli.py:75
 msgid "Add a package repository"
 msgstr "添加一个软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:72
+#: ruyi/ruyipkg/repo_cli.py:79
 msgid "unique repository identifier"
 msgstr "唯一的仓库标识符"
 
-#: ruyi/ruyipkg/repo_cli.py:74
+#: ruyi/ruyipkg/repo_cli.py:81
 msgid "git remote URL"
 msgstr "Git 远端 URL"
 
-#: ruyi/ruyipkg/repo_cli.py:77
+#: ruyi/ruyipkg/repo_cli.py:84
 msgid "git branch to track"
 msgstr "要跟踪的 Git 分支"
 
-#: ruyi/ruyipkg/repo_cli.py:83
+#: ruyi/ruyipkg/repo_cli.py:90
 msgid "priority (higher = overrides lower)"
 msgstr "优先级（高值 = 覆盖低值）"
 
-#: ruyi/ruyipkg/repo_cli.py:89
+#: ruyi/ruyipkg/repo_cli.py:96
 msgid "local path to use instead of or alongside remote"
 msgstr "本地路径，用于替代远端路径，或与远端路径一起使用"
 
-#: ruyi/ruyipkg/repo_cli.py:92
+#: ruyi/ruyipkg/repo_cli.py:99
 msgid "human-readable name for the repo"
 msgstr "仓库的可读名称"
 
-#: ruyi/ruyipkg/repo_cli.py:115
+#: ruyi/ruyipkg/repo_cli.py:122
 #, python-brace-format
 msgid "invalid repo id '{id}'"
 msgstr "无效的仓库 ID '{id}'"
 
-#: ruyi/ruyipkg/repo_cli.py:121
+#: ruyi/ruyipkg/repo_cli.py:128
 #, python-brace-format
 msgid "'{id}' is reserved; use [repo] config to configure the default repository"
 msgstr "'{id}' 是保留的；请使用 [repo] 配置来配置默认仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:129
+#: ruyi/ruyipkg/repo_cli.py:136
 msgid "at least one of URL or --local must be provided"
 msgstr "URL 或 --local 至少需要提供一个"
 
-#: ruyi/ruyipkg/repo_cli.py:133
+#: ruyi/ruyipkg/repo_cli.py:140
 #, python-brace-format
 msgid "local path '{path}' must be absolute"
 msgstr "本地路径 '{path}' 必须是绝对路径"
 
-#: ruyi/ruyipkg/repo_cli.py:139
+#: ruyi/ruyipkg/repo_cli.py:146
 #, python-brace-format
 msgid "a repo with id '{id}' already exists"
 msgstr "已有一个 ID 为 '{id}' 的软件包仓库了"
 
-#: ruyi/ruyipkg/repo_cli.py:159
+#: ruyi/ruyipkg/repo_cli.py:166
 #, python-brace-format
 msgid "repo '{id}' added; run 'ruyi update' to sync"
 msgstr "已添加软件包仓库 '{id}'；运行 'ruyi update' 以同步"
 
-#: ruyi/ruyipkg/repo_cli.py:166
+#: ruyi/ruyipkg/repo_cli.py:173
 msgid "Remove a package repository"
 msgstr "移除一个软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:170
+#: ruyi/ruyipkg/repo_cli.py:177
 msgid "repository identifier to remove"
 msgstr "要移除的仓库的标识符"
 
-#: ruyi/ruyipkg/repo_cli.py:179
+#: ruyi/ruyipkg/repo_cli.py:186
 msgid "also remove cached repo data from disk"
 msgstr "同时从磁盘中移除缓存的仓库数据"
 
-#: ruyi/ruyipkg/repo_cli.py:195
+#: ruyi/ruyipkg/repo_cli.py:202
 #, python-brace-format
 msgid "cannot remove the default repo '{id}'; use 'repo disable' instead"
 msgstr "无法移除默认仓库 '{id}'；请使用 'repo disable' 来禁用它"
 
-#: ruyi/ruyipkg/repo_cli.py:207
+#: ruyi/ruyipkg/repo_cli.py:214
 #, python-brace-format
 msgid "cannot remove system-provided repo '{id}'; use 'repo disable' instead"
 msgstr "无法移除由系统提供的仓库 '{id}'；请使用 'repo disable' 来禁用它"
 
-#: ruyi/ruyipkg/repo_cli.py:217 ruyi/ruyipkg/repo_cli.py:256
-#: ruyi/ruyipkg/repo_cli.py:289 ruyi/ruyipkg/repo_cli.py:324
+#: ruyi/ruyipkg/repo_cli.py:224 ruyi/ruyipkg/repo_cli.py:263
+#: ruyi/ruyipkg/repo_cli.py:296 ruyi/ruyipkg/repo_cli.py:331
 #, python-brace-format
 msgid "no repo with id '{id}' found in user config"
 msgstr "在用户配置中未找到 ID 为 '{id}' 的软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:226
+#: ruyi/ruyipkg/repo_cli.py:233
 #, python-brace-format
 msgid "purged cached data at '{path}'"
 msgstr "已清除 '{path}' 的缓存数据"
 
-#: ruyi/ruyipkg/repo_cli.py:228
+#: ruyi/ruyipkg/repo_cli.py:235
 #, python-brace-format
 msgid "repo '{id}' removed"
 msgstr "已移除软件包仓库 '{id}'"
 
-#: ruyi/ruyipkg/repo_cli.py:235
+#: ruyi/ruyipkg/repo_cli.py:242
 msgid "Enable a package repository"
 msgstr "启用一个软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:239
+#: ruyi/ruyipkg/repo_cli.py:246
 msgid "repository identifier to enable"
 msgstr "要启用的仓库的标识符"
 
-#: ruyi/ruyipkg/repo_cli.py:261
+#: ruyi/ruyipkg/repo_cli.py:268
 #, python-brace-format
 msgid "repo '{id}' enabled"
 msgstr "已启用软件包仓库 '{id}'"
 
-#: ruyi/ruyipkg/repo_cli.py:268
+#: ruyi/ruyipkg/repo_cli.py:275
 msgid "Disable a package repository"
 msgstr "禁用一个软件包仓库"
 
-#: ruyi/ruyipkg/repo_cli.py:272
+#: ruyi/ruyipkg/repo_cli.py:279
 msgid "repository identifier to disable"
 msgstr "要禁用的仓库的标识符"
 
-#: ruyi/ruyipkg/repo_cli.py:294
+#: ruyi/ruyipkg/repo_cli.py:301
 #, python-brace-format
 msgid "repo '{id}' disabled"
 msgstr "已禁用软件包仓库 '{id}'"
 
-#: ruyi/ruyipkg/repo_cli.py:301
+#: ruyi/ruyipkg/repo_cli.py:308
 msgid "Set the priority of a package repository"
 msgstr "为一个软件包仓库设置优先级"
 
-#: ruyi/ruyipkg/repo_cli.py:305
+#: ruyi/ruyipkg/repo_cli.py:312
 msgid "repository identifier"
 msgstr "软件包仓库标识符"
 
-#: ruyi/ruyipkg/repo_cli.py:310
+#: ruyi/ruyipkg/repo_cli.py:317
 msgid "new priority value"
 msgstr "新的优先级取值"
 
-#: ruyi/ruyipkg/repo_cli.py:330
+#: ruyi/ruyipkg/repo_cli.py:337
 #, python-brace-format
 msgid "repo '{id}' priority set to {priority}"
 msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
@@ -1893,7 +1961,7 @@ msgstr "zstd 失败：命令 {cmd} 返回 {retcode}"
 msgid "file '{filename}' does not appear to be a deb"
 msgstr "文件 '{filename}' 似乎不是一个 deb"
 
-#: ruyi/ruyipkg/unpack_method.py:65
+#: ruyi/ruyipkg/unpack_method.py:38
 #, python-brace-format
 msgid "don't know how to unpack file {filename}"
 msgstr "不知道如何解包文件 {filename}"
@@ -1905,11 +1973,6 @@ msgstr "更新 RuyiSDK 仓库和软件包"
 #: ruyi/ruyipkg/update_cli.py:23
 msgid "only sync the repo with this ID"
 msgstr "仅同步 ID 为此值的仓库"
-
-#: ruyi/ruyipkg/composite_repo.py:101 ruyi/ruyipkg/update_cli.py:43
-#, python-brace-format
-msgid "no active repo with id '{id}'"
-msgstr "没有 ID 为 '{id}' 的活动仓库"
 
 #: ruyi/ruyipkg/update_cli.py:55
 msgid ""
