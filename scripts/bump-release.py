@@ -10,7 +10,6 @@ import time
 import semver
 import tomlkit
 
-
 OPS_CHOICES = (
     "alpha",  # Make an alpha pre-release
     "beta",  # Make a beta pre-release
@@ -42,7 +41,7 @@ def main(argv: list[str]) -> int:
     # first read current version
     with open("pyproject.toml", "rb") as fp:
         pyproject = tomlkit.load(fp)
-    curr_ver_str: str = pyproject["project"]["version"]  # type: ignore[assignment,index]
+    curr_ver_str: str = pyproject["project"]["version"]  # type: ignore[assignment,index,unused-ignore]
     curr_ver = semver.Version.parse(curr_ver_str)
     prerelease = curr_ver.prerelease
 
@@ -142,9 +141,9 @@ def _bump_pyproject_toml(
             obj = tomlkit.load(fp)
 
     if poetry1:
-        obj["tool"]["poetry"]["version"] = new_ver  # type: ignore[index]
+        obj["tool"]["poetry"]["version"] = new_ver  # type: ignore[index,unused-ignore]
     else:
-        obj["project"]["version"] = new_ver  # type: ignore[index]
+        obj["project"]["version"] = new_ver  # type: ignore[index,unused-ignore]
 
     with open(file, "wb") as fp:
         fp.write(tomlkit.dumps(obj).encode("utf-8"))

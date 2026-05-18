@@ -52,7 +52,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
         except FileNotFoundError:
             self._content = tomlkit.document()
 
-        self._stage = cast(tomlkit.TOMLDocument, self._content.copy())
+        self._stage = cast(tomlkit.TOMLDocument, self._content.copy())  # type: ignore[redundant-cast,unused-ignore]
 
     @classmethod
     def work_on_user_local_config(cls, gc: "GlobalConfig") -> "Self":
@@ -81,7 +81,7 @@ class ConfigEditor(AbstractContextManager["ConfigEditor"]):
     def stage(self) -> None:
         self._content = self._stage
         self._touched = True
-        self._stage = cast(tomlkit.TOMLDocument, self._content.copy())
+        self._stage = cast(tomlkit.TOMLDocument, self._content.copy())  # type: ignore[redundant-cast,unused-ignore]
 
     def set_value(self, key: str | Sequence[str], val: object | None) -> None:
         parsed_key = parse_config_key(key)
