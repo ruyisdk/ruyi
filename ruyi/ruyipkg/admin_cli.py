@@ -69,15 +69,13 @@ class AdminFormatManifestCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        from .canonical_dump import dumps_canonical_package_manifest_toml
-        from .pkg_manifest import PackageManifest
+        from .manifest_io import dump_canonical_package_manifest_from_path
 
         files = args.file
 
         for f in files:
             p = pathlib.Path(f)
-            pm = PackageManifest.load_from_path(p)
-            d = dumps_canonical_package_manifest_toml(pm)
+            d = dump_canonical_package_manifest_from_path(p)
 
             dest_path = p.with_suffix(".toml")
             with open(dest_path, "w", encoding="utf-8") as fp:
