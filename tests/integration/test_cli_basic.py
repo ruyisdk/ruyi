@@ -1,15 +1,36 @@
+import io
 import pathlib
+import sys
 from tests.fixtures import IntegrationTestHarness
 
 import pytest
 
+from ruyi.cli.main import is_version_query, main as ruyi_main
+from ruyi.log import RuyiConsoleLogger
 from ruyi.ruyipkg.distfile import Distfile
 
 SHA_STUB = "0" * 64
 
 
+class _TTYStringIO(io.StringIO):
+    def isatty(self) -> bool:
+        return True
+
+
 def _fail_on_repo_access(self: object) -> None:
     raise AssertionError("completion setup must not access the package repo")
+
+
+def test_cli_version_query_detection() -> None:
+    assert is_version_query(["ruyi", "--version"])
+    assert is_version_query(["ruyi", "-V"])
+    assert is_version_query(["ruyi", "--porcelain", "--version"])
+    assert is_version_query(["ruyi", "--config", "foo", "--version"])
+    assert is_version_query(["ruyi", "version"])
+    assert is_version_query(["ruyi", "--porcelain", "version"])
+    assert not is_version_query(["ruyi"])
+    assert not is_version_query(["ruyi", "list"])
+    assert not is_version_query(["ruyi", "list", "version"])
 
 
 def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
@@ -57,6 +78,34 @@ def test_autocomplete_parser_build_does_not_access_package_repo(
     monkeypatch.setattr(MetadataRepo, "ensure_git_repo", _fail_on_repo_access)
 
     RootCommand.build_argparse(ctx.gc)
+
+
+def test_cli_version_skips_first_run_oobe(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: "pytest.MonkeyPatch",
+) -> None:
+    for argv in [
+        ("--version",),
+        ("version",),
+    ]:
+        ctx = ruyi_cli_runner.make_command_context(*argv)
+        stdout = _TTYStringIO()
+        stderr = _TTYStringIO()
+
+        ctx.gc.logger = RuyiConsoleLogger(ctx.gm, stdout=stdout, stderr=stderr)
+        monkeypatch.setattr(sys, "stdin", _TTYStringIO())
+        monkeypatch.setattr(sys, "stdout", stdout)
+        monkeypatch.setattr(sys, "stderr", stderr)
+
+        exit_code = ruyi_main(ctx.gm, ctx.gc, ctx.argv)
+
+        assert exit_code == 0
+        assert "Ruyi" in stdout.getvalue()
+        assert "Welcome to RuyiSDK" not in stderr.getvalue()
+
+        telemetry_root = pathlib.Path(ctx.gc.telemetry_root)
+        assert not (telemetry_root / "installation.json").exists()
+        assert not (telemetry_root / "minimal-installation-marker").exists()
 
 
 def test_cli_list_with_mock_repo(ruyi_cli_runner: IntegrationTestHarness) -> None:
