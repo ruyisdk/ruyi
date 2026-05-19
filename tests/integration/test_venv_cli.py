@@ -1,6 +1,15 @@
 import argparse
+import pathlib
+import shutil
+
+import pytest
 
 from ruyi.cli.completion import ArgumentParser
+from ruyi.mux.venv.maker import (
+    SysrootProvisionMode,
+    VenvProvisionError,
+    provision_sysroot,
+)
 from ruyi.mux.venv.venv_cli import VenvCommand
 from tests.fixtures import IntegrationTestHarness
 
@@ -102,3 +111,44 @@ def test_without_sysroot_conflicts_with_explicit_source(
     assert ctx.fatal_messages == [
         "--without-sysroot cannot be combined with a sysroot source option"
     ]
+
+
+def test_copy_sysroot_failure_reports_clean_diagnostic(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    ruyi_cli_runner: IntegrationTestHarness,
+) -> None:
+    ctx = ruyi_cli_runner.make_command_context("venv")
+    src = tmp_path / "sysroot"
+    dest = tmp_path / "venv" / "sysroot.riscv64-test-linux-gnu"
+    src.mkdir()
+
+    def fake_copytree(*args: object, **kwargs: object) -> None:
+        raise shutil.Error(
+            [
+                (
+                    str(src / "etc" / "shadow"),
+                    str(dest / "etc" / "shadow"),
+                    "permission denied",
+                ),
+            ]
+        )
+
+    monkeypatch.setattr(shutil, "copytree", fake_copytree)
+
+    with pytest.raises(VenvProvisionError):
+        provision_sysroot(
+            ctx.gc.logger,
+            src,
+            dest,
+            SysrootProvisionMode.COPY_TREE,
+            "riscv64-test-linux-gnu",
+        )
+
+    assert ctx.fatal_messages == [
+        f"cannot copy sysroot from {src}: one entry could not be copied"
+    ]
+    assert (
+        "Ruyi does not elevate privileges when creating virtual environments"
+        in ctx.stderr.getvalue()
+    )

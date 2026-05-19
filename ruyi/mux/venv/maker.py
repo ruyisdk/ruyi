@@ -40,6 +40,21 @@ class SysrootProvisionMode(enum.Enum):
     SYMLINK_TREE = "symlink-tree"
 
 
+class VenvProvisionError(Exception):
+    pass
+
+
+def _count_copytree_failures(exc: shutil.Error) -> int:
+    if not exc.args:
+        return 1
+
+    failures = exc.args[0]
+    if isinstance(failures, list):
+        return len(failures)
+
+    return 1
+
+
 def provision_sysroot(
     logger: RuyiLogger,
     src: pathlib.Path,
@@ -54,12 +69,45 @@ def provision_sysroot(
 
     if mode == SysrootProvisionMode.COPY_TREE:
         logger.D(f"copying sysroot for {target_tuple}")
-        shutil.copytree(
-            src,
-            dest,
-            symlinks=True,
-            ignore_dangling_symlinks=True,
-        )
+        try:
+            shutil.copytree(
+                src,
+                dest,
+                symlinks=True,
+                ignore_dangling_symlinks=True,
+            )
+        except shutil.Error as e:
+            failure_count = _count_copytree_failures(e)
+            if failure_count == 1:
+                reason = _("one entry could not be copied")
+            else:
+                reason = _("{count} entries could not be copied").format(
+                    count=failure_count,
+                )
+            logger.F(
+                _(
+                    "cannot copy sysroot from [yellow]{src}[/]: {reason}"
+                ).format(
+                    src=src,
+                    reason=reason,
+                )
+            )
+            logger.I(
+                _(
+                    "Ruyi does not elevate privileges when creating virtual environments; use a sysroot readable by the current user or --symlink-sysroot-from-dir"
+                )
+            )
+            logger.D(f"sysroot copy failure details: {e}")
+            raise VenvProvisionError from e
+        except OSError as e:
+            logger.F(
+                _("cannot copy sysroot from [yellow]{src}[/] to [green]{dest}[/]: {err}").format(
+                    src=src,
+                    dest=dest,
+                    err=e,
+                )
+            )
+            raise VenvProvisionError from e
         return
 
     raise NotImplementedError(mode)
@@ -499,7 +547,10 @@ def do_make_venv(
         override_name,
         sysroot_provision_mode,
     )
-    maker.provision()
+    try:
+        maker.provision()
+    except VenvProvisionError:
+        return 1
 
     # TODO: move the template to PO
     locale = match_lang_code(config.lang_code, avail=("en", "zh_CN"))
