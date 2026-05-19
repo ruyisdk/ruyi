@@ -156,10 +156,12 @@ def _do_extract_pkg(
         df.unpack(dest_dir, logger)
 
     if not fetch_only:
+        # None is the unpack helper's CWD sentinel; report it as a real path.
+        reported_dest_dir = pathlib.Path(".") if dest_dir is None else dest_dir
         logger.I(
             _("package [green]{pkg}[/] has been extracted to {dest_dir}").format(
                 pkg=pkg_name,
-                dest_dir=dest_dir,
+                dest_dir=reported_dest_dir,
             )
         )
 

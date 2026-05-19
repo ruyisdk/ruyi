@@ -1,4 +1,10 @@
+import pytest
+
+from ruyi.ruyipkg.distfile import Distfile
 from tests.fixtures import IntegrationTestHarness
+
+
+SHA_STUB = "0" * 64
 
 
 def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
@@ -20,7 +26,6 @@ def test_cli_list_with_mock_repo(ruyi_cli_runner: IntegrationTestHarness) -> Non
 
 
 def test_cli_list_with_custom_package(ruyi_cli_runner: IntegrationTestHarness) -> None:
-    sha_stub = "1" * 64
     manifest = (
         'format = "v1"\n'
         'kind = ["source"]\n\n'
@@ -31,7 +36,7 @@ def test_cli_list_with_custom_package(ruyi_cli_runner: IntegrationTestHarness) -
         'name = "custom-src.tar.zst"\n'
         "size = 0\n\n"
         "[distfiles.checksums]\n"
-        f'sha256 = "{sha_stub}"\n'
+        f'sha256 = "{SHA_STUB}"\n'
     )
     ruyi_cli_runner.add_package("examples", "custom-cli", "0.1.0", manifest)
 
@@ -39,3 +44,51 @@ def test_cli_list_with_custom_package(ruyi_cli_runner: IntegrationTestHarness) -
 
     assert result.exit_code == 0
     assert "examples/custom-cli" in result.stdout
+
+
+def test_cli_extract_without_subdir_reports_current_directory(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = f"""\
+format = "v1"
+kind = ["source"]
+
+[metadata]
+desc = "Extract message package"
+vendor = {{ name = "Integration Tests", eula = "" }}
+
+[[distfiles]]
+name = "extract-src.raw"
+size = 0
+unpack = "raw"
+
+[distfiles.checksums]
+sha256 = "{SHA_STUB}"
+
+[source]
+distfiles = ["extract-src.raw"]
+"""
+    ruyi_cli_runner.add_package("examples", "extract-message", "1.0.0", manifest)
+
+    unpack_roots: list[object] = []
+
+    def fake_ensure(self: object, logger: object) -> None:
+        pass
+
+    def fake_unpack(self: object, root: object, logger: object) -> None:
+        unpack_roots.append(root)
+
+    monkeypatch.setattr(Distfile, "ensure", fake_ensure)
+    monkeypatch.setattr(Distfile, "unpack", fake_unpack)
+
+    result = ruyi_cli_runner(
+        "extract",
+        "--extract-without-subdir",
+        "examples/extract-message",
+    )
+
+    assert result.exit_code == 0
+    assert unpack_roots == [None]
+    assert "has been extracted to ." in result.stderr
+    assert "has been extracted to None" not in result.stderr
