@@ -130,7 +130,7 @@ def _guess_porcelain_from_argv(argv: list[str]) -> bool:
 
 def is_cli_completion_script_requested(argv: Sequence[str]) -> bool:
     for arg in argv:
-        if arg.startswith("--output-completion-script"):
+        if arg.split("=", 1)[0] == "--output-completion-script":
             return True
     return False
 
