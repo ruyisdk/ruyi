@@ -20,6 +20,7 @@ ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
     f"{RUYI_ENTRYPOINT_NAME}.bin",  # Nuitka one-file program cache
     "__main__.py",
 )
+VERSION_QUERY_ARGS: Final = frozenset(("-V", "--version", "version"))
 
 
 def is_called_as_ruyi(argv0: str) -> bool:
@@ -34,14 +35,32 @@ def should_prompt_for_renaming(argv0: str) -> bool:
     return os.path.basename(argv0).lower().startswith(likely_artifact_name_prefix)
 
 
+def is_version_query(argv: list[str]) -> bool:
+    for arg in argv[1:]:
+        if arg == "--porcelain":
+            continue
+        return arg in VERSION_QUERY_ARGS
+
+    return False
+
+
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     logger = gc.logger
     is_completion_script_invocation = is_cli_completion_script_requested(argv)
+    is_ruyi_invocation = is_called_as_ruyi(gm.argv0)
+    # Version queries must be side-effect-free: issue #453 showed that OOBE
+    # could otherwise prompt before printing the version and consume first-run
+    # telemetry state.
+    skip_telemetry = is_ruyi_invocation and is_version_query(argv)
 
     # do not init telemetry or OOBE on shell completion invocations, because
     # our output isn't meant for humans in that case, and a "real" invocation
     # will likely follow shortly after
-    if not gm.is_cli_autocomplete and not is_completion_script_invocation:
+    if (
+        not gm.is_cli_autocomplete
+        and not is_completion_script_invocation
+        and not skip_telemetry
+    ):
         oobe = OOBE(gc)
 
         tm = gc.telemetry
@@ -52,7 +71,7 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
 
         oobe.maybe_prompt()
 
-    if not is_called_as_ruyi(gm.argv0):
+    if not is_ruyi_invocation:
         if should_prompt_for_renaming(gm.argv0):
             logger.F(
                 _(
@@ -138,20 +157,21 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     if is_completion_script_invocation and completion_script is not None:
         return func(gc, args)
 
-    tm = gc.telemetry
-    tm.print_telemetry_notice()
+    if not skip_telemetry:
+        tm = gc.telemetry
+        tm.print_telemetry_notice()
 
-    # Do not record `ruyi telemetry --cron-upload` invocations.
-    skip_recording_invocation = telemetry_key == "telemetry" and getattr(
-        args,
-        "cron_upload",
-        False,
-    )
-    if not skip_recording_invocation:
-        tm.record(
-            TelemetryScope(None),
-            "cli:invocation-v1",
-            key=telemetry_key,
+        # Do not record `ruyi telemetry --cron-upload` invocations.
+        skip_recording_invocation = telemetry_key == "telemetry" and getattr(
+            args,
+            "cron_upload",
+            False,
         )
+        if not skip_recording_invocation:
+            tm.record(
+                TelemetryScope(None),
+                "cli:invocation-v1",
+                key=telemetry_key,
+            )
 
     return func(gc, args)
