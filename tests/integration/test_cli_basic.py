@@ -42,6 +42,23 @@ def test_output_completion_script_does_not_access_repo_or_telemetry(
     assert not (telemetry_root / "telemetry" / "minimal-installation-marker").exists()
 
 
+def test_autocomplete_parser_build_does_not_access_package_repo(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ruyi.cli import builtin_commands
+    from ruyi.cli.cmd import RootCommand
+    from ruyi.ruyipkg.repo import MetadataRepo
+
+    del builtin_commands
+
+    ctx = ruyi_cli_runner.make_command_context()
+    ctx.gm._is_cli_autocomplete = True  # pylint: disable=protected-access
+    monkeypatch.setattr(MetadataRepo, "ensure_git_repo", _fail_on_repo_access)
+
+    RootCommand.build_argparse(ctx.gc)
+
+
 def test_cli_list_with_mock_repo(ruyi_cli_runner: IntegrationTestHarness) -> None:
     result = ruyi_cli_runner("list", "--name-contains", "sample-cli")
 

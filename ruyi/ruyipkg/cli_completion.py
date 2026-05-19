@@ -20,33 +20,29 @@ def package_completer_builder(
     cfg: "GlobalConfig",
     filters: list[Callable[[str], bool]] | None = None,
 ) -> "DynamicCompleter":
-    # Lazy import to avoid circular dependency
-    from ..ruyipkg.augmented_pkg import (
-        AugmentedPkg,
-    )  # pylint: disable=import-outside-toplevel
-    from ..ruyipkg.list_filter import (
-        ListFilter,
-    )  # pylint: disable=import-outside-toplevel
-
-    all_pkgs = list(
-        AugmentedPkg.yield_from_repo(
-            cfg,
-            cfg.repo,
-            ListFilter(),
-        )
-    )
-    if filters is not None:
-        all_pkgs = [
-            pkg
-            for pkg in all_pkgs
-            if pkg.name is not None and all(f(pkg.name) for f in filters)
-        ]
+    pkg_names: list[str] | None = None
 
     def f(prefix: str, parsed_args: object, **kwargs: Any) -> list[str]:
-        return [
-            pkg.name
-            for pkg in all_pkgs
-            if pkg.name is not None and pkg.name.startswith(prefix)
-        ]
+        nonlocal pkg_names
+
+        if pkg_names is None:
+            # Lazy import to avoid circular dependency, and lazy repo access so
+            # parser construction for unrelated completions does not sync repos.
+            from ..ruyipkg.augmented_pkg import (
+                AugmentedPkg,
+            )  # pylint: disable=import-outside-toplevel
+            from ..ruyipkg.list_filter import (
+                ListFilter,
+            )  # pylint: disable=import-outside-toplevel
+
+            pkg_names = []
+            for pkg in AugmentedPkg.yield_from_repo(cfg, cfg.repo, ListFilter()):
+                if pkg.name is None:
+                    continue
+                if filters is not None and not all(fn(pkg.name) for fn in filters):
+                    continue
+                pkg_names.append(pkg.name)
+
+        return [name for name in pkg_names if name.startswith(prefix)]
 
     return f
