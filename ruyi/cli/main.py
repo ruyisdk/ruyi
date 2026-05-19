@@ -6,7 +6,10 @@ from typing import Final, TYPE_CHECKING
 from ..config import GlobalConfig
 from ..i18n import _
 from ..telemetry.scope import TelemetryScope
-from ..utils.global_mode import GlobalModeProvider
+from ..utils.global_mode import (
+    GlobalModeProvider,
+    is_cli_completion_script_requested,
+)
 from ..version import RUYI_SEMVER
 from . import RUYI_ENTRYPOINT_NAME
 from .oobe import OOBE
@@ -33,11 +36,12 @@ def should_prompt_for_renaming(argv0: str) -> bool:
 
 def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     logger = gc.logger
+    is_completion_script_invocation = is_cli_completion_script_requested(argv)
 
-    # do not init telemetry or OOBE on CLI auto-completion invocations, because
+    # do not init telemetry or OOBE on shell completion invocations, because
     # our output isn't meant for humans in that case, and a "real" invocation
     # will likely follow shortly after
-    if not gm.is_cli_autocomplete:
+    if not gm.is_cli_autocomplete and not is_completion_script_invocation:
         oobe = OOBE(gc)
 
         tm = gc.telemetry
@@ -130,11 +134,9 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
 
     # Special-case the `--output-completion-script` argument; treat it as if
     # "ruyi completion-script" were called.
-    try:
-        if args.completion_script:
-            telemetry_key = "completion-script"
-    except AttributeError:
-        pass
+    completion_script: str | None = getattr(args, "completion_script", None)
+    if is_completion_script_invocation and completion_script is not None:
+        return func(gc, args)
 
     tm = gc.telemetry
     tm.print_telemetry_notice()

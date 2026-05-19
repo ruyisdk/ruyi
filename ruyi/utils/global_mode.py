@@ -1,6 +1,6 @@
 import abc
 import os
-from typing import Final, Mapping, Protocol, runtime_checkable
+from typing import Final, Mapping, Protocol, Sequence, runtime_checkable
 
 import ruyi
 
@@ -128,21 +128,19 @@ def _guess_porcelain_from_argv(argv: list[str]) -> bool:
     return len(argv) > 1 and argv[1] == "--porcelain"
 
 
-def _probe_cli_autocomplete(env: Mapping[str, str], argv: list[str]) -> bool:
-    """
-    Probe if the current invocation is related to shell completion based on
-    the arguments passed, without requiring the ``argparse`` machinery to be
-    completely initialized, and the environment.
-    """
-
-    # If `--output-completion-script` is present anywhere in the arguments,
-    # then this is related to shell completion even if _ARGCOMPLETE is not yet
-    # set (which is only set for invocations after the shell finished sourcing
-    # the completion script).
+def is_cli_completion_script_requested(argv: Sequence[str]) -> bool:
     for arg in argv:
         if arg.startswith("--output-completion-script"):
             return True
+    return False
 
+
+def _probe_cli_autocomplete(env: Mapping[str, str]) -> bool:
+    """
+    Probe if the current invocation is an argcomplete subprocess based on the
+    environment, without requiring the ``argparse`` machinery to be completely
+    initialized.
+    """
     return "_ARGCOMPLETE" in env
 
 
@@ -168,7 +166,7 @@ class EnvGlobalModeProvider(GlobalModeProvider):
 
         # We have to lift this piece of implementation detail out of argcomplete,
         # as the argcomplete import is very costly in terms of startup time.
-        self._is_cli_autocomplete = _probe_cli_autocomplete(env, argv)
+        self._is_cli_autocomplete = _probe_cli_autocomplete(env)
 
         self._venv_root = env.get(ENV_VENV_ROOT_KEY)
 

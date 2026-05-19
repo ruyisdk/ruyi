@@ -1,10 +1,15 @@
+import pathlib
+from tests.fixtures import IntegrationTestHarness
+
 import pytest
 
 from ruyi.ruyipkg.distfile import Distfile
-from tests.fixtures import IntegrationTestHarness
-
 
 SHA_STUB = "0" * 64
+
+
+def _fail_on_repo_access(self: object) -> None:
+    raise AssertionError("completion setup must not access the package repo")
 
 
 def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
@@ -16,6 +21,25 @@ def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
         assert result.exit_code == 0
         assert "Ruyi" in result.stdout
         assert "fatal error" not in result.stderr.lower()
+
+
+def test_output_completion_script_does_not_access_repo_or_telemetry(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ruyi.ruyipkg.repo import MetadataRepo
+
+    monkeypatch.setattr(MetadataRepo, "ensure_git_repo", _fail_on_repo_access)
+
+    result = ruyi_cli_runner("--output-completion-script=bash")
+
+    assert result.exit_code == 0
+    assert result.stdout.startswith("#compdef ruyi\n")
+    assert "package repository" not in result.stderr
+
+    telemetry_root = pathlib.Path(ruyi_cli_runner._env["XDG_STATE_HOME"]) / "ruyi"
+    assert not (telemetry_root / "telemetry" / "installation.json").exists()
+    assert not (telemetry_root / "telemetry" / "minimal-installation-marker").exists()
 
 
 def test_cli_list_with_mock_repo(ruyi_cli_runner: IntegrationTestHarness) -> None:
