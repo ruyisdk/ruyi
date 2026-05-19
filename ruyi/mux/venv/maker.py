@@ -1,3 +1,4 @@
+import enum
 import glob
 import os
 from os import PathLike
@@ -32,6 +33,36 @@ class ResolvedSysrootPkgSource(TypedDict):
     sysroot_dir: PathLike[Any]
     pkg_manifest: BoundPackageManifest
     gcc_install_dir: PathLike[Any] | None
+
+
+class SysrootProvisionMode(enum.Enum):
+    COPY_TREE = "copy-tree"
+    SYMLINK_TREE = "symlink-tree"
+
+
+def provision_sysroot(
+    logger: RuyiLogger,
+    src: pathlib.Path,
+    dest: pathlib.Path,
+    mode: SysrootProvisionMode,
+    target_tuple: str,
+) -> None:
+    if mode == SysrootProvisionMode.SYMLINK_TREE:
+        logger.D(f"symlinking sysroot for {target_tuple}")
+        os.symlink(src, dest)
+        return
+
+    if mode == SysrootProvisionMode.COPY_TREE:
+        logger.D(f"copying sysroot for {target_tuple}")
+        shutil.copytree(
+            src,
+            dest,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+        )
+        return
+
+    raise NotImplementedError(mode)
 
 
 def _resolve_sysroot_pkg_source(
@@ -150,7 +181,7 @@ def do_make_venv(
     explicit_sysroot_dir: pathlib.Path | None = None
     explicit_sysroot_gcc_install_dir: PathLike[Any] | None = None
     explicit_sysroot_pkg: VenvPackageInfo | None = None
-    symlink_sysroot = False
+    sysroot_provision_mode = SysrootProvisionMode.COPY_TREE
 
     if sysroot_atom_str is not None:
         result = _resolve_sysroot_pkg_source(config, host, sysroot_atom_str)
@@ -178,7 +209,7 @@ def do_make_venv(
                 )
             )
             return 1
-        symlink_sysroot = True
+        sysroot_provision_mode = SysrootProvisionMode.SYMLINK_TREE
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache
@@ -466,7 +497,7 @@ def do_make_venv(
         extra_cmds,
         venv_metadata,
         override_name,
-        symlink_sysroot,
+        sysroot_provision_mode,
     )
     maker.provision()
 
@@ -515,7 +546,7 @@ class VenvMaker:
         extra_cmds: dict[str, str] | None,
         metadata: VenvMetadata,
         override_name: str | None = None,
-        symlink_sysroot: bool = False,
+        sysroot_provision_mode: SysrootProvisionMode = SysrootProvisionMode.COPY_TREE,
     ) -> None:
         self.gc = gc
         self.profile = profile
@@ -526,7 +557,7 @@ class VenvMaker:
         self.extra_cmds = extra_cmds or {}
         self.metadata = metadata
         self.override_name = override_name
-        self.symlink_sysroot = symlink_sysroot
+        self.sysroot_provision_mode = sysroot_provision_mode
 
         self.bindir = self.venv_root / "bin"
 
@@ -715,17 +746,13 @@ class VenvMaker:
             assert sysroot_srcdir is not None
             sysroot_srcdir = pathlib.Path(sysroot_srcdir)
 
-            if self.symlink_sysroot:
-                self.logger.D(f"symlinking sysroot for {target_tuple}")
-                os.symlink(sysroot_srcdir, sysroot_destdir)
-            else:
-                self.logger.D(f"copying sysroot for {target_tuple}")
-                shutil.copytree(
-                    sysroot_srcdir,
-                    sysroot_destdir,
-                    symlinks=True,
-                    ignore_dangling_symlinks=True,
-                )
+            provision_sysroot(
+                self.logger,
+                sysroot_srcdir,
+                sysroot_destdir,
+                self.sysroot_provision_mode,
+                target_tuple,
+            )
 
             if is_primary:
                 self.logger.D("symlinking primary sysroot into place")
