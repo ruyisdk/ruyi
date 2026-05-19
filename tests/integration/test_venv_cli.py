@@ -77,6 +77,23 @@ def test_old_sysroot_from_alias_still_parses(
     assert args.copy_sysroot_from_pkg == "gnu-plct"
 
 
+def test_help_documents_sysroot_provisioning(
+    ruyi_cli_runner: IntegrationTestHarness,
+) -> None:
+    p = make_parser(ruyi_cli_runner)
+
+    help_text = p.format_help()
+
+    assert "Sysroot provisioning:" in help_text
+    assert "--copy-sysroot-from-dir only for a complete sysroot directory" in help_text
+    assert (
+        "--project-sysroot-from-rootfs for distro rootfs or chroot trees" in help_text
+    )
+    assert (
+        "Ruyi never elevates privileges when creating virtual environments" in help_text
+    )
+
+
 def test_sysroot_source_options_are_mutually_exclusive_at_main(
     ruyi_cli_runner: IntegrationTestHarness,
 ) -> None:
