@@ -32,7 +32,7 @@ jobs:
         run: pipx install poetry
 
       # NOTE: the Poetry venv is created during this step
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
           python-version-file: pyproject.toml
