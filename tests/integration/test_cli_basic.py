@@ -5,7 +5,7 @@ from tests.fixtures import IntegrationTestHarness
 
 import pytest
 
-from ruyi.cli.main import main as ruyi_main
+from ruyi.cli.main import is_version_query, main as ruyi_main
 from ruyi.log import RuyiConsoleLogger
 from ruyi.ruyipkg.distfile import Distfile
 
@@ -19,6 +19,18 @@ class _TTYStringIO(io.StringIO):
 
 def _fail_on_repo_access(self: object) -> None:
     raise AssertionError("completion setup must not access the package repo")
+
+
+def test_cli_version_query_detection() -> None:
+    assert is_version_query(["ruyi", "--version"])
+    assert is_version_query(["ruyi", "-V"])
+    assert is_version_query(["ruyi", "--porcelain", "--version"])
+    assert is_version_query(["ruyi", "--config", "foo", "--version"])
+    assert is_version_query(["ruyi", "version"])
+    assert is_version_query(["ruyi", "--porcelain", "version"])
+    assert not is_version_query(["ruyi"])
+    assert not is_version_query(["ruyi", "list"])
+    assert not is_version_query(["ruyi", "list", "version"])
 
 
 def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:

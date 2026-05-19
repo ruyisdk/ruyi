@@ -20,7 +20,8 @@ ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
     f"{RUYI_ENTRYPOINT_NAME}.bin",  # Nuitka one-file program cache
     "__main__.py",
 )
-VERSION_QUERY_ARGS: Final = frozenset(("-V", "--version", "version"))
+VERSION_QUERY_FLAGS: Final = frozenset(("-V", "--version"))
+VERSION_QUERY_SUBCOMMAND: Final = "version"
 
 
 def is_called_as_ruyi(argv0: str) -> bool:
@@ -36,10 +37,17 @@ def should_prompt_for_renaming(argv0: str) -> bool:
 
 
 def is_version_query(argv: list[str]) -> bool:
+    # Scan flags broadly for issue #453, while only accepting the subcommand
+    # spelling in command position so positional values named "version" do not
+    # suppress OOBE/telemetry for unrelated commands.
+    for arg in argv[1:]:
+        if arg in VERSION_QUERY_FLAGS:
+            return True
+
     for arg in argv[1:]:
         if arg == "--porcelain":
             continue
-        return arg in VERSION_QUERY_ARGS
+        return arg == VERSION_QUERY_SUBCOMMAND
 
     return False
 
