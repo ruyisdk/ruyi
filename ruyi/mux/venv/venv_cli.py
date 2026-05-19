@@ -17,6 +17,16 @@ class VenvCommand(
 ):
     @classmethod
     def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.formatter_class = argparse.RawDescriptionHelpFormatter
+        p.epilog = _(
+            "Sysroot provisioning:\n"
+            "  By default, Ruyi uses the sysroot bundled with the selected toolchain if one is available.\n"
+            "  Use --copy-sysroot-from-pkg to copy the sysroot from another installed toolchain package.\n"
+            "  Use --copy-sysroot-from-dir only for a complete sysroot directory readable by the current user; it performs a faithful full-tree copy.\n"
+            "  Use --symlink-sysroot-from-dir to point the virtual environment at an existing sysroot directory without copying it.\n"
+            "  Use --project-sysroot-from-rootfs for distro rootfs or chroot trees: Ruyi copies common cross-build directories such as include, lib*, usr/include, usr/lib*, usr/share, bin, and sbin, and skips unreadable or unsupported files.\n"
+            "  Ruyi never elevates privileges when creating virtual environments. If a rootfs contains private system files such as /etc/shadow, prepare a readable sysroot yourself or use projection mode."
+        )
         p.add_argument("profile", type=str, help=_("Profile to use for the environment"),
                        )
         p.add_argument("dest", type=str, help=_("Path to the new virtual environment"),
@@ -72,6 +82,11 @@ class VenvCommand(
             help=_("Symlink the virtual environment's sysroot to the given existing directory"),
         )
         p.add_argument(
+            "--project-sysroot-from-rootfs",
+            type=str,
+            help=_("Project a build sysroot from the given distro rootfs directory"),
+        )
+        p.add_argument(
             "--extra-commands-from",
             type=str,
             action="append",
@@ -83,15 +98,16 @@ class VenvCommand(
         from ...ruyipkg.host import get_native_host
         from .maker import do_make_venv
 
-        # validate sysroot source options: at most one of the three
+        # validate sysroot source options: at most one source may be specified
         sysroot_sources = sum([
             args.copy_sysroot_from_pkg is not None,
             args.copy_sysroot_from_dir is not None,
             args.symlink_sysroot_from_dir is not None,
+            args.project_sysroot_from_rootfs is not None,
         ])
         if sysroot_sources > 1:
             cfg.logger.F(
-                _("at most one of --copy-sysroot-from-pkg, --copy-sysroot-from-dir, and --symlink-sysroot-from-dir may be specified")
+                _("at most one of --copy-sysroot-from-pkg, --copy-sysroot-from-dir, --symlink-sysroot-from-dir, and --project-sysroot-from-rootfs may be specified")
             )
             return 1
 
@@ -110,6 +126,7 @@ class VenvCommand(
         sysroot_atom_str: str | None = args.copy_sysroot_from_pkg
         copy_sysroot_dir_str: str | None = args.copy_sysroot_from_dir
         symlink_sysroot_dir_str: str | None = args.symlink_sysroot_from_dir
+        project_sysroot_dir_str: str | None = args.project_sysroot_from_rootfs
         extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
         host = str(get_native_host())
 
@@ -125,5 +142,6 @@ class VenvCommand(
             sysroot_atom_str,
             copy_sysroot_dir_str,
             symlink_sysroot_dir_str,
+            project_sysroot_dir_str,
             extra_cmd_atoms_str,
         )
