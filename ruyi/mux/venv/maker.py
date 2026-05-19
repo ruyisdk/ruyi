@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import enum
 import glob
 import os
@@ -5,6 +6,7 @@ from os import PathLike
 import pathlib
 import re
 import shutil
+import stat
 from typing import Any, Final, Iterator, TypedDict
 
 from ...config import GlobalConfig
@@ -38,10 +40,34 @@ class ResolvedSysrootPkgSource(TypedDict):
 class SysrootProvisionMode(enum.Enum):
     COPY_TREE = "copy-tree"
     SYMLINK_TREE = "symlink-tree"
+    PROJECT_ROOTFS = "project-rootfs"
 
 
 class VenvProvisionError(Exception):
     pass
+
+
+PROJECTED_SYSROOT_ROOTS: Final = (
+    "include",
+    "lib",
+    "lib32",
+    "lib64",
+    "usr/include",
+    "usr/lib",
+    "usr/lib32",
+    "usr/lib64",
+    "usr/libexec",
+    "usr/share",
+    "bin",
+    "sbin",
+)
+
+
+@dataclass
+class SysrootProjectionReport:
+    copied_entries: int = 0
+    skipped_entries: int = 0
+    included_roots: int = 0
 
 
 def _count_copytree_failures(exc: shutil.Error) -> int:
@@ -53,6 +79,122 @@ def _count_copytree_failures(exc: shutil.Error) -> int:
         return len(failures)
 
     return 1
+
+
+def _is_projected_rootfs_relpath(relpath: pathlib.PurePosixPath) -> bool:
+    for root in PROJECTED_SYSROOT_ROOTS:
+        projected_root = pathlib.PurePosixPath(root)
+        if relpath == projected_root or projected_root in relpath.parents:
+            return True
+
+    return False
+
+
+def _copy_projected_sysroot_symlink(
+    source_root: pathlib.Path,
+    dest_root: pathlib.Path,
+    src: pathlib.Path,
+    dest: pathlib.Path,
+) -> None:
+    target = os.readlink(src)
+    if not target.startswith("/"):
+        os.symlink(target, dest)
+        return
+
+    target_relpath = pathlib.PurePosixPath(target.removeprefix("/"))
+    target_in_source = source_root.joinpath(*target_relpath.parts)
+    if (
+        _is_projected_rootfs_relpath(target_relpath)
+        and (target_in_source.exists() or target_in_source.is_symlink())
+    ):
+        target_in_dest = dest_root.joinpath(*target_relpath.parts)
+        os.symlink(os.path.relpath(target_in_dest, dest.parent), dest)
+        return
+
+    os.symlink(target, dest)
+
+
+def _copy_projected_sysroot_entry(
+    logger: RuyiLogger,
+    source_root: pathlib.Path,
+    dest_root: pathlib.Path,
+    src: pathlib.Path,
+    dest: pathlib.Path,
+    report: SysrootProjectionReport,
+) -> None:
+    try:
+        mode = src.lstat().st_mode
+    except OSError as e:
+        report.skipped_entries += 1
+        logger.D(f"skipping sysroot entry {src}: {e}")
+        return
+
+    try:
+        if stat.S_ISLNK(mode):
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            _copy_projected_sysroot_symlink(source_root, dest_root, src, dest)
+            report.copied_entries += 1
+            return
+
+        if stat.S_ISDIR(mode):
+            dest.mkdir(parents=True, exist_ok=True)
+            report.copied_entries += 1
+            try:
+                children = list(src.iterdir())
+            except OSError as e:
+                report.skipped_entries += 1
+                logger.D(f"skipping sysroot directory contents {src}: {e}")
+                return
+
+            for child in children:
+                _copy_projected_sysroot_entry(
+                    logger,
+                    source_root,
+                    dest_root,
+                    child,
+                    dest / child.name,
+                    report,
+                )
+            return
+
+        if stat.S_ISREG(mode):
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest, follow_symlinks=False)
+            report.copied_entries += 1
+            return
+    except OSError as e:
+        report.skipped_entries += 1
+        logger.D(f"skipping sysroot entry {src}: {e}")
+        return
+
+    report.skipped_entries += 1
+    logger.D(f"skipping unsupported sysroot entry {src}")
+
+
+def _project_rootfs_sysroot(
+    logger: RuyiLogger,
+    src: pathlib.Path,
+    dest: pathlib.Path,
+) -> SysrootProjectionReport:
+    report = SysrootProjectionReport()
+    dest.mkdir(parents=True, exist_ok=False)
+
+    for root in PROJECTED_SYSROOT_ROOTS:
+        root_src = src / root
+        if not root_src.exists() and not root_src.is_symlink():
+            continue
+
+        report.included_roots += 1
+        _copy_projected_sysroot_entry(
+            logger,
+            src,
+            dest,
+            root_src,
+            dest / root,
+            report,
+        )
+
+    return report
 
 
 def provision_sysroot(
@@ -94,7 +236,7 @@ def provision_sysroot(
             )
             logger.I(
                 _(
-                    "Ruyi does not elevate privileges when creating virtual environments; use a sysroot readable by the current user or --symlink-sysroot-from-dir"
+                    "Ruyi does not elevate privileges when creating virtual environments; use a sysroot readable by the current user, --symlink-sysroot-from-dir, or --project-sysroot-from-rootfs"
                 )
             )
             logger.D(f"sysroot copy failure details: {e}")
@@ -108,6 +250,45 @@ def provision_sysroot(
                 )
             )
             raise VenvProvisionError from e
+        return
+
+    if mode == SysrootProvisionMode.PROJECT_ROOTFS:
+        logger.D(f"projecting rootfs sysroot for {target_tuple}")
+        try:
+            report = _project_rootfs_sysroot(logger, src, dest)
+        except OSError as e:
+            logger.F(
+                _("cannot project sysroot from [yellow]{src}[/] to [green]{dest}[/]: {err}").format(
+                    src=src,
+                    dest=dest,
+                    err=e,
+                )
+            )
+            raise VenvProvisionError from e
+
+        if report.included_roots == 0:
+            logger.F(
+                _(
+                    "cannot project sysroot from [yellow]{src}[/]: no supported sysroot directories were found"
+                ).format(src=src)
+            )
+            raise VenvProvisionError
+
+        logger.I(
+            _(
+                "projected sysroot from [yellow]{src}[/]: copied {copied_count} entries, skipped {skipped_count} entries"
+            ).format(
+                src=src,
+                copied_count=report.copied_entries,
+                skipped_count=report.skipped_entries,
+            )
+        )
+        if report.skipped_entries:
+            logger.W(
+                _(
+                    "some unreadable or unsupported files were skipped; the projected sysroot may be incomplete"
+                )
+            )
         return
 
     raise NotImplementedError(mode)
@@ -222,6 +403,7 @@ def do_make_venv(
     sysroot_atom_str: str | None = None,
     copy_sysroot_dir_str: str | None = None,
     symlink_sysroot_dir_str: str | None = None,
+    project_sysroot_dir_str: str | None = None,
     extra_cmd_atoms_str: list[str] | None = None,
 ) -> int:
     logger = config.logger
@@ -258,6 +440,16 @@ def do_make_venv(
             )
             return 1
         sysroot_provision_mode = SysrootProvisionMode.SYMLINK_TREE
+    elif project_sysroot_dir_str is not None:
+        explicit_sysroot_dir = pathlib.Path(project_sysroot_dir_str).resolve()
+        if not explicit_sysroot_dir.is_dir():
+            logger.F(
+                _("the rootfs directory [yellow]{path}[/] does not exist").format(
+                    path=project_sysroot_dir_str,
+                )
+            )
+            return 1
+        sysroot_provision_mode = SysrootProvisionMode.PROJECT_ROOTFS
 
     # TODO: support omitting this if user only has one toolchain installed
     # this should come after implementation of local state cache

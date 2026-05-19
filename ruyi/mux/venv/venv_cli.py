@@ -72,6 +72,11 @@ class VenvCommand(
             help=_("Symlink the virtual environment's sysroot to the given existing directory"),
         )
         p.add_argument(
+            "--project-sysroot-from-rootfs",
+            type=str,
+            help=_("Project a build sysroot from the given distro rootfs directory"),
+        )
+        p.add_argument(
             "--extra-commands-from",
             type=str,
             action="append",
@@ -83,15 +88,16 @@ class VenvCommand(
         from ...ruyipkg.host import get_native_host
         from .maker import do_make_venv
 
-        # validate sysroot source options: at most one of the three
+        # validate sysroot source options: at most one source may be specified
         sysroot_sources = sum([
             args.copy_sysroot_from_pkg is not None,
             args.copy_sysroot_from_dir is not None,
             args.symlink_sysroot_from_dir is not None,
+            args.project_sysroot_from_rootfs is not None,
         ])
         if sysroot_sources > 1:
             cfg.logger.F(
-                _("at most one of --copy-sysroot-from-pkg, --copy-sysroot-from-dir, and --symlink-sysroot-from-dir may be specified")
+                _("at most one of --copy-sysroot-from-pkg, --copy-sysroot-from-dir, --symlink-sysroot-from-dir, and --project-sysroot-from-rootfs may be specified")
             )
             return 1
 
@@ -110,6 +116,7 @@ class VenvCommand(
         sysroot_atom_str: str | None = args.copy_sysroot_from_pkg
         copy_sysroot_dir_str: str | None = args.copy_sysroot_from_dir
         symlink_sysroot_dir_str: str | None = args.symlink_sysroot_from_dir
+        project_sysroot_dir_str: str | None = args.project_sysroot_from_rootfs
         extra_cmd_atoms_str: list[str] | None = args.extra_commands_from
         host = str(get_native_host())
 
@@ -125,5 +132,6 @@ class VenvCommand(
             sysroot_atom_str,
             copy_sysroot_dir_str,
             symlink_sysroot_dir_str,
+            project_sysroot_dir_str,
             extra_cmd_atoms_str,
         )
