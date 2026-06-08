@@ -620,7 +620,7 @@ jobs:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
           # fetch-tags: true
           fetch-depth: 0
-          # to include ruyi-litester
+          # to include external integration tests
           submodules: recursive
       - name: Fetch Git tags
         run: git fetch --tags --force

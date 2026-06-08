@@ -59,7 +59,6 @@ repository = "https://github.com/ruyisdk/ruyi.git"
 [tool.mypy]
 files = ["ruyi", "scripts", "tests"]
 exclude = [
-  "tests/ruyi-litester",
   "tests/ruyi-pytest",
 ]
 show_error_codes = true
@@ -96,18 +95,17 @@ safe_licenses = [
 
 [tool.pyright]
 include = ["ruyi", "scripts", "tests"]
-exclude = ["**/__pycache__", "tests/ruyi-litester", "tests/ruyi-pytest", "tmp"]
+exclude = ["**/__pycache__", "tests/ruyi-pytest", "tmp"]
 stubPath = "./stubs"
 pythonPlatform = "Linux"
 
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["ruyi-litester", "ruyi-pytest"]
+norecursedirs = ["ruyi-pytest"]
 
 
 [tool.ruff]
 extend-exclude = [
-  "tests/ruyi-litester",
   "tests/ruyi-pytest",
 ]
