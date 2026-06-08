@@ -56,6 +56,7 @@ def test_output_completion_script_does_not_access_repo_or_telemetry(
 
     assert result.exit_code == 0
     assert result.stdout.startswith("#compdef ruyi\n")
+    assert "__python_argcomplete_ruyi_run" in result.stdout
     assert "package repository" not in result.stderr
 
     telemetry_root = pathlib.Path(ruyi_cli_runner._env["XDG_STATE_HOME"]) / "ruyi"

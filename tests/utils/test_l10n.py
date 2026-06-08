@@ -1,6 +1,15 @@
 from ruyi.utils.l10n import lang_code_to_lang_region, LangAndRegion, match_lang_code
 
 
+def test_embedded_zh_cn_translations_are_available() -> None:
+    from ruyi.i18n import I18nAdapter
+
+    adapter = I18nAdapter()
+
+    assert adapter.set_locale("ruyi", "zh_CN")
+    assert adapter.gettext("Print version information") == "打印版本信息"
+
+
 def test_lang_code_to_lang_region() -> None:
     assert lang_code_to_lang_region("en", False) == LangAndRegion("en", "en", None)
     assert lang_code_to_lang_region("en", True) == LangAndRegion("en", "en", "US")
