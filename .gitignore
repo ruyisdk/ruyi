@@ -233,4 +233,4 @@ tags
 
 # these are pre-built to avoid requiring additional build deps on a multitude
 # of distros
-!resources/bundled/locale/**/*.mo
+!ruyi/resources/locale/**/*.mo

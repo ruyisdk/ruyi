@@ -27,7 +27,7 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Typing :: Typed",
 ]
-include = ["ruyi/py.typed"]
+include = ["ruyi/py.typed", "ruyi/resources/**/*"]
 
 [tool.poetry.dependencies]
 python = ">=3.11"
