@@ -205,11 +205,10 @@ class RootCommand(
             raise ValueError(f"Unsupported shell: {sh}")
 
         import sys
-        from ..resource_bundle import get_resource_str
+        from importlib import resources
 
-        script = get_resource_str("_ruyi_completion")
-        assert script is not None, "should never happen; completion script not found"
-        sys.stdout.write(script)
+        script = resources.files("ruyi.resources") / "_ruyi_completion"
+        sys.stdout.write(script.read_text("utf-8"))
         return 0
 
 

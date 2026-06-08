@@ -3,8 +3,6 @@ import gettext
 import os
 from typing import Final, LiteralString, Mapping, NewType
 
-from ..resource_bundle import get_resource_blob
-
 
 def _probe_lang(environ: Mapping[str, str]) -> list[str]:
     """Probe the environment variables the gettext way, to determine the list
@@ -58,12 +56,17 @@ class I18nAdapter:
                     break
 
     def _get_mo(self, domain: str, locale: str) -> BytesIO | None:
-        # this is always forward-slash-separated, because this is not a concrete
-        # filesystem path, rather a resource bundle key
-        path = f"locale/{locale}/LC_MESSAGES/{domain}.mo"
-        blob = get_resource_blob(path)
-        if blob:
-            return BytesIO(blob)
+        from importlib import resources
+
+        path = (
+            resources.files("ruyi.resources")
+            / "locale"
+            / locale
+            / "LC_MESSAGES"
+            / f"{domain}.mo"
+        )
+        if path.is_file():
+            return BytesIO(path.read_bytes())
         return None
 
     def set_locale(self, domain: str, locale: str | None = None) -> bool:
