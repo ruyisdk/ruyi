@@ -274,7 +274,7 @@ jobs:
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
           cd tests/ruyi-pytest
-          RUYI_REPO=ISCAS uv run --with ../.. pytest
+          uv run --with ../.. pytest
 
   shellcheck:
     name: lint shell scripts
