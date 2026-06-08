@@ -208,7 +208,12 @@ class RootCommand(
         from importlib import resources
 
         script = resources.files("ruyi.resources") / "_ruyi_completion"
-        sys.stdout.write(script.read_text("utf-8"))
+        try:
+            content = script.read_text("utf-8")
+        except FileNotFoundError:
+            sys.stderr.write("failed to read bundled _ruyi_completion script")
+            return 1
+        sys.stdout.write(content)
         return 0
 
 
