@@ -42,7 +42,7 @@ main() {
     version="$(git describe)"
     staging_dirname="ruyi-$version"
     artifact_name="$staging_dirname.tar.gz"
-    dest_dir="${1:=$REPO_ROOT/tmp}"
+    dest_dir="${1:-$REPO_ROOT/tmp}"
 
     SOURCE_EPOCH="$(get_repo_commit_time)"
     export SOURCE_EPOCH
