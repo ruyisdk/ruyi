@@ -271,10 +271,6 @@ jobs:
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: poetry run ./scripts/lint-cli-startup-flow.py
 
-      - name: Ensure bundled resources are synced with the codebase
-        if: success() && !matrix.baseline && matrix.poetry == 2
-        run: ./scripts/lint-bundled-resources.sh
-
       - name: Run integration tests
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |

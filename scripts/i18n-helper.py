@@ -207,7 +207,7 @@ def _do_merge_po(locale: str) -> int:
 
 
 def _do_build_mo(locale: str) -> int:
-    destdir = pathlib.Path("resources/bundled/locale") / locale / "LC_MESSAGES"
+    destdir = pathlib.Path("ruyi/resources/locale") / locale / "LC_MESSAGES"
     destdir.mkdir(parents=True, exist_ok=True)
 
     for domain in DOMAINS:
@@ -222,17 +222,12 @@ def _do_build_mo(locale: str) -> int:
             locale,
             # destination directory
             "-d",
-            "resources/bundled/locale",
+            "ruyi/resources/locale",
             # input file
             "-i",
             f"resources/po/{locale}/LC_MESSAGES/{domain}.po",
         ]
         _invoke_babel(babel_argv)
-
-    # regenerate resource bundle data
-    from ruyi.resource_bundle.__main__ import main as resource_bundle_main
-
-    resource_bundle_main()
 
     return 0
 

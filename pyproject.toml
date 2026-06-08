@@ -63,7 +63,7 @@ issues = "https://github.com/ruyisdk/ruyi/issues"
 repository = "https://github.com/ruyisdk/ruyi.git"
 
 [tool.poetry]
-include = ["ruyi/py.typed"]
+include = ["ruyi/py.typed", "ruyi/resources/**/*"]
 exclude = ["**/.gitignore"]
 
 [tool.poetry.group.dev.dependencies]

@@ -3,8 +3,6 @@ from typing import Any, Final, Callable, Tuple
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
-from ..resource_bundle import get_template_str
-
 
 class EmbeddedLoader(BaseLoader):
     def __init__(self) -> None:
@@ -15,8 +13,11 @@ class EmbeddedLoader(BaseLoader):
         environment: Environment,
         template: str,
     ) -> Tuple[str, str | None, Callable[[], bool] | None]:
-        if payload := get_template_str(template):
-            return payload, None, None
+        from importlib import resources
+
+        path = resources.files("ruyi.resources") / f"{template}.jinja"
+        if path.is_file():
+            return path.read_text("utf-8"), None, None
         raise TemplateNotFound(template)
 
 

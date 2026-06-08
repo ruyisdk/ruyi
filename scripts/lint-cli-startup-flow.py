@@ -46,8 +46,6 @@ CURRENT_ALLOWLIST = {
     "ruyi.mux.venv.venv_cli",
     "ruyi.pluginhost",
     "ruyi.pluginhost.plugin_cli",
-    "ruyi.resource_bundle",
-    "ruyi.resource_bundle.data",
     "ruyi.ruyipkg",
     "ruyi.ruyipkg.admin_cli",
     "ruyi.ruyipkg.cli_completion",  # part of the argparse machinery
