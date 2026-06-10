@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-05-19 14:37+0800\n"
+"POT-Creation-Date: 2026-06-10 16:55+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -39,15 +39,11 @@ msgstr "子命令"
 msgid "RuyiSDK Package Manager"
 msgstr "RuyiSDK 包管理器"
 
-#: ruyi/cli/cmd.py:174 ruyi/cli/version_cli.py:15
-msgid "Print version information"
-msgstr "打印版本信息"
-
 #: ruyi/cli/cmd.py:179
 msgid "Give the output in a machine-friendly format if applicable"
 msgstr "在适用的情况下，以机器友好格式输出"
 
-#: ruyi/cli/cmd.py:223
+#: ruyi/cli/cmd.py:227
 msgid "(NOT FOR REGULAR USERS) Subcommands for managing Ruyi repos"
 msgstr "（非面向普通用户）用来管理 Ruyi 软件源仓库的子命令"
 
@@ -336,6 +332,10 @@ msgstr "可接受的选择：从 1 到 {nr_choices}（含）的整数。"
 #, python-brace-format
 msgid "Out-of-range input [yellow]'{user_input}'[/]."
 msgstr "输入 [yellow]'{user_input}'[/] 超出了范围。"
+
+#: ruyi/cli/cmd.py:174 ruyi/cli/version_cli.py:15
+msgid "Print version information"
+msgstr "打印版本信息"
 
 #: ruyi/cli/version_cli.py:32
 #, python-brace-format
@@ -1559,39 +1559,44 @@ msgstr "未为 list 操作指定过滤器"
 msgid "for the old behavior of listing all packages, try [yellow]ruyi list --all[/]"
 msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --all[/]"
 
-#: ruyi/ruyipkg/list.py:57
+#: ruyi/ruyipkg/list.py:64
 msgid "List of available packages:\n"
 msgstr "可用软件包列表：\n"
 
-#: ruyi/ruyipkg/list.py:97
+#: ruyi/ruyipkg/list.py:111
 #, python-brace-format
 msgid "* Slug: [yellow]{slug}[/]"
 msgstr "* Slug：[yellow]{slug}[/]"
 
-#: ruyi/ruyipkg/list.py:99
+#: ruyi/ruyipkg/list.py:113
 msgid "* Slug: (none)"
 msgstr "* Slug：（无）"
 
-#: ruyi/ruyipkg/list.py:100
+#: ruyi/ruyipkg/list.py:114
 #, python-brace-format
 msgid "* Package kind: {kind}"
 msgstr "* 软件包类型：{kind}"
 
-#: ruyi/ruyipkg/list.py:101
+#: ruyi/ruyipkg/list.py:115
 #, python-brace-format
 msgid "* Vendor: {vendor}"
 msgstr "* 供应商：{vendor}"
 
-#: ruyi/ruyipkg/list.py:104
+#: ruyi/ruyipkg/list.py:118
+#, python-brace-format
+msgid "* Download size for {host}: {size}"
+msgstr "* {host} 的下载大小：{size}"
+
+#: ruyi/ruyipkg/list.py:125
 #, python-brace-format
 msgid "* Upstream version number: {version}"
 msgstr "* 上游版本号：{version}"
 
-#: ruyi/ruyipkg/list.py:107
+#: ruyi/ruyipkg/list.py:128
 msgid "* Upstream version number: (undeclared)"
 msgstr "* 上游版本号：（未声明）"
 
-#: ruyi/ruyipkg/list.py:112
+#: ruyi/ruyipkg/list.py:133
 msgid ""
 "\n"
 "Package has known issue(s):\n"
@@ -1599,17 +1604,17 @@ msgstr ""
 "\n"
 "软件包有已知问题：\n"
 
-#: ruyi/ruyipkg/list.py:117
+#: ruyi/ruyipkg/list.py:138
 #, python-brace-format
 msgid "Package declares {count} distfile(s):\n"
 msgstr "软件包声明了 {count} 个分发文件：\n"
 
-#: ruyi/ruyipkg/list.py:120
+#: ruyi/ruyipkg/list.py:141
 #, python-brace-format
 msgid "    - Size: [yellow]{size}[/] bytes"
 msgstr "    - 大小：[yellow]{size}[/] 字节"
 
-#: ruyi/ruyipkg/list.py:125
+#: ruyi/ruyipkg/list.py:146
 msgid ""
 "\n"
 "### Binary artifacts\n"
@@ -1617,21 +1622,21 @@ msgstr ""
 "\n"
 "### 二进制制品\n"
 
-#: ruyi/ruyipkg/list.py:127
+#: ruyi/ruyipkg/list.py:148
 #, python-brace-format
 msgid "* Host [green]{host}[/]:"
 msgstr "* 主机 [green]{host}[/]："
 
-#: ruyi/ruyipkg/list.py:129
+#: ruyi/ruyipkg/list.py:150
 #, python-brace-format
 msgid "    - Distfiles: {distfiles}"
 msgstr "    - 分发文件：{distfiles}"
 
-#: ruyi/ruyipkg/list.py:132
+#: ruyi/ruyipkg/list.py:153
 msgid "    - Available command(s):"
 msgstr "    - 可用命令："
 
-#: ruyi/ruyipkg/list.py:137
+#: ruyi/ruyipkg/list.py:158
 msgid ""
 "\n"
 "### Toolchain metadata\n"
@@ -1639,19 +1644,33 @@ msgstr ""
 "\n"
 "### 工具链元数据\n"
 
-#: ruyi/ruyipkg/list.py:138
+#: ruyi/ruyipkg/list.py:159
 #, python-brace-format
 msgid "* Target: [bold green]{target}[/]"
 msgstr "* 目标：[bold green]{target}[/]"
 
-#: ruyi/ruyipkg/list.py:139
+#: ruyi/ruyipkg/list.py:160
 #, python-brace-format
 msgid "* Quirks: {quirks}"
 msgstr "* 特殊特性：{quirks}"
 
-#: ruyi/ruyipkg/list.py:140
+#: ruyi/ruyipkg/list.py:161
 msgid "* Components:"
 msgstr "* 组件："
+
+#: ruyi/ruyipkg/list.py:168
+msgid "(unknown)"
+msgstr "（未知）"
+
+#: ruyi/ruyipkg/list.py:169
+#, python-brace-format
+msgid "[yellow]{size}[/] bytes"
+msgstr "[yellow]{size}[/] 字节"
+
+#: ruyi/ruyipkg/list.py:175
+#, python-brace-format
+msgid " download: [yellow]{size}[/] bytes for {host}"
+msgstr " 下载：[yellow]{size}[/] 字节，适用于 {host}"
 
 #: ruyi/ruyipkg/list_cli.py:19
 msgid "List available packages in configured repository"
@@ -2338,4 +2357,3 @@ msgstr ""
 #~ "              Ruyi never elevates privileges when creating virtual environments. If a rootfs contains private system files such as /etc/shadow, prepare a readable sysroot yourself or use projection mode.\n"
 #~ "        "
 #~ msgstr ""
-
