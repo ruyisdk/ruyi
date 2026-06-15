@@ -48,7 +48,7 @@ class AugmentedPkgManifest:
         pm: BoundPackageManifest,
         remarks: list[PkgRemark],
         download_size_host_bytes: int | None,
-        download_size_host: str,
+        download_size_host: str | None,
     ) -> None:
         self.pm = pm
         self.remarks = remarks
@@ -145,12 +145,13 @@ class AugmentedPkg:
                 if is_installed:
                     remarks.append(PkgRemark.Installed)
 
+                dl_size = _get_pkg_download_size_for_host(pm, native_host)
                 pkg.add_version(
                     AugmentedPkgManifest(
                         pm,
                         remarks,
-                        _get_pkg_download_size_for_host(pm, native_host),
-                        native_host,
+                        dl_size,
+                        native_host if dl_size is not None else None,
                     )
                 )
 
@@ -172,7 +173,7 @@ class PorcelainPkgVersionV1(TypedDict):
     is_downloaded: bool
     is_installed: bool
     download_size_host_bytes: int | None
-    download_size_host: str
+    download_size_host: str | None
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):

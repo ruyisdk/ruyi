@@ -169,8 +169,8 @@ def _format_download_size_value(size: int | None) -> str:
     return _("[yellow]{size}[/] bytes").format(size=size)
 
 
-def _format_download_size_inline(size: int | None, host: str) -> str:
-    if size is None:
+def _format_download_size_inline(size: int | None, host: str | None) -> str:
+    if size is None or host is None:
         return ""
     return _(" download: [yellow]{size}[/] bytes for {host}").format(
         size=size,
