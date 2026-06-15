@@ -6,7 +6,7 @@ import sys
 from ruyi.utils.node_info import gather_node_info
 
 
-def test_gather_node_info_without_freedesktop_os_release():
+def test_gather_node_info_without_freedesktop_os_release() -> None:
     """Ensure gather_node_info does not crash when platform.freedesktop_os_release
     is unavailable, e.g. on macOS or other non-systemd/non-freedesktop systems."""
     with mock.patch.object(
@@ -28,7 +28,7 @@ def test_gather_node_info_without_freedesktop_os_release():
     assert "shell" in info
 
 
-def test_gather_node_info_darwin_like():
+def test_gather_node_info_darwin_like() -> None:
     """Ensure gather_node_info produces macOS-compatible fields when running on
     a Darwin-like system without freedesktop_os_release."""
     with (

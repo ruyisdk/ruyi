@@ -5,7 +5,7 @@ from unittest import mock
 from ruyi.utils import prereqs
 
 
-def test_ensure_cmds_only_checks_requested_commands():
+def test_ensure_cmds_only_checks_requested_commands() -> None:
     """ensure_cmds only cares about the commands passed to it, not all of _CMDS."""
     with mock.patch.object(
         shutil, "which", return_value=None
@@ -19,7 +19,7 @@ def test_ensure_cmds_only_checks_requested_commands():
             assert absent == ["gunzip", "tar"]
 
 
-def test_init_cmd_presence_map_platform_aware():
+def test_init_cmd_presence_map_platform_aware() -> None:
     """init_cmd_presence_map skips device-provisioning commands on macOS."""
     with mock.patch.object(
         shutil, "which", return_value=None
@@ -33,7 +33,7 @@ def test_init_cmd_presence_map_platform_aware():
             assert "unzip" in prereqs._CMD_PRESENCE_MAP
 
 
-def test_init_cmd_presence_map_linux_includes_all():
+def test_init_cmd_presence_map_linux_includes_all() -> None:
     """init_cmd_presence_map checks all commands on Linux."""
     with mock.patch.object(
         shutil, "which", return_value=None

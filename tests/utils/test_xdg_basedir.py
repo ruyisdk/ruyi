@@ -7,7 +7,7 @@ import sys
 from ruyi.utils.xdg_basedir import XDGBaseDir, XDGPathEntry
 
 
-def test_xdg_macos_defaults():
+def test_xdg_macos_defaults() -> None:
     home = pathlib.Path("/Users/testuser")
     with (
         mock.patch.object(pathlib.Path, "home", return_value=home),
@@ -27,7 +27,7 @@ def test_xdg_macos_defaults():
         assert dirs.app_state == home / "Library" / "Application Support" / "ruyi"
 
 
-def test_xdg_macos_system_dirs_are_empty():
+def test_xdg_macos_system_dirs_are_empty() -> None:
     with (
         mock.patch.object(sys, "platform", "darwin"),
         mock.patch.dict(os.environ, {}, clear=True),
@@ -37,7 +37,7 @@ def test_xdg_macos_system_dirs_are_empty():
         assert list(dirs.data_dirs) == []
 
 
-def test_xdg_macos_env_override_still_works():
+def test_xdg_macos_env_override_still_works() -> None:
     home = pathlib.Path("/Users/testuser")
     with (
         mock.patch.object(pathlib.Path, "home", return_value=home),
@@ -55,7 +55,7 @@ def test_xdg_macos_env_override_still_works():
         assert dirs.config_home == pathlib.Path("/custom/config")
 
 
-def test_xdg_macos_config_dirs_env_override():
+def test_xdg_macos_config_dirs_env_override() -> None:
     with (
         mock.patch.object(sys, "platform", "darwin"),
         mock.patch.dict(
@@ -72,7 +72,7 @@ def test_xdg_macos_config_dirs_env_override():
         }
 
 
-def test_xdg_linux_defaults_unchanged():
+def test_xdg_linux_defaults_unchanged() -> None:
     """Ensure Linux defaults are not affected by macOS changes."""
     home = pathlib.Path("/home/testuser")
     with (
