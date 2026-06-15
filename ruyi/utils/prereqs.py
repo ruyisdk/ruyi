@@ -11,7 +11,7 @@ def has_cmd_in_path(cmd: str) -> bool:
     return shutil.which(cmd) is not None
 
 
-_CMDS: Final = (
+_UNPACK_CMDS: Final = (
     "bzip2",
     "gunzip",
     "lz4",
@@ -19,18 +19,28 @@ _CMDS: Final = (
     "xz",
     "zstd",
     "unzip",
-    # commands used by the device provisioner
+)
+
+_PROVISION_CMDS: Final = (
     "sudo",
     "dd",
     "fastboot",
 )
 
+_CMDS = _UNPACK_CMDS + _PROVISION_CMDS
+
 _CMD_PRESENCE_MAP: Final[dict[str, bool]] = {}
+
+
+def _get_cmds_for_platform() -> tuple[str, ...]:
+    if sys.platform == "darwin":
+        return _UNPACK_CMDS
+    return _CMDS
 
 
 def init_cmd_presence_map() -> None:
     _CMD_PRESENCE_MAP.clear()
-    for cmd in _CMDS:
+    for cmd in _get_cmds_for_platform():
         _CMD_PRESENCE_MAP[cmd] = has_cmd_in_path(cmd)
 
 
