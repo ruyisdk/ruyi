@@ -58,6 +58,18 @@ class PorcelainPkgListOutputV1(PorcelainEntity):
     vers: list[PorcelainPkgVersionV1]
 
 
+class PorcelainPkgVersionV1(TypedDict):
+    semver: str
+    pm: PackageManifestType
+    remarks: list[str]
+    is_downloaded: bool
+    is_installed: bool
+    download_size_host_bytes: int | None
+    """Total size in bytes of the distfiles needed for download_size_host."""
+    download_size_host: str
+    """Host architecture used for resolving host-specific distfiles."""
+
+
 # ty: "entitylistoutput-v1"
 # see ruyipkg/entity_provider.py
 class PorcelainEntityListOutputV1(PorcelainEntity):

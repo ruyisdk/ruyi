@@ -44,7 +44,14 @@ def do_list(
         if i > 0:
             logger.stdout("\n")
 
-        _print_pkg_detail(logger, ver.pm, cfg.lang_code, multi_repo)
+        _print_pkg_detail(
+            logger,
+            ver.pm,
+            cfg.lang_code,
+            multi_repo,
+            download_size_host_bytes=ver.download_size_host_bytes,
+            download_size_host=ver.download_size_host,
+        )
 
     return 0
 
@@ -66,9 +73,13 @@ def _do_list_non_verbose(
             else:
                 comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
+            size_str = _format_download_size_inline(
+                ver.download_size_host_bytes,
+                ver.download_size_host,
+            )
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
             logger.stdout(
-                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{repo_str}"
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{repo_str}"
             )
 
     return 0
@@ -87,6 +98,9 @@ def _print_pkg_detail(
     pm: BoundPackageManifest,
     lang_code: str,
     multi_repo: bool = False,
+    *,
+    download_size_host_bytes: int | None = None,
+    download_size_host: str | None = None,
 ) -> None:
     repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
     logger.stdout(
@@ -99,6 +113,13 @@ def _print_pkg_detail(
         logger.stdout(_("* Slug: (none)"))
     logger.stdout(_("* Package kind: {kind}").format(kind=sorted(pm.kind)))
     logger.stdout(_("* Vendor: {vendor}").format(vendor=pm.vendor_name))
+    if download_size_host is not None:
+        logger.stdout(
+            _("* Download size for {host}: {size}").format(
+                host=download_size_host,
+                size=_format_download_size_value(download_size_host_bytes),
+            )
+        )
     if upstream_ver := pm.upstream_version:
         logger.stdout(
             _("* Upstream version number: {version}").format(version=upstream_ver)
@@ -140,3 +161,18 @@ def _print_pkg_detail(
         logger.stdout(_("* Components:"))
         for tc in tm.components:
             logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
+
+
+def _format_download_size_value(size: int | None) -> str:
+    if size is None:
+        return _("(unknown)")
+    return _("[yellow]{size}[/] bytes").format(size=size)
+
+
+def _format_download_size_inline(size: int | None, host: str | None) -> str:
+    if size is None or host is None:
+        return ""
+    return _(" download: [yellow]{size}[/] bytes for {host}").format(
+        size=size,
+        host=host,
+    )

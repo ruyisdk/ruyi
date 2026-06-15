@@ -47,9 +47,13 @@ class AugmentedPkgManifest:
         self,
         pm: BoundPackageManifest,
         remarks: list[PkgRemark],
+        download_size_host_bytes: int | None,
+        download_size_host: str | None,
     ) -> None:
         self.pm = pm
         self.remarks = remarks
+        self.download_size_host_bytes = download_size_host_bytes
+        self.download_size_host = download_size_host
         self._is_downloaded = PkgRemark.Downloaded in remarks
         self._is_installed = PkgRemark.Installed in remarks
 
@@ -60,6 +64,8 @@ class AugmentedPkgManifest:
             "remarks": self.remarks,
             "is_downloaded": self._is_downloaded,
             "is_installed": self._is_installed,
+            "download_size_host_bytes": self.download_size_host_bytes,
+            "download_size_host": self.download_size_host,
         }
 
 
@@ -139,7 +145,15 @@ class AugmentedPkg:
                 if is_installed:
                     remarks.append(PkgRemark.Installed)
 
-                pkg.add_version(AugmentedPkgManifest(pm, remarks))
+                dl_size = _get_pkg_download_size_for_host(pm, native_host)
+                pkg.add_version(
+                    AugmentedPkgManifest(
+                        pm,
+                        remarks,
+                        dl_size,
+                        native_host if dl_size is not None else None,
+                    )
+                )
 
             yield pkg
 
@@ -158,6 +172,8 @@ class PorcelainPkgVersionV1(TypedDict):
     remarks: list[PkgRemark]
     is_downloaded: bool
     is_installed: bool
+    download_size_host_bytes: int | None
+    download_size_host: str | None
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):
@@ -177,3 +193,28 @@ def _is_pkg_fully_downloaded(pm: BoundPackageManifest) -> bool:
             return False
 
     return True
+
+
+def _get_pkg_distfile_names_for_host(
+    pm: BoundPackageManifest,
+    host: str,
+) -> list[str] | None:
+    if bin_md := pm.binary_metadata:
+        return bin_md.get_distfile_names_for_host(host)
+    if blob_md := pm.blob_metadata:
+        return blob_md.get_distfile_names()
+    if src_md := pm.source_metadata:
+        return src_md.get_distfile_names_for_host(host)
+    return None
+
+
+def _get_pkg_download_size_for_host(
+    pm: BoundPackageManifest,
+    host: str,
+) -> int | None:
+    distfile_names = _get_pkg_distfile_names_for_host(pm, host)
+    if distfile_names is None:
+        return None
+
+    distfiles = pm.distfiles
+    return sum(distfiles[name].size for name in distfile_names)
