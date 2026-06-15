@@ -27,7 +27,7 @@ def test_admin_build_package_dry_run(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true'])\n"
+        "    return ctx.subprocess(argv = ['true'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
 
@@ -44,7 +44,7 @@ def test_admin_build_package_executes(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true'])\n"
+        "    return ctx.subprocess(argv = ['true'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     result = ruyi_cli_runner("admin", "build-package", str(recipe))
@@ -59,7 +59,7 @@ def test_admin_build_package_var_flag(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/echo', ctx.var('arch')])\n"
+        "    return ctx.subprocess(argv = ['echo', ctx.var('arch')])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     result = ruyi_cli_runner(
@@ -82,7 +82,7 @@ def test_admin_build_package_invalid_var(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true'])\n"
+        "    return ctx.subprocess(argv = ['true'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     result = ruyi_cli_runner(
@@ -104,7 +104,7 @@ def test_admin_build_package_build_failure_exits_nonzero(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/false'])\n"
+        "    return ctx.subprocess(argv = ['false'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     result = ruyi_cli_runner("admin", "build-package", str(recipe))
