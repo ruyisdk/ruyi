@@ -198,12 +198,12 @@ def _get_pkg_distfile_names_for_host(
     pm: BoundPackageManifest,
     host: str,
 ) -> list[str] | None:
-    if bm := pm.binary_metadata:
-        return bm.get_distfile_names_for_host(host)
-    if bm := pm.blob_metadata:
-        return bm.get_distfile_names()
-    if sm := pm.source_metadata:
-        return sm.get_distfile_names_for_host(host)
+    if bin_md := pm.binary_metadata:
+        return bin_md.get_distfile_names_for_host(host)
+    if blob_md := pm.blob_metadata:
+        return blob_md.get_distfile_names()
+    if src_md := pm.source_metadata:
+        return src_md.get_distfile_names_for_host(host)
     return None
 
 
