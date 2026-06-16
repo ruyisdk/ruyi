@@ -2,6 +2,24 @@
 
 : "${_INSIDE_DOCKER:=false}"
 
+DOCKER_IMAGES_TO_CHECK=(
+    debian:12
+    debian:13
+    linuxdeepin/deepin:crimson
+    fedora:42
+    fedora:43
+    fedora:44
+    opencloudos/opencloudos9-minimal:9.4-v20260424
+    opencloudos/opencloudos9-minimal:9.6-v20260514
+    openeuler/openeuler:24.03-lts-sp2
+    openeuler/openeuler:24.03-lts-sp3
+    openeuler/openeuler:25.09
+    openkylin/openkylin:2.0
+    ghcr.io/openruyi-project/creek:latest
+    ubuntu:24.04
+    ubuntu:26.04
+)
+
 ARCH_APT_PKGS=(
     libc6
     python3
@@ -14,8 +32,10 @@ ARCH_APT_PKGS=(
 ARCH_DNF_PKGS=(
     glibc
     python3
+    python3-lz4
     python3-pygit2
     python3-pyyaml
+    python3-zstandard
 )
 
 NOARCH_PKGS=(
@@ -53,9 +73,19 @@ main() {
     fi
 
     if [[ -z $image_tag ]]; then
-        echo "usage: $0 <image-tag-to-probe>" >&2
-        exit 2
+        # probe for every supported distro
+        for image in "${DOCKER_IMAGES_TO_CHECK[@]}"; do
+            check_one "$image"
+        done
+        exit $?
     fi
+
+    check_one "$image_tag"
+    exit $?
+}
+
+check_one() {
+    local image_tag="$1"
 
     local args=(
         --rm
@@ -66,7 +96,7 @@ main() {
         "$image_tag"
     )
 
-    exec docker run "${args[@]}"
+    docker run "${args[@]}"
 }
 
 _strip_pkgver_suffix() {
