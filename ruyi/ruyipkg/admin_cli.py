@@ -125,7 +125,13 @@ class AdminChecksumCommand(
         restrict = restrict_str.split(",") if restrict_str else []
         install_size = cast(bool, args.install_size)
 
-        return do_admin_checksum(logger, files, format, restrict, install_size=install_size)
+        return do_admin_checksum(
+            logger,
+            files,
+            format,
+            restrict,
+            install_size=install_size,
+        )
 
 
 class AdminFormatManifestCommand(

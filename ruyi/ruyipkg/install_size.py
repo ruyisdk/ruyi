@@ -20,7 +20,15 @@ def compute_install_size(path: Path, unpack_method: UnpackMethod) -> int:
     """
 
     match unpack_method:
-        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO | UnpackMethod.TAR_GZ | UnpackMethod.TAR_BZ2 | UnpackMethod.TAR_LZ4 | UnpackMethod.TAR_XZ | UnpackMethod.TAR_ZST:
+        case (
+            UnpackMethod.TAR
+            | UnpackMethod.TAR_AUTO
+            | UnpackMethod.TAR_GZ
+            | UnpackMethod.TAR_BZ2
+            | UnpackMethod.TAR_LZ4
+            | UnpackMethod.TAR_XZ
+            | UnpackMethod.TAR_ZST
+        ):
             return _install_size_tar(str(path))
 
         case UnpackMethod.ZIP:
@@ -32,7 +40,13 @@ def compute_install_size(path: Path, unpack_method: UnpackMethod) -> int:
         case UnpackMethod.RAW:
             return os.stat(path).st_size
 
-        case UnpackMethod.GZ | UnpackMethod.BZ2 | UnpackMethod.XZ | UnpackMethod.LZ4 | UnpackMethod.ZST:
+        case (
+            UnpackMethod.GZ
+            | UnpackMethod.BZ2
+            | UnpackMethod.XZ
+            | UnpackMethod.LZ4
+            | UnpackMethod.ZST
+        ):
             return _install_size_decompressed_stream(str(path), unpack_method)
 
         case _:
