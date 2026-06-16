@@ -107,6 +107,12 @@ class AdminChecksumCommand(
             nargs="+",
             help=_("Path to the distfile(s) to checksum"),
         )
+        p.add_argument(
+            "--install-size",
+            action="store_true",
+            default=False,
+            help=_("Also compute and report the unpacked install size"),
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -117,8 +123,15 @@ class AdminChecksumCommand(
         format = args.format
         restrict_str = cast(str, args.restrict)
         restrict = restrict_str.split(",") if restrict_str else []
+        install_size = cast(bool, args.install_size)
 
-        return do_admin_checksum(logger, files, format, restrict)
+        return do_admin_checksum(
+            logger,
+            files,
+            format,
+            restrict,
+            install_size=install_size,
+        )
 
 
 class AdminFormatManifestCommand(

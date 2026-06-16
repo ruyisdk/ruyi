@@ -51,6 +51,8 @@ def do_list(
             multi_repo,
             download_size_host_bytes=ver.download_size_host_bytes,
             download_size_host=ver.download_size_host,
+            install_size=ver.install_size,
+            is_installed=ver._is_installed,
         )
 
     return 0
@@ -73,10 +75,13 @@ def _do_list_non_verbose(
             else:
                 comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
-            size_str = _format_download_size_inline(
-                ver.download_size_host_bytes,
-                ver.download_size_host,
-            )
+            if ver._is_installed:
+                size_str = _format_install_size_inline(ver.install_size, True)
+            else:
+                size_str = _format_download_size_inline(
+                    ver.download_size_host_bytes,
+                    ver.download_size_host,
+                )
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
             logger.stdout(
                 f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{repo_str}"
@@ -101,6 +106,8 @@ def _print_pkg_detail(
     *,
     download_size_host_bytes: int | None = None,
     download_size_host: str | None = None,
+    install_size: int | None = None,
+    is_installed: bool = False,
 ) -> None:
     repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
     logger.stdout(
@@ -118,6 +125,12 @@ def _print_pkg_detail(
             _("* Download size for {host}: {size}").format(
                 host=download_size_host,
                 size=_format_download_size_value(download_size_host_bytes),
+            )
+        )
+    if is_installed and install_size is not None:
+        logger.stdout(
+            _("* Installed size: {size}").format(
+                size=_format_download_size_value(install_size),
             )
         )
     if upstream_ver := pm.upstream_version:
@@ -163,16 +176,42 @@ def _print_pkg_detail(
             logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
 
 
+def _format_size_human(size: int) -> str:
+    """Format a byte count as a human-readable binary-prefixed string."""
+    units = ("KiB", "MiB", "GiB", "TiB", "PiB")
+    value = float(size)
+    unit = "B"
+
+    for u in units:
+        if value < 1024:
+            break
+        value /= 1024
+        unit = u
+
+    if unit == "B":
+        return f"{int(value)} {unit}"
+
+    if value == int(value):
+        return f"{int(value)} {unit}"
+    return f"{value:.1f} {unit}"
+
+
 def _format_download_size_value(size: int | None) -> str:
     if size is None:
         return _("(unknown)")
-    return _("[yellow]{size}[/] bytes").format(size=size)
+    return _format_size_human(size)
 
 
 def _format_download_size_inline(size: int | None, host: str | None) -> str:
     if size is None or host is None:
         return ""
-    return _(" download: [yellow]{size}[/] bytes for {host}").format(
-        size=size,
+    return _(" download: [yellow]{size}[/] for {host}").format(
+        size=_format_size_human(size),
         host=host,
     )
+
+
+def _format_install_size_inline(size: int | None, is_installed: bool) -> str:
+    if size is None or not is_installed:
+        return ""
+    return _(" install: [yellow]{size}[/]").format(size=_format_size_human(size))

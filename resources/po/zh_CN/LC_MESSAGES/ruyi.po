@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-06-10 16:55+0800\n"
+"POT-Creation-Date: 2026-06-16 19:31+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -1060,10 +1060,15 @@ msgstr "命令名称"
 msgid "Arguments to pass to the plugin command"
 msgstr "要传递给插件命令的参数"
 
-#: ruyi/ruyipkg/admin_checksum.py:23
+#: ruyi/ruyipkg/admin_checksum.py:28
 #, python-brace-format
 msgid "invalid restrict kinds given: {restrict}"
 msgstr "给出了无效的 restrict 类型：{restrict}"
+
+#: ruyi/ruyipkg/admin_checksum.py:118
+#, python-brace-format
+msgid "cannot compute install size for {name}: {error}"
+msgstr "为 {name} 计算安装大小失败：{error}"
 
 #: ruyi/ruyipkg/admin_cli.py:16
 msgid "Check package manifests and metadata repositories"
@@ -1105,49 +1110,53 @@ msgstr "所有提及的分发文件使用的 'restrict' 字段，用逗号分隔
 msgid "Path to the distfile(s) to checksum"
 msgstr "要计算校验和的分发文件的路径"
 
-#: ruyi/ruyipkg/admin_cli.py:127
+#: ruyi/ruyipkg/admin_cli.py:114
+msgid "Also compute and report the unpacked install size"
+msgstr "一并计算并报告解压后的安装大小"
+
+#: ruyi/ruyipkg/admin_cli.py:140
 msgid "Format the given package manifests into canonical TOML representation"
 msgstr "将给定的软件包清单文件格式化为规范的 TOML 表示"
 
-#: ruyi/ruyipkg/admin_cli.py:135
+#: ruyi/ruyipkg/admin_cli.py:148
 msgid "Path to the distfile(s) to generate manifest for"
 msgstr "要为其生成清单文件的分发文件的路径"
 
-#: ruyi/ruyipkg/admin_cli.py:158
+#: ruyi/ruyipkg/admin_cli.py:171
 msgid "Build a package from a recipe file"
 msgstr "从一个配方文件构建软件包"
 
-#: ruyi/ruyipkg/admin_cli.py:165
+#: ruyi/ruyipkg/admin_cli.py:178
 msgid "Path to the recipe .star file"
 msgstr "配方 .star 文件的路径"
 
-#: ruyi/ruyipkg/admin_cli.py:173
+#: ruyi/ruyipkg/admin_cli.py:186
 msgid "Set a user variable for the recipe (repeatable)"
 msgstr "为构建配方设置用户变量（可重复）"
 
-#: ruyi/ruyipkg/admin_cli.py:182
+#: ruyi/ruyipkg/admin_cli.py:195
 msgid "Select a specific scheduled build by name (repeatable); by default all scheduled builds are executed"
 msgstr "按名称选择特定的计划构建任务（可重复）；默认情况下执行所有计划构建任务"
 
-#: ruyi/ruyipkg/admin_cli.py:189
+#: ruyi/ruyipkg/admin_cli.py:202
 msgid "Print the build plan without executing it"
 msgstr "打印构建计划而不执行它"
 
-#: ruyi/ruyipkg/admin_cli.py:195
+#: ruyi/ruyipkg/admin_cli.py:208
 msgid "Override the recipe project's output directory"
 msgstr "覆盖构建配方项目的输出目录"
 
-#: ruyi/ruyipkg/admin_cli.py:220
+#: ruyi/ruyipkg/admin_cli.py:233
 #, python-brace-format
 msgid "invalid --var spec {spec!r}: expected KEY=VALUE"
 msgstr "无效的 --var 规范 {spec!r}：预期格式为 KEY=VALUE"
 
-#: ruyi/ruyipkg/admin_cli.py:227
+#: ruyi/ruyipkg/admin_cli.py:240
 #, python-brace-format
 msgid "invalid --var spec {spec!r}: empty key"
 msgstr "无效的 --var 规范 {spec!r}：键为空"
 
-#: ruyi/ruyipkg/admin_cli.py:249
+#: ruyi/ruyipkg/admin_cli.py:262
 #, python-brace-format
 msgid "build {name!r} completed: {n} artifact(s)"
 msgstr "构建任务 {name!r} 完成：{n} 个构建产物"
@@ -1559,44 +1568,49 @@ msgstr "未为 list 操作指定过滤器"
 msgid "for the old behavior of listing all packages, try [yellow]ruyi list --all[/]"
 msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --all[/]"
 
-#: ruyi/ruyipkg/list.py:64
+#: ruyi/ruyipkg/list.py:66
 msgid "List of available packages:\n"
 msgstr "可用软件包列表：\n"
 
-#: ruyi/ruyipkg/list.py:111
+#: ruyi/ruyipkg/list.py:118
 #, python-brace-format
 msgid "* Slug: [yellow]{slug}[/]"
 msgstr "* Slug：[yellow]{slug}[/]"
 
-#: ruyi/ruyipkg/list.py:113
+#: ruyi/ruyipkg/list.py:120
 msgid "* Slug: (none)"
 msgstr "* Slug：（无）"
 
-#: ruyi/ruyipkg/list.py:114
+#: ruyi/ruyipkg/list.py:121
 #, python-brace-format
 msgid "* Package kind: {kind}"
 msgstr "* 软件包类型：{kind}"
 
-#: ruyi/ruyipkg/list.py:115
+#: ruyi/ruyipkg/list.py:122
 #, python-brace-format
 msgid "* Vendor: {vendor}"
 msgstr "* 供应商：{vendor}"
 
-#: ruyi/ruyipkg/list.py:118
+#: ruyi/ruyipkg/list.py:125
 #, python-brace-format
 msgid "* Download size for {host}: {size}"
 msgstr "* {host} 的下载大小：{size}"
 
-#: ruyi/ruyipkg/list.py:125
+#: ruyi/ruyipkg/list.py:132
+#, python-brace-format
+msgid "* Installed size: {size}"
+msgstr "* 安装后大小：{size}"
+
+#: ruyi/ruyipkg/list.py:138
 #, python-brace-format
 msgid "* Upstream version number: {version}"
 msgstr "* 上游版本号：{version}"
 
-#: ruyi/ruyipkg/list.py:128
+#: ruyi/ruyipkg/list.py:141
 msgid "* Upstream version number: (undeclared)"
 msgstr "* 上游版本号：（未声明）"
 
-#: ruyi/ruyipkg/list.py:133
+#: ruyi/ruyipkg/list.py:146
 msgid ""
 "\n"
 "Package has known issue(s):\n"
@@ -1604,17 +1618,17 @@ msgstr ""
 "\n"
 "软件包有已知问题：\n"
 
-#: ruyi/ruyipkg/list.py:138
+#: ruyi/ruyipkg/list.py:151
 #, python-brace-format
 msgid "Package declares {count} distfile(s):\n"
 msgstr "软件包声明了 {count} 个分发文件：\n"
 
-#: ruyi/ruyipkg/list.py:141
+#: ruyi/ruyipkg/list.py:154
 #, python-brace-format
 msgid "    - Size: [yellow]{size}[/] bytes"
 msgstr "    - 大小：[yellow]{size}[/] 字节"
 
-#: ruyi/ruyipkg/list.py:146
+#: ruyi/ruyipkg/list.py:159
 msgid ""
 "\n"
 "### Binary artifacts\n"
@@ -1622,21 +1636,21 @@ msgstr ""
 "\n"
 "### 二进制制品\n"
 
-#: ruyi/ruyipkg/list.py:148
+#: ruyi/ruyipkg/list.py:161
 #, python-brace-format
 msgid "* Host [green]{host}[/]:"
 msgstr "* 主机 [green]{host}[/]："
 
-#: ruyi/ruyipkg/list.py:150
+#: ruyi/ruyipkg/list.py:163
 #, python-brace-format
 msgid "    - Distfiles: {distfiles}"
 msgstr "    - 分发文件：{distfiles}"
 
-#: ruyi/ruyipkg/list.py:153
+#: ruyi/ruyipkg/list.py:166
 msgid "    - Available command(s):"
 msgstr "    - 可用命令："
 
-#: ruyi/ruyipkg/list.py:158
+#: ruyi/ruyipkg/list.py:171
 msgid ""
 "\n"
 "### Toolchain metadata\n"
@@ -1644,33 +1658,33 @@ msgstr ""
 "\n"
 "### 工具链元数据\n"
 
-#: ruyi/ruyipkg/list.py:159
+#: ruyi/ruyipkg/list.py:172
 #, python-brace-format
 msgid "* Target: [bold green]{target}[/]"
 msgstr "* 目标：[bold green]{target}[/]"
 
-#: ruyi/ruyipkg/list.py:160
+#: ruyi/ruyipkg/list.py:173
 #, python-brace-format
 msgid "* Quirks: {quirks}"
 msgstr "* 特殊特性：{quirks}"
 
-#: ruyi/ruyipkg/list.py:161
+#: ruyi/ruyipkg/list.py:174
 msgid "* Components:"
 msgstr "* 组件："
 
-#: ruyi/ruyipkg/list.py:168
+#: ruyi/ruyipkg/list.py:201
 msgid "(unknown)"
 msgstr "（未知）"
 
-#: ruyi/ruyipkg/list.py:169
+#: ruyi/ruyipkg/list.py:208
 #, python-brace-format
-msgid "[yellow]{size}[/] bytes"
-msgstr "[yellow]{size}[/] 字节"
+msgid " download: [yellow]{size}[/] for {host}"
+msgstr " 下载量：[yellow]{size}[/] ({host})"
 
-#: ruyi/ruyipkg/list.py:175
+#: ruyi/ruyipkg/list.py:217
 #, python-brace-format
-msgid " download: [yellow]{size}[/] bytes for {host}"
-msgstr " 下载：[yellow]{size}[/] 字节，适用于 {host}"
+msgid " install: [yellow]{size}[/]"
+msgstr " 安装后大小：[yellow]{size}[/]"
 
 #: ruyi/ruyipkg/list_cli.py:19
 msgid "List available packages in configured repository"
@@ -2009,42 +2023,17 @@ msgstr "新的优先级取值"
 msgid "repo '{id}' priority set to {priority}"
 msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
 
-#: ruyi/ruyipkg/unpack.py:197
+#: ruyi/ruyipkg/unpack.py:195
 #, python-brace-format
 msgid "untar failed: command {cmd} returned {retcode}"
 msgstr "tar 解包失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:216
+#: ruyi/ruyipkg/unpack.py:300
 #, python-brace-format
 msgid "unzip failed: command {cmd} returned {retcode}"
 msgstr "unzip 失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:240
-#, python-brace-format
-msgid "gunzip failed: command {cmd} returned {retcode}"
-msgstr "gunzip 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:264
-#, python-brace-format
-msgid "bzip2 failed: command {cmd} returned {retcode}"
-msgstr "bzip2 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:284
-#, python-brace-format
-msgid "lz4 failed: command {cmd} returned {retcode}"
-msgstr "lz4 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:308
-#, python-brace-format
-msgid "xz failed: command {cmd} returned {retcode}"
-msgstr "xz 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:328
-#, python-brace-format
-msgid "zstd failed: command {cmd} returned {retcode}"
-msgstr "zstd 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:355
+#: ruyi/ruyipkg/unpack.py:403
 #, python-brace-format
 msgid "file '{filename}' does not appear to be a deb"
 msgstr "文件 '{filename}' 似乎不是一个 deb"
@@ -2299,24 +2288,24 @@ msgstr "无法将仓库快进到新获取的状态"
 msgid "manual intervention is required to avoid data loss"
 msgstr "需要手动干预以避免数据丢失"
 
-#: ruyi/utils/prereqs.py:62
+#: ruyi/utils/prereqs.py:67
 #, python-brace-format
 msgid "The command(s) {cmds} cannot be found in PATH, which [yellow]ruyi[/] requires"
 msgstr "在 PATH 中找不到命令 {cmds}，而 [yellow]ruyi[/] 需要它们"
 
-#: ruyi/utils/prereqs.py:66
+#: ruyi/utils/prereqs.py:71
 msgid "please install and retry"
 msgstr "请安装并重试"
 
-#: ruyi/utils/prereqs.py:72
+#: ruyi/utils/prereqs.py:77
 msgid "please install them and press [green]Enter[/] to retry, or [green]Ctrl+C[/] to exit"
 msgstr "请安装它们并按 [green]Enter[/] 重试，或按 [green]Ctrl+C[/] 退出"
 
-#: ruyi/utils/prereqs.py:78
+#: ruyi/utils/prereqs.py:83
 msgid "exiting due to EOF"
 msgstr "由于 EOF 退出"
 
-#: ruyi/utils/prereqs.py:81
+#: ruyi/utils/prereqs.py:86
 msgid "exiting due to keyboard interrupt"
 msgstr "由于键盘中断退出"
 
@@ -2346,14 +2335,3 @@ msgstr ""
 "\n"
 "* certifi: https://github.com/certifi/python-certifi\n"
 
-#~ msgid ""
-#~ "\n"
-#~ "            Sysroot provisioning:\n"
-#~ "              By default, Ruyi uses the sysroot bundled with the selected toolchain if one is available.\n"
-#~ "              Use --copy-sysroot-from-pkg to copy the sysroot from another installed toolchain package.\n"
-#~ "              Use --copy-sysroot-from-dir only for a complete sysroot directory readable by the current user; it performs a faithful full-tree copy.\n"
-#~ "              Use --symlink-sysroot-from-dir to point the virtual environment at an existing sysroot directory without copying it.\n"
-#~ "              Use --project-sysroot-from-rootfs for distro rootfs or chroot trees: Ruyi copies common cross-build directories such as include, lib*, usr/include, usr/lib*, usr/share, bin, and sbin, and skips unreadable or unsupported files.\n"
-#~ "              Ruyi never elevates privileges when creating virtual environments. If a rootfs contains private system files such as /etc/shadow, prepare a readable sysroot yourself or use projection mode.\n"
-#~ "        "
-#~ msgstr ""

@@ -7,6 +7,7 @@ from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
 from tomlkit.toml_document import TOMLDocument
 
 from .pkg_manifest import (
+    ArtifactMetadataDeclType,
     BinaryDeclType,
     BinaryFileDeclType,
     BlobDeclType,
@@ -179,9 +180,19 @@ def dump_fetch_restriction(x: FetchRestrictionDeclType) -> Table:
     return y
 
 
+def dump_artifact_metadata(x: ArtifactMetadataDeclType) -> Table:
+    """Dump per-artifact metadata as a regular sub-table."""
+    y = table()
+    if "install_size" in x:
+        y.add("install_size", x["install_size"])
+    return y
+
+
 def dump_blob_decl(x: BlobDeclType) -> Table:
     y = table()
     y.add("distfiles", str_array(x["distfiles"], multiline=True))
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 
@@ -221,6 +232,8 @@ def dump_binary_decl(x: BinaryFileDeclType, last: bool) -> Table:
         y.add("commands", sorted_table(cmds))
         if not last:
             y.add(nl())
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 
@@ -268,6 +281,8 @@ def dump_source_decl(x: SourceDeclType) -> Table:
     y = table()
     multiline_distfiles = len(x["distfiles"]) > 1
     y.add("distfiles", str_array(x["distfiles"], multiline=multiline_distfiles))
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 

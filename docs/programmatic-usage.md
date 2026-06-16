@@ -68,6 +68,8 @@ class PorcelainPkgVersionV1(TypedDict):
     """Total size in bytes of the distfiles needed for download_size_host."""
     download_size_host: str
     """Host architecture used for resolving host-specific distfiles."""
+    install_size: int | None
+    """Declared unpacked install size in bytes, or None if not available."""
 
 
 # ty: "entitylistoutput-v1"

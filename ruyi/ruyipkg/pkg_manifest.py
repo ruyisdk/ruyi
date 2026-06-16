@@ -63,10 +63,15 @@ class DistfileDeclType(TypedDict):
     prefixes_to_unpack: "NotRequired[list[str]]"
 
 
+class ArtifactMetadataDeclType(TypedDict):
+    install_size: "NotRequired[int]"
+
+
 class BinaryFileDeclType(TypedDict):
     host: str
     distfiles: list[str]
     commands: "NotRequired[dict[str, str]]"
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 BinaryDeclType = list[BinaryFileDeclType]
@@ -74,10 +79,12 @@ BinaryDeclType = list[BinaryFileDeclType]
 
 class BlobDeclType(TypedDict):
     distfiles: list[str]
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 class SourceDeclType(TypedDict):
     distfiles: list[str]
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 class ToolchainComponentDeclType(TypedDict):
@@ -288,6 +295,10 @@ class BlobDecl:
     def get_distfile_names(self) -> list[str] | None:
         return self._data["distfiles"]
 
+    @property
+    def metadata(self) -> ArtifactMetadataDeclType | None:
+        return self._data.get("metadata")
+
 
 class SourceDecl:
     def __init__(self, data: SourceDeclType) -> None:
@@ -296,6 +307,10 @@ class SourceDecl:
     def get_distfile_names_for_host(self, host: str | RuyiHost) -> list[str] | None:
         # currently the host parameter is ignored
         return self._data["distfiles"]
+
+    @property
+    def metadata(self) -> ArtifactMetadataDeclType | None:
+        return self._data.get("metadata")
 
 
 class ToolchainDecl:
