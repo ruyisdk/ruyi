@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-06-16 16:54+0800\n"
+"POT-Creation-Date: 2026-06-16 19:31+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -2023,42 +2023,17 @@ msgstr "新的优先级取值"
 msgid "repo '{id}' priority set to {priority}"
 msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
 
-#: ruyi/ruyipkg/unpack.py:197
+#: ruyi/ruyipkg/unpack.py:195
 #, python-brace-format
 msgid "untar failed: command {cmd} returned {retcode}"
 msgstr "tar 解包失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:216
+#: ruyi/ruyipkg/unpack.py:300
 #, python-brace-format
 msgid "unzip failed: command {cmd} returned {retcode}"
 msgstr "unzip 失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:240
-#, python-brace-format
-msgid "gunzip failed: command {cmd} returned {retcode}"
-msgstr "gunzip 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:264
-#, python-brace-format
-msgid "bzip2 failed: command {cmd} returned {retcode}"
-msgstr "bzip2 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:284
-#, python-brace-format
-msgid "lz4 failed: command {cmd} returned {retcode}"
-msgstr "lz4 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:308
-#, python-brace-format
-msgid "xz failed: command {cmd} returned {retcode}"
-msgstr "xz 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:328
-#, python-brace-format
-msgid "zstd failed: command {cmd} returned {retcode}"
-msgstr "zstd 失败：命令 {cmd} 返回 {retcode}"
-
-#: ruyi/ruyipkg/unpack.py:355
+#: ruyi/ruyipkg/unpack.py:403
 #, python-brace-format
 msgid "file '{filename}' does not appear to be a deb"
 msgstr "文件 '{filename}' 似乎不是一个 deb"
@@ -2313,24 +2288,24 @@ msgstr "无法将仓库快进到新获取的状态"
 msgid "manual intervention is required to avoid data loss"
 msgstr "需要手动干预以避免数据丢失"
 
-#: ruyi/utils/prereqs.py:72
+#: ruyi/utils/prereqs.py:67
 #, python-brace-format
 msgid "The command(s) {cmds} cannot be found in PATH, which [yellow]ruyi[/] requires"
 msgstr "在 PATH 中找不到命令 {cmds}，而 [yellow]ruyi[/] 需要它们"
 
-#: ruyi/utils/prereqs.py:76
+#: ruyi/utils/prereqs.py:71
 msgid "please install and retry"
 msgstr "请安装并重试"
 
-#: ruyi/utils/prereqs.py:82
+#: ruyi/utils/prereqs.py:77
 msgid "please install them and press [green]Enter[/] to retry, or [green]Ctrl+C[/] to exit"
 msgstr "请安装它们并按 [green]Enter[/] 重试，或按 [green]Ctrl+C[/] 退出"
 
-#: ruyi/utils/prereqs.py:88
+#: ruyi/utils/prereqs.py:83
 msgid "exiting due to EOF"
 msgstr "由于 EOF 退出"
 
-#: ruyi/utils/prereqs.py:91
+#: ruyi/utils/prereqs.py:86
 msgid "exiting due to keyboard interrupt"
 msgstr "由于键盘中断退出"
 
@@ -2359,19 +2334,4 @@ msgstr ""
 "授权的代码。您可以从相应项目的官方网站获取源代码：\n"
 "\n"
 "* certifi: https://github.com/certifi/python-certifi\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "            Sysroot provisioning:\n"
-#~ "              By default, Ruyi uses the sysroot bundled with the selected toolchain if one is available.\n"
-#~ "              Use --copy-sysroot-from-pkg to copy the sysroot from another installed toolchain package.\n"
-#~ "              Use --copy-sysroot-from-dir only for a complete sysroot directory readable by the current user; it performs a faithful full-tree copy.\n"
-#~ "              Use --symlink-sysroot-from-dir to point the virtual environment at an existing sysroot directory without copying it.\n"
-#~ "              Use --project-sysroot-from-rootfs for distro rootfs or chroot trees: Ruyi copies common cross-build directories such as include, lib*, usr/include, usr/lib*, usr/share, bin, and sbin, and skips unreadable or unsupported files.\n"
-#~ "              Ruyi never elevates privileges when creating virtual environments. If a rootfs contains private system files such as /etc/shadow, prepare a readable sysroot yourself or use projection mode.\n"
-#~ "        "
-#~ msgstr ""
-
-#~ msgid "[yellow]{size}[/] bytes"
-#~ msgstr "[yellow]{size}[/] 字节"
 
