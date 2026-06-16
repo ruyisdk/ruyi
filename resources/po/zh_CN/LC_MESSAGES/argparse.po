@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-19 02:52+0800\n"
+"POT-Creation-Date: 2026-06-16 16:54+0800\n"
 "PO-Revision-Date: 2026-01-17 22:25+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -18,155 +18,155 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: argparse.py:242
+#: argparse.py:246
 #, python-format
 msgid "%(heading)s:"
 msgstr "%(heading)s："
 
-#: argparse.py:321
+#: argparse.py:325
 msgid "usage: "
 msgstr "用法："
 
-#: argparse.py:749
+#: argparse.py:753
 #, python-format
 msgid " (default: %(default)s)"
 msgstr "（默认：%(default)s）"
 
-#: argparse.py:811
+#: argparse.py:815
 #, python-format
 msgid "argument %(argument_name)s: %(message)s"
 msgstr "参数 %(argument_name)s: %(message)s"
 
-#: argparse.py:1186
+#: argparse.py:1190
 msgid "show program's version number and exit"
 msgstr "显示程序的版本号并退出"
 
-#: argparse.py:1300
+#: argparse.py:1304
 #, python-format
 msgid "unknown parser %(parser_name)r (choices: %(choices)s)"
 msgstr "未知的解析器 %(parser_name)r（选择：%(choices)s）"
 
-#: argparse.py:1304
+#: argparse.py:1308
 #, python-format
 msgid "command '%(parser_name)s' is deprecated"
 msgstr "命令“%(parser_name)s”已被弃用"
 
-#: argparse.py:1371
+#: argparse.py:1375
 #, python-format
 msgid "argument \"-\" with mode %r"
 msgstr "%r 模式的参数 \"-\""
 
-#: argparse.py:1380
+#: argparse.py:1384
 #, python-format
 msgid "can't open '%(filename)s': %(error)s"
 msgstr "无法打开“%(filename)s”：%(error)s"
 
-#: argparse.py:1718
+#: argparse.py:1722
 #, python-format
 msgid "conflicting option string: %s"
 msgid_plural "conflicting option strings: %s"
 msgstr[0] "冲突的选项字符串：%s"
 
-#: argparse.py:1901
+#: argparse.py:1905
 msgid "positional arguments"
 msgstr "位置参数"
 
-#: argparse.py:1902
+#: argparse.py:1906
 msgid "options"
 msgstr "选项"
 
-#: argparse.py:1917
+#: argparse.py:1919
 msgid "show this help message and exit"
 msgstr "显示该帮助信息并退出"
 
-#: argparse.py:1954
+#: argparse.py:1956
 msgid "subcommands"
 msgstr "子命令"
 
-#: argparse.py:2005 argparse.py:2568
+#: argparse.py:2007 argparse.py:2570
 #, python-format
 msgid "unrecognized arguments: %s"
 msgstr "不认识的参数：%s"
 
-#: argparse.py:2111
+#: argparse.py:2113
 #, python-format
 msgid "not allowed with argument %s"
 msgstr "不可与 %s 参数搭配使用"
 
-#: argparse.py:2130
+#: argparse.py:2132
 #, python-format
 msgid "ambiguous option: %(option)s could match %(matches)s"
 msgstr "选项存在歧义：%(option)s 可能匹配上 %(matches)s"
 
-#: argparse.py:2162 argparse.py:2194
+#: argparse.py:2164 argparse.py:2196
 #, python-format
 msgid "ignored explicit argument %r"
 msgstr "忽略了显式参数 %r"
 
-#: argparse.py:2214
+#: argparse.py:2216
 #, python-format
 msgid "option '%(option)s' is deprecated"
 msgstr "选项“%(option)s”已被弃用"
 
-#: argparse.py:2246
+#: argparse.py:2248
 #, python-format
 msgid "argument '%(argument_name)s' is deprecated"
 msgstr "参数“%(argument_name)s”已被弃用"
 
-#: argparse.py:2339
+#: argparse.py:2341
 #, python-format
 msgid "the following arguments are required: %s"
 msgstr "必须传入以下参数：%s"
 
-#: argparse.py:2354
+#: argparse.py:2356
 #, python-format
 msgid "one of the arguments %s is required"
 msgstr "必须传入 %s 其中之一"
 
-#: argparse.py:2398
+#: argparse.py:2400
 msgid "expected one argument"
 msgstr "预期单个参数"
 
-#: argparse.py:2399
+#: argparse.py:2401
 msgid "expected at most one argument"
 msgstr "预期至多一个参数"
 
-#: argparse.py:2400
+#: argparse.py:2402
 msgid "expected at least one argument"
 msgstr "预期至少一个参数"
 
-#: argparse.py:2404
+#: argparse.py:2406
 #, python-format
 msgid "expected %s argument"
 msgid_plural "expected %s arguments"
 msgstr[0] "预期 %s 个参数"
 
-#: argparse.py:2514
+#: argparse.py:2516
 #, python-format
 msgid "unexpected option string: %s"
 msgstr "非预期的选项字符串：%s"
 
-#: argparse.py:2662
+#: argparse.py:2664
 #, python-format
 msgid "invalid %(type)s value: %(value)r"
 msgstr "无效的 %(type)s 值：%(value)r"
 
-#: argparse.py:2680
+#: argparse.py:2682
 #, python-format
 msgid "invalid choice: %(value)r (choose from %(choices)s)"
 msgstr "无效的选择：%(value)r（从 %(choices)s 中选择）"
 
-#: argparse.py:2688
+#: argparse.py:2690
 #, python-format
 msgid "invalid choice: %(value)r, maybe you meant %(closest)r? (choose from %(choices)s)"
 msgstr "无效的选择：%(value)r，您可能想的是 %(closest)r？（从 %(choices)s 中选择）"
 
-#: argparse.py:2780
+#: argparse.py:2782
 #, python-format
 msgid "%(prog)s: error: %(message)s\n"
 msgstr "%(prog)s：错误：%(message)s\n"
 
-#: argparse.py:2784
+#: argparse.py:2786
 #, python-format
 msgid "%(prog)s: warning: %(message)s\n"
 msgstr "%(prog)s：警告：%(message)s\n"
