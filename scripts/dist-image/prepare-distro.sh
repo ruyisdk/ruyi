@@ -20,19 +20,15 @@ esac
 
 case "$ID:$VERSION_ID" in
 debian:12)
-    _SYS_LLVM_VER=16
     _SYS_PYTHON_VER=3.11
     ;;
 deepin:25)
-    _SYS_LLVM_VER=19
     _SYS_PYTHON_VER=3.12
     ;;
 openEuler:*)
     # no special handling needed for Python devel libs
-    _SYS_LLVM_VER=20
     ;;
 ubuntu:24.04)
-    _SYS_LLVM_VER=20
     _SYS_PYTHON_VER=3.12
     ;;
 *)
@@ -119,21 +115,22 @@ EOF
         # for docker/setup-qemu-action
         docker.io
 
-        # for ruyi-litester
-        jq
-        "llvm-${_SYS_LLVM_VER}-tools"
+        # for ruyi-pytest
+        bzip2
+        gzip
+        lz4
+        make
         pipx
-        schroot
+        tar
+        unzip
         # wget  # already included
-        yq
+        xz-utils
+        zstd
     )
 
     apt-get update
     apt-get upgrade -qqy
     apt-get install -qqy "${package_list[@]}"
-
-    ln -s "/usr/bin/FileCheck-$_SYS_LLVM_VER" /usr/local/bin/FileCheck
-
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 }
@@ -173,23 +170,20 @@ prepare_dnf_distro() {
         # for docker/setup-qemu-action
         docker
 
-        # for ruyi-litester
-        jq
-        "llvm-toolset-${_SYS_LLVM_VER}"
+        # for ruyi-pytest
+        bzip2
+        gzip
+        lz4
         pipx
-        # schroot  # unavailable
+        tar
+        unzip
         # wget  # already included
-        # yq  # unavailable
+        xz
+        zstd
     )
 
     dnf -y upgrade --refresh
     dnf -y install "${package_list[@]}"
-
-    ln -s "/usr/bin/FileCheck-$_SYS_LLVM_VER" /usr/local/bin/FileCheck
-
-    # openEuler does not have yq in archive
-    wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_$TARGETARCH"
-    chmod a+x /usr/local/bin/yq
 
     dnf clean all
     rm -rf /var/cache/dnf

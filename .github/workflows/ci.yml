@@ -192,12 +192,11 @@ jobs:
         if: success() && !matrix.baseline
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq llvm-20-tools pipx schroot wget yq
+          sudo apt-get install -y bzip2 gzip lz4 make pipx tar unzip xz-utils zstd
           sudo apt-get clean
-          sudo ln -s /usr/bin/FileCheck-20 /usr/local/bin/FileCheck
 
           export PIPX_BIN_DIR=/usr/local/bin
-          sudo PIPX_BIN_DIR=/usr/local/bin pipx install lit
+          sudo PIPX_BIN_DIR=/usr/local/bin pipx install uv
 
       - name: Install baseline deps system-wide
         if: success() && matrix.baseline
@@ -274,11 +273,8 @@ jobs:
       - name: Run integration tests
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
-          sed -i 's@pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple @pip install @' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
-          sed -i 's@arpy certifi jinja2@arpy babel certifi jinja2@' tests/ruyi-litester/scripts/ruyi/ruyi-src-install.bash
-          export PIPX_BIN_DIR=/usr/local/bin
-          export RUYI_VERSION=0.47.0
-          ./tests/ruyi-litester/rit.bash -s --suites "$(pwd)/tests/rit-suites" ruyi-gha
+          cd tests/ruyi-pytest
+          uv run --with ../.. pytest
 
   shellcheck:
     name: lint shell scripts
@@ -624,7 +620,7 @@ jobs:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
           # fetch-tags: true
           fetch-depth: 0
-          # to include ruyi-litester
+          # to include external integration tests
           submodules: recursive
       - name: Fetch Git tags
         run: git fetch --tags --force
