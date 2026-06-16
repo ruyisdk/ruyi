@@ -20,8 +20,10 @@ from .unpack_method import (
 )
 
 
-class SupportsRead(Protocol):
+class StreamReader(Protocol):
     def read(self, n: int = -1, /) -> bytes: ...
+    def seekable(self) -> bool: ...
+    def seek(self, n: int, /) -> Any: ...
 
 
 def do_unpack(
@@ -30,7 +32,7 @@ def do_unpack(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: BinaryIO | SupportsRead | None = None,
+    stream: BinaryIO | StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     match unpack_method:
@@ -87,7 +89,7 @@ def do_unpack_or_symlink(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: BinaryIO | SupportsRead | None = None,
+    stream: BinaryIO | StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     try:
@@ -142,32 +144,21 @@ def _do_unpack_tar(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: SupportsRead | None,
+    stream: StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     argv = ["tar", "-x"]
 
-    match unpack_method:
-        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
-            pass
-        case UnpackMethod.TAR_GZ:
-            argv.append("-z")
-        case UnpackMethod.TAR_BZ2:
-            argv.append("-j")
-        case UnpackMethod.TAR_LZ4:
-            argv.append("--use-compress-program=lz4")
-        case UnpackMethod.TAR_XZ:
-            argv.append("-J")
-        case UnpackMethod.TAR_ZST:
-            argv.append("--zstd")
-        case _:
-            raise ValueError(
-                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
-            )
+    if stream is not None:
+        stream = _wrap_decompressed(stream, unpack_method)
+        filename = "-"
+    elif unpack_method not in (UnpackMethod.TAR, UnpackMethod.TAR_AUTO):
+        logger.D(f"decompressing {unpack_method} for tar: {filename}")
+        stream = _open_decompressed(filename, unpack_method)
+        filename = "-"
 
     stdin: int | None = None
-    if stream is not None:
-        filename = "-"
+    if filename == "-":
         stdin = subprocess.PIPE
 
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
@@ -184,9 +175,6 @@ def _do_unpack_tar(
     if stream is None:
         retcode = p.wait()
     else:
-        # this is only for pleasing the type-checker; it's statically true
-        # because the assignment always happens due to the earlier
-        # "stream is not None" branch.
         assert p.stdin is not None
 
         bufsize = 4 * mmap.PAGESIZE
@@ -205,6 +193,50 @@ def _do_unpack_tar(
                 retcode=retcode,
             )
         )
+
+
+def _open_decompressed(
+    filename: str,
+    unpack_method: UnpackMethod,
+) -> StreamReader:
+    match unpack_method:
+        case UnpackMethod.TAR_GZ:
+            return gzip.open(filename, "rb")
+        case UnpackMethod.TAR_BZ2:
+            return bz2.open(filename, "rb")
+        case UnpackMethod.TAR_XZ:
+            return lzma.open(filename, "rb")
+        case UnpackMethod.TAR_ZST:
+            return zstandard.ZstdDecompressor().stream_reader(open(filename, "rb"))
+        case UnpackMethod.TAR_LZ4:
+            return lz4.frame.open(filename, "rb")
+        case _:
+            raise ValueError(
+                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
+            )
+
+
+def _wrap_decompressed(
+    stream: StreamReader,
+    unpack_method: UnpackMethod,
+) -> StreamReader:
+    match unpack_method:
+        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+            return stream
+        case UnpackMethod.TAR_GZ:
+            return gzip.GzipFile(fileobj=stream, mode="rb")
+        case UnpackMethod.TAR_BZ2:
+            return bz2.BZ2File(stream, "rb")
+        case UnpackMethod.TAR_XZ:
+            return lzma.LZMAFile(stream, "rb")  # type: ignore[arg-type]  # in fact only read() is used
+        case UnpackMethod.TAR_ZST:
+            return zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
+        case UnpackMethod.TAR_LZ4:
+            return lz4.frame.LZ4FrameFile(stream)
+        case _:
+            raise ValueError(
+                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
+            )
 
 
 def _do_unpack_zip(
@@ -330,30 +362,27 @@ def _do_unpack_deb(
 
 def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
     match m:
-        case UnpackMethod.UNKNOWN | UnpackMethod.RAW | UnpackMethod.DEB:
+        case (
+            UnpackMethod.UNKNOWN
+            | UnpackMethod.RAW
+            | UnpackMethod.DEB
+            | UnpackMethod.GZ
+            | UnpackMethod.BZ2
+            | UnpackMethod.LZ4
+            | UnpackMethod.XZ
+            | UnpackMethod.ZST
+        ):
             return []
-        case UnpackMethod.GZ:
-            return ["gunzip"]
-        case UnpackMethod.BZ2:
-            return ["bzip2"]
-        case UnpackMethod.LZ4:
-            return ["lz4"]
-        case UnpackMethod.XZ:
-            return ["xz"]
-        case UnpackMethod.ZST:
-            return ["zstd"]
-        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+        case (
+            UnpackMethod.TAR
+            | UnpackMethod.TAR_AUTO
+            | UnpackMethod.TAR_GZ
+            | UnpackMethod.TAR_BZ2
+            | UnpackMethod.TAR_LZ4
+            | UnpackMethod.TAR_XZ
+            | UnpackMethod.TAR_ZST
+        ):
             return ["tar"]
-        case UnpackMethod.TAR_GZ:
-            return ["tar", "gunzip"]
-        case UnpackMethod.TAR_BZ2:
-            return ["tar", "bzip2"]
-        case UnpackMethod.TAR_LZ4:
-            return ["tar", "lz4"]
-        case UnpackMethod.TAR_XZ:
-            return ["tar", "xz"]
-        case UnpackMethod.TAR_ZST:
-            return ["tar", "zstd"]
         case UnpackMethod.ZIP:
             return ["unzip"]
         case UnpackMethod.AUTO:
