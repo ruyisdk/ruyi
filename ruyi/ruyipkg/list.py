@@ -200,14 +200,14 @@ def _format_size_human(size: int) -> str:
 def _format_download_size_value(size: int | None) -> str:
     if size is None:
         return _("(unknown)")
-    return _("[yellow]{size}[/] bytes").format(size=size)
+    return _format_size_human(size)
 
 
 def _format_download_size_inline(size: int | None, host: str | None) -> str:
     if size is None or host is None:
         return ""
-    return _(" download: [yellow]{size}[/] bytes for {host}").format(
-        size=size,
+    return _(" download: [yellow]{size}[/] for {host}").format(
+        size=_format_size_human(size),
         host=host,
     )
 
@@ -215,4 +215,4 @@ def _format_download_size_inline(size: int | None, host: str | None) -> str:
 def _format_install_size_inline(size: int | None, is_installed: bool) -> str:
     if size is None or not is_installed:
         return ""
-    return _(" install: [yellow]{size}[/] bytes").format(size=size)
+    return _(" install: [yellow]{size}[/]").format(size=_format_size_human(size))
