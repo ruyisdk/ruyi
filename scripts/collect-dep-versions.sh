@@ -155,9 +155,21 @@ probe_dnf() {
     local noarch_data_row="| $pretty_name |"
     local pkgver
 
+    local is_openruyi=false
+    case "$pretty_name" in
+    *openRuyi*)
+        is_openruyi=true
+        ;;
+    esac
+
     dnf check-update
 
     for pkg in "${ARCH_DNF_PKGS[@]}"; do
+        # openRuyi has "python-" instead of "python3-" for Python packages
+        if "$is_openruyi"; then
+            pkg="${pkg/python3-/python-}"
+        fi
+
         printf "querying dnf for %s..." "$pkg"
         pkgver="$(_query_dnf_pkgver "$pkg")"
         echo " $pkgver"
@@ -165,6 +177,11 @@ probe_dnf() {
     done
 
     for pkg in "${NOARCH_PKGS[@]}"; do
+        # openRuyi has "python-" instead of "python3-" for Python packages
+        if "$is_openruyi"; then
+            pkg="${pkg/python3-/python-}"
+        fi
+
         printf "querying dnf for %s..." "$pkg"
         pkgver="$(_query_dnf_pkgver "$pkg")"
         echo " $pkgver"
