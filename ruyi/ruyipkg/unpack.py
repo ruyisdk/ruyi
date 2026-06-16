@@ -1,3 +1,4 @@
+import gzip
 import mmap
 import os
 import shutil
@@ -225,23 +226,14 @@ def _do_unpack_bare_gz(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".gz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["gunzip", "-c", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call gunzip: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("gunzip failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing gzip: {filename}")
+    with gzip.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_bzip2(
