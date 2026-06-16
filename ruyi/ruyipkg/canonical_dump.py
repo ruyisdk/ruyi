@@ -191,6 +191,8 @@ def dump_artifact_metadata(x: ArtifactMetadataDeclType) -> Table:
 def dump_blob_decl(x: BlobDeclType) -> Table:
     y = table()
     y.add("distfiles", str_array(x["distfiles"], multiline=True))
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 
@@ -277,6 +279,8 @@ def dump_source_decl(x: SourceDeclType) -> Table:
     y = table()
     multiline_distfiles = len(x["distfiles"]) > 1
     y.add("distfiles", str_array(x["distfiles"], multiline=multiline_distfiles))
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 
