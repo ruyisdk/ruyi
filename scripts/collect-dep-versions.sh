@@ -73,11 +73,12 @@ main() {
     fi
 
     if [[ -z $image_tag ]]; then
+        local rc=0
         # probe for every supported distro
         for image in "${DOCKER_IMAGES_TO_CHECK[@]}"; do
-            check_one "$image"
+            check_one "$image" || rc=$?
         done
-        exit $?
+        exit "$rc"
     fi
 
     check_one "$image_tag"
