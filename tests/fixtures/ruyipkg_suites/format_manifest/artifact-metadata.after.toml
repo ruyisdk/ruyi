@@ -1,0 +1,47 @@
+format = "v1"
+
+[metadata]
+desc = "Test package with artifact metadata"
+vendor = { name = "Test Vendor", eula = "" }
+
+[[distfiles]]
+name = "binary-host.tar.zst"
+size = 5000000
+
+[distfiles.checksums]
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+[[distfiles]]
+name = "src.tar.zst"
+size = 3000000
+
+[distfiles.checksums]
+sha256 = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+[[distfiles]]
+name = "blob.bin"
+size = 1000000
+
+[distfiles.checksums]
+sha256 = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+
+[[binary]]
+host = "x86_64"
+distfiles = ["binary-host.tar.zst"]
+
+[binary.metadata]
+install_size = 12000000
+
+[blob]
+distfiles = [
+  "blob.bin",
+]
+
+[blob.metadata]
+install_size = 1000000
+
+[source]
+distfiles = ["src.tar.zst"]
+
+[source.metadata]
+install_size = 8000000
