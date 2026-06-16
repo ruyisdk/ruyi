@@ -75,17 +75,16 @@ def _do_list_non_verbose(
             else:
                 comments_str = ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
-            size_str = _format_download_size_inline(
-                ver.download_size_host_bytes,
-                ver.download_size_host,
-            )
-            install_str = _format_install_size_inline(
-                ver.install_size,
-                ver._is_installed,
-            )
+            if ver._is_installed:
+                size_str = _format_install_size_inline(ver.install_size, True)
+            else:
+                size_str = _format_download_size_inline(
+                    ver.download_size_host_bytes,
+                    ver.download_size_host,
+                )
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
             logger.stdout(
-                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{install_str}{repo_str}"
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{repo_str}"
             )
 
     return 0
