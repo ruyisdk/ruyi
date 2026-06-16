@@ -232,6 +232,8 @@ def dump_binary_decl(x: BinaryFileDeclType, last: bool) -> Table:
         y.add("commands", sorted_table(cmds))
         if not last:
             y.add(nl())
+    if md := x.get("metadata"):
+        y.add("metadata", dump_artifact_metadata(md))
     return y
 
 
