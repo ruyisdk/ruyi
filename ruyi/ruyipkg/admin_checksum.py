@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import Any, TypeGuard
 
 from tomlkit import document, table
@@ -9,7 +10,9 @@ from tomlkit.toml_document import TOMLDocument
 from ..i18n import _
 from ..log import RuyiLogger
 from . import checksum
+from .install_size import compute_install_size
 from .pkg_manifest import DistfileDeclType, RestrictKind
+from .unpack_method import determine_unpack_method
 
 
 def do_admin_checksum(
@@ -31,6 +34,10 @@ def do_admin_checksum(
         doc = emit_toml_distfiles_section(entries)
         logger.D(f"{doc}")
         sys.stdout.write(doc.as_string())
+
+        if install_size:
+            _emit_install_size_comment(logger, files)
+
         return 0
 
     raise RuntimeError("unrecognized output format; should never happen")
@@ -91,3 +98,41 @@ def emit_toml_checksums(x: dict[str, str]) -> Table:
     for k in sorted(x.keys()):
         t.add(k, x[k])
     return t
+
+
+def _emit_install_size_comment(
+    logger: RuyiLogger,
+    files: list[os.PathLike[Any]],
+) -> None:
+    total = 0
+    sizes: list[tuple[str, int]] = []
+
+    for f in files:
+        path = Path(os.fspath(f))
+        name = path.name
+        try:
+            method = determine_unpack_method(name)
+            size = compute_install_size(path, method)
+        except Exception as exc:
+            logger.W(
+                _("cannot compute install size for {name}: {error}").format(
+                    name=name,
+                    error=exc,
+                )
+            )
+            continue
+
+        sizes.append((name, size))
+        total += size
+
+    if not sizes:
+        return
+
+    lines = [
+        "",
+        "# --- install_size (generated with --install-size) ---",
+        "# Paste into the appropriate section metadata:",
+        "#   [<kind>.metadata]",
+        f"#   install_size = {total}",
+    ]
+    sys.stdout.write("\n".join(lines) + "\n")
