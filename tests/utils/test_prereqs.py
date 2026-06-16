@@ -5,8 +5,8 @@ from unittest import mock
 from ruyi.utils import prereqs
 
 
-def test_ensure_cmds_only_checks_requested_commands() -> None:
-    """ensure_cmds only cares about the commands passed to it, not all of _CMDS."""
+def test_init_cmd_presence_map_populates_all_platform_cmds() -> None:
+    """init_cmd_presence_map records availability for every platform-appropriate command."""
     with mock.patch.object(
         shutil, "which", return_value=None
     ):
