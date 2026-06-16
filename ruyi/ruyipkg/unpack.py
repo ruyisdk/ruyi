@@ -157,7 +157,7 @@ def _do_unpack_tar(
         filename = "-"
     elif unpack_method not in (UnpackMethod.TAR, UnpackMethod.TAR_AUTO):
         logger.D(f"decompressing {unpack_method} for tar: {filename}")
-        wrapped_stream = _open_decompressed(filename, unpack_method)
+        wrapped_stream = open_decompressed(filename, unpack_method)
         filename = "-"
 
     stdin: int | None = None
@@ -200,7 +200,7 @@ def _do_unpack_tar(
 
 
 @contextmanager
-def _open_decompressed(
+def open_decompressed(
     filename: str,
     unpack_method: UnpackMethod,
 ) -> Generator[StreamReader, None, None]:
