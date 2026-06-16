@@ -68,6 +68,7 @@ class AugmentedPkgManifest:
             "is_installed": self._is_installed,
             "download_size_host_bytes": self.download_size_host_bytes,
             "download_size_host": self.download_size_host,
+            "install_size": self.install_size,
         }
 
 
@@ -178,6 +179,7 @@ class PorcelainPkgVersionV1(TypedDict):
     is_installed: bool
     download_size_host_bytes: int | None
     download_size_host: str | None
+    install_size: int | None
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):
