@@ -595,8 +595,8 @@ jobs:
       - name: Build executable
         if: success() && !matrix.skip
         run: |
-          export RUYI_DIST_BUILD_DIR=/build
-          export RUYI_DIST_CACHE_DIR=/build-cache
+          export RUYI_DIST_BUILD_DIR=${{ github.workspace }}/tmp/build
+          export RUYI_DIST_CACHE_DIR=${{ github.workspace }}/tmp/cache
           mkdir -p "$RUYI_DIST_BUILD_DIR" "$RUYI_DIST_CACHE_DIR"
           poetry run python scripts/dist-inner.py
 
