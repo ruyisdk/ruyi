@@ -6,6 +6,17 @@ import shutil
 import sys
 import tomllib
 
+# From set-gha-env.py
+def _is_prerelease(version: str) -> bool:
+    # Do not depend on external libraries so this can work in plain GHA
+    # environment without any venv setup. See the SemVer spec -- as long as
+    # we don't have build tags containing "-" we should be fine, which is
+    # exactly the case.
+    #
+    # sv = Version.parse(version)
+    # is_prerelease = sv.prerelease
+    return "-" in version
+
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
@@ -58,7 +69,8 @@ def main(argv: list[str]) -> int:
     # for now, hardcode the exact artifacts we want
     included_arches = ("amd64", "arm64", "riscv64")
     wanted_names = {f"ruyi.{arch}" for arch in included_arches}
-    wanted_names.add("ruyi-macos-arm64")
+    if _is_prerelease(version):
+        wanted_names.add("ruyi-macos-arm64")
     names = os.listdir(".")
     for name in names:
         if name.endswith(".tar.gz"):
