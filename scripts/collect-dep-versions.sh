@@ -6,9 +6,9 @@ DOCKER_IMAGES_TO_CHECK=(
     debian:12
     debian:13
     linuxdeepin/deepin:crimson
-    fedora:42
     fedora:43
     fedora:44
+    fedora:45
     opencloudos/opencloudos9-minimal:9.4-v20260424
     opencloudos/opencloudos9-minimal:9.6-v20260514
     openeuler/openeuler:24.03-lts-sp2
