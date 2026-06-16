@@ -8,7 +8,7 @@ from ..config import GlobalConfig
 from ..i18n import _
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from .distfile import Distfile
-from .host import get_native_host
+from .host import canonicalize_host_str, get_native_host
 from .list_filter import ListFilter
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .composite_repo import CompositeRepo
@@ -49,11 +49,13 @@ class AugmentedPkgManifest:
         remarks: list[PkgRemark],
         download_size_host_bytes: int | None,
         download_size_host: str | None,
+        install_size: int | None = None,
     ) -> None:
         self.pm = pm
         self.remarks = remarks
         self.download_size_host_bytes = download_size_host_bytes
         self.download_size_host = download_size_host
+        self.install_size = install_size
         self._is_downloaded = PkgRemark.Downloaded in remarks
         self._is_installed = PkgRemark.Installed in remarks
 
@@ -146,12 +148,14 @@ class AugmentedPkg:
                     remarks.append(PkgRemark.Installed)
 
                 dl_size = _get_pkg_download_size_for_host(pm, native_host)
+                install_size = _get_pkg_install_size(pm, native_host)
                 pkg.add_version(
                     AugmentedPkgManifest(
                         pm,
                         remarks,
                         dl_size,
                         native_host if dl_size is not None else None,
+                        install_size=install_size,
                     )
                 )
 
@@ -223,3 +227,21 @@ def _get_pkg_download_size_for_host(
             return None
         total += df.size
     return total
+
+
+def _get_pkg_install_size(pm: BoundPackageManifest, host: str) -> int | None:
+    """Extract the declared install_size from per-artifact metadata."""
+    if bin_md := pm.binary_metadata:
+        data = bin_md.data.get(canonicalize_host_str(host))
+        if data is not None and (md := data.get("metadata")) is not None:
+            return md.get("install_size")
+        return None
+    if blob_md := pm.blob_metadata:
+        if (md := blob_md.metadata) is not None:
+            return md.get("install_size")
+        return None
+    if src_md := pm.source_metadata:
+        if (md := src_md.metadata) is not None:
+            return md.get("install_size")
+        return None
+    return None
