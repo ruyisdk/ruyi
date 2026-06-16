@@ -1,4 +1,6 @@
 import bz2
+from collections.abc import Generator
+from contextlib import contextmanager
 import gzip
 import lzma
 import mmap
@@ -149,12 +151,13 @@ def _do_unpack_tar(
 ) -> None:
     argv = ["tar", "-x"]
 
+    wrapped_stream = None
     if stream is not None:
-        stream = _wrap_decompressed(stream, unpack_method)
+        wrapped_stream = _wrap_decompressed(stream, unpack_method)
         filename = "-"
     elif unpack_method not in (UnpackMethod.TAR, UnpackMethod.TAR_AUTO):
         logger.D(f"decompressing {unpack_method} for tar: {filename}")
-        stream = _open_decompressed(filename, unpack_method)
+        wrapped_stream = _open_decompressed(filename, unpack_method)
         filename = "-"
 
     stdin: int | None = None
@@ -172,17 +175,18 @@ def _do_unpack_tar(
     p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
 
     retcode: int
-    if stream is None:
+    if wrapped_stream is None:
         retcode = p.wait()
     else:
         assert p.stdin is not None
 
         bufsize = 4 * mmap.PAGESIZE
-        while True:
-            buf = stream.read(bufsize)
-            if not buf:
-                break
-            p.stdin.write(buf)
+        with wrapped_stream as s:
+            while True:
+                buf = s.read(bufsize)
+                if not buf:
+                    break
+                p.stdin.write(buf)
         p.stdin.close()
         retcode = p.wait()
 
@@ -195,44 +199,86 @@ def _do_unpack_tar(
         )
 
 
+@contextmanager
 def _open_decompressed(
     filename: str,
     unpack_method: UnpackMethod,
-) -> StreamReader:
+) -> Generator[StreamReader, None, None]:
     match unpack_method:
         case UnpackMethod.TAR_GZ:
-            return gzip.open(filename, "rb")
+            gzipFile = gzip.GzipFile(filename, "rb")
+            try:
+                yield gzipFile
+            finally:
+                gzipFile.close()
         case UnpackMethod.TAR_BZ2:
-            return bz2.open(filename, "rb")
+            bz2File = bz2.BZ2File(filename, "rb")
+            try:
+                yield bz2File
+            finally:
+                bz2File.close()
         case UnpackMethod.TAR_XZ:
-            return lzma.open(filename, "rb")
+            lzmaFile = lzma.LZMAFile(filename, "rb")
+            try:
+                yield lzmaFile
+            finally:
+                lzmaFile.close()
         case UnpackMethod.TAR_ZST:
-            return zstandard.ZstdDecompressor().stream_reader(open(filename, "rb"))
+            zstFile = zstandard.ZstdDecompressor().stream_reader(open(filename, "rb"))
+            try:
+                yield zstFile
+            finally:
+                zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
         case UnpackMethod.TAR_LZ4:
-            return lz4.frame.open(filename, "rb")
+            lz4File = lz4.frame.LZ4FrameFile(filename, "rb")
+            try:
+                yield lz4File
+            finally:
+                lz4File.close()
         case _:
             raise ValueError(
                 f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
             )
 
 
+@contextmanager
 def _wrap_decompressed(
     stream: StreamReader,
     unpack_method: UnpackMethod,
-) -> StreamReader:
+) -> Generator[StreamReader, None, None]:
     match unpack_method:
         case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
-            return stream
+            yield stream
         case UnpackMethod.TAR_GZ:
-            return gzip.GzipFile(fileobj=stream, mode="rb")
+            gzipFile = gzip.GzipFile(fileobj=stream, mode="rb")
+            try:
+                yield gzipFile
+            finally:
+                gzipFile.close()
         case UnpackMethod.TAR_BZ2:
-            return bz2.BZ2File(stream, "rb")
+            bz2File = bz2.BZ2File(stream, "rb")
+            try:
+                yield bz2File
+            finally:
+                bz2File.close()
         case UnpackMethod.TAR_XZ:
-            return lzma.LZMAFile(stream, "rb")  # type: ignore[arg-type]  # in fact only read() is used
+            lzmaFile = lzma.LZMAFile(stream, "rb")  # type: ignore[arg-type]  # in fact only read() is used
+            try:
+                yield lzmaFile
+            finally:
+                lzmaFile.close()
         case UnpackMethod.TAR_ZST:
-            return zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
+            zstFile = zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
+            try:
+                yield zstFile
+            finally:
+                zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
         case UnpackMethod.TAR_LZ4:
-            return lz4.frame.LZ4FrameFile(stream)
+            lz4File = lz4.frame.LZ4FrameFile(stream)
+            try:
+                yield lz4File
+            finally:
+                lz4File.close()
         case _:
             raise ValueError(
                 f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
