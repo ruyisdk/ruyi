@@ -60,6 +60,38 @@ def probe_for_libc() -> tuple[str, str]:
     return ("unknown", "unknown")
 
 
+def probe_for_os_release() -> dict[str, str]:
+    """Return os-release-style data for the current platform.
+
+    On Linux and FreeBSD this is platform.freedesktop_os_release(). On macOS
+    we probe sw_vers. On other platforms we return an "unknown" fallback.
+    """
+    if sys.platform == "darwin":
+        return _probe_for_macos_os_release()
+
+    try:
+        return platform.freedesktop_os_release()
+    except OSError:
+        return {"ID": "unknown", "VERSION_ID": "unknown"}
+
+
+def _probe_for_macos_os_release() -> dict[str, str]:
+    name = "macos"
+    version = "unknown"
+    try:
+        result = subprocess.run(
+            ["sw_vers", "-productVersion"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+    except Exception:
+        pass
+    return {"ID": name, "VERSION_ID": version}
+
+
 _MUSL_VERSION_RE: Final = re.compile(rb"(?m)^Version ([0-9.]+)$")
 
 
@@ -215,7 +247,7 @@ def _probe_for_wsl() -> bool:
 def gather_node_info(report_uuid: uuid.UUID | None = None) -> NodeInfo:
     arch = platform.machine()
     libc = probe_for_libc()
-    os_release = platform.freedesktop_os_release()
+    os_release = probe_for_os_release()
 
     os_version = os_release.get("VERSION_CODENAME")  # works on e.g. Debian
     if not os_version:

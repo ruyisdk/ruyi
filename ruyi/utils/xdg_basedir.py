@@ -4,6 +4,7 @@
 
 import os
 import pathlib
+import sys
 from typing import Iterable, NamedTuple
 
 
@@ -15,7 +16,8 @@ class XDGPathEntry(NamedTuple):
 def _paths_from_env(env: str, default: str) -> Iterable[pathlib.Path]:
     v = os.environ.get(env, default)
     for p in v.split(":"):
-        yield pathlib.Path(p)
+        if p:
+            yield pathlib.Path(p)
 
 
 class XDGBaseDir:
@@ -25,33 +27,53 @@ class XDGBaseDir:
     @property
     def cache_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_CACHE_HOME", "")
-        return pathlib.Path(v) if v else pathlib.Path.home() / ".cache"
+        if v:
+            return pathlib.Path(v)
+        if sys.platform == "darwin":
+            return pathlib.Path.home() / "Library" / "Caches"
+        return pathlib.Path.home() / ".cache"
 
     @property
     def config_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_CONFIG_HOME", "")
-        return pathlib.Path(v) if v else pathlib.Path.home() / ".config"
+        if v:
+            return pathlib.Path(v)
+        if sys.platform == "darwin":
+            return pathlib.Path.home() / "Library" / "Preferences"
+        return pathlib.Path.home() / ".config"
 
     @property
     def data_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_DATA_HOME", "")
-        return pathlib.Path(v) if v else pathlib.Path.home() / ".local" / "share"
+        if v:
+            return pathlib.Path(v)
+        if sys.platform == "darwin":
+            return pathlib.Path.home() / "Library" / "Application Support"
+        return pathlib.Path.home() / ".local" / "share"
 
     @property
     def state_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_STATE_HOME", "")
-        return pathlib.Path(v) if v else pathlib.Path.home() / ".local" / "state"
+        if v:
+            return pathlib.Path(v)
+        if sys.platform == "darwin":
+            return pathlib.Path.home() / "Library" / "Application Support"
+        return pathlib.Path.home() / ".local" / "state"
 
     @property
     def config_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        for p in _paths_from_env("XDG_CONFIG_DIRS", "/etc/xdg"):
+        default = "/etc/xdg" if sys.platform != "darwin" else ""
+        for p in _paths_from_env("XDG_CONFIG_DIRS", default):
             yield XDGPathEntry(p, True)
 
     @property
     def data_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        for p in _paths_from_env("XDG_DATA_DIRS", "/usr/local/share/:/usr/share/"):
+        default = (
+            "/usr/local/share/:/usr/share/" if sys.platform != "darwin" else ""
+        )
+        for p in _paths_from_env("XDG_DATA_DIRS", default):
             yield XDGPathEntry(p, True)
 
     # derived info

@@ -31,7 +31,7 @@ def test_run_recipe_dry_run(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -> 
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true', 'hi'])\n"
+        "    return ctx.subprocess(argv = ['true', 'hi'])\n"
         "\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
@@ -40,7 +40,7 @@ def test_run_recipe_dry_run(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -> 
     assert len(reports) == 1
     r = reports[0]
     assert r.build_name == "build_it"
-    assert r.invocations[0].argv == ("/bin/true", "hi")
+    assert r.invocations[0].argv == ("true", "hi")
     assert r.exit_code == 0
     assert r.artifacts == ()
 
@@ -60,9 +60,9 @@ def test_run_recipe_name_filter_selects(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_a(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true', 'a'])\n"
+        "    return ctx.subprocess(argv = ['true', 'a'])\n"
         "def build_b(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true', 'b'])\n"
+        "    return ctx.subprocess(argv = ['true', 'b'])\n"
         "\n"
         "RUYI.build.schedule_build(build_a)\n"
         "RUYI.build.schedule_build(build_b)\n",
@@ -78,7 +78,7 @@ def test_run_recipe_name_filter_missing_errors(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_a(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true'])\n"
+        "    return ctx.subprocess(argv = ['true'])\n"
         "RUYI.build.schedule_build(build_a)\n",
     )
     with pytest.raises(RuntimeError, match="does not define the requested"):
@@ -91,7 +91,7 @@ def test_run_recipe_user_vars(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
         "    arch = ctx.var('arch')\n"
-        "    return ctx.subprocess(argv = ['/bin/echo', arch])\n"
+        "    return ctx.subprocess(argv = ['echo', arch])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     reports = run_recipe(
@@ -100,7 +100,7 @@ def test_run_recipe_user_vars(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) -
         dry_run=True,
         user_vars={"arch": "riscv64"},
     )
-    assert reports[0].invocations[0].argv == ("/bin/echo", "riscv64")
+    assert reports[0].invocations[0].argv == ("echo", "riscv64")
 
 
 def test_run_recipe_executes_and_collects_artifacts(
@@ -116,7 +116,7 @@ def test_run_recipe_executes_and_collects_artifacts(
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
         "    return ctx.subprocess(\n"
-        "        argv = ['/bin/true'],\n"
+        "        argv = ['true'],\n"
         "        produces = [ctx.artifact(glob = 'pkg-*.tar.zst')],\n"
         "    )\n"
         "RUYI.build.schedule_build(build_it)\n",
@@ -142,7 +142,7 @@ def test_run_recipe_missing_artifact_fails(
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
         "    return ctx.subprocess(\n"
-        "        argv = ['/bin/true'],\n"
+        "        argv = ['true'],\n"
         "        produces = [ctx.artifact(glob = 'nope-*.tar')],\n"
         "    )\n"
         "RUYI.build.schedule_build(build_it)\n",
@@ -158,7 +158,7 @@ def test_run_recipe_non_zero_exit_raises_build_failure(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/false'])\n"
+        "    return ctx.subprocess(argv = ['false'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     with pytest.raises(BuildFailure) as excinfo:
@@ -182,12 +182,12 @@ def test_run_recipe_supports_ruyi_build_load(
         "RUYI = ruyi_plugin_rev(1)\n"
         "load('ruyi-build://lib/common.star', 'GREETING')\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/echo', GREETING])\n"
+        "    return ctx.subprocess(argv = ['echo', GREETING])\n"
         "RUYI.build.schedule_build(build_it)\n"
     )
 
     reports = run_recipe(ruyi_logger, recipe, dry_run=True)
-    assert reports[0].invocations[0].argv == ("/bin/echo", "hi from lib")
+    assert reports[0].invocations[0].argv == ("echo", "hi from lib")
 
 
 def test_format_build_report_is_reasonable(
@@ -197,7 +197,7 @@ def test_format_build_report_is_reasonable(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return ctx.subprocess(argv = ['/bin/true'])\n"
+        "    return ctx.subprocess(argv = ['true'])\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     reports = run_recipe(ruyi_logger, recipe, dry_run=True)
@@ -218,7 +218,7 @@ def test_format_build_report_includes_artifacts(
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
         "    return ctx.subprocess(\n"
-        "        argv = ['/bin/true'],\n"
+        "        argv = ['true'],\n"
         "        produces = [ctx.artifact(glob = 'pkg-*.tar.zst')],\n"
         "    )\n"
         "RUYI.build.schedule_build(build_it)\n",
@@ -254,7 +254,7 @@ def test_run_recipe_rejects_list_with_non_invocation(
         tmp_path,
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
-        "    return [ctx.subprocess(argv = ['/bin/true']), 42]\n"
+        "    return [ctx.subprocess(argv = ['true']), 42]\n"
         "RUYI.build.schedule_build(build_it)\n",
     )
     with pytest.raises(RuntimeError, match="expected Invocation"):
@@ -287,7 +287,7 @@ def test_run_recipe_output_dir_override(
         "RUYI = ruyi_plugin_rev(1)\n"
         "def build_it(ctx):\n"
         "    return ctx.subprocess(\n"
-        "        argv = ['/bin/true'],\n"
+        "        argv = ['true'],\n"
         "        produces = [ctx.artifact(glob = '*.tar.zst')],\n"
         "    )\n"
         "RUYI.build.schedule_build(build_it)\n",

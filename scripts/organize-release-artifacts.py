@@ -6,6 +6,17 @@ import shutil
 import sys
 import tomllib
 
+# From set-gha-env.py
+def _is_prerelease(version: str) -> bool:
+    # Do not depend on external libraries so this can work in plain GHA
+    # environment without any venv setup. See the SemVer spec -- as long as
+    # we don't have build tags containing "-" we should be fine, which is
+    # exactly the case.
+    #
+    # sv = Version.parse(version)
+    # is_prerelease = sv.prerelease
+    return "-" in version
+
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
@@ -37,8 +48,10 @@ def main(argv: list[str]) -> int:
     # │   └── ruyi
     # ├── ruyi.riscv64
     # │   └── ruyi
-    # └── ruyi.windows-amd64.exe
-    #     └── ruyi.exe
+    # ├── ruyi.windows-amd64.exe
+    # │   └── ruyi.exe
+    # └── ruyi-macos-arm64
+    #     └── ruyi
     #
     # we want to organize it into the following layout:
     #
@@ -46,16 +59,18 @@ def main(argv: list[str]) -> int:
     # ├── ruyi-XXXXXXXX.tar.gz
     # ├── ruyi-<semver>.amd64
     # ├── ruyi-<semver>.arm64
-    # └── ruyi-<semver>.riscv64
+    # ├── ruyi-<semver>.riscv64
+    # ├── ruyi-<semver>.macos-arm64
     #
-    # i.e. with the non-Linux build removed, with the directory structure
-    # flattened, and with the semver attached.
+    # i.e. with the directory structure flattened and semver attached.
 
     os.chdir(workdir)
 
     # for now, hardcode the exact artifacts we want
     included_arches = ("amd64", "arm64", "riscv64")
     wanted_names = {f"ruyi.{arch}" for arch in included_arches}
+    if _is_prerelease(version):
+        wanted_names.add("ruyi-macos-arm64")
     names = os.listdir(".")
     for name in names:
         if name.endswith(".tar.gz"):
@@ -76,10 +91,15 @@ def main(argv: list[str]) -> int:
             shutil.rmtree(name)
             continue
 
-        # assume name is ruyi.{arch}
-        arch = name.rsplit(".", 1)[1]
-        src_name = os.path.join(name, "ruyi")
-        dest_name = f"ruyi-{version}.{arch}"
+        # special-case macOS artifact naming
+        if name == "ruyi-macos-arm64":
+            src_name = os.path.join(name, "ruyi")
+            dest_name = f"ruyi-{version}.macos-arm64"
+        else:
+            # assume name is ruyi.{arch}
+            arch = name.rsplit(".", 1)[1]
+            src_name = os.path.join(name, "ruyi")
+            dest_name = f"ruyi-{version}.{arch}"
         print(f"moving {src_name} to {dest_name}")
         os.rename(src_name, dest_name)
         os.chmod(dest_name, 0o755)
