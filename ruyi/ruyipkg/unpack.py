@@ -1,5 +1,6 @@
 import bz2
 import gzip
+import lzma
 import mmap
 import os
 import shutil
@@ -277,23 +278,14 @@ def _do_unpack_bare_xz(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".xz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["xz", "-d", "-c", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call xz: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("xz failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing xz: {filename}")
+    with lzma.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_zstd(
