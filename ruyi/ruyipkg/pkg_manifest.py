@@ -63,6 +63,10 @@ class DistfileDeclType(TypedDict):
     prefixes_to_unpack: "NotRequired[list[str]]"
 
 
+class ArtifactMetadataDeclType(TypedDict):
+    install_size: "NotRequired[int]"
+
+
 class BinaryFileDeclType(TypedDict):
     host: str
     distfiles: list[str]
