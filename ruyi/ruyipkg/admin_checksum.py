@@ -17,6 +17,8 @@ def do_admin_checksum(
     files: list[os.PathLike[Any]],
     format: str,
     restrict: list[str],
+    *,
+    install_size: bool = False,
 ) -> int:
     if not validate_restrict_kinds(restrict):
         logger.F(
