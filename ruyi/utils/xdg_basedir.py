@@ -70,9 +70,7 @@ class XDGBaseDir:
     @property
     def data_dirs(self) -> Iterable[XDGPathEntry]:
         # from highest precedence to lowest
-        default = (
-            "/usr/local/share/:/usr/share/" if sys.platform != "darwin" else ""
-        )
+        default = "/usr/local/share/:/usr/share/" if sys.platform != "darwin" else ""
         for p in _paths_from_env("XDG_DATA_DIRS", default):
             yield XDGPathEntry(p, True)
 

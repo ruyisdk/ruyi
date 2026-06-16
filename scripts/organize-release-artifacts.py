@@ -6,6 +6,7 @@ import shutil
 import sys
 import tomllib
 
+
 # From set-gha-env.py
 def _is_prerelease(version: str) -> bool:
     # Do not depend on external libraries so this can work in plain GHA
