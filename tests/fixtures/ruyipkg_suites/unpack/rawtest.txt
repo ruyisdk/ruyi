@@ -1,0 +1,1 @@
+raw uncompressed data for bare-format testing

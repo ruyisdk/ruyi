@@ -2,18 +2,40 @@
 
 : "${_INSIDE_DOCKER:=false}"
 
+DOCKER_IMAGES_TO_CHECK=(
+    debian:12
+    debian:13
+    linuxdeepin/deepin:crimson
+    fedora:43
+    fedora:44
+    fedora:45
+    opencloudos/opencloudos9-minimal:9.4-v20260424
+    opencloudos/opencloudos9-minimal:9.6-v20260514
+    openeuler/openeuler:24.03-lts-sp2
+    openeuler/openeuler:24.03-lts-sp3
+    openeuler/openeuler:25.09
+    openkylin/openkylin:2.0
+    ghcr.io/openruyi-project/creek:latest
+    ubuntu:24.04
+    ubuntu:26.04
+)
+
 ARCH_APT_PKGS=(
     libc6
     python3
+    python3-lz4
     python3-pygit2
     python3-yaml
+    python3-zstandard
 )
 
 ARCH_DNF_PKGS=(
     glibc
     python3
+    python3-lz4
     python3-pygit2
     python3-pyyaml
+    python3-zstandard
 )
 
 NOARCH_PKGS=(
@@ -51,9 +73,20 @@ main() {
     fi
 
     if [[ -z $image_tag ]]; then
-        echo "usage: $0 <image-tag-to-probe>" >&2
-        exit 2
+        local rc=0
+        # probe for every supported distro
+        for image in "${DOCKER_IMAGES_TO_CHECK[@]}"; do
+            check_one "$image" || rc=$?
+        done
+        exit "$rc"
     fi
+
+    check_one "$image_tag"
+    exit $?
+}
+
+check_one() {
+    local image_tag="$1"
 
     local args=(
         --rm
@@ -64,7 +97,7 @@ main() {
         "$image_tag"
     )
 
-    exec docker run "${args[@]}"
+    docker run "${args[@]}"
 }
 
 _strip_pkgver_suffix() {
@@ -123,9 +156,21 @@ probe_dnf() {
     local noarch_data_row="| $pretty_name |"
     local pkgver
 
+    local is_openruyi=false
+    case "$pretty_name" in
+    *openRuyi*)
+        is_openruyi=true
+        ;;
+    esac
+
     dnf check-update
 
     for pkg in "${ARCH_DNF_PKGS[@]}"; do
+        # openRuyi has "python-" instead of "python3-" for Python packages
+        if "$is_openruyi"; then
+            pkg="${pkg/python3-/python-}"
+        fi
+
         printf "querying dnf for %s..." "$pkg"
         pkgver="$(_query_dnf_pkgver "$pkg")"
         echo " $pkgver"
@@ -133,6 +178,11 @@ probe_dnf() {
     done
 
     for pkg in "${NOARCH_PKGS[@]}"; do
+        # openRuyi has "python-" instead of "python3-" for Python packages
+        if "$is_openruyi"; then
+            pkg="${pkg/python3-/python-}"
+        fi
+
         printf "querying dnf for %s..." "$pkg"
         pkgver="$(_query_dnf_pkgver "$pkg")"
         echo " $pkgver"

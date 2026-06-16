@@ -1,8 +1,16 @@
+import bz2
+from collections.abc import Generator
+from contextlib import contextmanager
+import gzip
+import lzma
 import mmap
 import os
 import shutil
 import subprocess
 from typing import Any, BinaryIO, NoReturn, Protocol
+
+import lz4.frame
+import zstandard
 
 from ..i18n import _
 from ..log import RuyiLogger
@@ -14,8 +22,10 @@ from .unpack_method import (
 )
 
 
-class SupportsRead(Protocol):
+class StreamReader(Protocol):
     def read(self, n: int = -1, /) -> bytes: ...
+    def seekable(self) -> bool: ...
+    def seek(self, n: int, whence: int = 0, /) -> Any: ...
 
 
 def do_unpack(
@@ -24,7 +34,7 @@ def do_unpack(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: BinaryIO | SupportsRead | None = None,
+    stream: BinaryIO | StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     match unpack_method:
@@ -81,7 +91,7 @@ def do_unpack_or_symlink(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: BinaryIO | SupportsRead | None = None,
+    stream: BinaryIO | StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     try:
@@ -136,32 +146,22 @@ def _do_unpack_tar(
     dest: str | os.PathLike[Any] | None,
     strip_components: int,
     unpack_method: UnpackMethod,
-    stream: SupportsRead | None,
+    stream: StreamReader | None = None,
     prefixes_to_unpack: list[str] | None = None,
 ) -> None:
     argv = ["tar", "-x"]
 
-    match unpack_method:
-        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
-            pass
-        case UnpackMethod.TAR_GZ:
-            argv.append("-z")
-        case UnpackMethod.TAR_BZ2:
-            argv.append("-j")
-        case UnpackMethod.TAR_LZ4:
-            argv.append("--use-compress-program=lz4")
-        case UnpackMethod.TAR_XZ:
-            argv.append("-J")
-        case UnpackMethod.TAR_ZST:
-            argv.append("--zstd")
-        case _:
-            raise ValueError(
-                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
-            )
+    wrapped_stream = None
+    if stream is not None:
+        wrapped_stream = _wrap_decompressed(stream, unpack_method)
+        filename = "-"
+    elif unpack_method not in (UnpackMethod.TAR, UnpackMethod.TAR_AUTO):
+        logger.D(f"decompressing {unpack_method} for tar: {filename}")
+        wrapped_stream = _open_decompressed(filename, unpack_method)
+        filename = "-"
 
     stdin: int | None = None
-    if stream is not None:
-        filename = "-"
+    if filename == "-":
         stdin = subprocess.PIPE
 
     argv.extend(("-f", filename, f"--strip-components={strip_components}"))
@@ -175,20 +175,18 @@ def _do_unpack_tar(
     p = subprocess.Popen(argv, cwd=dest, stdin=stdin)
 
     retcode: int
-    if stream is None:
+    if wrapped_stream is None:
         retcode = p.wait()
     else:
-        # this is only for pleasing the type-checker; it's statically true
-        # because the assignment always happens due to the earlier
-        # "stream is not None" branch.
         assert p.stdin is not None
 
         bufsize = 4 * mmap.PAGESIZE
-        while True:
-            buf = stream.read(bufsize)
-            if not buf:
-                break
-            p.stdin.write(buf)
+        with wrapped_stream as s:
+            while True:
+                buf = s.read(bufsize)
+                if not buf:
+                    break
+                p.stdin.write(buf)
         p.stdin.close()
         retcode = p.wait()
 
@@ -199,6 +197,92 @@ def _do_unpack_tar(
                 retcode=retcode,
             )
         )
+
+
+@contextmanager
+def _open_decompressed(
+    filename: str,
+    unpack_method: UnpackMethod,
+) -> Generator[StreamReader, None, None]:
+    match unpack_method:
+        case UnpackMethod.TAR_GZ:
+            gzipFile = gzip.GzipFile(filename, "rb")
+            try:
+                yield gzipFile
+            finally:
+                gzipFile.close()
+        case UnpackMethod.TAR_BZ2:
+            bz2File = bz2.BZ2File(filename, "rb")
+            try:
+                yield bz2File
+            finally:
+                bz2File.close()
+        case UnpackMethod.TAR_XZ:
+            lzmaFile = lzma.LZMAFile(filename, "rb")
+            try:
+                yield lzmaFile
+            finally:
+                lzmaFile.close()
+        case UnpackMethod.TAR_ZST:
+            zstFile = zstandard.ZstdDecompressor().stream_reader(open(filename, "rb"))
+            try:
+                yield zstFile
+            finally:
+                zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
+        case UnpackMethod.TAR_LZ4:
+            lz4File = lz4.frame.LZ4FrameFile(filename, "rb")
+            try:
+                yield lz4File
+            finally:
+                lz4File.close()
+        case _:
+            raise ValueError(
+                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
+            )
+
+
+@contextmanager
+def _wrap_decompressed(
+    stream: StreamReader,
+    unpack_method: UnpackMethod,
+) -> Generator[StreamReader, None, None]:
+    match unpack_method:
+        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+            yield stream
+        case UnpackMethod.TAR_GZ:
+            gzipFile = gzip.GzipFile(fileobj=stream, mode="rb")
+            try:
+                yield gzipFile
+            finally:
+                gzipFile.close()
+        case UnpackMethod.TAR_BZ2:
+            bz2File = bz2.BZ2File(stream, "rb")
+            try:
+                yield bz2File
+            finally:
+                bz2File.close()
+        case UnpackMethod.TAR_XZ:
+            lzmaFile = lzma.LZMAFile(stream, "rb")  # type: ignore[arg-type]  # in fact only read() is used
+            try:
+                yield lzmaFile
+            finally:
+                lzmaFile.close()
+        case UnpackMethod.TAR_ZST:
+            zstFile = zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
+            try:
+                yield zstFile
+            finally:
+                zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
+        case UnpackMethod.TAR_LZ4:
+            lz4File = lz4.frame.LZ4FrameFile(stream)
+            try:
+                yield lz4File
+            finally:
+                lz4File.close()
+        case _:
+            raise ValueError(
+                f"do_unpack_tar cannot handle non-tar unpack method {unpack_method}"
+            )
 
 
 def _do_unpack_zip(
@@ -225,23 +309,14 @@ def _do_unpack_bare_gz(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".gz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["gunzip", "-c", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call gunzip: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("gunzip failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing gzip: {filename}")
+    with gzip.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_bzip2(
@@ -249,23 +324,14 @@ def _do_unpack_bare_bzip2(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".bz2" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["bzip2", "-dc", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call bzip2: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("bzip2 failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing bzip2: {filename}")
+    with bz2.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_lz4(
@@ -273,19 +339,14 @@ def _do_unpack_bare_lz4(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".lz4" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["lz4", "-dk", filename, f"./{dest_filename}"]
-    logger.D(f"about to call lz4: argv={argv}")
-    retcode = subprocess.call(argv, cwd=destdir)
-    if retcode != 0:
-        raise RuntimeError(
-            _("lz4 failed: command {cmd} returned {retcode}").format(
-                cmd=" ".join(argv),
-                retcode=retcode,
-            )
-        )
+    if destdir is not None:
+        os.chdir(destdir)
+
+    logger.D(f"decompressing lz4: {filename}")
+    with lz4.frame.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_xz(
@@ -293,23 +354,14 @@ def _do_unpack_bare_xz(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".xz" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["xz", "-d", "-c", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call xz: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("xz failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing xz: {filename}")
+    with lzma.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_zstd(
@@ -317,19 +369,15 @@ def _do_unpack_bare_zstd(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".zst" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["zstd", "-d", filename, "-o", f"./{dest_filename}"]
-    logger.D(f"about to call zstd: argv={argv}")
-    retcode = subprocess.call(argv, cwd=destdir)
-    if retcode != 0:
-        raise RuntimeError(
-            _("zstd failed: command {cmd} returned {retcode}").format(
-                cmd=" ".join(argv),
-                retcode=retcode,
-            )
-        )
+    if destdir is not None:
+        os.chdir(destdir)
+
+    logger.D(f"decompressing zstd: {filename}")
+    dctx = zstandard.ZstdDecompressor()
+    with open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        dctx.copy_stream(src, out)
 
 
 def _do_unpack_deb(
@@ -360,30 +408,27 @@ def _do_unpack_deb(
 
 def _get_unpack_cmds_for_method(m: UnpackMethod) -> list[str]:
     match m:
-        case UnpackMethod.UNKNOWN | UnpackMethod.RAW | UnpackMethod.DEB:
+        case (
+            UnpackMethod.UNKNOWN
+            | UnpackMethod.RAW
+            | UnpackMethod.DEB
+            | UnpackMethod.GZ
+            | UnpackMethod.BZ2
+            | UnpackMethod.LZ4
+            | UnpackMethod.XZ
+            | UnpackMethod.ZST
+        ):
             return []
-        case UnpackMethod.GZ:
-            return ["gunzip"]
-        case UnpackMethod.BZ2:
-            return ["bzip2"]
-        case UnpackMethod.LZ4:
-            return ["lz4"]
-        case UnpackMethod.XZ:
-            return ["xz"]
-        case UnpackMethod.ZST:
-            return ["zstd"]
-        case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
+        case (
+            UnpackMethod.TAR
+            | UnpackMethod.TAR_AUTO
+            | UnpackMethod.TAR_GZ
+            | UnpackMethod.TAR_BZ2
+            | UnpackMethod.TAR_LZ4
+            | UnpackMethod.TAR_XZ
+            | UnpackMethod.TAR_ZST
+        ):
             return ["tar"]
-        case UnpackMethod.TAR_GZ:
-            return ["tar", "gunzip"]
-        case UnpackMethod.TAR_BZ2:
-            return ["tar", "bzip2"]
-        case UnpackMethod.TAR_LZ4:
-            return ["tar", "lz4"]
-        case UnpackMethod.TAR_XZ:
-            return ["tar", "xz"]
-        case UnpackMethod.TAR_ZST:
-            return ["tar", "zstd"]
         case UnpackMethod.ZIP:
             return ["unzip"]
         case UnpackMethod.AUTO:
