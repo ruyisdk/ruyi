@@ -71,6 +71,7 @@ class BinaryFileDeclType(TypedDict):
     host: str
     distfiles: list[str]
     commands: "NotRequired[dict[str, str]]"
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 BinaryDeclType = list[BinaryFileDeclType]
@@ -78,10 +79,12 @@ BinaryDeclType = list[BinaryFileDeclType]
 
 class BlobDeclType(TypedDict):
     distfiles: list[str]
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 class SourceDeclType(TypedDict):
     distfiles: list[str]
+    metadata: "NotRequired[ArtifactMetadataDeclType]"
 
 
 class ToolchainComponentDeclType(TypedDict):
