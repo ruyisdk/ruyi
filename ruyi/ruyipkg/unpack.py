@@ -7,6 +7,8 @@ import shutil
 import subprocess
 from typing import Any, BinaryIO, NoReturn, Protocol
 
+import zstandard
+
 from ..i18n import _
 from ..log import RuyiLogger
 from ..utils import ar, prereqs
@@ -293,19 +295,15 @@ def _do_unpack_bare_zstd(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".zst" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["zstd", "-d", filename, "-o", f"./{dest_filename}"]
-    logger.D(f"about to call zstd: argv={argv}")
-    retcode = subprocess.call(argv, cwd=destdir)
-    if retcode != 0:
-        raise RuntimeError(
-            _("zstd failed: command {cmd} returned {retcode}").format(
-                cmd=" ".join(argv),
-                retcode=retcode,
-            )
-        )
+    if destdir is not None:
+        os.chdir(destdir)
+
+    logger.D(f"decompressing zstd: {filename}")
+    dctx = zstandard.ZstdDecompressor()
+    with open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        dctx.copy_stream(src, out)
 
 
 def _do_unpack_deb(
