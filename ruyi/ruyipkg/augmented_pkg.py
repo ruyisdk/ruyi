@@ -216,5 +216,10 @@ def _get_pkg_download_size_for_host(
     if distfile_names is None:
         return None
 
-    distfiles = pm.distfiles
-    return sum(distfiles[name].size for name in distfile_names)
+    total = 0
+    for name in distfile_names:
+        df = pm.distfiles.get(name)
+        if df is None:
+            return None
+        total += df.size
+    return total
