@@ -295,6 +295,10 @@ class BlobDecl:
     def get_distfile_names(self) -> list[str] | None:
         return self._data["distfiles"]
 
+    @property
+    def metadata(self) -> ArtifactMetadataDeclType | None:
+        return self._data.get("metadata")
+
 
 class SourceDecl:
     def __init__(self, data: SourceDeclType) -> None:
@@ -303,6 +307,10 @@ class SourceDecl:
     def get_distfile_names_for_host(self, host: str | RuyiHost) -> list[str] | None:
         # currently the host parameter is ignored
         return self._data["distfiles"]
+
+    @property
+    def metadata(self) -> ArtifactMetadataDeclType | None:
+        return self._data.get("metadata")
 
 
 class ToolchainDecl:
