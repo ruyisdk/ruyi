@@ -177,6 +177,26 @@ def _print_pkg_detail(
             logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
 
 
+def _format_size_human(size: int) -> str:
+    """Format a byte count as a human-readable binary-prefixed string."""
+    units = ("KiB", "MiB", "GiB", "TiB", "PiB")
+    value = float(size)
+    unit = "bytes"
+
+    for u in units:
+        if value < 1024:
+            break
+        value /= 1024
+        unit = u
+
+    if unit == "bytes":
+        return f"{int(value)} {unit}"
+
+    if value == int(value):
+        return f"{int(value)} {unit}"
+    return f"{value:.1f} {unit}"
+
+
 def _format_download_size_value(size: int | None) -> str:
     if size is None:
         return _("(unknown)")
