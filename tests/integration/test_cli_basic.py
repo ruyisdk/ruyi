@@ -179,7 +179,7 @@ distfiles = ["other-host.tar.zst"]
 
     assert result.exit_code == 0
     assert "examples/binary-size" in result.stdout
-    assert f"download: 123 bytes for {native_host}" in result.stdout
+    assert f"download: 123 B for {native_host}" in result.stdout
     assert "456 bytes" not in result.stdout
 
 
@@ -211,7 +211,7 @@ distfiles = ["verbose-src.tar.zst"]
 
     assert result.exit_code == 0
     assert "examples/verbose-size" in result.stdout
-    assert f"Download size for {native_host}: 789 bytes" in result.stdout
+    assert f"Download size for {native_host}: 789 B" in result.stdout
 
 
 def test_cli_list_porcelain_reports_current_host_download_size(

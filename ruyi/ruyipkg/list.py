@@ -180,7 +180,7 @@ def _format_size_human(size: int) -> str:
     """Format a byte count as a human-readable binary-prefixed string."""
     units = ("KiB", "MiB", "GiB", "TiB", "PiB")
     value = float(size)
-    unit = "bytes"
+    unit = "B"
 
     for u in units:
         if value < 1024:
@@ -188,7 +188,7 @@ def _format_size_human(size: int) -> str:
         value /= 1024
         unit = u
 
-    if unit == "bytes":
+    if unit == "B":
         return f"{int(value)} {unit}"
 
     if value == int(value):
