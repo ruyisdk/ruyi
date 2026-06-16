@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from typing import Any, BinaryIO, NoReturn, Protocol
 
+import lz4.frame
 import zstandard
 
 from ..i18n import _
@@ -260,19 +261,14 @@ def _do_unpack_bare_lz4(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".lz4" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["lz4", "-dk", filename, f"./{dest_filename}"]
-    logger.D(f"about to call lz4: argv={argv}")
-    retcode = subprocess.call(argv, cwd=destdir)
-    if retcode != 0:
-        raise RuntimeError(
-            _("lz4 failed: command {cmd} returned {retcode}").format(
-                cmd=" ".join(argv),
-                retcode=retcode,
-            )
-        )
+    if destdir is not None:
+        os.chdir(destdir)
+
+    logger.D(f"decompressing lz4: {filename}")
+    with lz4.frame.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_xz(
