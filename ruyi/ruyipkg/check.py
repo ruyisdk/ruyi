@@ -418,13 +418,16 @@ def _touch_manifest_parse_surface(manifest: PackageManifest) -> None:
         for host in binary_metadata.data:
             binary_metadata.get_distfile_names_for_host(host)
             binary_metadata.get_commands_for_host(host)
+            binary_metadata.data[host].get("metadata")
 
     if blob_metadata := manifest.blob_metadata:
         blob_metadata.get_distfile_names()
+        blob_metadata.metadata
 
     native_host = get_native_host()
     if source_metadata := manifest.source_metadata:
         source_metadata.get_distfile_names_for_host(native_host)
+        source_metadata.metadata
 
     if toolchain_metadata := manifest.toolchain_metadata:
         toolchain_metadata.target
