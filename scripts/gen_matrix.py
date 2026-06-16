@@ -53,8 +53,10 @@ GHA_PUBLIC_RUNNER_ARCHES = {
 }
 
 
-def gha_runner_needs_qemu(arch: str) -> bool:
-    return arch != GHA_PUBLIC_RUNNER_ARCHES[GHA_PUBLIC_UBUNTU_RUNNER_NAMES[arch]]
+def gha_runner_needs_qemu(c: Combo) -> bool:
+    if c.os != "linux":
+        return False
+    return c.arch != GHA_PUBLIC_RUNNER_ARCHES[GHA_PUBLIC_UBUNTU_RUNNER_NAMES[c.arch]]
 
 
 def runs_on(c: Combo) -> RunsOn:
@@ -65,6 +67,8 @@ def runs_on(c: Combo) -> RunsOn:
             return GHA_PUBLIC_UBUNTU_RUNNER_NAMES[c.arch]
         case "windows":
             return "windows-latest"
+        case "macos":
+            return "macos-latest"
         case _:
             raise ValueError(f"unrecognized combo {c} for deriving runs_on property")
 
@@ -72,6 +76,8 @@ def runs_on(c: Combo) -> RunsOn:
 def upload_artifact_name(c: Combo) -> str:
     if c.os == "windows":
         return f"ruyi.windows-{c.arch}.exe"
+    if c.os == "macos":
+        return f"ruyi-macos-{c.arch}"
     return f"ruyi.{c.arch}"
 
 
@@ -88,7 +94,7 @@ def to_matrix_entry(c: Combo, should_run: bool) -> MatrixEntry:
         "runs_on": runs_on(c),
         "skip": not should_run,
         "upload_artifact_name": upload_artifact_name(c),
-        "needs_qemu": gha_runner_needs_qemu(c.arch),
+        "needs_qemu": gha_runner_needs_qemu(c),
     }
 
 
@@ -119,6 +125,7 @@ COMBOS: list[Combo] = [
     Combo("linux", "arm64", False, False),
     # temporarily switch away from self-hosted runners due to resource migration
     Combo("linux", "riscv64", False, False),
+    Combo("macos", "arm64", False, False),
     Combo("windows", "amd64", False, False),
 ]
 
