@@ -5,8 +5,10 @@
 ARCH_APT_PKGS=(
     libc6
     python3
+    python3-lz4
     python3-pygit2
     python3-yaml
+    python3-zstandard
 )
 
 ARCH_DNF_PKGS=(

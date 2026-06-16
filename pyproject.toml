@@ -49,6 +49,8 @@ dependencies = [
   "semver>=2.10",
   "tomlkit>=0.9",
   "tzdata; sys_platform=='win32'",
+  "lz4 (>=4.4.5,<5.0.0)",
+  "zstandard (>=0.25.0,<0.26.0)",
 ]
 
 [project.scripts]
