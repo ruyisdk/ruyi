@@ -1,3 +1,4 @@
+import bz2
 import gzip
 import mmap
 import os
@@ -241,23 +242,14 @@ def _do_unpack_bare_bzip2(
     filename: str,
     destdir: str | os.PathLike[Any] | None,
 ) -> None:
-    # the suffix may not be ".bz2" so do this generically
     dest_filename = os.path.splitext(os.path.basename(filename))[0]
 
-    argv = ["bzip2", "-dc", filename]
     if destdir is not None:
         os.chdir(destdir)
 
-    logger.D(f"about to call bzip2: argv={argv}")
-    with open(dest_filename, "wb") as out:
-        retcode = subprocess.call(argv, stdout=out)
-        if retcode != 0:
-            raise RuntimeError(
-                _("bzip2 failed: command {cmd} returned {retcode}").format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+    logger.D(f"decompressing bzip2: {filename}")
+    with bz2.open(filename, "rb") as src, open(dest_filename, "wb") as out:
+        shutil.copyfileobj(src, out)
 
 
 def _do_unpack_bare_lz4(
