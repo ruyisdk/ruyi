@@ -7,6 +7,7 @@ from tomlkit.items import AoT, Array, InlineTable, Table, Trivia
 from tomlkit.toml_document import TOMLDocument
 
 from .pkg_manifest import (
+    ArtifactMetadataDeclType,
     BinaryDeclType,
     BinaryFileDeclType,
     BlobDeclType,
@@ -176,6 +177,14 @@ def dump_fetch_restriction(x: FetchRestrictionDeclType) -> Table:
     y.add("msgid", x["msgid"])
     if "params" in x:
         y.add("params", sorted_table(x["params"]))
+    return y
+
+
+def dump_artifact_metadata(x: ArtifactMetadataDeclType) -> Table:
+    """Dump per-artifact metadata as a regular sub-table."""
+    y = table()
+    if "install_size" in x:
+        y.add("install_size", x["install_size"])
     return y
 
 
