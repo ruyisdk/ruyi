@@ -51,6 +51,8 @@ def do_list(
             multi_repo,
             download_size_host_bytes=ver.download_size_host_bytes,
             download_size_host=ver.download_size_host,
+            install_size=ver.install_size,
+            is_installed=ver._is_installed,
         )
 
     return 0
@@ -77,9 +79,13 @@ def _do_list_non_verbose(
                 ver.download_size_host_bytes,
                 ver.download_size_host,
             )
+            install_str = _format_install_size_inline(
+                ver.install_size,
+                ver._is_installed,
+            )
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
             logger.stdout(
-                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{repo_str}"
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{install_str}{repo_str}"
             )
 
     return 0
@@ -101,6 +107,8 @@ def _print_pkg_detail(
     *,
     download_size_host_bytes: int | None = None,
     download_size_host: str | None = None,
+    install_size: int | None = None,
+    is_installed: bool = False,
 ) -> None:
     repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
     logger.stdout(
@@ -118,6 +126,12 @@ def _print_pkg_detail(
             _("* Download size for {host}: {size}").format(
                 host=download_size_host,
                 size=_format_download_size_value(download_size_host_bytes),
+            )
+        )
+    if is_installed and install_size is not None:
+        logger.stdout(
+            _("* Installed size: {size}").format(
+                size=_format_download_size_value(install_size),
             )
         )
     if upstream_ver := pm.upstream_version:
@@ -176,3 +190,9 @@ def _format_download_size_inline(size: int | None, host: str | None) -> str:
         size=size,
         host=host,
     )
+
+
+def _format_install_size_inline(size: int | None, is_installed: bool) -> str:
+    if size is None or not is_installed:
+        return ""
+    return _(" install: [yellow]{size}[/] bytes").format(size=size)
