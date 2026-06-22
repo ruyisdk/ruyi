@@ -157,18 +157,17 @@ class GlobalConfig:
         is_global_scope: bool,
     ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
-            iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
-            if iem is not None and not is_global_scope:
-                iem_cfg_key = f"{schema.SECTION_INSTALLATION}.{schema.KEY_INSTALLATION_EXTERNALLY_MANAGED}"
+            if is_global_scope:
+                iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
+                self.is_installation_externally_managed = bool(iem)
+            else:
                 self.logger.W(
                     _(
-                        "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
+                        "the config section [yellow]'{section}'[/] cannot be set from user config; ignoring"
                     ).format(
-                        key=iem_cfg_key,
+                        section=schema.SECTION_INSTALLATION,
                     ),
                 )
-            else:
-                self.is_installation_externally_managed = bool(iem)
 
         if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
             self.include_prereleases = pkgs_cfg.get(
