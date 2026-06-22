@@ -281,11 +281,8 @@ def _wrap_decompressed(
         case UnpackMethod.TAR_ZST:
             import zstandard
 
-            zstFile = zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
-            try:
+            with zstandard.ZstdDecompressor().stream_reader(stream) as zstFile:  # type: ignore[arg-type]  # in fact only read() is used
                 yield zstFile
-            finally:
-                zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
         case UnpackMethod.TAR_LZ4:
             import lz4.frame
 
