@@ -1,16 +1,11 @@
-import bz2
 from collections.abc import Generator
 from contextlib import contextmanager
-import gzip
-import lzma
 import mmap
 import os
 import shutil
 import subprocess
 from typing import Any, BinaryIO, NoReturn, Protocol
 
-import lz4.frame
-import zstandard
 
 from ..i18n import _
 from ..log import RuyiLogger
@@ -206,30 +201,40 @@ def open_decompressed(
 ) -> Generator[StreamReader, None, None]:
     match unpack_method:
         case UnpackMethod.TAR_GZ:
+            import gzip
+
             gzipFile = gzip.GzipFile(filename, "rb")
             try:
                 yield gzipFile
             finally:
                 gzipFile.close()
         case UnpackMethod.TAR_BZ2:
+            import bz2
+
             bz2File = bz2.BZ2File(filename, "rb")
             try:
                 yield bz2File
             finally:
                 bz2File.close()
         case UnpackMethod.TAR_XZ:
+            import lzma
+
             lzmaFile = lzma.LZMAFile(filename, "rb")
             try:
                 yield lzmaFile
             finally:
                 lzmaFile.close()
         case UnpackMethod.TAR_ZST:
+            import zstandard
+
             zstFile = zstandard.ZstdDecompressor().stream_reader(open(filename, "rb"))
             try:
                 yield zstFile
             finally:
                 zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
         case UnpackMethod.TAR_LZ4:
+            import lz4.frame
+
             lz4File = lz4.frame.LZ4FrameFile(filename, "rb")
             try:
                 yield lz4File
@@ -250,30 +255,40 @@ def _wrap_decompressed(
         case UnpackMethod.TAR | UnpackMethod.TAR_AUTO:
             yield stream
         case UnpackMethod.TAR_GZ:
+            import gzip
+
             gzipFile = gzip.GzipFile(fileobj=stream, mode="rb")
             try:
                 yield gzipFile
             finally:
                 gzipFile.close()
         case UnpackMethod.TAR_BZ2:
+            import bz2
+
             bz2File = bz2.BZ2File(stream, "rb")
             try:
                 yield bz2File
             finally:
                 bz2File.close()
         case UnpackMethod.TAR_XZ:
+            import lzma
+
             lzmaFile = lzma.LZMAFile(stream, "rb")  # type: ignore[arg-type]  # in fact only read() is used
             try:
                 yield lzmaFile
             finally:
                 lzmaFile.close()
         case UnpackMethod.TAR_ZST:
+            import zstandard
+
             zstFile = zstandard.ZstdDecompressor().stream_reader(stream)  # type: ignore[arg-type]  # in fact only read() is used
             try:
                 yield zstFile
             finally:
                 zstFile.close()  # type: ignore[no-untyped-call]  # this is weird
         case UnpackMethod.TAR_LZ4:
+            import lz4.frame
+
             lz4File = lz4.frame.LZ4FrameFile(stream)
             try:
                 yield lz4File
@@ -314,6 +329,8 @@ def _do_unpack_bare_gz(
     if destdir is not None:
         os.chdir(destdir)
 
+    import gzip
+
     logger.D(f"decompressing gzip: {filename}")
     with gzip.open(filename, "rb") as src, open(dest_filename, "wb") as out:
         shutil.copyfileobj(src, out)
@@ -328,6 +345,8 @@ def _do_unpack_bare_bzip2(
 
     if destdir is not None:
         os.chdir(destdir)
+
+    import bz2
 
     logger.D(f"decompressing bzip2: {filename}")
     with bz2.open(filename, "rb") as src, open(dest_filename, "wb") as out:
@@ -344,6 +363,8 @@ def _do_unpack_bare_lz4(
     if destdir is not None:
         os.chdir(destdir)
 
+    import lz4.frame
+
     logger.D(f"decompressing lz4: {filename}")
     with lz4.frame.open(filename, "rb") as src, open(dest_filename, "wb") as out:
         shutil.copyfileobj(src, out)
@@ -359,6 +380,8 @@ def _do_unpack_bare_xz(
     if destdir is not None:
         os.chdir(destdir)
 
+    import lzma
+
     logger.D(f"decompressing xz: {filename}")
     with lzma.open(filename, "rb") as src, open(dest_filename, "wb") as out:
         shutil.copyfileobj(src, out)
@@ -373,6 +396,8 @@ def _do_unpack_bare_zstd(
 
     if destdir is not None:
         os.chdir(destdir)
+
+    import zstandard
 
     logger.D(f"decompressing zstd: {filename}")
     dctx = zstandard.ZstdDecompressor()
