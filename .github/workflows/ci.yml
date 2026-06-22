@@ -601,7 +601,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.upload_artifact_name }}
-          path: /build/${{ matrix.build_output_name }}
+          path: ${{ github.workspace }}/tmp/build/${{ matrix.build_output_name }}
           compression-level: 0
 
   dist-src:
