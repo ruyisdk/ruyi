@@ -178,7 +178,7 @@ def get_pygit2_wheel_build_env(pygit2_dir: str) -> dict[str, str]:
         # auditwheel 6.1.0+ has manylinux policies for riscv64, but the default
         # is too low for our environment
         # bump it up
-        r["AUDITWHEEL_PLAT"] = "manylinux_2_35_riscv64"
+        r["AUDITWHEEL_PLAT"] = "manylinux_2_38_riscv64"
 
     # This controls the build type for the CMake-built libgit2, and defaults to
     # Debug otherwise in the pygit2 build.sh.
