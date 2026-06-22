@@ -77,6 +77,22 @@ class GlobalConfigRepoType(TypedDict):
 
 
 class GlobalConfigInstallationType(TypedDict):
+    # Undocumented: whether OOBE is globally disabled for this Ruyi installation.
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to make ruyi adhere to packaging policies.
+    disable_oobe: "NotRequired[bool]"
+
+    # Undocumented: whether telemetry is disabled by default for this Ruyi
+    # installation.
+    #
+    # When this option is on, the default telemetry mode would become "off"
+    # instead of "local".
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to make ruyi adhere to packaging policies.
+    disable_telemetry_by_default: "NotRequired[bool]"
+
     # Undocumented: whether this Ruyi installation is externally managed.
     #
     # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
