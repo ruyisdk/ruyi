@@ -108,6 +108,9 @@ EOF
         # Rust openssl-sys
         libssl-dev
         pkgconf
+        # python build: _bz2, _lzma extension modules
+        libbz2-dev
+        liblzma-dev
         # pygit2 build
         cmake
         wget
@@ -163,6 +166,9 @@ prepare_dnf_distro() {
         # Rust openssl-sys
         openssl-devel
         pkgconf-pkg-config
+        # python build: _bz2, _lzma extension modules
+        bzip2-devel
+        xz-devel
         # pygit2 build
         cmake
         wget
