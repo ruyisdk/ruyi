@@ -77,7 +77,7 @@ jobs:
             files.pythonhosted.org:443
             github.com:443
             pypi.org:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v6
@@ -184,7 +184,7 @@ jobs:
             wps-linux-personal.wpscdn.cn:443
             wrong_magic.git:443
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
 
@@ -288,7 +288,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
 
@@ -304,7 +304,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         run: pipx install poetry
@@ -362,7 +362,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py linux
@@ -383,7 +383,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py windows
@@ -404,7 +404,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py macos
@@ -442,7 +442,7 @@ jobs:
             pkg-containers.githubusercontent.com:443
             pypi.org:443
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         if: success() && !matrix.skip && matrix.needs_qemu
@@ -508,7 +508,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         if: success() && !matrix.skip
@@ -572,7 +572,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         if: success() && !matrix.skip
@@ -615,7 +615,7 @@ jobs:
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
           # fetch-tags: true
@@ -646,7 +646,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         run: pipx install poetry
@@ -703,7 +703,7 @@ jobs:
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version-file: "pyproject.toml"
