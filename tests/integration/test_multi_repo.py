@@ -130,9 +130,9 @@ active = false
             if "disabled-repo" in line:
                 # Should not start with *
                 stripped = line.lstrip()
-                assert not stripped.startswith(
-                    "*"
-                ), f"disabled repo should not have *: {line}"
+                assert not stripped.startswith("*"), (
+                    f"disabled repo should not have *: {line}"
+                )
 
 
 class TestRepoAddRemoveRoundTrip:
