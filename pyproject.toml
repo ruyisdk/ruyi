@@ -15,7 +15,8 @@ keywords = [
   "sdk",
   "toolchain",
 ]
-license = { file = "LICENSE-Apache.txt" }
+license = "Apache-2.0"
+license-files = ["LICENSE*"]
 readme = "README.md"
 authors = [
   { name = "WANG Xuerui", email = "wangxuerui@iscas.ac.cn" }
@@ -120,6 +121,12 @@ safe_licenses = [
   "BSD-2-Clause",  # boolean.py
   "BSD-3-Clause",  # click
   "Apache-2.0",  # license-expression
+]
+unsafe_packages = [
+  # SAFETY: its runtime remains permissive and non-infectious, despite the
+  # remaining Nuitka code becoming AGPL from 4.0+
+  # See https://github.com/Nuitka/Nuitka/commit/25d9589c92abbe2b420e2808419addabb1aa9938
+  "Nuitka",
 ]
 
 
