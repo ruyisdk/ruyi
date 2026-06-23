@@ -23,6 +23,28 @@ riscv64)
     ;;
 esac
 
+# workaround patchelf 0.18.0 being broken for Nuitka by downgrading to the latest
+# maintenance release as of June 2026
+#
+# for now this just applies to riscv64's deepin 25
+case "$(uname -m):$(patchelf --version | cut -f2 -d' ')" in
+riscv64:0.18.0*)
+    mkdir tmp.patchelf
+    pushd tmp.patchelf
+
+    echo "011617086323d4f1f959b83ca508f1f89edaabd5f5c3be49d2574cad044f0daa  patchelf-0.15.5-riscv64.tar.gz" > patchelf.sha256sum
+    wget https://github.com/NixOS/patchelf/releases/download/0.15.5/patchelf-0.15.5-riscv64.tar.gz
+    sha256sum -c patchelf.sha256sum
+    tar xf ./patchelf-0.15.5-riscv64.tar.gz
+    mv bin/patchelf /usr/local/bin/patchelf
+    hash -r
+    patchelf --version
+
+    popd
+    rm -rf tmp.patchelf
+    ;;
+esac
+
 _pip_install() {
     "${_PIP_INSTALL[@]}" "$@"
 }

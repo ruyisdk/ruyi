@@ -50,7 +50,7 @@ jobs:
         run: exit 0
 
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -70,14 +70,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
             files.pythonhosted.org:443
             github.com:443
             pypi.org:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install Poetry
         run: pipx install poetry
       - uses: actions/setup-python@v6
@@ -91,7 +91,7 @@ jobs:
       - name: List all licenses involved
         run: poetry run pylic list
       - name: Check license compatibility with pylic
-        run: poetry run pylic check --allow-extra-safe-licenses
+        run: poetry run pylic check --allow-extra-safe-licenses --allow-extra-unsafe-packages
 
   compliance-result:
     name: compliance check result
@@ -149,7 +149,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           # Details about the allowlist, out-of-line because the action seems
@@ -184,7 +184,7 @@ jobs:
             wps-linux-personal.wpscdn.cn:443
             wrong_magic.git:443
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: ${{ matrix.baseline && 'false' || 'recursive' }}
 
@@ -283,12 +283,12 @@ jobs:
       - compliance-result
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Lint with shellcheck
         run: ./scripts/lint-shell-scripts.sh
 
@@ -300,11 +300,11 @@ jobs:
     continue-on-error: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         run: pipx install poetry
@@ -357,12 +357,12 @@ jobs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py linux
@@ -378,12 +378,12 @@ jobs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py windows
@@ -399,12 +399,12 @@ jobs:
       matrix: ${{ steps.gen_matrix.outputs.matrix }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate the matrix
         id: gen_matrix
         run: scripts/gen_matrix.py macos
@@ -432,7 +432,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
           allowed-endpoints: >
@@ -442,15 +442,15 @@ jobs:
             pkg-containers.githubusercontent.com:443
             pypi.org:443
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         if: success() && !matrix.skip && matrix.needs_qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Cache deps and Nuitka output
         if: success() && !matrix.skip
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: dist-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
           restore-keys: |
@@ -470,7 +470,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           registry: ghcr.io
-          image: ghcr.io/ruyisdk/ruyi-python-dist:20260622
+          image: ghcr.io/ruyisdk/ruyi-python-dist:20260623
           options: |
             --user root
             --platform linux/${{ matrix.arch }}
@@ -504,11 +504,11 @@ jobs:
     runs-on: ${{ matrix.runs_on }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         if: success() && !matrix.skip
@@ -525,7 +525,7 @@ jobs:
 
       - name: Cache/restore Nuitka clcache contents
         if: success() && !matrix.skip
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: clcache-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
           restore-keys: |
@@ -568,11 +568,11 @@ jobs:
     runs-on: ${{ matrix.runs_on }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Poetry
         if: success() && !matrix.skip
@@ -601,7 +601,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.upload_artifact_name }}
-          path: ${{ github.workspace }}/tmp//build/${{ matrix.build_output_name }}
+          path: ${{ github.workspace }}/tmp/build/${{ matrix.build_output_name }}
           compression-level: 0
 
   dist-src:
@@ -612,10 +612,10 @@ jobs:
       - lints-result
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # for git-describe to work, but also https://github.com/actions/checkout/issues/1467
           # fetch-tags: true
@@ -634,6 +634,39 @@ jobs:
           path: /tmp/${{ steps.pack_sources.outputs.artifact_name }}
           compression-level: 0 # the archive is already compressed
 
+  pypi-build:
+    name: build artifacts for PyPI
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    needs:
+      - lints-result
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@v7
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      # NOTE: the Poetry venv is created during this step
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: pyproject.toml
+          cache: poetry
+
+      - name: Build wheels and sdist with Poetry
+        run: poetry build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: pypi-dist
+          path: dist
+          compression-level: 0 # all dist files are already compressed
+
   dist-result:
     name: dist builds result
     runs-on: ubuntu-latest
@@ -642,6 +675,7 @@ jobs:
       - dist-macos
       - dist-src
       - dist-windows
+      - pypi-build
     outputs:
       run_id: ${{ github.run_id }}
       release_mirror_url: ${{ needs.dist.outputs.release_mirror_url }}
@@ -666,10 +700,10 @@ jobs:
       - dist-result
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version-file: "pyproject.toml"
@@ -694,44 +728,11 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(needs.dist-result.outputs.release_mirror_url, 'testing') }}
 
-  pypi-build:
-    name: build artifacts for PyPI
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    runs-on: ubuntu-latest
-    needs:
-      - lints-result
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@v6
-
-      - name: Install Poetry
-        run: pipx install poetry
-
-      # NOTE: the Poetry venv is created during this step
-      - uses: actions/setup-python@v6
-        with:
-          python-version-file: pyproject.toml
-          cache: poetry
-
-      - name: Build wheels and sdist with Poetry
-        run: poetry build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: pypi-dist
-          path: dist
-          compression-level: 0 # all dist files are already compressed
-
   pypi-publish:
     name: upload release to PyPI
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     needs:
-      - pypi-build
+      - dist-result
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
     environment: pypi
@@ -740,7 +741,7 @@ jobs:
       id-token: write
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
