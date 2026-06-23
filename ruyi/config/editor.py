@@ -1,10 +1,9 @@
 from contextlib import AbstractContextManager
 import pathlib
-from typing import Final, Sequence, TYPE_CHECKING, cast
+from typing import Final, Self, Sequence, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from types import TracebackType
-    from typing_extensions import Self
 
 import tomlkit
 from tomlkit.items import AoT, Table

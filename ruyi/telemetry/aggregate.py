@@ -1,7 +1,5 @@
-from typing import Iterable, TypeAlias, TypedDict, TYPE_CHECKING
+from typing import Iterable, NotRequired, TypeAlias, TypedDict
 
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
 
 from ..utils.node_info import NodeInfo
 from .event import TelemetryEvent

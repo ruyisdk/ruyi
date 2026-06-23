@@ -5,11 +5,8 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Final, Mapping, TypedDict, TYPE_CHECKING
+from typing import Final, Mapping, NotRequired, TypedDict
 import uuid
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
 
 from .ci import probe_for_ci
 

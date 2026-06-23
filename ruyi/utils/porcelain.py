@@ -4,10 +4,7 @@ import io
 import json
 import sys
 from types import TracebackType
-from typing import Protocol, TypedDict, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Protocol, Self, TypedDict
 
 
 class PorcelainEntityType(enum.StrEnum):

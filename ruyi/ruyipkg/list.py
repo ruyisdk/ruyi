@@ -173,7 +173,7 @@ def _print_pkg_detail(
         logger.stdout(_("* Quirks: {quirks}").format(quirks=tm.quirks))
         logger.stdout(_("* Components:"))
         for tc in tm.components:
-            logger.stdout(f'    - {tc["name"]} [bold green]{tc["version"]}[/]')
+            logger.stdout(f"    - {tc['name']} [bold green]{tc['version']}[/]")
 
 
 def _format_size_human(size: int) -> str:

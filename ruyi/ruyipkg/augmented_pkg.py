@@ -1,8 +1,5 @@
 import enum
-from typing import Iterable, TypedDict, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Iterable, Self, TypedDict
 
 from ..config import GlobalConfig
 from ..i18n import _

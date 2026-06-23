@@ -10,12 +10,7 @@ def _lint(src: str) -> None:
 
 
 def test_plain_module_passes() -> None:
-    _lint(
-        "x = 1\n"
-        "def f(a, b):\n"
-        "    return a + b\n"
-        "y = [f(i, 1) for i in range(10)]\n"
-    )
+    _lint("x = 1\ndef f(a, b):\n    return a + b\ny = [f(i, 1) for i in range(10)]\n")
 
 
 def test_slice_in_value_position_passes() -> None:

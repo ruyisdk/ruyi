@@ -1,7 +1,4 @@
-from typing import TypedDict, TypeGuard, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+from typing import NotRequired, TypedDict, TypeGuard
 
 
 class TelemetryEvent(TypedDict):
