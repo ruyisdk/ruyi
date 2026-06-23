@@ -1,8 +1,5 @@
 import os
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Any, Self
 
 from ...ruyipkg.pkg_manifest import EmulatorProgDecl
 from ...ruyipkg.profile import ProfileProxy

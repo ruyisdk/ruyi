@@ -12,6 +12,7 @@ from typing import (
     Final,
     Iterable,
     Mapping,
+    NotRequired,
     Sequence,
     TypedDict,
     TypeGuard,
@@ -44,8 +45,6 @@ from .profile import PluginProfileProvider, ProfileEntityProvider, ProfileProxy
 from .protocols import ProvidesPackageManifests
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired
-
     # for avoiding circular import
     from ..config import GlobalConfig
 

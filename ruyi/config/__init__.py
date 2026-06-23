@@ -5,11 +5,18 @@ import os.path
 from os import PathLike
 import pathlib
 import sys
-from typing import Any, Final, Iterable, Sequence, TypedDict, TYPE_CHECKING
+from typing import (
+    Any,
+    Final,
+    Iterable,
+    NotRequired,
+    Self,
+    Sequence,
+    TypedDict,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired, Self
-
     from ..log import RuyiLogger
     from ..ruyipkg.composite_repo import CompositeRepo
     from ..ruyipkg.repo import MetadataRepo, RepoEntry
@@ -29,7 +36,6 @@ from babel.core import UnknownLocaleError
 from ..i18n import _
 from . import errors
 from . import schema
-
 
 if sys.platform == "linux":
     PRESET_GLOBAL_CONFIG_LOCATIONS: Final[list[str]] = [

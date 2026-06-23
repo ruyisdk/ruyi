@@ -10,14 +10,14 @@ from typing import (
     Iterable,
     Iterator,
     Literal,
+    NotRequired,
+    Self,
     TypedDict,
     TYPE_CHECKING,
     cast,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired, Self
-
     # pyright only works with semver 3.x
     from semver.version import Version
 else:

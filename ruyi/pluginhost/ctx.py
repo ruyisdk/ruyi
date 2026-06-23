@@ -8,19 +8,15 @@ from typing import (
     Final,
     Generic,
     MutableMapping,
+    Self,
     TypeVar,
-    TYPE_CHECKING,
 )
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 from ..log import RuyiLogger
 from . import api
 from . import paths
 from .build_api import ScheduledBuild
 from .traits import SupportsEvalFunction, SupportsGetOption, SupportsMessageStore
-
 
 ENV_PLUGIN_BACKEND_KEY: Final = "RUYI_PLUGIN_BACKEND"
 

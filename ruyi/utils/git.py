@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager
 import pathlib
-from typing import Any, TYPE_CHECKING
+from typing import Any, Self
 
 from pygit2 import GitError, Oid
 from pygit2.callbacks import RemoteCallbacks
@@ -26,9 +26,6 @@ from pygit2 import (
 
 from rich.progress import Progress, TaskID
 from rich.text import Text
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 from ..i18n import _
 from ..log import RuyiLogger

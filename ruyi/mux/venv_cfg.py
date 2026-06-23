@@ -2,11 +2,7 @@ import copy
 import os.path
 import pathlib
 import tomllib
-from typing import Any, TypedDict, TYPE_CHECKING, cast
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired, Self
-
+from typing import Any, NotRequired, Self, TypedDict, cast
 
 from ..log import RuyiLogger
 from ..utils.global_mode import ProvidesGlobalMode

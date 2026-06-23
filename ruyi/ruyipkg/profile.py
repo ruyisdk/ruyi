@@ -3,16 +3,13 @@ from typing import (
     Any,
     Iterable,
     Mapping,
+    NotRequired,
     Protocol,
     Sequence,
     TypedDict,
     TypeGuard,
-    TYPE_CHECKING,
     cast,
 )
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
 
 from ..pluginhost.ctx import PluginHostContext
 from ..pluginhost.traits import SupportsEvalFunction
