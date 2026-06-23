@@ -70,10 +70,10 @@ include = ["ruyi/py.typed", "ruyi/resources/**/*"]
 exclude = ["**/.gitignore"]
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.9.0"
+mypy = "^2"
 pyright = "^1.1.389"
 pytest = ">=6.2.5"
-ruff = "^0.8.1"
+ruff = "^0.15"
 tomlkit-extras = "^0.2.0"
 typing-extensions = ">=3.10.0.2"
 
