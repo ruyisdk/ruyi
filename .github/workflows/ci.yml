@@ -446,7 +446,7 @@ jobs:
 
       - name: Set up QEMU
         if: success() && !matrix.skip && matrix.needs_qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Cache deps and Nuitka output
         if: success() && !matrix.skip
