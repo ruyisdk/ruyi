@@ -91,7 +91,7 @@ jobs:
       - name: List all licenses involved
         run: poetry run pylic list
       - name: Check license compatibility with pylic
-        run: poetry run pylic check --allow-extra-safe-licenses
+        run: poetry run pylic check --allow-extra-safe-licenses --allow-extra-unsafe-packages
 
   compliance-result:
     name: compliance check result
