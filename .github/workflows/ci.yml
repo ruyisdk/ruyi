@@ -450,7 +450,7 @@ jobs:
 
       - name: Cache deps and Nuitka output
         if: success() && !matrix.skip
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: dist-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
           restore-keys: |
@@ -525,7 +525,7 @@ jobs:
 
       - name: Cache/restore Nuitka clcache contents
         if: success() && !matrix.skip
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: clcache-${{ runner.os }}-${{ matrix.arch }}-r5-${{ hashFiles('poetry.lock') }}
           restore-keys: |
