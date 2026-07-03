@@ -40,10 +40,6 @@ def _make_repo(
 
 
 class TestEnsureGitRepoInvalidCache:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="#415: empty cache dir should be re-cloned instead of raising",
-    )
     def test_empty_dir_is_recloned(
         self,
         tmp_path: pathlib.Path,
@@ -67,10 +63,6 @@ class TestEnsureGitRepoInvalidCache:
         assert result is not None
         assert clone_calls == [str(root)]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="#415: corrupt/non-empty cache dir should fail with a clear message",
-    )
     def test_corrupt_dir_is_fatal(
         self,
         tmp_path: pathlib.Path,
@@ -94,10 +86,6 @@ class TestEnsureGitRepoInvalidCache:
         assert fatal_lines
         assert any(str(root) in line for line in fatal_lines)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="#415: failure path should emit debug diagnostics about the dir",
-    )
     def test_corrupt_dir_emits_debug_diagnostics(
         self,
         tmp_path: pathlib.Path,
