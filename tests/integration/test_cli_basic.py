@@ -6,7 +6,12 @@ from tests.fixtures import IntegrationTestHarness
 
 import pytest
 
-from ruyi.cli.main import is_version_query, main as ruyi_main
+from ruyi.cli.main import (
+    is_called_as_ruyi,
+    is_version_query,
+    main as ruyi_main,
+    should_prompt_for_renaming,
+)
 from ruyi.log import RuyiConsoleLogger
 from ruyi.ruyipkg.distfile import Distfile
 from ruyi.ruyipkg.host import get_native_host
@@ -33,6 +38,36 @@ def test_cli_version_query_detection() -> None:
     assert not is_version_query(["ruyi"])
     assert not is_version_query(["ruyi", "list"])
     assert not is_version_query(["ruyi", "list", "version"])
+
+
+def test_is_called_as_ruyi() -> None:
+    from ruyi.cli import RUYI_ENTRYPOINT_NAME
+    from ruyi.version import RUYI_SEMVER
+
+    assert is_called_as_ruyi(RUYI_ENTRYPOINT_NAME)
+    assert is_called_as_ruyi(f"{RUYI_ENTRYPOINT_NAME}.exe")
+    assert is_called_as_ruyi(f"{RUYI_ENTRYPOINT_NAME}.bin")
+    assert is_called_as_ruyi("__main__.py")
+
+    versioned_name = f"{RUYI_ENTRYPOINT_NAME}-{RUYI_SEMVER}"
+    assert is_called_as_ruyi(versioned_name)
+    assert is_called_as_ruyi(f"{versioned_name}.exe")
+
+    assert not is_called_as_ruyi(f"{RUYI_ENTRYPOINT_NAME}-qemu")
+    assert not is_called_as_ruyi("python")
+    assert not is_called_as_ruyi("")
+
+
+def test_should_prompt_for_renaming() -> None:
+    from ruyi.cli import RUYI_ENTRYPOINT_NAME
+    from ruyi.version import RUYI_SEMVER
+
+    prefix = f"{RUYI_ENTRYPOINT_NAME}-{RUYI_SEMVER}."
+    assert should_prompt_for_renaming(f"{prefix}linux.amd64")
+    assert should_prompt_for_renaming(f"/usr/bin/{prefix}linux.amd64")
+
+    assert not should_prompt_for_renaming(RUYI_ENTRYPOINT_NAME)
+    assert not should_prompt_for_renaming(f"{RUYI_ENTRYPOINT_NAME}-{RUYI_SEMVER}")
 
 
 def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
