@@ -77,6 +77,22 @@ class GlobalConfigRepoType(TypedDict):
 
 
 class GlobalConfigInstallationType(TypedDict):
+    # Undocumented: whether OOBE is globally disabled for this Ruyi installation.
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to make ruyi adhere to packaging policies.
+    disable_oobe: "NotRequired[bool]"
+
+    # Undocumented: whether telemetry is disabled by default for this Ruyi
+    # installation.
+    #
+    # When this option is on, the default telemetry mode would become "off"
+    # instead of "local".
+    #
+    # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
+    # to make ruyi adhere to packaging policies.
+    disable_telemetry_by_default: "NotRequired[bool]"
+
     # Undocumented: whether this Ruyi installation is externally managed.
     #
     # Can be used by distro packagers (by placing a config file in /etc/xdg/ruyi)
@@ -122,6 +138,8 @@ class GlobalConfig:
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
         self.is_installation_externally_managed = False
+        self.is_installation_oobe_disabled = False
+        self.is_installation_telemetry_disabled_by_default = False
 
         self._lang_code = _get_lang_code()
 
@@ -141,18 +159,25 @@ class GlobalConfig:
         is_global_scope: bool,
     ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
-            iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
-            if iem is not None and not is_global_scope:
-                iem_cfg_key = f"{schema.SECTION_INSTALLATION}.{schema.KEY_INSTALLATION_EXTERNALLY_MANAGED}"
+            if is_global_scope:
+                iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
+                self.is_installation_externally_managed = bool(iem)
+
+                dob = ins_cfg.get(schema.KEY_INSTALLATION_DISABLE_OOBE, None)
+                self.is_installation_oobe_disabled = bool(dob)
+
+                dtbd = ins_cfg.get(
+                    schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT, None
+                )
+                self.is_installation_telemetry_disabled_by_default = bool(dtbd)
+            else:
                 self.logger.W(
                     _(
-                        "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
+                        "the config section [yellow]'{section}'[/] cannot be set from user config; ignoring"
                     ).format(
-                        key=iem_cfg_key,
+                        section=schema.SECTION_INSTALLATION,
                     ),
                 )
-            else:
-                self.is_installation_externally_managed = bool(iem)
 
         if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
             self.include_prereleases = pkgs_cfg.get(
@@ -348,6 +373,10 @@ class GlobalConfig:
         leaf = selector[0]
         if leaf == schema.KEY_INSTALLATION_EXTERNALLY_MANAGED:
             return "is_installation_externally_managed"
+        elif leaf == schema.KEY_INSTALLATION_DISABLE_OOBE:
+            return "is_installation_oobe_disabled"
+        elif leaf == schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT:
+            return "is_installation_telemetry_disabled_by_default"
         else:
             return None
 
@@ -475,7 +504,11 @@ class GlobalConfig:
 
     @property
     def telemetry_mode(self) -> str:
-        return self._telemetry_mode or DEFAULT_TELEMETRY_MODE
+        if self._telemetry_mode:
+            return self._telemetry_mode
+        if self.is_installation_telemetry_disabled_by_default:
+            return "off"
+        return DEFAULT_TELEMETRY_MODE
 
     @telemetry_mode.setter
     def telemetry_mode(self, mode: str) -> None:

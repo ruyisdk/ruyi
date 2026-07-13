@@ -596,9 +596,10 @@ class TelemetryProvider:
         """Ask whether the user consents to a first-run telemetry upload, and
         persist the user's exact telemetry choice."""
 
-        if self._gc.is_telemetry_optout:
+        if self._gc.is_telemetry_optout or self._gc.is_installation_oobe_disabled:
             # user has already explicitly opted out via the environment variable,
-            # don't bother asking
+            # or the distro packager has made a decision for the user
+            # don't bother asking or uploading
             return
 
         # We always report installation info on first run, regardless of

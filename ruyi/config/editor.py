@@ -12,7 +12,6 @@ from .errors import MalformedConfigFileError, ProtectedGlobalConfigError
 from .schema import (
     SECTION_INSTALLATION,
     SECTION_REPOS,
-    KEY_INSTALLATION_EXTERNALLY_MANAGED,
     KEY_REPOS_ID,
     ensure_valid_config_kv,
     parse_config_key,
@@ -23,10 +22,8 @@ if TYPE_CHECKING:
     from . import GlobalConfig
 
 
-GLOBAL_ONLY_CONFIG_KEYS: Final[set[tuple[str, str]]] = {
-    (SECTION_INSTALLATION, KEY_INSTALLATION_EXTERNALLY_MANAGED),
-}
-"""Settings that can only be set in global-scope config files.
+GLOBAL_ONLY_CONFIG_SECTIONS: Final[frozenset[str]] = frozenset({SECTION_INSTALLATION})
+"""Config sections that can only be set in global-scope config files.
 
 Changes should be reflected in ``GlobalConfig._apply_config`` too."""
 
@@ -35,8 +32,8 @@ def _is_config_key_global_only(key: str | Sequence[str]) -> bool:
     parsed_key = parse_config_key(key)
     if len(parsed_key) != 2:
         return False
-    section, leaf = parsed_key
-    return (section, leaf) in GLOBAL_ONLY_CONFIG_KEYS
+    section, _ = parsed_key
+    return section in GLOBAL_ONLY_CONFIG_SECTIONS
 
 
 class ConfigEditor(AbstractContextManager["ConfigEditor"]):

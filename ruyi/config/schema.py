@@ -16,6 +16,8 @@ def parse_config_key(key: str | Sequence[str]) -> list[str]:
 
 
 SECTION_INSTALLATION: Final = "installation"
+KEY_INSTALLATION_DISABLE_OOBE: Final = "disable_oobe"
+KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT: Final = "disable_telemetry_by_default"
 KEY_INSTALLATION_EXTERNALLY_MANAGED: Final = "externally_managed"
 
 SECTION_PACKAGES: Final = "packages"
@@ -73,7 +75,11 @@ def get_expected_type_for_config_key(key: str | Sequence[str]) -> type | Sequenc
 
 
 def _get_expected_type_for_section_installation(sel: str) -> type:
-    if sel == KEY_INSTALLATION_EXTERNALLY_MANAGED:
+    if sel == KEY_INSTALLATION_DISABLE_OOBE:
+        return bool
+    elif sel == KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT:
+        return bool
+    elif sel == KEY_INSTALLATION_EXTERNALLY_MANAGED:
         return bool
     else:
         raise InvalidConfigKeyError(sel)

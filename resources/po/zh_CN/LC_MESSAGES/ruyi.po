@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-07-13 20:35+0800\n"
+"POT-Creation-Date: 2026-07-13 21:13+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -352,37 +352,37 @@ msgstr ""
 msgid "This Ruyi installation is externally managed."
 msgstr "该 Ruyi 安装由外部管理。"
 
-#: ruyi/config/__init__.py:149
+#: ruyi/config/__init__.py:166
 #, python-brace-format
-msgid "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
-msgstr "配置项 [yellow]{key}[/] 不能从用户配置文件被设置；忽略"
+msgid "the config section [yellow]'{section}'[/] cannot be set from user config; ignoring"
+msgstr "配置章节 [yellow]'{section}'[/] 不能从用户配置文件被设置；忽略"
 
-#: ruyi/config/__init__.py:172
+#: ruyi/config/__init__.py:187
 #, python-brace-format
 msgid "the local repo path '{path}' is not absolute; ignoring"
 msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 
-#: ruyi/config/__init__.py:214
+#: ruyi/config/__init__.py:229
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with invalid id: '{id}'"
 msgstr "忽略具有无效 id 的 \\[\\[repos]] 条目：'{id}'"
 
-#: ruyi/config/__init__.py:223
+#: ruyi/config/__init__.py:238
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with reserved id '{id}'; use \\[repo] to configure the default repository"
 msgstr "忽略具有保留 id '{id}' 的 \\[\\[repos]] 条目；请使用 \\[repo] 来配置默认仓库"
 
-#: ruyi/config/__init__.py:261 ruyi/config/__init__.py:268
+#: ruyi/config/__init__.py:276 ruyi/config/__init__.py:283
 #, python-brace-format
 msgid "ignoring duplicate \\[\\[repos]] entry with id '{id}'"
 msgstr "忽略具有重复 id '{id}' 的 \\[\\[repos]] 条目"
 
-#: ruyi/config/__init__.py:278
+#: ruyi/config/__init__.py:293
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
-#: ruyi/config/__init__.py:287
+#: ruyi/config/__init__.py:302
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': the local path '{path}' is not absolute"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
