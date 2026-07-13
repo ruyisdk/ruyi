@@ -138,6 +138,8 @@ class GlobalConfig:
         self.override_repo_branch: str | None = None
         self.include_prereleases = False
         self.is_installation_externally_managed = False
+        self.is_installation_oobe_disabled = False
+        self.is_installation_telemetry_disabled_by_default = False
 
         self._lang_code = _get_lang_code()
 
@@ -160,6 +162,14 @@ class GlobalConfig:
             if is_global_scope:
                 iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
                 self.is_installation_externally_managed = bool(iem)
+
+                dob = ins_cfg.get(schema.KEY_INSTALLATION_DISABLE_OOBE, None)
+                self.is_installation_oobe_disabled = bool(dob)
+
+                dtbd = ins_cfg.get(
+                    schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT, None
+                )
+                self.is_installation_telemetry_disabled_by_default = bool(dtbd)
             else:
                 self.logger.W(
                     _(
@@ -363,6 +373,10 @@ class GlobalConfig:
         leaf = selector[0]
         if leaf == schema.KEY_INSTALLATION_EXTERNALLY_MANAGED:
             return "is_installation_externally_managed"
+        elif leaf == schema.KEY_INSTALLATION_DISABLE_OOBE:
+            return "is_installation_oobe_disabled"
+        elif leaf == schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT:
+            return "is_installation_telemetry_disabled_by_default"
         else:
             return None
 
