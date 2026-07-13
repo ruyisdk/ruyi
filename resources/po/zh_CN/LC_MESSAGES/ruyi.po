@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-07-08 16:01+0800\n"
+"POT-Creation-Date: 2026-07-13 20:35+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -92,21 +92,21 @@ msgstr "从 Ruyi 配置中移除一个章节"
 msgid "The section to remove"
 msgstr "要移除的章节"
 
-#: ruyi/cli/main.py:86
+#: ruyi/cli/main.py:92
 #, python-brace-format
 msgid "the {ruyi_exe} executable must be named [green]'{expected_name}'[/] to work"
 msgstr "{ruyi_exe} 可执行文件必须名为 [green]'{expected_name}'[/] 才能工作"
 
-#: ruyi/cli/main.py:93
+#: ruyi/cli/main.py:99
 #, python-brace-format
 msgid "it is now [yellow]'{current_name}'[/]"
 msgstr "当前为 [yellow]'{current_name}'[/]"
 
-#: ruyi/cli/main.py:97
+#: ruyi/cli/main.py:103
 msgid "please rename the command file and retry"
 msgstr "请给命令文件重命名后重试"
 
-#: ruyi/cli/main.py:159
+#: ruyi/cli/main.py:165
 msgid "internal error: CLI entrypoint was added without a telemetry key"
 msgstr "内部错误：CLI 入口点被添加时未附带遥测键"
 
@@ -364,28 +364,28 @@ msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 
 #: ruyi/config/__init__.py:211
 #, python-brace-format
-msgid "ignoring [[repos]] entry with invalid id: '{id}'"
-msgstr "忽略具有无效 id 的 [[repos]] 条目：'{id}'"
+msgid "ignoring \\[\\[repos]] entry with invalid id: '{id}'"
+msgstr "忽略具有无效 id 的 \\[\\[repos]] 条目：'{id}'"
 
 #: ruyi/config/__init__.py:220
 #, python-brace-format
-msgid "ignoring [[repos]] entry with reserved id '{id}'; use [repo] to configure the default repository"
-msgstr "忽略具有保留 id '{id}' 的 [[repos]] 条目；请使用 [repo] 来配置默认仓库"
+msgid "ignoring \\[\\[repos]] entry with reserved id '{id}'; use \\[repo] to configure the default repository"
+msgstr "忽略具有保留 id '{id}' 的 \\[\\[repos]] 条目；请使用 \\[repo] 来配置默认仓库"
 
 #: ruyi/config/__init__.py:228
 #, python-brace-format
-msgid "ignoring duplicate [[repos]] entry with id '{id}'"
-msgstr "忽略具有重复 id '{id}' 的 [[repos]] 条目"
+msgid "ignoring duplicate \\[\\[repos]] entry with id '{id}'"
+msgstr "忽略具有重复 id '{id}' 的 \\[\\[repos]] 条目"
 
 #: ruyi/config/__init__.py:239
 #, python-brace-format
-msgid "ignoring [[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
-msgstr "忽略 [[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
+msgid "ignoring \\[\\[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
+msgstr "忽略 \\[\\[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
 #: ruyi/config/__init__.py:248
 #, python-brace-format
-msgid "ignoring [[repos]] entry '{id}': the local path '{path}' is not absolute"
-msgstr "忽略 [[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
+msgid "ignoring \\[\\[repos]] entry '{id}': the local path '{path}' is not absolute"
+msgstr "忽略 \\[\\[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
 
 #: ruyi/config/errors.py:13
 #, python-brace-format
@@ -1934,8 +1934,8 @@ msgstr "无效的仓库 ID '{id}'"
 
 #: ruyi/ruyipkg/repo_cli.py:128
 #, python-brace-format
-msgid "'{id}' is reserved; use [repo] config to configure the default repository"
-msgstr "'{id}' 是保留的；请使用 [repo] 配置来配置默认仓库"
+msgid "'{id}' is reserved; use \\[repo] config to configure the default repository"
+msgstr "'{id}' 是保留的；请使用 \\[repo] 配置来配置默认仓库"
 
 #: ruyi/ruyipkg/repo_cli.py:136
 msgid "at least one of URL or --local must be provided"
