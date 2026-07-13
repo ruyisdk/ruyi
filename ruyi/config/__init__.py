@@ -504,7 +504,11 @@ class GlobalConfig:
 
     @property
     def telemetry_mode(self) -> str:
-        return self._telemetry_mode or DEFAULT_TELEMETRY_MODE
+        if self._telemetry_mode:
+            return self._telemetry_mode
+        if self.is_installation_telemetry_disabled_by_default:
+            return "off"
+        return DEFAULT_TELEMETRY_MODE
 
     @telemetry_mode.setter
     def telemetry_mode(self, mode: str) -> None:

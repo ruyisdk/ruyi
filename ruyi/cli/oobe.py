@@ -50,6 +50,10 @@ class OOBE:
         if is_env_var_truthy(os.environ, "RUYI_DEBUG_FORCE_FIRST_RUN"):
             return True
 
+        if self._gc.is_installation_oobe_disabled:
+            # OOBE has been disabled by the distro packager, don't prompt
+            return False
+
         return self.is_first_run()
 
     def maybe_prompt(self) -> None:
