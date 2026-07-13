@@ -87,7 +87,7 @@ class RepoEntry:
             branch=gc.override_repo_branch or DEFAULT_REPO_BRANCH,
             local_path=gc.override_repo_dir,
             priority=DEFAULT_REPO_PRIORITY,
-            active=True,
+            active=not gc._repo_disabled,
         )
 
     def make_metadata_repo(self, gc: "GlobalConfig") -> "MetadataRepo":
@@ -424,9 +424,7 @@ class MetadataRepo(ProvidesPackageManifests):
                 if entries is not None and not entries:
                     # An empty directory is as-good-as-not-present: fall
                     # through to the clone path below to self-heal.
-                    self.logger.D(
-                        "repo dir exists but is empty; cloning afresh"
-                    )
+                    self.logger.D("repo dir exists but is empty; cloning afresh")
                 else:
                     # A non-empty but invalid directory. This is what a corrupt
                     # cache or a timeout-killed update looks like. We cannot

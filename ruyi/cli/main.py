@@ -19,7 +19,6 @@ ALLOWED_RUYI_ENTRYPOINT_NAMES: Final = (
     f"{RUYI_ENTRYPOINT_NAME}.exe",
     f"{RUYI_ENTRYPOINT_NAME}.bin",  # Nuitka one-file program cache
     "__main__.py",
-
     # Undocumented: for testing purposes only, to allow multiple versions of
     # ruyi to peacefully co-exist, while not allowing conflating the different
     # versions.

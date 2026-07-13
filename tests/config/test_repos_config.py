@@ -290,3 +290,99 @@ class TestReposConfigParsing:
 
         entry = [e for e in gc.repo_entries if e.id == "disabled"][0]
         assert entry.active is False
+
+    def test_default_repo_disabled_via_config(
+        self,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+        gc._apply_config(
+            {
+                "repo": {
+                    "disabled": True,
+                }
+            },
+            is_global_scope=False,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+
+        default_entry = gc.repo_entries[0]
+        assert default_entry.id == "ruyisdk"
+        assert default_entry.active is False
+
+    def test_default_repo_disabled_then_enabled(
+        self,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        """Later configs override disabled; absence of the key means enabled."""
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+        gc._apply_config(
+            {"repo": {"disabled": True}},
+            is_global_scope=False,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+        assert gc.repo_entries[0].active is False
+
+        # A subsequent config without the disabled key re-enables
+        gc._apply_config(
+            {"repo": {"remote": "https://example.invalid/repo.git"}},
+            is_global_scope=False,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+        assert gc.repo_entries[0].active is True
+
+    def test_system_repo_overridden_by_user_entry(
+        self,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+
+        # A system-scope repo entry
+        gc._apply_config(
+            {
+                "repos": [
+                    {
+                        "id": "vendor-repo",
+                        "remote": "https://example.invalid/vendor.git",
+                        "priority": 10,
+                        "active": True,
+                    }
+                ]
+            },
+            is_global_scope=True,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+
+        entries = gc.repo_entries
+        vendor = [e for e in entries if e.id == "vendor-repo"][0]
+        assert vendor.active is True
+        assert vendor.is_system is True
+
+        # A user-scope entry with same id should override the system entry
+        gc._apply_config(
+            {
+                "repos": [
+                    {
+                        "id": "vendor-repo",
+                        "active": False,
+                    }
+                ]
+            },
+            is_global_scope=False,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+
+        entries = gc.repo_entries
+        vendor = [e for e in entries if e.id == "vendor-repo"][0]
+        assert vendor.active is False
+        assert vendor.is_system is False
+        # The remote should be preserved from the system entry
+        assert vendor.remote == "https://example.invalid/vendor.git"

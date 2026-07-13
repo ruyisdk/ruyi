@@ -287,6 +287,52 @@ class TestRepoEnableDisable:
                 stripped = line.lstrip()
                 assert stripped.startswith("*")
 
+    def test_disable_default_repo(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        result = ruyi_cli_runner("repo", "disable", "ruyisdk")
+        assert result.exit_code == 0
+        assert "disabled" in result.stderr
+
+        result = ruyi_cli_runner("repo", "list")
+        lines = result.stdout.strip().splitlines()
+        for line in lines:
+            if "ruyisdk" in line:
+                stripped = line.lstrip()
+                assert not stripped.startswith("*"), (
+                    f"disabled default repo should not have *: {line}"
+                )
+
+    def test_enable_default_repo_after_disable(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        result = ruyi_cli_runner("repo", "disable", "ruyisdk")
+        assert result.exit_code == 0
+
+        result = ruyi_cli_runner("repo", "enable", "ruyisdk")
+        assert result.exit_code == 0
+        assert "enabled" in result.stderr
+
+        result = ruyi_cli_runner("repo", "list")
+        lines = result.stdout.strip().splitlines()
+        for line in lines:
+            if "ruyisdk" in line:
+                stripped = line.lstrip()
+                assert stripped.startswith("*"), (
+                    f"re-enabled default repo should have *: {line}"
+                )
+
+    def test_default_repo_disabled_excludes_packages(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        result = ruyi_cli_runner("repo", "disable", "ruyisdk")
+        assert result.exit_code == 0
+
+        result = ruyi_cli_runner("list", "--all")
+        assert result.exit_code == 0
+        # The sample-cli package from the default repo should no longer appear
+        assert "sample-cli" not in result.stdout
+
 
 class TestRepoSetPriority:
     """Set priority on repos via CLI."""
