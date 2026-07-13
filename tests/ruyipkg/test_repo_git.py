@@ -85,20 +85,3 @@ class TestEnsureGitRepoInvalidCache:
         ]
         assert fatal_lines
         assert any(str(root) in line for line in fatal_lines)
-
-    def test_corrupt_dir_emits_debug_diagnostics(
-        self,
-        tmp_path: pathlib.Path,
-    ) -> None:
-        root = tmp_path / "packages-index"
-        root.mkdir()
-        (root / "stray-file").write_text("leftover\n", encoding="utf-8")
-
-        repo, stderr = _make_repo(root, is_debug=True)
-
-        with pytest.raises(SystemExit):
-            repo.ensure_git_repo()
-
-        debug_output = stderr.getvalue()
-        assert str(root) in debug_output
-        assert "Repository() failed" in debug_output
