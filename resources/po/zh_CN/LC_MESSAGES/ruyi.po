@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-06-16 19:31+0800\n"
+"POT-Creation-Date: 2026-07-08 16:01+0800\n"
 "PO-Revision-Date: 2026-01-16 01:05+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -352,37 +352,37 @@ msgstr ""
 msgid "This Ruyi installation is externally managed."
 msgstr "该 Ruyi 安装由外部管理。"
 
-#: ruyi/config/__init__.py:141
+#: ruyi/config/__init__.py:147
 #, python-brace-format
 msgid "the config key [yellow]{key}[/] cannot be set from user config; ignoring"
 msgstr "配置项 [yellow]{key}[/] 不能从用户配置文件被设置；忽略"
 
-#: ruyi/config/__init__.py:163
+#: ruyi/config/__init__.py:169
 #, python-brace-format
 msgid "the local repo path '{path}' is not absolute; ignoring"
 msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 
-#: ruyi/config/__init__.py:205
+#: ruyi/config/__init__.py:211
 #, python-brace-format
 msgid "ignoring [[repos]] entry with invalid id: '{id}'"
 msgstr "忽略具有无效 id 的 [[repos]] 条目：'{id}'"
 
-#: ruyi/config/__init__.py:214
+#: ruyi/config/__init__.py:220
 #, python-brace-format
 msgid "ignoring [[repos]] entry with reserved id '{id}'; use [repo] to configure the default repository"
 msgstr "忽略具有保留 id '{id}' 的 [[repos]] 条目；请使用 [repo] 来配置默认仓库"
 
-#: ruyi/config/__init__.py:222
+#: ruyi/config/__init__.py:228
 #, python-brace-format
 msgid "ignoring duplicate [[repos]] entry with id '{id}'"
 msgstr "忽略具有重复 id '{id}' 的 [[repos]] 条目"
 
-#: ruyi/config/__init__.py:233
+#: ruyi/config/__init__.py:239
 #, python-brace-format
 msgid "ignoring [[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
 msgstr "忽略 [[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
-#: ruyi/config/__init__.py:242
+#: ruyi/config/__init__.py:248
 #, python-brace-format
 msgid "ignoring [[repos]] entry '{id}': the local path '{path}' is not absolute"
 msgstr "忽略 [[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
@@ -1161,31 +1161,31 @@ msgstr "无效的 --var 规范 {spec!r}：键为空"
 msgid "build {name!r} completed: {n} artifact(s)"
 msgstr "构建任务 {name!r} 完成：{n} 个构建产物"
 
-#: ruyi/ruyipkg/augmented_pkg.py:29
+#: ruyi/ruyipkg/augmented_pkg.py:26
 msgid "latest"
 msgstr "最新"
 
-#: ruyi/ruyipkg/augmented_pkg.py:31
+#: ruyi/ruyipkg/augmented_pkg.py:28
 msgid "latest-prerelease"
 msgstr "最新预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:33
+#: ruyi/ruyipkg/augmented_pkg.py:30
 msgid "[red]no binary for current host[/]"
 msgstr "[red]无适用当前主机的二进制文件[/]"
 
-#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:35
+#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:32
 msgid "prerelease"
 msgstr "预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:37
+#: ruyi/ruyipkg/augmented_pkg.py:34
 msgid "[yellow]has known issue[/]"
 msgstr "[yellow]有已知问题[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:39
+#: ruyi/ruyipkg/augmented_pkg.py:36
 msgid "[green]downloaded[/]"
 msgstr "[green]已下载[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:41
+#: ruyi/ruyipkg/augmented_pkg.py:38
 msgid "[green]installed[/]"
 msgstr "[green]已安装[/]"
 
@@ -1835,45 +1835,59 @@ msgstr "{profile_id}（架构：[green]{arch}[/]）"
 msgid "{profile_id} (arch: [green]{arch}[/], needs quirks: [yellow]{need_quirks}[/])"
 msgstr "{profile_id}（架构：[green]{arch}[/]，需要特殊特性：[yellow]{need_quirks}[/]）"
 
-#: ruyi/ruyipkg/repo.py:255
+#: ruyi/ruyipkg/repo.py:254
 #, python-brace-format
 msgid "unrecognized dist URL scheme: {scheme}"
 msgstr "未识别的分发 URL 协议：{scheme}"
 
-#: ruyi/ruyipkg/repo.py:413
+#: ruyi/ruyipkg/repo.py:437
+#, python-brace-format
+msgid "the package repository at [yellow]{root}[/] is not a valid Git repository"
+msgstr "位于 [yellow]{atom}[/] 的软件包仓库不是合法的 Git 仓库"
+
+#: ruyi/ruyipkg/repo.py:442
+msgid "it may be corrupt or left incomplete by an interrupted update"
+msgstr "可能由于某次更新被打断，造成该仓库损坏或不完整"
+
+#: ruyi/ruyipkg/repo.py:447
+#, python-brace-format
+msgid "please remove [yellow]{root}[/] and re-run [green]ruyi update[/]"
+msgstr "请将 [yellow]{root}[/] 移除，之后重新运行 [green]ruyi update[/]"
+
+#: ruyi/ruyipkg/repo.py:453
 #, python-brace-format
 msgid "the package repository does not exist at [yellow]{root}[/]"
 msgstr "软件包仓库不存在于 [yellow]{root}[/]"
 
-#: ruyi/ruyipkg/repo.py:418
+#: ruyi/ruyipkg/repo.py:458
 #, python-brace-format
 msgid "cloning from [cyan link={remote}]{remote}[/]"
 msgstr "正在从 [cyan link={remote}]{remote}[/] 克隆"
 
-#: ruyi/ruyipkg/repo.py:444
+#: ruyi/ruyipkg/repo.py:484
 #, python-brace-format
 msgid "skipping sync for local-only repo '{id}'"
 msgstr "为设置为仅本地的仓库 '{id}' 跳过同步"
 
-#: ruyi/ruyipkg/repo.py:452
+#: ruyi/ruyipkg/repo.py:492
 msgid "updating the package repository"
 msgstr "正在更新软件包仓库"
 
-#: ruyi/ruyipkg/repo.py:469
+#: ruyi/ruyipkg/repo.py:509
 msgid "package repository is updated"
 msgstr "软件包仓库已更新"
 
-#: ruyi/ruyipkg/repo.py:753
+#: ruyi/ruyipkg/repo.py:793
 #, python-brace-format
 msgid "UnicodeDecodeError: {path}"
 msgstr "Unicode 解码错误：{path}"
 
-#: ruyi/ruyipkg/repo.py:789
+#: ruyi/ruyipkg/repo.py:829
 #, python-brace-format
 msgid "unexpected return type of cmd plugin '{plugin_id}': {type} is not int."
 msgstr "命令插件 '{plugin_id}' 的返回类型非预期：{type} 不是 int。"
 
-#: ruyi/ruyipkg/repo.py:795
+#: ruyi/ruyipkg/repo.py:835
 msgid "forcing return code to 1; the plugin should be fixed"
 msgstr "强制返回码为 1；该插件需要被修复"
 
@@ -2023,17 +2037,17 @@ msgstr "新的优先级取值"
 msgid "repo '{id}' priority set to {priority}"
 msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
 
-#: ruyi/ruyipkg/unpack.py:195
+#: ruyi/ruyipkg/unpack.py:190
 #, python-brace-format
 msgid "untar failed: command {cmd} returned {retcode}"
 msgstr "tar 解包失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:300
+#: ruyi/ruyipkg/unpack.py:312
 #, python-brace-format
 msgid "unzip failed: command {cmd} returned {retcode}"
 msgstr "unzip 失败：命令 {cmd} 返回 {retcode}"
 
-#: ruyi/ruyipkg/unpack.py:403
+#: ruyi/ruyipkg/unpack.py:425
 #, python-brace-format
 msgid "file '{filename}' does not appear to be a deb"
 msgstr "文件 '{filename}' 似乎不是一个 deb"
@@ -2243,48 +2257,48 @@ msgstr "遥测模式为 [green]off[/]：不会收集更多数据"
 msgid "Upload collected telemetry data now"
 msgstr "立即上传已收集的遥测数据"
 
-#: ruyi/utils/git.py:81
+#: ruyi/utils/git.py:78
 msgid "transferring objects"
 msgstr "正在传输对象"
 
-#: ruyi/utils/git.py:85
+#: ruyi/utils/git.py:82
 msgid "processing deltas"
 msgstr "正在处理 deltas"
 
-#: ruyi/utils/git.py:118
+#: ruyi/utils/git.py:115
 #, python-brace-format
 msgid "URL of remote '[yellow]{remote}[/]' does not match expected URL"
 msgstr "远端 '[yellow]{remote}[/]' 的 URL 与预期 URL 不匹配"
 
-#: ruyi/utils/git.py:122
+#: ruyi/utils/git.py:119
 #, python-brace-format
 msgid "repository:          [yellow]{path}[/]"
 msgstr "仓库：        [yellow]{path}[/]"
 
-#: ruyi/utils/git.py:123
+#: ruyi/utils/git.py:120
 #, python-brace-format
 msgid "expected remote URL: [yellow]{url}[/]"
 msgstr "预期远端 URL： [yellow]{url}[/]"
 
-#: ruyi/utils/git.py:124
+#: ruyi/utils/git.py:121
 #, python-brace-format
 msgid "actual remote URL:   [yellow]{url}[/]"
 msgstr "实际远端 URL： [yellow]{url}[/]"
 
-#: ruyi/utils/git.py:125
+#: ruyi/utils/git.py:122
 msgid "please [bold red]fix the repo settings manually[/]"
 msgstr "请[bold red]手动修复仓库设置[/]"
 
-#: ruyi/utils/git.py:141
+#: ruyi/utils/git.py:138
 #, python-brace-format
 msgid "failed to fetch from remote URL {url}: {reason}"
 msgstr "从远端 URL {url} 获取失败：{reason}"
 
-#: ruyi/utils/git.py:176
+#: ruyi/utils/git.py:173
 msgid "cannot fast-forward repo to newly fetched state"
 msgstr "无法将仓库快进到新获取的状态"
 
-#: ruyi/utils/git.py:177
+#: ruyi/utils/git.py:174
 msgid "manual intervention is required to avoid data loss"
 msgstr "需要手动干预以避免数据丢失"
 

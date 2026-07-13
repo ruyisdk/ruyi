@@ -21,7 +21,7 @@ from typing import (
 )
 from urllib import parse
 
-from pygit2 import clone_repository
+from pygit2 import GitError, clone_repository, discover_repository
 from pygit2.repository import Repository
 
 from ..i18n import _
@@ -405,8 +405,49 @@ class MetadataRepo(ProvidesPackageManifests):
             return self.repo
 
         if os.path.exists(self.root):
-            self.repo = Repository(self.root)
-            return self.repo
+            try:
+                self.repo = Repository(self.root)
+                return self.repo
+            except GitError as e:
+                # The directory exists but pygit2 cannot open it as a Git
+                # repository. Only now (on the failure path) do we gather the
+                # extra, potentially expensive diagnostics.
+                entries = os.listdir(self.root) if os.path.isdir(self.root) else None
+                self.logger.D(
+                    f"invalid git repo at {self.root!r}: exists but "
+                    f"Repository() failed: {e}; "
+                    f"isdir={os.path.isdir(self.root)}, "
+                    f"entries={None if entries is None else len(entries)}, "
+                    f"discover={discover_repository(self.root)}"
+                )
+
+                if entries is not None and not entries:
+                    # An empty directory is as-good-as-not-present: fall
+                    # through to the clone path below to self-heal.
+                    self.logger.D(
+                        "repo dir exists but is empty; cloning afresh"
+                    )
+                else:
+                    # A non-empty but invalid directory. This is what a corrupt
+                    # cache or a timeout-killed update looks like. We cannot
+                    # safely introspect the remote or clean up on the user's
+                    # behalf, so abort with an actionable message.
+                    self.logger.F(
+                        _(
+                            "the package repository at [yellow]{root}[/] is not a valid Git repository"
+                        ).format(root=self.root)
+                    )
+                    self.logger.I(
+                        _(
+                            "it may be corrupt or left incomplete by an interrupted update"
+                        )
+                    )
+                    self.logger.I(
+                        _(
+                            "please remove [yellow]{root}[/] and re-run [green]ruyi update[/]"
+                        ).format(root=self.root)
+                    )
+                    raise SystemExit(1) from e
 
         self.logger.I(
             _("the package repository does not exist at [yellow]{root}[/]").format(
