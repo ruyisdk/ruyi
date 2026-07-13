@@ -23,6 +23,7 @@ KEY_PACKAGES_PRERELEASES: Final = "prereleases"
 
 SECTION_REPO: Final = "repo"
 KEY_REPO_BRANCH: Final = "branch"
+KEY_REPO_DISABLED: Final = "disabled"
 KEY_REPO_LOCAL: Final = "local"
 KEY_REPO_REMOTE: Final = "remote"
 
@@ -88,6 +89,8 @@ def _get_expected_type_for_section_packages(sel: str) -> type:
 def _get_expected_type_for_section_repo(sel: str) -> type:
     if sel == KEY_REPO_BRANCH:
         return str
+    elif sel == KEY_REPO_DISABLED:
+        return bool
     elif sel == KEY_REPO_LOCAL:
         return str
     elif sel == KEY_REPO_REMOTE:

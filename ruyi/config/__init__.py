@@ -73,6 +73,7 @@ class GlobalConfigRepoType(TypedDict):
     local: "NotRequired[str]"
     remote: "NotRequired[str]"
     branch: "NotRequired[str]"
+    disabled: "NotRequired[bool]"
 
 
 class GlobalConfigInstallationType(TypedDict):
@@ -130,6 +131,7 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
+        self._repo_disabled = False
         self._extra_repo_entries: list["RepoEntry"] = []
 
     def _apply_config(
@@ -161,6 +163,7 @@ class GlobalConfig:
             self.override_repo_dir = repo_cfg.get(schema.KEY_REPO_LOCAL, None)
             self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
             self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
+            self._repo_disabled = repo_cfg.get(schema.KEY_REPO_DISABLED, False)
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -224,12 +227,48 @@ class GlobalConfig:
                 continue
 
             if repo_id in seen_ids:
-                self.logger.W(
-                    _(r"ignoring duplicate \[\[repos]] entry with id '{id}'").format(
-                        id=repo_id
+                if not is_system:
+                    # A user-scope entry may override a system-scope entry by
+                    # merging user-supplied fields on top of the system defaults.
+                    for i, existing in enumerate(self._extra_repo_entries):
+                        if existing.id == repo_id and existing.is_system:
+                            self._extra_repo_entries[i] = RepoEntry(
+                                id=existing.id,
+                                name=entry_data.get(
+                                    schema.KEY_REPOS_NAME, existing.name
+                                ),
+                                remote=entry_data.get(
+                                    schema.KEY_REPOS_REMOTE, existing.remote or ""
+                                ),
+                                branch=entry_data.get(
+                                    schema.KEY_REPOS_BRANCH, existing.branch
+                                ),
+                                local_path=entry_data.get(
+                                    schema.KEY_REPOS_LOCAL, existing.local_path
+                                ),
+                                priority=entry_data.get(
+                                    schema.KEY_REPOS_PRIORITY, existing.priority
+                                ),
+                                active=entry_data.get(
+                                    schema.KEY_REPOS_ACTIVE, existing.active
+                                ),
+                                is_system=False,
+                            )
+                            break
+                    else:
+                        self.logger.W(
+                            _(
+                                r"ignoring duplicate \[\[repos]] entry with id '{id}'"
+                            ).format(id=repo_id)
+                        )
+                    continue
+                else:
+                    self.logger.W(
+                        _(
+                            r"ignoring duplicate \[\[repos]] entry with id '{id}'"
+                        ).format(id=repo_id)
                     )
-                )
-                continue
+                    continue
 
             remote = entry_data.get(schema.KEY_REPOS_REMOTE, "")
             local_path = entry_data.get(schema.KEY_REPOS_LOCAL, None)

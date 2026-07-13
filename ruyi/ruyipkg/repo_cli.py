@@ -253,12 +253,23 @@ class RepoEnableCommand(
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         from ..config.editor import ConfigEditor
         from ..config.schema import KEY_REPOS_ACTIVE
+        from .repo import DEFAULT_REPO_ID
 
         logger = cfg.logger
         repo_id: str = args.id
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
-            if not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: True}):
+            if repo_id == DEFAULT_REPO_ID:
+                editor.unset_value("repo.disabled")
+            elif not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: True}):
+                # Not in user config — if it exists as a system-provided repo,
+                # it is already active and nothing needs to be done.
+                for entry in cfg.repo_entries:
+                    if entry.id == repo_id and entry.is_system:
+                        # reuse the prompt to make the messages look uniform
+                        # regarding user-configured repos
+                        logger.I(_("repo '{id}' enabled").format(id=repo_id))
+                        return 0
                 logger.F(
                     _("no repo with id '{id}' found in user config").format(id=repo_id)
                 )
@@ -285,17 +296,45 @@ class RepoDisableCommand(
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         from ..config.editor import ConfigEditor
-        from ..config.schema import KEY_REPOS_ACTIVE
+        from ..config.schema import (
+            KEY_REPOS_ACTIVE,
+            KEY_REPOS_ID,
+            KEY_REPOS_LOCAL,
+            KEY_REPOS_NAME,
+            KEY_REPOS_REMOTE,
+        )
+        from .repo import DEFAULT_REPO_ID
 
         logger = cfg.logger
         repo_id: str = args.id
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
-            if not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: False}):
-                logger.F(
-                    _("no repo with id '{id}' found in user config").format(id=repo_id)
-                )
-                return 1
+            if repo_id == DEFAULT_REPO_ID:
+                editor.set_value("repo.disabled", True)
+            elif not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: False}):
+                # Not in user config — might be a system-provided repo.
+                # Create a user [[repos]] entry to override the active flag.
+                for entry in cfg.repo_entries:
+                    if entry.id == repo_id and entry.is_system:
+                        entry_data: dict[str, object] = {
+                            KEY_REPOS_ID: repo_id,
+                            KEY_REPOS_ACTIVE: False,
+                        }
+                        if entry.remote:
+                            entry_data[KEY_REPOS_REMOTE] = entry.remote
+                        if entry.local_path:
+                            entry_data[KEY_REPOS_LOCAL] = entry.local_path
+                        if entry.name != repo_id:
+                            entry_data[KEY_REPOS_NAME] = entry.name
+                        editor.add_repos_entry(entry_data)
+                        break
+                else:
+                    logger.F(
+                        _("no repo with id '{id}' found in user config").format(
+                            id=repo_id
+                        )
+                    )
+                    return 1
             editor.stage()
 
         logger.I(_("repo '{id}' disabled").format(id=repo_id))
