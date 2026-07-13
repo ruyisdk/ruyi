@@ -125,7 +125,7 @@ class RepoAddCommand(
         if repo_id == DEFAULT_REPO_ID:
             logger.F(
                 _(
-                    "'{id}' is reserved; use [repo] config to configure the default repository"
+                    r"'{id}' is reserved; use \[repo] config to configure the default repository"
                 ).format(
                     id=DEFAULT_REPO_ID,
                 )

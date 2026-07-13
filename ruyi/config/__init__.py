@@ -208,7 +208,7 @@ class GlobalConfig:
             repo_id = entry_data.get(schema.KEY_REPOS_ID, "")
             if not repo_id or not REPO_ID_PATTERN.match(repo_id):
                 self.logger.W(
-                    _("ignoring [[repos]] entry with invalid id: '{id}'").format(
+                    _(r"ignoring \[\[repos]] entry with invalid id: '{id}'").format(
                         id=repo_id
                     )
                 )
@@ -217,15 +217,15 @@ class GlobalConfig:
             if repo_id == DEFAULT_REPO_ID:
                 self.logger.W(
                     _(
-                        "ignoring [[repos]] entry with reserved id '{id}'; "
-                        "use [repo] to configure the default repository"
+                        r"ignoring \[\[repos]] entry with reserved id '{id}'; "
+                        r"use \[repo] to configure the default repository"
                     ).format(id=repo_id)
                 )
                 continue
 
             if repo_id in seen_ids:
                 self.logger.W(
-                    _("ignoring duplicate [[repos]] entry with id '{id}'").format(
+                    _(r"ignoring duplicate \[\[repos]] entry with id '{id}'").format(
                         id=repo_id
                     )
                 )
@@ -236,8 +236,8 @@ class GlobalConfig:
             if not remote and not local_path:
                 self.logger.W(
                     _(
-                        "ignoring [[repos]] entry '{id}': "
-                        "at least one of 'remote' or 'local' must be set"
+                        r"ignoring \[\[repos]] entry '{id}': "
+                        r"at least one of 'remote' or 'local' must be set"
                     ).format(id=repo_id)
                 )
                 continue
@@ -245,8 +245,8 @@ class GlobalConfig:
             if local_path and not pathlib.Path(local_path).is_absolute():
                 self.logger.W(
                     _(
-                        "ignoring [[repos]] entry '{id}': "
-                        "the local path '{path}' is not absolute"
+                        r"ignoring \[\[repos]] entry '{id}': "
+                        r"the local path '{path}' is not absolute"
                     ).format(id=repo_id, path=local_path)
                 )
                 continue
