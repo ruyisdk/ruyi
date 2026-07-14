@@ -47,12 +47,18 @@ _python_argcomplete_ruyi() {
         if [[ "${completions-}" =~ ([^\\]): && "${match[1]}" =~ [=/:] ]]; then
             nospace=(-S '')
         fi
-        _describe "${words[1]}" completions "${nosort[@]}" "${nospace[@]}"
+        if [[ ${#completions[@]} -gt 0 ]]; then
+            _describe "${words[1]}" completions "${nosort[@]}" "${nospace[@]}"
+        fi
+        # Always add shell-native file completions as a fallback for
+        # arguments that lack a custom ruyi completer.
+        _files
     else
         local SUPPRESS_SPACE=0
         if compopt +o nospace 2> /dev/null; then
             SUPPRESS_SPACE=1
         fi
+        local rc=0
         COMPREPLY=($(IFS="$IFS" \
             COMP_LINE="$COMP_LINE" \
             COMP_POINT="$COMP_POINT" \
@@ -62,8 +68,19 @@ _python_argcomplete_ruyi() {
             _ARGCOMPLETE_SHELL="bash" \
             _ARGCOMPLETE_SUPPRESS_SPACE=$SUPPRESS_SPACE \
             __python_argcomplete_ruyi_run ${script:-$1}))
-        if [[ $? != 0 ]]; then
+        rc=$?
+
+        if [[ $rc != 0 ]]; then
             unset COMPREPLY
+        fi
+
+        # Always add shell-native file completions so the user can
+        # fall back to completing arbitrary paths.
+        local cur="${COMP_WORDS[COMP_CWORD]-}"
+        COMPREPLY+=($(compgen -f -- "$cur"))
+
+        if [[ $rc != 0 ]]; then
+            :
         elif [[ $SUPPRESS_SPACE == 1 ]] && [[ "${COMPREPLY-}" =~ [=/:]$ ]]; then
             compopt -o nospace
         fi

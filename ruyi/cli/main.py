@@ -132,11 +132,10 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         import argcomplete
         from .completer import NoneCompleter
 
-        # Pass a default completer that returns an empty list so argcomplete
-        # gracefully handles any argument without a custom ruyi completer.
-        # An empty list is safe to iterate in all supported versions (2.0.0
-        # uses a list comprehension, 3.x uses a for loop), unlike None which
-        # caused a TypeError crash.
+        # Pass NoneCompleter as the default so argcomplete produces no
+        # suggestions of its own for arguments that lack a custom ruyi
+        # completer.  The completion script then adds shell-native file
+        # completions as a fallback.
         argcomplete.autocomplete(
             p,
             always_complete_options=True,
