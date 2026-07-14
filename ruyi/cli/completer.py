@@ -30,7 +30,13 @@ else:
 
 
 class NoneCompleter(BaseCompleter):
-    def __call__(
+    # The return type 'list[str]' deliberately deviates from the base class
+    # annotation '-> None' in argcomplete (tested through 3.7.0).  Upstream's
+    # @completers.BaseCompleter.__call__ has -> None, but finders.py:413-414
+    # iterates over the return value with 'for completion in completer_output:'
+    # (the non-Mapping branch), so returning None would raise TypeError at
+    # runtime.  Returning an empty list is safe and produces no suggestions.
+    def __call__(  # type: ignore[override]
         self,
         *,
         prefix: str,
