@@ -37,8 +37,8 @@ class NoneCompleter(BaseCompleter):
         action: argparse.Action,
         parser: argparse.ArgumentParser,
         parsed_args: argparse.Namespace,
-    ) -> None:
-        return None
+    ) -> list[str]:
+        return []
 
 
 class DynamicCompleter(Protocol):

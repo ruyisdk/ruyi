@@ -130,13 +130,17 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
     # (which may not be the case for an out-of-the-box experience).
     if gm.is_cli_autocomplete:
         import argcomplete
+        from .completer import NoneCompleter
 
-        # Do not pass a default_completer so argcomplete falls through to its
-        # built-in FilesCompleter for path completion on arguments that lack a
-        # custom completer.
+        # Pass a default completer that returns an empty list so argcomplete
+        # gracefully handles any argument without a custom ruyi completer.
+        # An empty list is safe to iterate in all supported versions (2.0.0
+        # uses a list comprehension, 3.x uses a for loop), unlike None which
+        # caused a TypeError crash.
         argcomplete.autocomplete(
             p,
             always_complete_options=True,
+            default_completer=NoneCompleter(),
         )
 
     args = p.parse_args(argv[1:])
