@@ -132,6 +132,10 @@ def main(gm: GlobalModeProvider, gc: GlobalConfig, argv: list[str]) -> int:
         import argcomplete
         from .completer import NoneCompleter
 
+        # Pass NoneCompleter as the default so argcomplete produces no
+        # suggestions of its own for arguments that lack a custom ruyi
+        # completer.  The completion script then adds shell-native file
+        # completions as a fallback.
         argcomplete.autocomplete(
             p,
             always_complete_options=True,

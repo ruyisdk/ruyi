@@ -6,7 +6,15 @@ build-backend = "poetry.core.masonry.api"
 name = "ruyi"
 version = "0.51.0-alpha.20260616"
 description = "Package manager for RuyiSDK"
-keywords = ["ruyi", "ruyisdk"]
+keywords = [
+  "package manager",
+  "risc-v",
+  "riscv",
+  "ruyi",
+  "ruyisdk",
+  "sdk",
+  "toolchain",
+]
 license = "Apache-2.0"
 readme = "README.md"
 authors = [
@@ -35,14 +43,16 @@ argcomplete = ">=2.0.0"
 arpy = "*"
 babel = ">=2.10.3"
 fastjsonschema = ">=2.16.3"
-jinja2 = "^3.0.3"
+jinja2 = ">=3.1.2"
+lz4 = ">=4.0.2"
 pygit2 = ">=1.11.1"
 pyyaml = ">=6.0"
-requests = "^2.25.1"
-rich = ">=11.2.0"
+requests = ">=2.28.1"
+rich = ">=13.3.1"
 semver = ">=2.10"
-tomlkit = ">=0.9"
+tomlkit = ">=0.11.8"
 tzdata = { version = "*", platform = "win32" }
+zstandard = ">=0.20.0"
 
 [tool.poetry.scripts]
 ruyi = "ruyi.__main__:entrypoint"
@@ -78,6 +88,7 @@ safe_licenses = [
   "BSD License",
   "GPLv2 with linking exception",
   "MIT",  # pyright spells "MIT License" differently
+  "MIT-0",  # cffi-2.1.0
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
   "PSF-2.0",  # typing_extensions 4.13
