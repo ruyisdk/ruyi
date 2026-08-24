@@ -36,7 +36,7 @@ class NoneCompleter(BaseCompleter):
     # iterates over the return value with 'for completion in completer_output:'
     # (the non-Mapping branch), so returning None would raise TypeError at
     # runtime.  Returning an empty list is safe and produces no suggestions.
-    def __call__(  # type: ignore[override]
+    def __call__(  # type: ignore[override,unused-ignore]  # 3.7.2 doesn't trigger anymore
         self,
         *,
         prefix: str,
