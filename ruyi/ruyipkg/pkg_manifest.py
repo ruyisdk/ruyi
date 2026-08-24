@@ -608,9 +608,7 @@ class PackageManifest:
 
         for vendor_id, block in data.items():
             if not isinstance(block, dict):
-                raise ValueError(
-                    f"metadata.vendor.data.{vendor_id} must be a table"
-                )
+                raise ValueError(f"metadata.vendor.data.{vendor_id} must be a table")
             for key, value in block.items():
                 # bool must be checked explicitly since it is a subclass of int
                 if not isinstance(value, (bool, str)):

@@ -117,9 +117,7 @@ def test_validate_vendor_data_no_data_ok() -> None:
 
 
 def test_validate_vendor_data_rejects_int_value() -> None:
-    pm = _make_manifest_from_toml(
-        "\n[metadata.vendor.data.othervendor]\ncount = 5\n"
-    )
+    pm = _make_manifest_from_toml("\n[metadata.vendor.data.othervendor]\ncount = 5\n")
     with pytest.raises(ValueError, match="othervendor"):
         pm.validate_vendor_data()
 
