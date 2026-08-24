@@ -120,6 +120,8 @@ def _print_pkg_detail(
         logger.stdout(_("* Slug: (none)"))
     logger.stdout(_("* Package kind: {kind}").format(kind=sorted(pm.kind)))
     logger.stdout(_("* Vendor: {vendor}").format(vendor=pm.vendor_name))
+    if pm.is_ruyisdk_certified:
+        logger.stdout(_("* [bold green]RuyiSDK Certified[/] package"))
     if download_size_host is not None:
         logger.stdout(
             _("* Download size for {host}: {size}").format(

@@ -9,6 +9,7 @@ from ruyi.ruyipkg.state import BoundInstallationStateStore
 from ..cli.user_input import ask_for_yesno_confirmation
 from ..config import GlobalConfig
 from ..i18n import _
+from ..log import RuyiLogger
 from ..telemetry.scope import TelemetryScope
 from .atom import Atom
 from .distfile import Distfile
@@ -168,6 +169,23 @@ def _do_extract_pkg(
     return 0
 
 
+def _log_preinstall_notices(
+    logger: RuyiLogger,
+    pm: BoundPackageManifest,
+    lang_code: str,
+) -> None:
+    """Emit user-facing notices about a package right before installing it."""
+
+    sv = pm.service_level
+    if sv.has_known_issues:
+        logger.W(_("package has known issue(s)"))
+        for s in sv.render_known_issues(pm.repo.messages, lang_code):
+            logger.I(s)
+
+    if pm.is_ruyisdk_certified:
+        logger.I(_("this package is [bold green]RuyiSDK Certified[/]"))
+
+
 def do_install_atoms(
     config: GlobalConfig,
     mr: CompositeRepo,
@@ -190,11 +208,7 @@ def do_install_atoms(
             return 1
         pkg_name = pm.name_for_installation
 
-        sv = pm.service_level
-        if sv.has_known_issues:
-            logger.W(_("package has known issue(s)"))
-            for s in sv.render_known_issues(pm.repo.messages, config.lang_code):
-                logger.I(s)
+        _log_preinstall_notices(logger, pm, config.lang_code)
 
         config.telemetry.record(
             TelemetryScope(mr.repo_id),
