@@ -27,7 +27,11 @@ def _make_bound_manifest(vendor: object) -> BoundPackageManifest:
         "distfiles": [],
     }
     return BoundPackageManifest(
-        "toolchain", "gcc", "1.0.0", data, _FakeRepo()  # type: ignore[arg-type]
+        "toolchain",
+        "gcc",
+        "1.0.0",
+        data,
+        _FakeRepo(),  # type: ignore[arg-type]
     )
 
 
