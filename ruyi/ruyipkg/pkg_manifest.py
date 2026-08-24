@@ -38,9 +38,20 @@ if TYPE_CHECKING:
     from .repo import MetadataRepo
 
 
+class RuyiSDKVendorDataDeclType(TypedDict):
+    certified: "NotRequired[bool]"
+
+
+# Generic per-vendor metadata block. The ``ruyisdk`` vendor ID is reserved for
+# the strongly-typed ``RuyiSDKVendorDataDeclType`` above; all other vendor IDs
+# carry untyped key-value data that is preserved verbatim.
+VendorDataDeclType = dict[str, "str | bool"]
+
+
 class VendorDeclType(TypedDict):
     name: str
     eula: str | None
+    data: "NotRequired[dict[str, VendorDataDeclType]]"
 
 
 RestrictKind = Literal["fetch"] | Literal["mirror"]
@@ -156,9 +167,13 @@ ALL_PACKAGE_KINDS: Final[list[PackageKind]] = [
 
 RuyiPkgFormat = Literal["v1"]
 
-ServiceLevelKind = Literal["known_issue"] | Literal["untested"]
+ServiceLevelKind = Literal["good"] | Literal["known_issue"] | Literal["untested"]
 
-ALL_SERVICE_LEVEL_KINDS: Final[list[ServiceLevelKind]] = ["known_issue", "untested"]
+ALL_SERVICE_LEVEL_KINDS: Final[list[ServiceLevelKind]] = [
+    "good",
+    "known_issue",
+    "untested",
+]
 
 
 class ServiceLevelDeclType(TypedDict):
@@ -472,11 +487,18 @@ class PackageServiceLevel:
 
     @property
     def level(self) -> ServiceLevelKind:
+        # A known issue is the most actionable state, so it takes precedence
+        # over any positive level regardless of declaration order. Otherwise
+        # report the first non-untested level, defaulting to untested.
+        result: ServiceLevelKind = "untested"
         for r in self._data:
+            if r["level"] == "known_issue":
+                return "known_issue"
             if r["level"] == "untested":
                 continue
-            return r["level"]
-        return "untested"
+            if result == "untested":
+                result = r["level"]
+        return result
 
     @property
     def has_known_issues(self) -> bool:
@@ -559,6 +581,63 @@ class PackageManifest:
     @property
     def vendor_name(self) -> str:
         return self._data["metadata"]["vendor"]["name"]
+
+    def vendor_data(self, vendor_id: str) -> "VendorDataDeclType | None":
+        """Return the private metadata block declared by the given vendor ID,
+        or ``None`` if the vendor declared none."""
+
+        data = self._data["metadata"]["vendor"].get("data")
+        if data is None:
+            return None
+        return data.get(vendor_id)
+
+    def validate_vendor_data(self) -> None:
+        """Validate the ``metadata.vendor.data`` namespace, raising
+        ``ValueError`` on any malformed declaration.
+
+        Every vendor block must be a table whose values are strings or
+        booleans. The reserved ``ruyisdk`` block additionally requires its
+        ``certified`` field, if present, to be a boolean (so that e.g.
+        ``certified = "false"`` is rejected rather than treated as truthy)."""
+
+        data = self._data["metadata"]["vendor"].get("data")
+        if data is None:
+            return
+        if not isinstance(data, dict):
+            raise ValueError("metadata.vendor.data must be a table")
+
+        for vendor_id, block in data.items():
+            if not isinstance(block, dict):
+                raise ValueError(
+                    f"metadata.vendor.data.{vendor_id} must be a table"
+                )
+            for key, value in block.items():
+                # bool must be checked explicitly since it is a subclass of int
+                if not isinstance(value, (bool, str)):
+                    raise ValueError(
+                        f"metadata.vendor.data.{vendor_id}.{key} must be a "
+                        "string or boolean"
+                    )
+
+        ruyisdk = data.get("ruyisdk")
+        if isinstance(ruyisdk, dict) and "certified" in ruyisdk:
+            if not isinstance(ruyisdk["certified"], bool):
+                raise ValueError(
+                    "metadata.vendor.data.ruyisdk.certified must be a boolean"
+                )
+
+    @property
+    def is_ruyisdk_certified(self) -> bool:
+        """Whether the package carries the "RuyiSDK Certified" mark.
+
+        Only a genuine boolean ``true`` counts; any other value (including the
+        string ``"false"`` or ``"true"``) is not treated as certified. Use
+        :meth:`validate_vendor_data` to reject such malformed declarations."""
+
+        block = self.vendor_data("ruyisdk")
+        if block is None:
+            return False
+        return block.get("certified") is True
 
     @property
     def upstream_version(self) -> str | None:
