@@ -167,6 +167,72 @@ sha256 = "{SHA_STUB}"
     assert "name" in diagnostics[0].message
 
 
+def test_non_bool_certified_is_reported(tmp_path: pathlib.Path) -> None:
+    manifest_path = tmp_path / "1.0.0.toml"
+    manifest_path.write_text(
+        f"""format = "v1"
+
+[metadata]
+desc = "Test package"
+
+[metadata.vendor]
+name = "Test Vendor"
+eula = ""
+
+[metadata.vendor.data.ruyisdk]
+certified = "false"
+
+[[distfiles]]
+name = "src.tar.zst"
+size = 0
+
+[distfiles.checksums]
+sha256 = "{SHA_STUB}"
+
+[source]
+distfiles = ["src.tar.zst"]
+""",
+        encoding="utf-8",
+    )
+
+    diagnostics = check_manifest_file(manifest_path)
+    assert [diag.code for diag in diagnostics] == ["RYC0003"]
+    assert "certified" in diagnostics[0].message
+
+
+def test_non_str_bool_vendor_data_is_reported(tmp_path: pathlib.Path) -> None:
+    manifest_path = tmp_path / "1.0.0.toml"
+    manifest_path.write_text(
+        f"""format = "v1"
+
+[metadata]
+desc = "Test package"
+
+[metadata.vendor]
+name = "Test Vendor"
+eula = ""
+
+[metadata.vendor.data.othervendor]
+count = 5
+
+[[distfiles]]
+name = "src.tar.zst"
+size = 0
+
+[distfiles.checksums]
+sha256 = "{SHA_STUB}"
+
+[source]
+distfiles = ["src.tar.zst"]
+""",
+        encoding="utf-8",
+    )
+
+    diagnostics = check_manifest_file(manifest_path)
+    assert [diag.code for diag in diagnostics] == ["RYC0003"]
+    assert "othervendor" in diagnostics[0].message
+
+
 def test_repo_mode_reports_invalid_semver_filenames(
     tmp_path: pathlib.Path,
 ) -> None:

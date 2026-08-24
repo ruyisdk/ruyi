@@ -5,6 +5,9 @@ from ruyi.ruyipkg.pkg_manifest import (
     PackageServiceLevel,
 )
 
+import tomlkit
+import pytest
+
 
 def _make_manifest(vendor: object) -> PackageManifest:
     data: InputPackageManifestType = {
@@ -16,6 +19,20 @@ def _make_manifest(vendor: object) -> PackageManifest:
         "distfiles": [],
     }
     return PackageManifest(data)
+
+
+def _make_manifest_from_toml(vendor_body: str) -> PackageManifest:
+    text = f"""format = "v1"
+distfiles = []
+
+[metadata]
+desc = "test package"
+
+[metadata.vendor]
+name = "Acme"
+eula = ""
+{vendor_body}"""
+    return PackageManifest(tomlkit.loads(text))
 
 
 def test_ruyisdk_certified_true() -> None:
@@ -77,3 +94,39 @@ def test_known_issue_takes_precedence_over_good() -> None:
 def test_empty_service_level_defaults_to_untested() -> None:
     sv = PackageServiceLevel([])
     assert sv.level == "untested"
+
+
+def test_certified_string_false_not_truthy() -> None:
+    pm = _make_manifest_from_toml(
+        '\n[metadata.vendor.data.ruyisdk]\ncertified = "false"\n'
+    )
+    assert pm.is_ruyisdk_certified is False
+
+
+def test_validate_vendor_data_accepts_str_and_bool() -> None:
+    pm = _make_manifest_from_toml(
+        "\n[metadata.vendor.data.ruyisdk]\ncertified = true\n"
+        '\n[metadata.vendor.data.othervendor]\nfoo = "bar"\nflag = false\n'
+    )
+    pm.validate_vendor_data()  # should not raise
+
+
+def test_validate_vendor_data_no_data_ok() -> None:
+    pm = _make_manifest_from_toml("")
+    pm.validate_vendor_data()  # should not raise
+
+
+def test_validate_vendor_data_rejects_int_value() -> None:
+    pm = _make_manifest_from_toml(
+        "\n[metadata.vendor.data.othervendor]\ncount = 5\n"
+    )
+    with pytest.raises(ValueError, match="othervendor"):
+        pm.validate_vendor_data()
+
+
+def test_validate_certified_rejects_non_bool() -> None:
+    pm = _make_manifest_from_toml(
+        '\n[metadata.vendor.data.ruyisdk]\ncertified = "false"\n'
+    )
+    with pytest.raises(ValueError, match="certified"):
+        pm.validate_vendor_data()

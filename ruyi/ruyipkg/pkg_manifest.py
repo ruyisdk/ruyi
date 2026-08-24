@@ -591,14 +591,53 @@ class PackageManifest:
             return None
         return data.get(vendor_id)
 
+    def validate_vendor_data(self) -> None:
+        """Validate the ``metadata.vendor.data`` namespace, raising
+        ``ValueError`` on any malformed declaration.
+
+        Every vendor block must be a table whose values are strings or
+        booleans. The reserved ``ruyisdk`` block additionally requires its
+        ``certified`` field, if present, to be a boolean (so that e.g.
+        ``certified = "false"`` is rejected rather than treated as truthy)."""
+
+        data = self._data["metadata"]["vendor"].get("data")
+        if data is None:
+            return
+        if not isinstance(data, dict):
+            raise ValueError("metadata.vendor.data must be a table")
+
+        for vendor_id, block in data.items():
+            if not isinstance(block, dict):
+                raise ValueError(
+                    f"metadata.vendor.data.{vendor_id} must be a table"
+                )
+            for key, value in block.items():
+                # bool must be checked explicitly since it is a subclass of int
+                if not isinstance(value, (bool, str)):
+                    raise ValueError(
+                        f"metadata.vendor.data.{vendor_id}.{key} must be a "
+                        "string or boolean"
+                    )
+
+        ruyisdk = data.get("ruyisdk")
+        if isinstance(ruyisdk, dict) and "certified" in ruyisdk:
+            if not isinstance(ruyisdk["certified"], bool):
+                raise ValueError(
+                    "metadata.vendor.data.ruyisdk.certified must be a boolean"
+                )
+
     @property
     def is_ruyisdk_certified(self) -> bool:
-        """Whether the package carries the "RuyiSDK Certified" mark."""
+        """Whether the package carries the "RuyiSDK Certified" mark.
+
+        Only a genuine boolean ``true`` counts; any other value (including the
+        string ``"false"`` or ``"true"``) is not treated as certified. Use
+        :meth:`validate_vendor_data` to reject such malformed declarations."""
 
         block = self.vendor_data("ruyisdk")
         if block is None:
             return False
-        return bool(block.get("certified", False))
+        return block.get("certified") is True
 
     @property
     def upstream_version(self) -> str | None:

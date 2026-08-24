@@ -393,6 +393,7 @@ def _touch_manifest_parse_surface(manifest: PackageManifest) -> None:
     manifest.doc_uri
     manifest.vendor_name
     manifest.vendor_data("ruyisdk")
+    manifest.validate_vendor_data()
     manifest.is_ruyisdk_certified
     manifest.upstream_version
 
