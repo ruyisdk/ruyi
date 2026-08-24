@@ -22,6 +22,7 @@ from .pkg_manifest import (
     SourceDeclType,
     ToolchainComponentDeclType,
     ToolchainDeclType,
+    VendorDataDeclType,
     VendorDeclType,
 )
 from ..utils.toml import (
@@ -33,6 +34,9 @@ from ..utils.toml import (
 )
 
 RE_INDENT_FIX: Final = re.compile(r"(?m)^    ([\"'{\[])")
+
+# Vendor ID reserved for RuyiSDK's strongly-typed vendor.data block.
+RUYISDK_VENDOR_ID: Final = "ruyisdk"
 
 
 # XXX: To workaround https://github.com/python-poetry/tomlkit/issues/290,
@@ -110,15 +114,39 @@ def dump_service_level_decls(x: list[ServiceLevelDeclType]) -> AoT:
 
 
 def dump_metadata_decl(x: PackageMetadataDeclType) -> Table:
+    vendor = x["vendor"]
+    if vendor.get("data"):
+        return _dump_metadata_decl_with_vendor_table(x, vendor)
+
     y = table()
     y.add("desc", string(x["desc"]))
-    y.add("vendor", dump_vendor_decl(x["vendor"]))
+    y.add("vendor", dump_vendor_decl(vendor))
     if "slug" in x:
         y.add("slug", string(x["slug"]))
     if uv := x.get("upstream_version"):
         y.add("upstream_version", string(uv))
     if sl := x.get("service_level"):
         y.add(nl())
+        y.add("service_level", dump_service_level_decls(sl))
+    return y
+
+
+def _dump_metadata_decl_with_vendor_table(
+    x: PackageMetadataDeclType,
+    vendor: VendorDeclType,
+) -> Table:
+    # When a vendor declares private metadata, ``vendor`` is promoted to a
+    # standalone ``[metadata.vendor]`` table. Every scalar metadata key must
+    # therefore precede it, otherwise those keys would be absorbed into the
+    # sub-table upon re-parsing.
+    y = table()
+    y.add("desc", string(x["desc"]))
+    if "slug" in x:
+        y.add("slug", string(x["slug"]))
+    if uv := x.get("upstream_version"):
+        y.add("upstream_version", string(uv))
+    y.add("vendor", dump_vendor_table(vendor))
+    if sl := x.get("service_level"):
         y.add("service_level", dump_service_level_decls(sl))
     return y
 
@@ -133,6 +161,52 @@ def dump_vendor_decl(x: VendorDeclType) -> InlineTable:
     with y:
         y.add("name", string(x["name"]))
         y.add("eula", string(x["eula"] if x["eula"] is not None else ""))
+    return y
+
+
+def dump_vendor_table(x: VendorDeclType) -> Table:
+    """Dump the vendor declaration as a full ``[metadata.vendor]`` table.
+
+    Used instead of the inline form whenever the vendor carries a ``data``
+    namespace, which cannot be represented compactly.
+    """
+    y = table()
+    y.add("name", string(x["name"]))
+    y.add("eula", string(x["eula"] if x["eula"] is not None else ""))
+    if data := x.get("data"):
+        y.add("data", dump_vendor_data_map(data))
+    return y
+
+
+def dump_vendor_data_map(x: dict[str, VendorDataDeclType]) -> Table:
+    y = table()
+    # Emit the reserved ``ruyisdk`` block first, then the remaining vendor IDs
+    # in sorted order, for deterministic output.
+    if RUYISDK_VENDOR_ID in x:
+        y.add(RUYISDK_VENDOR_ID, dump_ruyisdk_vendor_data(x[RUYISDK_VENDOR_ID]))
+    for vendor_id in sorted(x.keys()):
+        if vendor_id == RUYISDK_VENDOR_ID:
+            continue
+        y.add(vendor_id, dump_generic_vendor_data(x[vendor_id]))
+    return y
+
+
+def dump_ruyisdk_vendor_data(x: VendorDataDeclType) -> Table:
+    y = table()
+    if "certified" in x:
+        y.add("certified", bool(x["certified"]))
+    # Preserve any keys not yet part of the typed schema, deterministically.
+    for k in sorted(x.keys()):
+        if k == "certified":
+            continue
+        y.add(k, x[k])
+    return y
+
+
+def dump_generic_vendor_data(x: VendorDataDeclType) -> Table:
+    y = table()
+    for k in sorted(x.keys()):
+        y.add(k, x[k])
     return y
 
 
