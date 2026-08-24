@@ -77,7 +77,7 @@ do_inner() {
     [[ -n $RUYI_DIST_INNER_CONTAINERIZED ]] && cd "$REPO_ROOT"
 
     # avoid long build times if a prebuilt cache of artifacts is available
-    local _has_pygit2_ready=false
+    local _has_binaries_ready=false
     case "$arch" in
     riscv64)
         if [[ -n $RUYI_DIST_ADDITIONAL_INDEX_URL ]]; then
@@ -90,23 +90,24 @@ do_inner() {
 [tool.poetry.dependencies]
 cffi = {source = "ruyi-dist"}
 lz4 = {source = "ruyi-dist"}
-pygit2 = {source = "ruyi-dist"}
 zstandard = {source = "ruyi-dist"}
 EOF
             poetry lock
 
-            _has_pygit2_ready=true
+            _has_binaries_ready=true
         fi
     esac
 
     # build dep(s) with extension(s) if no prebuilt artifact is available on PyPI
     # for now this is / these are:
     #
-    # - pygit2
+    # - n/a
+    #
+    # the scaffolding is kept as a reference should any need arise later
     case "$arch" in
-    amd64|arm64|ppc64el) ;;  # current as of pygit2 1.19.3
+    amd64|arm64) ;;
     *)
-        "$_has_pygit2_ready" || ./scripts/build-pygit2.py
+        "$_has_binaries_ready" || true
         ;;
     esac
 
