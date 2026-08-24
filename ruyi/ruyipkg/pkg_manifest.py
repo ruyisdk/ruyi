@@ -167,9 +167,13 @@ ALL_PACKAGE_KINDS: Final[list[PackageKind]] = [
 
 RuyiPkgFormat = Literal["v1"]
 
-ServiceLevelKind = Literal["known_issue"] | Literal["untested"]
+ServiceLevelKind = Literal["good"] | Literal["known_issue"] | Literal["untested"]
 
-ALL_SERVICE_LEVEL_KINDS: Final[list[ServiceLevelKind]] = ["known_issue", "untested"]
+ALL_SERVICE_LEVEL_KINDS: Final[list[ServiceLevelKind]] = [
+    "good",
+    "known_issue",
+    "untested",
+]
 
 
 class ServiceLevelDeclType(TypedDict):
@@ -483,11 +487,18 @@ class PackageServiceLevel:
 
     @property
     def level(self) -> ServiceLevelKind:
+        # A known issue is the most actionable state, so it takes precedence
+        # over any positive level regardless of declaration order. Otherwise
+        # report the first non-untested level, defaulting to untested.
+        result: ServiceLevelKind = "untested"
         for r in self._data:
+            if r["level"] == "known_issue":
+                return "known_issue"
             if r["level"] == "untested":
                 continue
-            return r["level"]
-        return "untested"
+            if result == "untested":
+                result = r["level"]
+        return result
 
     @property
     def has_known_issues(self) -> bool:

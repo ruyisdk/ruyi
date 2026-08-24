@@ -229,6 +229,7 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
               不再重复记录。
 * `service_level` 是可选的该包的服务等级描述。如果不提供该字段，则等效于存在一条 `untested` 的记录。
     - `level`：服务等级。目前支持以下取值：
+        - `good`：已经过测试，工作正常。
         - `known_issue`：存在已知问题。
         - `untested`：测试状态未知：可能稳定可用，也可能存在问题。
     - `msgid`：当 `level` 为 `known_issue` 时，用来描述问题的文案字符串在 `messages.toml` 中的消息 ID。

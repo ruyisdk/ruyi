@@ -1,4 +1,9 @@
-from ruyi.ruyipkg.pkg_manifest import InputPackageManifestType, PackageManifest
+from ruyi.ruyipkg.pkg_manifest import (
+    ALL_SERVICE_LEVEL_KINDS,
+    InputPackageManifestType,
+    PackageManifest,
+    PackageServiceLevel,
+)
 
 
 def _make_manifest(vendor: object) -> PackageManifest:
@@ -49,3 +54,26 @@ def test_vendor_data_returns_generic_block() -> None:
 def test_vendor_data_returns_none_when_absent() -> None:
     pm = _make_manifest({"name": "Acme", "eula": None})
     assert pm.vendor_data("othervendor") is None
+
+
+def test_good_is_a_known_service_level() -> None:
+    assert "good" in ALL_SERVICE_LEVEL_KINDS
+
+
+def test_good_level_reported_as_good() -> None:
+    sv = PackageServiceLevel([{"level": "good"}])
+    assert sv.level == "good"
+    assert sv.has_known_issues is False
+
+
+def test_known_issue_takes_precedence_over_good() -> None:
+    sv = PackageServiceLevel(
+        [{"level": "good"}, {"level": "known_issue", "msgid": "x"}]
+    )
+    assert sv.level == "known_issue"
+    assert sv.has_known_issues is True
+
+
+def test_empty_service_level_defaults_to_untested() -> None:
+    sv = PackageServiceLevel([])
+    assert sv.level == "untested"
