@@ -179,7 +179,11 @@ def dump_vendor_table(x: VendorDeclType) -> Table:
 
 
 def dump_vendor_data_map(x: dict[str, VendorDataDeclType]) -> Table:
-    y = table()
+    # Mark this as a super table so the intermediate ``[metadata.vendor.data]``
+    # header is never emitted; only the per-vendor leaf tables carry headers.
+    # Older tomlkit versions (e.g. 0.12.x) would otherwise render the empty
+    # parent header, diverging from newer ones.
+    y = table(is_super_table=True)
     # Emit the reserved ``ruyisdk`` block first, then the remaining vendor IDs
     # in sorted order, for deterministic output.
     if RUYISDK_VENDOR_ID in x:
