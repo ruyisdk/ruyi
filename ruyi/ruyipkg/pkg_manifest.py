@@ -38,9 +38,20 @@ if TYPE_CHECKING:
     from .repo import MetadataRepo
 
 
+class RuyiSDKVendorDataDeclType(TypedDict):
+    certified: "NotRequired[bool]"
+
+
+# Generic per-vendor metadata block. The ``ruyisdk`` vendor ID is reserved for
+# the strongly-typed ``RuyiSDKVendorDataDeclType`` above; all other vendor IDs
+# carry untyped key-value data that is preserved verbatim.
+VendorDataDeclType = dict[str, "str | bool"]
+
+
 class VendorDeclType(TypedDict):
     name: str
     eula: str | None
+    data: "NotRequired[dict[str, VendorDataDeclType]]"
 
 
 RestrictKind = Literal["fetch"] | Literal["mirror"]
@@ -559,6 +570,24 @@ class PackageManifest:
     @property
     def vendor_name(self) -> str:
         return self._data["metadata"]["vendor"]["name"]
+
+    def vendor_data(self, vendor_id: str) -> "VendorDataDeclType | None":
+        """Return the private metadata block declared by the given vendor ID,
+        or ``None`` if the vendor declared none."""
+
+        data = self._data["metadata"]["vendor"].get("data")
+        if data is None:
+            return None
+        return data.get(vendor_id)
+
+    @property
+    def is_ruyisdk_certified(self) -> bool:
+        """Whether the package carries the "RuyiSDK Certified" mark."""
+
+        block = self.vendor_data("ruyisdk")
+        if block is None:
+            return False
+        return bool(block.get("certified", False))
 
     @property
     def upstream_version(self) -> str | None:
