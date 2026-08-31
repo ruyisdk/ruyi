@@ -28,5 +28,13 @@ def test_entity_list_outputs_every_requested_type(
     )
 
     assert result.exit_code == 0
-    assert "'device:sipeed-lpi4a':" in result.stdout
-    assert "'uarch:xuantie-c910':" in result.stdout
+    expected_entity_refs = {
+        "device:sipeed-lc4a",
+        "device:sipeed-lcon4a",
+        "device:sipeed-lpi4a",
+        "uarch:xiangshan-nanhu",
+        "uarch:xuantie-c910",
+    }
+    assert all(
+        f"'{entity_ref}':" in result.stdout for entity_ref in expected_entity_refs
+    )
