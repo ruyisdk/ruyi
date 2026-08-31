@@ -55,6 +55,18 @@ def test_entity_store_iter_entities(
         cpus = list(store.iter_entities("cpu"))
         assert len(cpus) >= 2  # At least xiangshan-nanhu and xuantie-th1520
 
+        # Multiple requested types should contribute every matching entity.
+        filtered_entities = list(store.iter_entities(["device", "uarch"]))
+        assert {
+            (entity.entity_type, entity.id) for entity in filtered_entities
+        } == {
+            ("device", "sipeed-lc4a"),
+            ("device", "sipeed-lcon4a"),
+            ("device", "sipeed-lpi4a"),
+            ("uarch", "xiangshan-nanhu"),
+            ("uarch", "xuantie-c910"),
+        }
+
         # Test iterating over all entities
         all_entities = list(store.iter_entities(None))
         assert len(all_entities) >= 6  # Total number of entities in the fixture
