@@ -164,7 +164,7 @@ class EntityStore:
             # handle multiple entity types
             for et in entity_type:
                 yield from self._entities.get(et, {}).values()
-                return
+            return
 
         for entities in self._entities.values():
             yield from entities.values()
