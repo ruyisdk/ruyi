@@ -45,6 +45,8 @@ NOARCH_PKGS=(
     python3-certifi
     python3-fastjsonschema
     python3-jinja2
+    python3-pathspec
+    python3-pyelftools
     python3-requests
     python3-rich
     python3-semver
