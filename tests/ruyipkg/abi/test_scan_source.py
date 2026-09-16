@@ -1,8 +1,10 @@
 import pathlib
+import struct
+from typing import Iterator
 
 from ruyi.log import RuyiLogger
 from ruyi.ruyipkg.abi import scan_source
-from ruyi.ruyipkg.abi.sources import ABISource
+from ruyi.ruyipkg.abi.sources import ABISource, MemberEntry
 from tests.ruyipkg.abi._elfbuilder import build_elf
 
 
@@ -48,3 +50,41 @@ def test_records_sorted_by_sha(tmp_path: pathlib.Path, ruyi_logger: RuyiLogger) 
     report = scan_source(ABISource.from_directory(tmp_path), logger=ruyi_logger)
     shas = [r.sha256 for r in report.records]
     assert shas == sorted(shas)
+
+
+def _corrupt_program_headers(elf: bytes) -> bytes:
+    data = bytearray(elf)
+    struct.pack_into("<Q", data, 0x20, 0x10000)  # e_phoff
+    struct.pack_into("<H", data, 0x36, 56)  # e_phentsize
+    struct.pack_into("<H", data, 0x38, 4)  # e_phnum
+    return bytes(data)
+
+
+def test_scan_source_continues_after_bad_elf(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    # Valid ELF magic but program headers pointing past EOF: parsing raises
+    # after the initial header check, which must not abort the whole scan.
+    (tmp_path / "bad").write_bytes(_corrupt_program_headers(build_elf(e_machine=62)))
+    (tmp_path / "good").write_bytes(build_elf(e_machine=243))
+
+    report = scan_source(ABISource.from_directory(tmp_path), logger=ruyi_logger)
+
+    assert report.summary.e_machines == (243,)
+    assert [e.path for e in report.errors] == ["bad"]
+
+
+class _ReaderErrorSource(ABISource):
+    def iter_members(self) -> Iterator[MemberEntry]:
+        def boom() -> bytes:
+            raise OSError("decompression failed")
+
+        yield "bad", None, boom
+        yield "good", None, lambda: build_elf(e_machine=62)
+
+
+def test_scan_source_continues_after_reader_error(ruyi_logger: RuyiLogger) -> None:
+    report = scan_source(_ReaderErrorSource(), logger=ruyi_logger)
+
+    assert report.summary.e_machines == (62,)
+    assert [e.path for e in report.errors] == ["bad"]

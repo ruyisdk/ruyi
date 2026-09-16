@@ -215,7 +215,13 @@ def scan_source(
             errors.append(ABIScanError(path, _("member exceeds size limit")))
             continue
 
-        data = reader()
+        try:
+            data = reader()
+        except Exception as exc:  # noqa: BLE001 - a bad member must not abort
+            logger.D(f"failed to read member {path}: {exc}")
+            errors.append(ABIScanError(path, f"failed to read member: {exc}"))
+            continue
+
         if len(data) > max_member_bytes:
             logger.D(f"skipping oversized member {path} ({len(data)} bytes)")
             errors.append(ABIScanError(path, _("member exceeds size limit")))
@@ -232,12 +238,17 @@ def scan_source(
                 seen[sha] = dataclasses.replace(existing, paths=merged)
             continue
 
-        record, errs = scan_elf_stream(
-            io.BytesIO(data),
-            paths=(path,),
-            sha256=sha,
-            max_raw_attr_bytes=max_raw_attr_bytes,
-        )
+        try:
+            record, errs = scan_elf_stream(
+                io.BytesIO(data),
+                paths=(path,),
+                sha256=sha,
+                max_raw_attr_bytes=max_raw_attr_bytes,
+            )
+        except Exception as exc:  # noqa: BLE001 - a malformed ELF must not abort
+            logger.D(f"failed to scan member {path}: {exc}")
+            errors.append(ABIScanError(path, f"failed to scan member: {exc}"))
+            continue
         errors.extend(errs)
         if record is not None:
             seen[sha] = record
