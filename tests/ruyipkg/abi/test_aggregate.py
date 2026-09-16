@@ -3,7 +3,7 @@ from ruyi.ruyipkg.abi.model import ElfABIRecord, ElfType, VersionNeed
 
 
 def _rec(**kw: object) -> ElfABIRecord:
-    base = dict(
+    base: dict[str, object] = dict(
         paths=("x",),
         sha256="0",
         e_machine=62,

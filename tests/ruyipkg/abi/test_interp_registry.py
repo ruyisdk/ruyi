@@ -1,13 +1,21 @@
+from typing import Mapping, Sequence
+
 from ruyi.ruyipkg.abi.interp.base import get_interpreter, register
+from ruyi.ruyipkg.abi.model import AttributeVendorBlob, GnuProperty
 
 
 class _FakeInterp:
     e_machines = frozenset({0xBEEF})
 
-    def interpret(self, gnu_properties, elf_attributes, little_endian=True):  # type: ignore[no-untyped-def]
+    def interpret(
+        self,
+        gnu_properties: Sequence[GnuProperty],
+        elf_attributes: Sequence[AttributeVendorBlob],
+        little_endian: bool = True,
+    ) -> dict[str, str | int | bool]:
         return {"ok": True}
 
-    def rollup(self, per_file):  # type: ignore[no-untyped-def]
+    def rollup(self, per_file: Sequence[Mapping[str, object]]) -> dict[str, object]:
         return {}
 
 
