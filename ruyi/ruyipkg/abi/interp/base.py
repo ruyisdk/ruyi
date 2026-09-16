@@ -20,6 +20,7 @@ class AttrInterpreter(Protocol):
         self,
         gnu_properties: Sequence[GnuProperty],
         elf_attributes: Sequence[AttributeVendorBlob],
+        little_endian: bool = True,
     ) -> dict[str, str | int | bool]: ...
 
     def rollup(

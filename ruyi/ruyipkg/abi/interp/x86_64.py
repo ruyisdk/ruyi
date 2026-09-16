@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from typing import Literal, Mapping, Sequence
 
 from ..model import AttributeVendorBlob, GnuProperty
 from .base import register
@@ -26,12 +26,16 @@ class X86_64Interpreter:
         self,
         gnu_properties: Sequence[GnuProperty],
         elf_attributes: Sequence[AttributeVendorBlob],
+        little_endian: bool = True,
     ) -> dict[str, str | int | bool]:
+        byteorder: Literal["little", "big"] = "little"
+        if not little_endian:
+            byteorder = "big"
         mask = 0
         for prop in gnu_properties:
             if prop.pr_type == _GNU_PROPERTY_X86_ISA_1_NEEDED:
                 data = bytes.fromhex(prop.data_hex)
-                mask = int.from_bytes(data[:4], "little")
+                mask = int.from_bytes(data[:4], byteorder)
                 break
 
         level = 1

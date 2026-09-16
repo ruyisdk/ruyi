@@ -41,17 +41,25 @@ class RiscVInterpreter:
         self,
         gnu_properties: Sequence[GnuProperty],
         elf_attributes: Sequence[AttributeVendorBlob],
+        little_endian: bool = True,
     ) -> dict[str, str | int | bool]:
         out: dict[str, str | int | bool] = {}
         for blob in elf_attributes:
             if blob.vendor != "riscv":
                 continue
-            self._parse_vendor_body(bytes.fromhex(blob.data_hex), out)
+            self._parse_vendor_body(
+                bytes.fromhex(blob.data_hex), out, little_endian=little_endian
+            )
         return out
 
     def _parse_vendor_body(
-        self, body: bytes, out: dict[str, str | int | bool]
+        self,
+        body: bytes,
+        out: dict[str, str | int | bool],
+        *,
+        little_endian: bool,
     ) -> None:
+        size_fmt = "<I" if little_endian else ">I"
         off = 0
         n = len(body)
         while off < n:
@@ -59,7 +67,7 @@ class RiscVInterpreter:
             off += 1
             if off + 4 > n:
                 break
-            (size,) = struct.unpack_from("<I", body, off)
+            (size,) = struct.unpack_from(size_fmt, body, off)
             off += 4
             if size < 5:
                 break

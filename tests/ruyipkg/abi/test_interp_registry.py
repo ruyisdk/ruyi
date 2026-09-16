@@ -4,7 +4,7 @@ from ruyi.ruyipkg.abi.interp.base import get_interpreter, register
 class _FakeInterp:
     e_machines = frozenset({0xBEEF})
 
-    def interpret(self, gnu_properties, elf_attributes):  # type: ignore[no-untyped-def]
+    def interpret(self, gnu_properties, elf_attributes, little_endian=True):  # type: ignore[no-untyped-def]
         return {"ok": True}
 
     def rollup(self, per_file):  # type: ignore[no-untyped-def]
