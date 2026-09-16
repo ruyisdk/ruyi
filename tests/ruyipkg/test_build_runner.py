@@ -132,6 +132,10 @@ def test_run_recipe_executes_and_collects_artifacts(
     assert ar.size == 5
     assert len(ar.checksums["sha256"]) == 64
     assert len(ar.checksums["sha512"]) == 128
+    # The placeholder content is not a real zstd stream: the scan failure is
+    # swallowed and no sidecar is written.
+    assert ar.abi_sidecar is None
+    assert not (out / "pkg-1.0.tar.zst.abi.toml").exists()
 
 
 def test_run_recipe_forwards_artifact_exclude_to_abi_scan(
