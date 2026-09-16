@@ -74,6 +74,7 @@ class GlobalConfigRepoType(TypedDict):
     remote: "NotRequired[str]"
     branch: "NotRequired[str]"
     disabled: "NotRequired[bool]"
+    priority: "NotRequired[int]"
 
 
 class GlobalConfigInstallationType(TypedDict):
@@ -150,6 +151,7 @@ class GlobalConfig:
         self._telemetry_pm_telemetry_url: str | None = None
 
         self._repo_disabled = False
+        self.repo_priority = 0
         self._extra_repo_entries: list["RepoEntry"] = []
 
     def _apply_config(
@@ -189,6 +191,9 @@ class GlobalConfig:
             self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
             self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
             self._repo_disabled = repo_cfg.get(schema.KEY_REPO_DISABLED, False)
+            self.repo_priority = repo_cfg.get(
+                schema.KEY_REPO_PRIORITY, self.repo_priority
+            )
 
             if self.override_repo_dir:
                 if not pathlib.Path(self.override_repo_dir).is_absolute():
@@ -399,6 +404,8 @@ class GlobalConfig:
             return "override_repo_branch"
         elif leaf == schema.KEY_REPO_LOCAL:
             return "override_repo_dir"
+        elif leaf == schema.KEY_REPO_PRIORITY:
+            return "repo_priority"
         elif leaf == schema.KEY_REPO_REMOTE:
             return "override_repo_url"
         else:

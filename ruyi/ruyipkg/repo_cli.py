@@ -358,18 +358,48 @@ class RepoSetPriorityCommand(
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
         from ..config.editor import ConfigEditor
-        from ..config.schema import KEY_REPOS_PRIORITY
+        from ..config.schema import (
+            KEY_REPO_PRIORITY,
+            KEY_REPOS_ID,
+            KEY_REPOS_LOCAL,
+            KEY_REPOS_NAME,
+            KEY_REPOS_PRIORITY,
+            KEY_REPOS_REMOTE,
+        )
+        from .repo import DEFAULT_REPO_ID
 
         logger = cfg.logger
         repo_id: str = args.id
         priority: int = args.priority
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
-            if not editor.update_repos_entry(repo_id, {KEY_REPOS_PRIORITY: priority}):
-                logger.F(
-                    _("no repo with id '{id}' found in user config").format(id=repo_id)
-                )
-                return 1
+            if repo_id == DEFAULT_REPO_ID:
+                editor.set_value(f"repo.{KEY_REPO_PRIORITY}", priority)
+            elif not editor.update_repos_entry(repo_id, {KEY_REPOS_PRIORITY: priority}):
+                # Not in user config — might be a system-provided repo.
+                # Create a user [[repos]] entry to override the priority,
+                # preserving the fields needed for the entry to resolve.
+                for entry in cfg.repo_entries:
+                    if entry.id == repo_id and entry.is_system:
+                        entry_data: dict[str, object] = {
+                            KEY_REPOS_ID: repo_id,
+                            KEY_REPOS_PRIORITY: priority,
+                        }
+                        if entry.remote:
+                            entry_data[KEY_REPOS_REMOTE] = entry.remote
+                        if entry.local_path:
+                            entry_data[KEY_REPOS_LOCAL] = entry.local_path
+                        if entry.name != repo_id:
+                            entry_data[KEY_REPOS_NAME] = entry.name
+                        editor.add_repos_entry(entry_data)
+                        break
+                else:
+                    logger.F(
+                        _("no repo with id '{id}' found in user config").format(
+                            id=repo_id
+                        )
+                    )
+                    return 1
             editor.stage()
 
         logger.I(

@@ -2,7 +2,8 @@
 
 Ruyi 支持同时配置多个软件包软件源（repo）。多个软件源按照优先级叠加：
 优先级更高的软件源，会遮蔽低优先级软件源中类别、名称、版本均相同的软件包。
-默认的 `ruyisdk` 软件源始终存在，优先级固定为 0。
+默认的 `ruyisdk` 软件源始终存在，优先级默认为 0，可通过
+`ruyi repo set-priority` 调整。
 
 ## 配置方式
 
@@ -95,7 +96,8 @@ ruyi repo add mixed https://example.com/repo.git --local /path/to/cache --branch
 
 ### `ruyi repo set-priority <id> <priority>`
 
-修改某个软件源的优先级。
+修改某个软件源的优先级。默认软件源（`ruyisdk`）的优先级通过 `[repo]` 段
+的 `priority` 字段保存，系统提供的软件源则会在用户配置中生成一条覆盖条目。
 
 ### `ruyi update [--repo <id>]`
 
@@ -149,7 +151,7 @@ urls = ["https://example.com/dist/"]
 ## 迁移说明
 
 现有的单软件源配置无需修改。默认的 `ruyisdk` 软件源仍会像以前一样继续工作。
-`[repo]` 配置段也仍然保留，用于配置默认软件源的 URL 和分支。
+`[repo]` 配置段也仍然保留，用于配置默认软件源的 URL、分支和优先级。
 
 新增 Overlay 软件源时，可按以下步骤操作：
 

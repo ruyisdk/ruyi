@@ -312,6 +312,23 @@ class TestReposConfigParsing:
         assert default_entry.id == "ruyisdk"
         assert default_entry.active is False
 
+    def test_default_repo_priority_via_config(
+        self,
+        mock_gm: "MockGlobalModeProvider",
+        ruyi_logger: "RuyiLogger",
+    ) -> None:
+        gc = GlobalConfig(mock_gm, ruyi_logger)
+        gc._apply_config(
+            {"repo": {"priority": 42}},
+            is_global_scope=False,
+        )
+        if "repo_entries" in gc.__dict__:
+            del gc.__dict__["repo_entries"]
+
+        default_entry = gc.repo_entries[0]
+        assert default_entry.id == "ruyisdk"
+        assert default_entry.priority == 42
+
     def test_default_repo_disabled_then_enabled(
         self,
         mock_gm: "MockGlobalModeProvider",

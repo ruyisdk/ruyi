@@ -86,7 +86,7 @@ class RepoEntry:
             remote=gc.override_repo_url or DEFAULT_REPO_URL,
             branch=gc.override_repo_branch or DEFAULT_REPO_BRANCH,
             local_path=gc.override_repo_dir,
-            priority=DEFAULT_REPO_PRIORITY,
+            priority=gc.repo_priority,
             active=not gc._repo_disabled,
         )
 
