@@ -7,6 +7,7 @@ list with priority shadowing, and package listing across repos.
 import pathlib
 
 import pygit2
+import pytest
 
 from tests.fixtures import IntegrationTestHarness
 
@@ -353,6 +354,51 @@ class TestRepoSetPriority:
 
         result = ruyi_cli_runner("repo", "list")
         assert "priority=99" in result.stdout
+
+    def test_set_priority_default_repo(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        result = ruyi_cli_runner("repo", "set-priority", "ruyisdk", "100")
+        assert result.exit_code == 0
+        assert "priority set to 100" in result.stderr
+
+        result = ruyi_cli_runner("repo", "list")
+        assert result.exit_code == 0
+        assert "priority=100" in result.stdout
+
+    def test_set_priority_system_repo(
+        self,
+        ruyi_cli_runner: IntegrationTestHarness,
+        monkeypatch: "pytest.MonkeyPatch",
+    ) -> None:
+        system_dir = (
+            pathlib.Path(ruyi_cli_runner._env["XDG_CONFIG_HOME"]).parent / "system"
+        )
+        ruyi_system_dir = system_dir / "ruyi"
+        ruyi_system_dir.mkdir(parents=True, exist_ok=True)
+        (ruyi_system_dir / "config.toml").write_text(
+            """\
+[[repos]]
+id = "system-repo"
+remote = "https://example.invalid/system.git"
+priority = 10
+active = true
+""",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("XDG_CONFIG_DIRS", str(system_dir))
+
+        result = ruyi_cli_runner("repo", "list")
+        assert result.exit_code == 0
+        assert "(system)" in result.stdout
+
+        result = ruyi_cli_runner("repo", "set-priority", "system-repo", "77")
+        assert result.exit_code == 0
+        assert "priority set to 77" in result.stderr
+
+        result = ruyi_cli_runner("repo", "list")
+        assert result.exit_code == 0
+        assert "priority=77" in result.stdout
 
 
 class TestMultiRepoPackageListing:

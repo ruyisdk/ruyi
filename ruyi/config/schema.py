@@ -27,6 +27,7 @@ SECTION_REPO: Final = "repo"
 KEY_REPO_BRANCH: Final = "branch"
 KEY_REPO_DISABLED: Final = "disabled"
 KEY_REPO_LOCAL: Final = "local"
+KEY_REPO_PRIORITY: Final = "priority"
 KEY_REPO_REMOTE: Final = "remote"
 
 SECTION_REPOS: Final = "repos"
@@ -99,6 +100,8 @@ def _get_expected_type_for_section_repo(sel: str) -> type:
         return bool
     elif sel == KEY_REPO_LOCAL:
         return str
+    elif sel == KEY_REPO_PRIORITY:
+        return int
     elif sel == KEY_REPO_REMOTE:
         return str
     else:
