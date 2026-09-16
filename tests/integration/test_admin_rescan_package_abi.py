@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import pathlib
+import shutil
 import tarfile
 
-from tests.fixtures import IntegrationTestHarness
+from tests.fixtures import IntegrationTestHarness, RuyiFileFixtureFactory
 from tests.ruyipkg.abi._elfbuilder import build_elf
 
 
@@ -97,3 +98,32 @@ def test_rescan_corrupt_archive_errors_cleanly(
     result = ruyi_cli_runner("admin", "rescan-package-abi", str(archive))
     assert result.exit_code != 0
     assert "Traceback" not in result.stderr
+
+
+def test_rescan_real_distfile_writes_matching_sidecar(
+    tmp_path: pathlib.Path,
+    ruyi_cli_runner: IntegrationTestHarness,
+    ruyi_file: RuyiFileFixtureFactory,
+) -> None:
+    arch = "riscv64"
+    prefix = "wlink-0.1.2-ruyi.20260501"
+
+    # Copy out of the tracked fixture tree so the default sidecar does not
+    # pollute the repository checkout.
+    with ruyi_file.path(
+        "ruyipkg_suites", "abi", f"{prefix}.{arch}.tar.gz"
+    ) as fixture:
+        archive = tmp_path / fixture.name
+        shutil.copyfile(fixture, archive)
+
+    with ruyi_file.path(
+        "ruyipkg_suites", "abi", f"{prefix}.{arch}.expected.toml"
+    ) as golden:
+        expected = golden.read_text(encoding="utf-8")
+
+    result = ruyi_cli_runner("admin", "rescan-package-abi", str(archive))
+    assert result.exit_code == 0, result.stderr
+
+    sidecar = archive.with_name(archive.name + ".abi.toml")
+    assert sidecar.is_file()
+    assert sidecar.read_text(encoding="utf-8") == expected
