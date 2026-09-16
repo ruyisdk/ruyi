@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import struct
 
-from .model import GnuProperty
+from .model import AttributeVendorBlob, GnuProperty
 
 _NT_GNU_PROPERTY_TYPE_0 = 5
 
@@ -68,5 +68,43 @@ def _parse_property_array(
             truncated = True
         out.append(
             GnuProperty(pr_type=pr_type, data_hex=blob.hex(), truncated=truncated)
+        )
+    return out
+
+
+def parse_attribute_vendor_blobs(
+    data: bytes,
+    *,
+    little_endian: bool,
+    max_bytes: int,
+) -> list[AttributeVendorBlob]:
+    if not data or data[0:1] != b"A":
+        return []
+
+    endian = "<" if little_endian else ">"
+    out: list[AttributeVendorBlob] = []
+    off = 1
+    n = len(data)
+    while off + 4 <= n:
+        (length,) = struct.unpack_from(endian + "I", data, off)
+        if length < 4 or off + length > n:
+            break
+        sub = data[off : off + length]
+        off += length
+
+        vend_end = sub.find(b"\x00", 4)
+        if vend_end == -1:
+            break
+        vendor = sub[4:vend_end].decode("latin-1")
+        blob = sub[vend_end + 1 :]
+
+        truncated = False
+        if len(blob) > max_bytes:
+            blob = blob[:max_bytes]
+            truncated = True
+        out.append(
+            AttributeVendorBlob(
+                vendor=vendor, data_hex=blob.hex(), truncated=truncated
+            )
         )
     return out
