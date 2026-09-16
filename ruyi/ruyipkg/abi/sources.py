@@ -80,9 +80,7 @@ class _ArchiveSource(ABISource):
             data = self._path.read_bytes()
             yield self._path.name, len(data), _bytes_reader(data)
         else:
-            raise ValueError(
-                f"unsupported unpack method for ABI scan: {self._method}"
-            )
+            raise ValueError(f"unsupported unpack method for ABI scan: {self._method}")
 
     def _iter_tar(self) -> Iterator[MemberEntry]:
         import tarfile

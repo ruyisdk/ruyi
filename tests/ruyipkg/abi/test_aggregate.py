@@ -45,7 +45,10 @@ def test_rollup_x86_minimum_level() -> None:
         _rec(e_machine=62, parsed_attrs={"isa_level": "v2"}),
     ]
     summary = build_summary(recs, file_count=2, excluded_count=0)
-    assert summary.parsed_attrs_rollup["62"] == {"isa_level": "v2", "isa_levels": ["v2", "v3"]}
+    assert summary.parsed_attrs_rollup["62"] == {
+        "isa_level": "v2",
+        "isa_levels": ["v2", "v3"],
+    }
 
 
 def test_counts_passthrough() -> None:

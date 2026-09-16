@@ -57,9 +57,7 @@ def test_entity_store_iter_entities(
 
         # Multiple requested types should contribute every matching entity.
         filtered_entities = list(store.iter_entities(["device", "uarch"]))
-        assert {
-            (entity.entity_type, entity.id) for entity in filtered_entities
-        } == {
+        assert {(entity.entity_type, entity.id) for entity in filtered_entities} == {
             ("device", "sipeed-lc4a"),
             ("device", "sipeed-lcon4a"),
             ("device", "sipeed-lpi4a"),

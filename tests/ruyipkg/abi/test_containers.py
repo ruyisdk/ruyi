@@ -48,9 +48,12 @@ def test_truncates_oversized_blob() -> None:
 
 
 def test_empty_data() -> None:
-    assert parse_gnu_property_note_section(
-        b"", is_64bit=True, little_endian=True, max_bytes=4096
-    ) == []
+    assert (
+        parse_gnu_property_note_section(
+            b"", is_64bit=True, little_endian=True, max_bytes=4096
+        )
+        == []
+    )
 
 
 def _attr_section(subsections: list[tuple[bytes, bytes]]) -> bytes:
@@ -85,4 +88,6 @@ def test_truncates_oversized_vendor_data() -> None:
 
 def test_missing_format_byte_returns_empty() -> None:
     assert parse_attribute_vendor_blobs(b"", little_endian=True, max_bytes=4096) == []
-    assert parse_attribute_vendor_blobs(b"X\x00", little_endian=True, max_bytes=4096) == []
+    assert (
+        parse_attribute_vendor_blobs(b"X\x00", little_endian=True, max_bytes=4096) == []
+    )

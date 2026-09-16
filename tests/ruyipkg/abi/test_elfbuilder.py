@@ -11,7 +11,9 @@ def test_builder_roundtrips_via_pyelftools() -> None:
     # 'A' format version. Prefix the arbitrary payload accordingly so the
     # section constructs and its raw data still roundtrips unchanged.
     payload = b"A\x02\x03\x04"
-    data = build_elf(e_machine=243, sections={".riscv.attributes": (0x70000003, payload)})
+    data = build_elf(
+        e_machine=243, sections={".riscv.attributes": (0x70000003, payload)}
+    )
     elf = ELFFile(io.BytesIO(data))
     assert elf.header["e_machine"] == "EM_RISCV"
     assert elf.elfclass == 64

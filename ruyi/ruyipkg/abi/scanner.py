@@ -102,7 +102,10 @@ def scan_elf_stream(
     needs_unversioned = _compute_needs_unversioned(elf)
 
     gnu_properties = _extract_gnu_properties(  # type: ignore[no-untyped-call]
-        elf, elf_class == 64, little_endian, max_raw_attr_bytes,
+        elf,
+        elf_class == 64,
+        little_endian,
+        max_raw_attr_bytes,
         parse_gnu_property_note_section,
     )
     elf_attributes = _extract_attributes(  # type: ignore[no-untyped-call]

@@ -15,7 +15,9 @@ def test_level_v3() -> None:
 
 
 def test_absent_property_is_baseline() -> None:
-    assert X86_64Interpreter().interpret([], [], little_endian=True)["isa_level"] == "v1"
+    assert (
+        X86_64Interpreter().interpret([], [], little_endian=True)["isa_level"] == "v1"
+    )
 
 
 def test_rollup_minimum_level() -> None:

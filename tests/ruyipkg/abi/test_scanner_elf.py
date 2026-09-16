@@ -90,10 +90,12 @@ def test_unhandled_arch_with_attributes_falls_back_gracefully() -> None:
     assert rec.parsed_attrs == {}
 
 
-
 def test_corrupt_stream_yields_error() -> None:
     rec, errors = scan_elf_stream(
-        io.BytesIO(b"not an elf"), paths=("bin/z",), sha256="00", max_raw_attr_bytes=4096
+        io.BytesIO(b"not an elf"),
+        paths=("bin/z",),
+        sha256="00",
+        max_raw_attr_bytes=4096,
     )
     assert rec is None
     assert errors and errors[0].path == "bin/z"

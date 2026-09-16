@@ -107,9 +107,7 @@ def _record_table(record: ElfABIRecord) -> Table:
 
     if record.elf_attributes:
         attrs = aot()
-        for attr in sorted(
-            record.elf_attributes, key=lambda a: (a.vendor, a.data_hex)
-        ):
+        for attr in sorted(record.elf_attributes, key=lambda a: (a.vendor, a.data_hex)):
             sub = table()
             sub.add("vendor", attr.vendor)
             sub.add("data_hex", attr.data_hex)

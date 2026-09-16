@@ -61,15 +61,15 @@ def build_elf(
         return struct.pack(
             endian + "IIQQQQIIQQ",
             name_offset,  # sh_name
-            sh_type,      # sh_type
-            0,            # sh_flags
-            0,            # sh_addr
-            sh_offset,    # sh_offset
-            sh_size,      # sh_size
-            0,            # sh_link
-            0,            # sh_info
-            1,            # sh_addralign
-            0,            # sh_entsize
+            sh_type,  # sh_type
+            0,  # sh_flags
+            0,  # sh_addr
+            sh_offset,  # sh_offset
+            sh_size,  # sh_size
+            0,  # sh_link
+            0,  # sh_info
+            1,  # sh_addralign
+            0,  # sh_entsize
         )
 
     shtable = bytearray()
@@ -78,25 +78,26 @@ def build_elf(
         shtable += shdr(name_off[name], sh_type, sh_offset, sh_size)
     shtable += shdr(name_off[".shstrtab"], 3, shstrtab_off, len(shstrtab))  # SHT_STRTAB
 
-    e_ident = bytes(
-        [0x7F, ord("E"), ord("L"), ord("F"), 2, 1 if little_endian else 2, 1, 0]
-    ) + b"\x00" * 8
+    e_ident = (
+        bytes([0x7F, ord("E"), ord("L"), ord("F"), 2, 1 if little_endian else 2, 1, 0])
+        + b"\x00" * 8
+    )
 
     ehdr = e_ident + struct.pack(
         endian + "HHIQQQIHHHHHH",
-        e_type,        # e_type
-        e_machine,     # e_machine
-        1,             # e_version
-        0,             # e_entry
-        0,             # e_phoff
-        shoff,         # e_shoff
-        0,             # e_flags
-        _EHDR_SIZE,    # e_ehsize
-        0,             # e_phentsize
-        0,             # e_phnum
-        _SHDR_SIZE,    # e_shentsize
+        e_type,  # e_type
+        e_machine,  # e_machine
+        1,  # e_version
+        0,  # e_entry
+        0,  # e_phoff
+        shoff,  # e_shoff
+        0,  # e_flags
+        _EHDR_SIZE,  # e_ehsize
+        0,  # e_phentsize
+        0,  # e_phnum
+        _SHDR_SIZE,  # e_shentsize
         total_sections,  # e_shnum
-        shstrndx,      # e_shstrndx
+        shstrndx,  # e_shstrndx
     )
 
     return bytes(ehdr + body + shtable)

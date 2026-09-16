@@ -103,8 +103,6 @@ def parse_attribute_vendor_blobs(
             blob = blob[:max_bytes]
             truncated = True
         out.append(
-            AttributeVendorBlob(
-                vendor=vendor, data_hex=blob.hex(), truncated=truncated
-            )
+            AttributeVendorBlob(vendor=vendor, data_hex=blob.hex(), truncated=truncated)
         )
     return out
