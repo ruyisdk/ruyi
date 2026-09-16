@@ -20,7 +20,7 @@ class AArch64Interpreter:
         self,
         gnu_properties: Sequence[GnuProperty],
         elf_attributes: Sequence[AttributeVendorBlob],
-        little_endian: bool = True,
+        little_endian: bool,
     ) -> dict[str, str | int | bool]:
         byteorder: Literal["little", "big"] = "little"
         if not little_endian:

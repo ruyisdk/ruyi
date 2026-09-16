@@ -41,7 +41,7 @@ class RiscVInterpreter:
         self,
         gnu_properties: Sequence[GnuProperty],
         elf_attributes: Sequence[AttributeVendorBlob],
-        little_endian: bool = True,
+        little_endian: bool,
     ) -> dict[str, str | int | bool]:
         out: dict[str, str | int | bool] = {}
         for blob in elf_attributes:

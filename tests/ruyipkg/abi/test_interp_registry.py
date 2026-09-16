@@ -19,4 +19,4 @@ def test_register_and_lookup() -> None:
     register(_FakeInterp())
     got = get_interpreter(0xBEEF)
     assert got is not None
-    assert got.interpret([], []) == {"ok": True}
+    assert got.interpret([], [], little_endian=True) == {"ok": True}

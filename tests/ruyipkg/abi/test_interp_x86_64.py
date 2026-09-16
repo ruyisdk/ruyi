@@ -10,12 +10,12 @@ def _isa_needed(mask: int) -> GnuProperty:
 
 def test_level_v3() -> None:
     interp = X86_64Interpreter()
-    out = interp.interpret([_isa_needed(0b0111)], [])
+    out = interp.interpret([_isa_needed(0b0111)], [], little_endian=True)
     assert out["isa_level"] == "v3"
 
 
 def test_absent_property_is_baseline() -> None:
-    assert X86_64Interpreter().interpret([], [])["isa_level"] == "v1"
+    assert X86_64Interpreter().interpret([], [], little_endian=True)["isa_level"] == "v1"
 
 
 def test_rollup_minimum_level() -> None:
