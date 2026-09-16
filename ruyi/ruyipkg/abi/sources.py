@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import abc
 import functools
-import io
 import pathlib
 from typing import BinaryIO, Callable, cast, Iterator, TYPE_CHECKING
 
@@ -137,14 +136,23 @@ class _ArchiveSource(ABISource):
 
         import arpy
 
+        from ..unpack import _wrap_decompressed
+
         ar = arpy.Archive(str(self._path))
         try:
             for entry in ar:
-                if not entry.header.name.startswith(b"data.tar"):
+                name = entry.header.name
+                if not name.startswith(b"data.tar"):
                     continue
-                inner = io.BytesIO(entry.read())
-                with tarfile.open(fileobj=inner, mode="r:*") as tf:
-                    yield from self._iter_tar_members(tf)
+                # The payload may itself be compressed (data.tar.zst,
+                # data.tar.xz, ...), so run it through the shared
+                # decompression machinery and parse the result as a
+                # sequential tar stream; the ar entry is read lazily.
+                method = determine_unpack_method(name.decode("ascii", "replace"))
+                with _wrap_decompressed(entry, method) as decompressed:
+                    fileobj = cast("BinaryIO", decompressed)
+                    with tarfile.open(fileobj=fileobj, mode="r|") as tf:
+                        yield from self._iter_tar_members(tf)
                 return
         finally:
             ar.close()

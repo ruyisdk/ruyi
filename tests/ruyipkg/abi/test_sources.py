@@ -1,3 +1,4 @@
+import io
 import pathlib
 import tarfile
 import zipfile
@@ -80,3 +81,44 @@ def test_tar_lz4_source_streams_members(tmp_path: pathlib.Path) -> None:
     src = ABISource.from_archive(arc, UnpackMethod.TAR_LZ4)
     members = {p: r() for p, _s, r in src.iter_members()}
     assert members["x"] == payload
+
+
+def _ar_member(name: str, data: bytes) -> bytes:
+    header = (
+        name.ljust(16)
+        + "0".ljust(12)
+        + "0".ljust(6)
+        + "0".ljust(6)
+        + "100644".ljust(8)
+        + str(len(data)).ljust(10)
+        + "`\n"
+    ).encode("ascii")
+    assert len(header) == 60
+    return header + data + (b"\n" if len(data) % 2 else b"")
+
+
+def test_deb_source_streams_compressed_data_tar(tmp_path: pathlib.Path) -> None:
+    import zstandard
+
+    payload = build_elf(e_machine=243)
+    tar_buf = io.BytesIO()
+    with tarfile.open(fileobj=tar_buf, mode="w") as tf:
+        info = tarfile.TarInfo("bin/r")
+        info.size = len(payload)
+        tf.addfile(info, io.BytesIO(payload))
+
+    deb = tmp_path / "pkg.deb"
+    with open(deb, "wb") as fout:
+        fout.write(b"!<arch>\n")
+        fout.write(_ar_member("debian-binary", b"2.0\n"))
+        fout.write(
+            _ar_member(
+                "data.tar.zst",
+                zstandard.ZstdCompressor().compress(tar_buf.getvalue()),
+            )
+        )
+
+    src = ABISource.from_archive(deb, UnpackMethod.DEB)
+    # Read each member before advancing, per the lazy MemberEntry contract.
+    members = [(path, size, reader()) for path, size, reader in src.iter_members()]
+    assert members == [("bin/r", len(payload), payload)]
