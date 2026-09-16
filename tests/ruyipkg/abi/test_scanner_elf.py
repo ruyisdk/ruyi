@@ -101,9 +101,18 @@ def test_corrupt_stream_yields_error() -> None:
     assert errors and errors[0].path == "bin/z"
 
 
-@pytest.mark.skipif(not os.path.exists("/bin/sh"), reason="needs a system ELF")
+def _has_elf_magic(path: str) -> bool:
+    try:
+        with open(path, "rb") as fp:
+            return fp.read(4) == b"\x7fELF"
+    except OSError:
+        return False
+
+
 def test_scans_real_system_binary() -> None:
     path = os.path.realpath("/bin/sh")
+    if not _has_elf_magic(path):
+        pytest.skip("no readable ELF /bin/sh available to scan")
     with open(path, "rb") as f:
         rec, errors = scan_elf_stream(
             f, paths=(path,), sha256="00", max_raw_attr_bytes=4096
