@@ -4,6 +4,7 @@ import zipfile
 
 from ruyi.ruyipkg.abi.sources import ABISource
 from ruyi.ruyipkg.unpack_method import UnpackMethod
+from tests.ruyipkg.abi._elfbuilder import build_elf
 
 
 def test_directory_source(tmp_path: pathlib.Path) -> None:
@@ -42,3 +43,40 @@ def test_zip_source(tmp_path: pathlib.Path) -> None:
     src = ABISource.from_archive(arc, UnpackMethod.ZIP)
     members = {p: r() for p, _s, r in src.iter_members()}
     assert members["y.bin"] == b"world!"
+
+
+def _make_tar(tmp_path: pathlib.Path) -> pathlib.Path:
+    payload = build_elf(e_machine=243)
+    (tmp_path / "x").write_bytes(payload)
+    raw = tmp_path / "a.tar"
+    with tarfile.open(raw, "w") as tf:
+        tf.add(tmp_path / "x", arcname="x")
+    return raw
+
+
+def test_tar_zst_source_streams_members(tmp_path: pathlib.Path) -> None:
+    import zstandard
+
+    raw = _make_tar(tmp_path)
+    arc = tmp_path / "a.tar.zst"
+    with open(raw, "rb") as fin, open(arc, "wb") as fout:
+        zstandard.ZstdCompressor().copy_stream(fin, fout)
+
+    payload = (tmp_path / "x").read_bytes()
+    src = ABISource.from_archive(arc, UnpackMethod.TAR_ZST)
+    members = {p: r() for p, _s, r in src.iter_members()}
+    assert members["x"] == payload
+
+
+def test_tar_lz4_source_streams_members(tmp_path: pathlib.Path) -> None:
+    import lz4.frame
+
+    raw = _make_tar(tmp_path)
+    arc = tmp_path / "a.tar.lz4"
+    with open(raw, "rb") as fin, open(arc, "wb") as fout:
+        fout.write(lz4.frame.compress(fin.read()))
+
+    payload = (tmp_path / "x").read_bytes()
+    src = ABISource.from_archive(arc, UnpackMethod.TAR_LZ4)
+    members = {p: r() for p, _s, r in src.iter_members()}
+    assert members["x"] == payload

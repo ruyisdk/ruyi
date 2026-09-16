@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import abc
+import functools
 import io
 import pathlib
-from typing import Callable, Iterator
+from typing import BinaryIO, Callable, cast, Iterator, TYPE_CHECKING
 
 from ..unpack_method import UnpackMethod, determine_unpack_method
 
+if TYPE_CHECKING:
+    import tarfile
+
+# ``(path, declared_size, read)``. The reader is a lazy view over the member
+# and must be called before requesting the next entry, while the source is
+# still positioned on it; excluded or oversized members can then be skipped
+# without ever reading their contents.
 MemberEntry = tuple[str, "int | None", Callable[[], bytes]]
 
 _TAR_METHODS = frozenset(
@@ -88,18 +96,30 @@ class _ArchiveSource(ABISource):
         from ..unpack import open_decompressed
 
         if self._method in (UnpackMethod.TAR_ZST, UnpackMethod.TAR_LZ4):
+            # zstd/lz4 streams are not seekable, so parse the tar sequentially
+            # (``r|``) while keeping the decompressor open for the duration of
+            # the iteration. Member contents are pulled lazily by the consumer,
+            # so excluded or oversized members are never materialized.
             with open_decompressed(str(self._path), self._method) as stream:
-                buf = io.BytesIO(stream.read())
-            tf = tarfile.open(fileobj=buf, mode="r:")
+                fileobj = cast("BinaryIO", stream)
+                with tarfile.open(fileobj=fileobj, mode="r|") as tf:
+                    yield from self._iter_tar_members(tf)
         else:
-            tf = tarfile.open(str(self._path), mode="r:*")
-        with tf:
-            for member in tf:
-                if not member.isreg():
-                    continue
-                extracted = tf.extractfile(member)
-                data = extracted.read() if extracted is not None else b""
-                yield member.name, member.size, _bytes_reader(data)
+            with tarfile.open(str(self._path), mode="r:*") as tf:
+                yield from self._iter_tar_members(tf)
+
+    @staticmethod
+    def _iter_tar_members(tf: "tarfile.TarFile") -> Iterator[MemberEntry]:
+        for member in tf:
+            if not member.isreg():
+                continue
+            extracted = tf.extractfile(member)
+            if extracted is None:
+                yield member.name, member.size, _bytes_reader(b"")
+                continue
+            # Hand out the bound ``read`` so the caller can decide whether the
+            # member is worth reading at all.
+            yield member.name, member.size, extracted.read
 
     def _iter_zip(self) -> Iterator[MemberEntry]:
         import zipfile
@@ -108,8 +128,9 @@ class _ArchiveSource(ABISource):
             for info in zf.infolist():
                 if info.is_dir():
                     continue
-                data = zf.read(info)
-                yield info.filename, info.file_size, _bytes_reader(data)
+                # Defer the actual decompression until the consumer asks for
+                # the member; it may be excluded or over the size limit.
+                yield info.filename, info.file_size, functools.partial(zf.read, info)
 
     def _iter_deb(self) -> Iterator[MemberEntry]:
         import tarfile
@@ -117,15 +138,13 @@ class _ArchiveSource(ABISource):
         import arpy
 
         ar = arpy.Archive(str(self._path))
-        for entry in ar:
-            if not entry.header.name.startswith(b"data.tar"):
-                continue
-            inner = io.BytesIO(entry.read())
-            with tarfile.open(fileobj=inner, mode="r:*") as tf:
-                for member in tf:
-                    if not member.isreg():
-                        continue
-                    extracted = tf.extractfile(member)
-                    data = extracted.read() if extracted is not None else b""
-                    yield member.name, member.size, _bytes_reader(data)
-            return
+        try:
+            for entry in ar:
+                if not entry.header.name.startswith(b"data.tar"):
+                    continue
+                inner = io.BytesIO(entry.read())
+                with tarfile.open(fileobj=inner, mode="r:*") as tf:
+                    yield from self._iter_tar_members(tf)
+                return
+        finally:
+            ar.close()
