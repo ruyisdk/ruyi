@@ -195,7 +195,7 @@ class RecipeBuildCtx:
 
         if not isinstance(exclude, (list, tuple)):
             raise RuntimeError(
-                "ctx.artifact: exclude must be a list of strings"
+                "ctx.artifact: exclude must be a list or tuple of strings"
             )
         exclude_tuple = tuple(exclude)
         if not all(isinstance(x, str) for x in exclude_tuple):
