@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO
+import dataclasses
+import hashlib
+import io
+from typing import BinaryIO, Sequence, TYPE_CHECKING
 
+from ...i18n import _
+from ...log import RuyiLogger
 from .model import (
+    ABIReport,
     ABIScanError,
+    DEFAULT_MAX_MEMBER_BYTES,
+    DEFAULT_MAX_RAW_ATTR_BYTES,
     ElfABIRecord,
     ElfType,
     VersionNeed,
 )
+
+if TYPE_CHECKING:
+    from .sources import ABISource
 
 _E_TYPE_MAP = {
     "ET_EXEC": ElfType.EXEC,
@@ -167,3 +178,71 @@ def _extract_attributes(elf, little_endian, max_bytes, parse):  # type: ignore[n
                 parse(section.data(), little_endian=little_endian, max_bytes=max_bytes)
             )
     return out
+
+
+def scan_source(
+    source: "ABISource",
+    *,
+    logger: RuyiLogger,
+    exclude: Sequence[str] = (),
+    max_member_bytes: int = DEFAULT_MAX_MEMBER_BYTES,
+    max_raw_attr_bytes: int = DEFAULT_MAX_RAW_ATTR_BYTES,
+) -> ABIReport:
+    from ...utils.pathmatch import build_matcher
+    from .aggregate import build_summary
+
+    matcher = build_matcher(exclude)
+
+    seen: dict[str, ElfABIRecord] = {}
+    errors: list[ABIScanError] = []
+    file_count = 0
+    excluded_count = 0
+
+    for path, size, reader in source.iter_members():
+        if matcher.is_excluded(path):
+            excluded_count += 1
+            continue
+
+        file_count += 1
+
+        if size is not None and size > max_member_bytes:
+            logger.D(f"skipping oversized member {path} ({size} bytes)")
+            errors.append(ABIScanError(path, _("member exceeds size limit")))
+            continue
+
+        data = reader()
+        if len(data) > max_member_bytes:
+            logger.D(f"skipping oversized member {path} ({len(data)} bytes)")
+            errors.append(ABIScanError(path, _("member exceeds size limit")))
+            continue
+
+        if not data.startswith(b"\x7fELF"):
+            continue
+
+        sha = hashlib.sha256(data).hexdigest()
+        existing = seen.get(sha)
+        if existing is not None:
+            if path not in existing.paths:
+                merged = tuple(sorted({*existing.paths, path}))
+                seen[sha] = dataclasses.replace(existing, paths=merged)
+            continue
+
+        record, errs = scan_elf_stream(
+            io.BytesIO(data),
+            paths=(path,),
+            sha256=sha,
+            max_raw_attr_bytes=max_raw_attr_bytes,
+        )
+        errors.extend(errs)
+        if record is not None:
+            seen[sha] = record
+
+    records = tuple(sorted(seen.values(), key=lambda r: r.sha256))
+    summary = build_summary(
+        records, file_count=file_count, excluded_count=excluded_count
+    )
+    logger.D(
+        f"ABI scan: {summary.elf_count} distinct ELF(s), "
+        f"{file_count} member(s), {excluded_count} excluded"
+    )
+    return ABIReport(records=records, summary=summary, errors=tuple(errors))
