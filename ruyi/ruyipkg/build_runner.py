@@ -289,19 +289,21 @@ def _resolve_artifacts(
 
                 abi_sidecar: pathlib.Path | None = None
                 if not skip_abi_scan and is_scannable(match):
-                    # A scan failure (e.g. a placeholder file with an archive
-                    # extension) must never fail an otherwise-successful build:
-                    # warn and continue without a sidecar.
+                    # Sidecar generation is auxiliary: a scan or write failure
+                    # (e.g. a placeholder file with an archive extension, or an
+                    # unwritable output directory) must never fail an
+                    # otherwise-successful build. Warn and continue.
                     try:
                         report = scan_path(logger, match, exclude=art.exclude)
+                        sidecar = sidecar_path_for(match)
+                        write_sidecar(report, sidecar)
                     except Exception as e:  # noqa: BLE001
                         logger.W(
-                            f"ABI scan of artifact {match} failed, "
+                            f"ABI sidecar generation for artifact {match} failed, "
                             f"no sidecar written: {e}"
                         )
                     else:
-                        abi_sidecar = sidecar_path_for(match)
-                        write_sidecar(report, abi_sidecar)
+                        abi_sidecar = sidecar
                         logger.I(f"wrote ABI sidecar to {abi_sidecar}")
                 elif not skip_abi_scan:
                     logger.D(f"skipping ABI scan for non-archive artifact {match}")
