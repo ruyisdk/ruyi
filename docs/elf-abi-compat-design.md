@@ -103,3 +103,44 @@ data_hex = "410000001872697363760001000000000572763634..."
   / `elf_attributes` 原始数据照常存在。`gnu_properties`、`elf_attributes` 以数组表形式给出，排序稳定。
 
 入口是 `scan_source()`（产出 `ABIReport`），序列化用 `dump_abi_report_toml()`。
+
+## CLI 集成
+
+采集能力通过 `ruyi admin` 下的两个子命令暴露给打包者。
+
+### `ruyi admin rescan-package-abi <path>`
+
+对一份已构建的产物做离线重扫。`<path>` 既可以是归档文件（tar / zip / deb），
+也可以是一棵已解压的目录树，二者都走前文的 `scan_source()`。注意：命令只接受
+目录，以及被识别为 TAR / ZIP / DEB 的归档；`scan_source()` 本身还支持的裸压缩流
+等其余来源，不在本命令的受理范围内。
+
+默认把 TOML 报告写到输入旁边的 `<path>.abi.toml`：后缀恰好是 `.abi.toml`，
+追加在目标全名之后（例如 `foo-0.1.0.tar.zst` 会得到
+`foo-0.1.0.tar.zst.abi.toml`）。`-o FILE` 指定其他输出路径；`-o -` 则把
+TOML 写到标准输出，便于与管道、diff 工具配合。
+
+排除模式与 `scan_source()` 的 `exclude` 语义一致，均为 `.gitignore` 风格：
+
+* `--exclude GLOB` 可重复给出，逐条累加；
+* `--exclude @FILE` 从文件中读取模式，每行一条；空行与以 `#` 开头的注释行会被跳过。
+
+需要注意的是，文件扫描排除的只是 `pathspec` 层面的成员匹配，与 Ruyi 运行时
+对 `_` 前缀条目的忽略是两回事（后者由仓库结构约定，见下）。
+
+### `ruyi admin build-package`
+
+构建软件包时默认顺带产出 ABI 元数据：对每个成功构建出的归档产物，在其旁边
+生成一份同名的 `<archive>.abi.toml` sidecar，后缀规则与 `rescan-package-abi`
+相同。
+
+* `--no-abi-scan` 关闭这一默认行为，只构建产物、不生成 sidecar。
+* recipe 可以按产物粒度定制排除规则：`ctx.artifact(glob, root, exclude=[...])`，
+  其中 `exclude` 的含义同 `scan_source()`。
+
+### 产物在软件源中的摆放
+
+生成的 sidecar 需要随软件源一起提交，具体放在保留的、以 `_` 开头的位置下
+（约定见 `docs/repo-structure.md`：软件包目录内任何 `_` 开头的条目都是保留的
+辅助内容，`ruyi` 运行时忽略、`ruyi admin check` 接受）。在哪个版本、以什么
+文件名被 Ruyi 摄入（ingest），属于后续工作，本文暂不约定。
