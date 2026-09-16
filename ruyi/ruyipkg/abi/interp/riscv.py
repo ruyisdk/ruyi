@@ -61,6 +61,8 @@ class RiscVInterpreter:
                 break
             (size,) = struct.unpack_from("<I", body, off)
             off += 4
+            if size < 5:
+                break
             attr_end = off - 5 + size
             if tag != _TAG_FILE:
                 off = attr_end

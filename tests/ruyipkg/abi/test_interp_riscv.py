@@ -33,6 +33,14 @@ def test_ignores_non_riscv_vendor() -> None:
     assert RiscVInterpreter().interpret([], [blob]) == {}
 
 
+def test_malformed_zero_size_does_not_hang() -> None:
+    # A Tag_File sub-subsection declaring size == 0 must not wedge the walker:
+    # pre-fix the cursor never advanced and the parse looped forever.
+    body = bytes([1]) + struct.pack("<I", 0)
+    blob = AttributeVendorBlob("riscv", body.hex(), False)
+    assert RiscVInterpreter().interpret([], [blob]) == {}
+
+
 def test_rollup_distinct_isa_set() -> None:
     interp = RiscVInterpreter()
     out = interp.rollup([{"isa": "rv64gc"}, {"isa": "rv64imac"}, {"isa": "rv64gc"}])
