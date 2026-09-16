@@ -205,6 +205,15 @@ def check_repo(
     for path in sorted(p for p in manifest_root.rglob("*") if p.is_file()):
         rel_path = path.relative_to(manifest_root)
         parts = rel_path.parts
+
+        # Entries reserved by the `_`-prefix convention (a reserved package
+        # directory, or auxiliary content under a package) are not version
+        # manifests and are skipped entirely. See docs/repo-structure.md.
+        if len(parts) >= 2 and parts[1].startswith("_"):
+            continue
+        if len(parts) >= 3 and parts[2].startswith("_"):
+            continue
+
         identity = _package_identity_from_manifest_relpath(parts)
 
         if (

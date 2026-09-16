@@ -244,6 +244,40 @@ def test_repo_mode_reports_invalid_semver_filenames(
     assert [diag.code for diag in diagnostics] == ["RYC0004"]
 
 
+def test_repo_mode_allows_reserved_underscore_file(tmp_path: pathlib.Path) -> None:
+    _write_repo_config(tmp_path)
+    _write_manifest(tmp_path, "source", "sample", "1.0.0")
+    reserved = tmp_path / "packages" / "source" / "sample" / "_notes.toml"
+    reserved.write_text("anything = true\n", encoding="utf-8")
+
+    diagnostics = check_repo(tmp_path)
+
+    assert [diag.code for diag in diagnostics] == []
+
+
+def test_repo_mode_allows_reserved_underscore_subdir(tmp_path: pathlib.Path) -> None:
+    _write_repo_config(tmp_path)
+    _write_manifest(tmp_path, "source", "sample", "1.0.0")
+    abi_dir = tmp_path / "packages" / "source" / "sample" / "_abi"
+    abi_dir.mkdir()
+    (abi_dir / "pkg.tar.gz.abi.toml").write_text("x = 1\n", encoding="utf-8")
+    (abi_dir / "blob.bin").write_bytes(b"\x00\x01")
+
+    diagnostics = check_repo(tmp_path)
+
+    assert [diag.code for diag in diagnostics] == []
+
+
+def test_repo_mode_still_flags_non_reserved_bad_file(tmp_path: pathlib.Path) -> None:
+    _write_repo_config(tmp_path)
+    _write_manifest(tmp_path, "source", "sample", "1.0.0")
+    _write_manifest(tmp_path, "source", "sample", "not-semver")
+
+    diagnostics = check_repo(tmp_path)
+
+    assert [diag.code for diag in diagnostics] == ["RYC0004"]
+
+
 def test_repo_mode_continues_after_bad_files(tmp_path: pathlib.Path) -> None:
     _write_repo_config(tmp_path)
     _write_manifest(tmp_path, "source", "bad-toml", "1.0.0", 'format = "v1"\n[')
