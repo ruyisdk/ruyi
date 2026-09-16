@@ -52,6 +52,7 @@ class Artifact:
 
     glob: str
     root: pathlib.Path
+    exclude: tuple[str, ...] = ()
 
 
 class RuyiBuildRecipeAPI:
@@ -187,9 +188,20 @@ class RecipeBuildCtx:
         self,
         glob: str,
         root: str | None = None,
+        exclude: list[str] | tuple[str, ...] = (),
     ) -> Artifact:
         if not glob:
             raise RuntimeError("ctx.artifact: glob must be a non-empty string")
+
+        if not isinstance(exclude, (list, tuple)):
+            raise RuntimeError(
+                "ctx.artifact: exclude must be a list of strings"
+            )
+        exclude_tuple = tuple(exclude)
+        if not all(isinstance(x, str) for x in exclude_tuple):
+            raise RuntimeError(
+                "ctx.artifact: exclude entries must be strings"
+            )
 
         if root is None:
             resolved_root = self._project.output_dir
@@ -211,4 +223,4 @@ class RecipeBuildCtx:
             else:
                 resolved_root = safe_join(self._project.root, root)
 
-        return Artifact(glob=glob, root=resolved_root)
+        return Artifact(glob=glob, root=resolved_root, exclude=exclude_tuple)
