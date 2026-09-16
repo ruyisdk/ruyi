@@ -344,9 +344,7 @@ class AdminRescanPackageAbiCommand(
             report = scan_path(logger, target, exclude=exclude)
         except Exception as e:  # noqa: BLE001
             logger.F(
-                _("failed to scan {path}: {err}").format(
-                    path=str(target), err=str(e)
-                )
+                _("failed to scan {path}: {err}").format(path=str(target), err=str(e))
             )
             return 1
 

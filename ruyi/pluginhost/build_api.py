@@ -199,9 +199,7 @@ class RecipeBuildCtx:
             )
         exclude_tuple = tuple(exclude)
         if not all(isinstance(x, str) for x in exclude_tuple):
-            raise RuntimeError(
-                "ctx.artifact: exclude entries must be strings"
-            )
+            raise RuntimeError("ctx.artifact: exclude entries must be strings")
 
         if root is None:
             resolved_root = self._project.output_dir

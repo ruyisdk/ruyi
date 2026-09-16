@@ -110,9 +110,7 @@ def test_rescan_real_distfile_writes_matching_sidecar(
 
     # Copy out of the tracked fixture tree so the default sidecar does not
     # pollute the repository checkout.
-    with ruyi_file.path(
-        "ruyipkg_suites", "abi", f"{prefix}.{arch}.tar.gz"
-    ) as fixture:
+    with ruyi_file.path("ruyipkg_suites", "abi", f"{prefix}.{arch}.tar.gz") as fixture:
         archive = tmp_path / fixture.name
         shutil.copyfile(fixture, archive)
 
