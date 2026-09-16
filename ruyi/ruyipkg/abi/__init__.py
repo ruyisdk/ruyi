@@ -15,6 +15,7 @@ from .model import (
     VersionNeed,
 )
 from .scanner import scan_source
+from .serialize import dump_abi_report_toml
 from .sources import ABISource
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "ElfType",
     "GnuProperty",
     "VersionNeed",
+    "dump_abi_report_toml",
     "scan_source",
 ]
