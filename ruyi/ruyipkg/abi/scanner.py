@@ -113,7 +113,9 @@ def scan_elf_stream(
     impl = get_interpreter(e_machine)
     if impl is not None:
         try:
-            parsed_attrs = impl.interpret(gnu_properties, elf_attributes)
+            parsed_attrs = impl.interpret(
+                gnu_properties, elf_attributes, little_endian=little_endian
+            )
         except Exception as exc:  # noqa: BLE001
             errors.append(
                 ABIScanError(paths[0], f"attribute interpretation failed: {exc}")
