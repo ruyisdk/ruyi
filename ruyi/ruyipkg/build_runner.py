@@ -298,6 +298,13 @@ def _resolve_artifacts(
                         sidecar = sidecar_path_for(match)
                         write_sidecar(report, sidecar)
                     except Exception as e:  # noqa: BLE001
+                        # A sidecar left over from a previous build would now
+                        # describe different content, so drop it instead of
+                        # letting stale metadata linger next to the artifact.
+                        try:
+                            sidecar_path_for(match).unlink()
+                        except OSError:
+                            pass
                         logger.W(
                             f"ABI sidecar generation for artifact {match} failed, "
                             f"no sidecar written: {e}"

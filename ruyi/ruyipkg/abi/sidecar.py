@@ -62,7 +62,22 @@ def scan_path(
 
 
 def write_sidecar(report: "ABIReport", path: pathlib.Path) -> None:
+    import os
+    import tempfile
+
     from . import dump_abi_report_toml
 
-    with open(path, "w", encoding="utf-8") as fp:
-        fp.write(dump_abi_report_toml(report))
+    text = dump_abi_report_toml(report)
+    fd, tmp = tempfile.mkstemp(
+        prefix=f"{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fp:
+            fp.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise

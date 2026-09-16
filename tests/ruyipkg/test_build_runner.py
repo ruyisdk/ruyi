@@ -138,6 +138,32 @@ def test_run_recipe_executes_and_collects_artifacts(
     assert not (out / "pkg-1.0.tar.zst.abi.toml").exists()
 
 
+def test_run_recipe_removes_stale_sidecar_when_scan_fails(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    artifact = out / "pkg-1.0.tar.zst"
+    artifact.write_bytes(b"dummy")
+    stale = out / "pkg-1.0.tar.zst.abi.toml"
+    stale.write_text("# stale sidecar\n", encoding="utf-8")
+
+    recipe = _make_project(
+        tmp_path,
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['true'],\n"
+        "        produces = [ctx.artifact(glob = 'pkg-*.tar.zst')],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n",
+    )
+
+    reports = run_recipe(ruyi_logger, recipe)
+    assert reports[0].artifacts[0].abi_sidecar is None
+    assert not stale.exists()
+
+
 def test_run_recipe_forwards_artifact_exclude_to_abi_scan(
     tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
 ) -> None:
