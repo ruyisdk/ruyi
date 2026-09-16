@@ -132,6 +132,81 @@ def test_run_recipe_executes_and_collects_artifacts(
     assert ar.size == 5
     assert len(ar.checksums["sha256"]) == 64
     assert len(ar.checksums["sha512"]) == 128
+    # The placeholder content is not a real zstd stream: the scan failure is
+    # swallowed and no sidecar is written.
+    assert ar.abi_sidecar is None
+    assert not (out / "pkg-1.0.tar.zst.abi.toml").exists()
+
+
+def test_run_recipe_removes_stale_sidecar_when_scan_fails(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    artifact = out / "pkg-1.0.tar.zst"
+    artifact.write_bytes(b"dummy")
+    stale = out / "pkg-1.0.tar.zst.abi.toml"
+    stale.write_text("# stale sidecar\n", encoding="utf-8")
+
+    recipe = _make_project(
+        tmp_path,
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['true'],\n"
+        "        produces = [ctx.artifact(glob = 'pkg-*.tar.zst')],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n",
+    )
+
+    reports = run_recipe(ruyi_logger, recipe)
+    assert reports[0].artifacts[0].abi_sidecar is None
+    assert not stale.exists()
+
+
+def test_run_recipe_forwards_artifact_exclude_to_abi_scan(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    import tarfile
+
+    from tests.ruyipkg.abi._elfbuilder import build_elf
+
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+
+    staging = tmp_path / "staging"
+    (staging / "bin").mkdir(parents=True)
+    (staging / "drop").mkdir(parents=True)
+    (staging / "bin" / "keep").write_bytes(build_elf(e_machine=62))
+    (staging / "drop" / "skip").write_bytes(build_elf(e_machine=243))
+
+    archive = out / "pkg.tar"
+    with tarfile.open(archive, mode="w") as tf:
+        tf.add(staging / "bin" / "keep", arcname="bin/keep")
+        tf.add(staging / "drop" / "skip", arcname="drop/skip")
+
+    recipe = _make_project(
+        tmp_path,
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['true'],\n"
+        "        produces = [\n"
+        "            ctx.artifact(glob = 'pkg.tar', exclude = ['drop/**']),\n"
+        "        ],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n",
+    )
+
+    reports = run_recipe(ruyi_logger, recipe)
+    assert len(reports) == 1
+
+    sidecar = out / "pkg.tar.abi.toml"
+    assert sidecar.is_file()
+    text = sidecar.read_text(encoding="utf-8")
+    assert "e_machines = [62]" in text
+    assert "excluded_count = 1" in text
+    assert "243" not in text
 
 
 def test_run_recipe_missing_artifact_fails(

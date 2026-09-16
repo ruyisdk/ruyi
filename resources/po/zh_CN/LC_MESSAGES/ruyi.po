@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ruyi 0.49.0-alpha.20260422\n"
+"Project-Id-Version: ruyi 0.53.0-alpha.20260828\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-07-13 21:13+0800\n"
-"PO-Revision-Date: 2026-01-16 01:05+0800\n"
+"POT-Creation-Date: 2026-09-16 12:49+0800\n"
+"PO-Revision-Date: 2026-09-16 13:00+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
 "Language-Team: zh_Hans_CN <LL@li.org>\n"
@@ -106,7 +106,7 @@ msgstr "当前为 [yellow]'{current_name}'[/]"
 msgid "please rename the command file and retry"
 msgstr "请给命令文件重命名后重试"
 
-#: ruyi/cli/main.py:164
+#: ruyi/cli/main.py:168
 msgid "internal error: CLI entrypoint was added without a telemetry key"
 msgstr "内部错误：CLI 入口点被添加时未附带遥测键"
 
@@ -352,37 +352,37 @@ msgstr ""
 msgid "This Ruyi installation is externally managed."
 msgstr "该 Ruyi 安装由外部管理。"
 
-#: ruyi/config/__init__.py:166
+#: ruyi/config/__init__.py:176
 #, python-brace-format
 msgid "the config section [yellow]'{section}'[/] cannot be set from user config; ignoring"
 msgstr "配置章节 [yellow]'{section}'[/] 不能从用户配置文件被设置；忽略"
 
-#: ruyi/config/__init__.py:187
+#: ruyi/config/__init__.py:197
 #, python-brace-format
 msgid "the local repo path '{path}' is not absolute; ignoring"
 msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 
-#: ruyi/config/__init__.py:229
+#: ruyi/config/__init__.py:239
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with invalid id: '{id}'"
 msgstr "忽略具有无效 id 的 \\[\\[repos]] 条目：'{id}'"
 
-#: ruyi/config/__init__.py:238
+#: ruyi/config/__init__.py:248
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with reserved id '{id}'; use \\[repo] to configure the default repository"
 msgstr "忽略具有保留 id '{id}' 的 \\[\\[repos]] 条目；请使用 \\[repo] 来配置默认仓库"
 
-#: ruyi/config/__init__.py:276 ruyi/config/__init__.py:283
+#: ruyi/config/__init__.py:286 ruyi/config/__init__.py:293
 #, python-brace-format
 msgid "ignoring duplicate \\[\\[repos]] entry with id '{id}'"
 msgstr "忽略具有重复 id '{id}' 的 \\[\\[repos]] 条目"
 
-#: ruyi/config/__init__.py:293
+#: ruyi/config/__init__.py:303
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
-#: ruyi/config/__init__.py:302
+#: ruyi/config/__init__.py:312
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': the local path '{path}' is not absolute"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
@@ -1060,6 +1060,10 @@ msgstr "命令名称"
 msgid "Arguments to pass to the plugin command"
 msgstr "要传递给插件命令的参数"
 
+#: ruyi/ruyipkg/abi/scanner.py:215 ruyi/ruyipkg/abi/scanner.py:221
+msgid "member exceeds size limit"
+msgstr "成员大小超限"
+
 #: ruyi/ruyipkg/admin_checksum.py:28
 #, python-brace-format
 msgid "invalid restrict kinds given: {restrict}"
@@ -1146,20 +1150,65 @@ msgstr "打印构建计划而不执行它"
 msgid "Override the recipe project's output directory"
 msgstr "覆盖构建配方项目的输出目录"
 
-#: ruyi/ruyipkg/admin_cli.py:233
+#: ruyi/ruyipkg/admin_cli.py:213
+msgid "Do not generate ELF ABI sidecars for built artifacts"
+msgstr "不要为构建产物生成 ELF ABI 挎斗文件"
+
+#: ruyi/ruyipkg/admin_cli.py:239
 #, python-brace-format
 msgid "invalid --var spec {spec!r}: expected KEY=VALUE"
 msgstr "无效的 --var 规范 {spec!r}：预期格式为 KEY=VALUE"
 
-#: ruyi/ruyipkg/admin_cli.py:240
+#: ruyi/ruyipkg/admin_cli.py:246
 #, python-brace-format
 msgid "invalid --var spec {spec!r}: empty key"
 msgstr "无效的 --var 规范 {spec!r}：键为空"
 
-#: ruyi/ruyipkg/admin_cli.py:262
+#: ruyi/ruyipkg/admin_cli.py:269
 #, python-brace-format
 msgid "build {name!r} completed: {n} artifact(s)"
 msgstr "构建任务 {name!r} 完成：{n} 个构建产物"
+
+#: ruyi/ruyipkg/admin_cli.py:282
+msgid "Scan a built archive or directory for ELF ABI information"
+msgstr "扫描一个已构建的归档文件或目录以采集 ELF ABI 信息"
+
+#: ruyi/ruyipkg/admin_cli.py:289
+msgid "Path to the built archive or extracted directory to scan"
+msgstr "要扫描的已构建归档文件或解压目录的路径"
+
+#: ruyi/ruyipkg/admin_cli.py:297
+msgid "Exclude members matching the .gitignore-style pattern (repeatable); use @FILE to load patterns from a file"
+msgstr "排除以 .gitignore 风格指定的成员（可重复）；使用 @FILE 写法以从文件加载排除模式"
+
+#: ruyi/ruyipkg/admin_cli.py:308
+msgid "Write the report to PATH; '-' writes to stdout; default writes a <path>.abi.toml sidecar next to the input"
+msgstr "将报告写入 PATH；'-' 写入标准输出；默认情况下在输入文件旁生成 <path>.abi.toml 挎斗文件"
+
+#: ruyi/ruyipkg/admin_cli.py:331
+#, python-brace-format
+msgid "cannot read exclude file: {err}"
+msgstr "无法读取排除模式文件：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:337
+#, python-brace-format
+msgid "{path} is neither a directory nor a recognized archive (tar/zip/deb)"
+msgstr "{path} 既不是目录，也不是认识的归档文件（tar/zip/deb）"
+
+#: ruyi/ruyipkg/admin_cli.py:347
+#, python-brace-format
+msgid "failed to scan {path}: {err}"
+msgstr "扫描 {path} 失败：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:361
+#, python-brace-format
+msgid "wrote ABI sidecar to {path}"
+msgstr "已将 ABI 挎斗文件写入 {path}"
+
+#: ruyi/ruyipkg/admin_cli.py:363
+#, python-brace-format
+msgid "failed to write ABI report: {err}"
+msgstr "写入 ABI 报告失败：{err}"
 
 #: ruyi/ruyipkg/augmented_pkg.py:26
 msgid "latest"
@@ -1383,130 +1432,134 @@ msgstr "请求的下载器 '{name}' 在当前系统不可用"
 msgid "failed to fetch distfile: command '{cmd}' returned {retcode}"
 msgstr "获取分发文件失败：命令 '{cmd}' 返回 {retcode}"
 
-#: ruyi/ruyipkg/install.py:48 ruyi/ruyipkg/install.py:188
+#: ruyi/ruyipkg/install.py:49 ruyi/ruyipkg/install.py:206
 #, python-brace-format
 msgid "atom {atom} matches no package in the repository"
 msgstr "atom {atom} 在仓库中未匹配到任何软件包"
 
-#: ruyi/ruyipkg/install.py:56 ruyi/ruyipkg/install.py:195
+#: ruyi/ruyipkg/install.py:57 ruyi/ruyipkg/install.py:181
 msgid "package has known issue(s)"
 msgstr "软件包有已知问题"
 
-#: ruyi/ruyipkg/install.py:106
+#: ruyi/ruyipkg/install.py:107
 #, python-brace-format
 msgid "don't know how to extract package [green]{pkg}[/]"
 msgstr "不知道如何解压缩软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:115
+#: ruyi/ruyipkg/install.py:116
 #, python-brace-format
 msgid "cannot handle package [green]{pkg}[/]: package is both binary and source"
 msgstr "无法处理软件包 [green]{pkg}[/]：软件包既是二进制又是源码"
 
-#: ruyi/ruyipkg/install.py:130
+#: ruyi/ruyipkg/install.py:131
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no distfile for host {host}"
 msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明分发文件"
 
-#: ruyi/ruyipkg/install.py:150 ruyi/ruyipkg/install.py:382
-#: ruyi/ruyipkg/install.py:509
+#: ruyi/ruyipkg/install.py:151 ruyi/ruyipkg/install.py:396
+#: ruyi/ruyipkg/install.py:523
 #, python-brace-format
 msgid "extracting [green]{distfile}[/] for package [green]{pkg}[/]"
 msgstr "正在为软件包 [green]{pkg}[/] 解压缩 [green]{distfile}[/]"
 
-#: ruyi/ruyipkg/install.py:162
+#: ruyi/ruyipkg/install.py:163
 #, python-brace-format
 msgid "package [green]{pkg}[/] has been extracted to {dest_dir}"
 msgstr "软件包 [green]{pkg}[/] 已被解压缩到 {dest_dir}"
 
-#: ruyi/ruyipkg/install.py:245 ruyi/ruyipkg/install.py:595
+#: ruyi/ruyipkg/install.py:186
+msgid "this package is [bold green]RuyiSDK Certified[/]"
+msgstr "该软件包[bold green]已通过 RuyiSDK 认证[/]"
+
+#: ruyi/ruyipkg/install.py:259 ruyi/ruyipkg/install.py:609
 #, python-brace-format
 msgid "don't know how to handle non-binary package [green]{pkg}[/]"
 msgstr "不知道如何处理非二进制软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:285 ruyi/ruyipkg/install.py:422
+#: ruyi/ruyipkg/install.py:299 ruyi/ruyipkg/install.py:436
 #, python-brace-format
 msgid "skipping already installed package [green]{pkg}[/]"
 msgstr "跳过已安装的软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:293 ruyi/ruyipkg/install.py:430
+#: ruyi/ruyipkg/install.py:307 ruyi/ruyipkg/install.py:444
 #, python-brace-format
 msgid "package [green]{pkg}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
 msgstr "软件包 [green]{pkg}[/] 似乎已安装；由于传入了 [yellow]--reinstall[/]，将移除并重新安装它"
 
-#: ruyi/ruyipkg/install.py:334
+#: ruyi/ruyipkg/install.py:348
 #, python-brace-format
 msgid "package [green]{pkg}[/]{repo_tag} installed to [yellow]{install_root}[/]"
 msgstr "软件包 [green]{pkg}[/]{repo_tag} 已安装到 [yellow]{install_root}[/]"
 
-#: ruyi/ruyipkg/install.py:362
+#: ruyi/ruyipkg/install.py:376
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no binary for host {host}"
 msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明二进制文件"
 
-#: ruyi/ruyipkg/install.py:377 ruyi/ruyipkg/install.py:504
+#: ruyi/ruyipkg/install.py:391 ruyi/ruyipkg/install.py:518
 msgid "skipping installation because [yellow]--fetch-only[/] is given"
 msgstr "由于传入了 [yellow]--fetch-only[/]，跳过安装"
 
-#: ruyi/ruyipkg/install.py:468
+#: ruyi/ruyipkg/install.py:482
 #, python-brace-format
 msgid "package [green]{pkg}[/] installed to [yellow]{install_root}[/]"
 msgstr "软件包 [green]{pkg}[/] 已安装到 [yellow]{install_root}[/]"
 
-#: ruyi/ruyipkg/install.py:492
+#: ruyi/ruyipkg/install.py:506
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no blob distfile"
 msgstr "软件包 [green]{pkg}[/] 未声明 blob 分发文件"
 
-#: ruyi/ruyipkg/install.py:538
+#: ruyi/ruyipkg/install.py:552
 #, python-brace-format
 msgid "atom [yellow]{atom}[/] is non-existent or not installed"
 msgstr "atom [yellow]{atom}[/] 不存在或未安装"
 
-#: ruyi/ruyipkg/install.py:546
+#: ruyi/ruyipkg/install.py:560
 msgid "no packages to uninstall"
 msgstr "没有要卸载的软件包"
 
-#: ruyi/ruyipkg/install.py:549
+#: ruyi/ruyipkg/install.py:563
 msgid "the following packages will be uninstalled:"
 msgstr "以下软件包将被卸载："
 
-#: ruyi/ruyipkg/install.py:552
+#: ruyi/ruyipkg/install.py:566
 #, python-brace-format
 msgid "  - [green]{category}/{name}[/] ({version})"
 msgstr "  - [green]{category}/{name}[/]（{version}）"
 
-#: ruyi/device/provision.py:180 ruyi/ruyipkg/install.py:560
+#: ruyi/device/provision.py:180 ruyi/ruyipkg/install.py:574
 msgid "Proceed?"
 msgstr "继续吗？"
 
-#: ruyi/ruyipkg/install.py:561
+#: ruyi/ruyipkg/install.py:575
 msgid "uninstallation aborted"
 msgstr "卸载已中止"
 
-#: ruyi/ruyipkg/install.py:629 ruyi/ruyipkg/install.py:691
+#: ruyi/ruyipkg/install.py:643 ruyi/ruyipkg/install.py:705
 #, python-brace-format
 msgid "skipping not-installed package [green]{pkg}[/]"
 msgstr "跳过未安装的软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:639 ruyi/ruyipkg/install.py:701
+#: ruyi/ruyipkg/install.py:653 ruyi/ruyipkg/install.py:715
 #, python-brace-format
 msgid "package [green]{pkg}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
 msgstr "软件包 [green]{pkg}[/] 未被记录为已安装，但其目录 [yellow]{install_root}[/] 存在。"
 
-#: ruyi/ruyipkg/install.py:642 ruyi/ruyipkg/install.py:704
+#: ruyi/ruyipkg/install.py:656 ruyi/ruyipkg/install.py:718
 msgid "Please remove it manually if you are sure it's safe to do so."
 msgstr "如果您确定这样做是安全的，请手动移除它。"
 
-#: ruyi/ruyipkg/install.py:645 ruyi/ruyipkg/install.py:707
+#: ruyi/ruyipkg/install.py:659 ruyi/ruyipkg/install.py:721
 msgid "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
 msgstr "如果您认为这是一个 bug，请在 [yellow]https://github.com/ruyisdk/ruyi/issues[/] 提交工单。"
 
-#: ruyi/ruyipkg/install.py:650 ruyi/ruyipkg/install.py:712
+#: ruyi/ruyipkg/install.py:664 ruyi/ruyipkg/install.py:726
 #, python-brace-format
 msgid "uninstalling package [green]{pkg}[/]"
 msgstr "正在卸载软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:663 ruyi/ruyipkg/install.py:725
+#: ruyi/ruyipkg/install.py:677 ruyi/ruyipkg/install.py:739
 #, python-brace-format
 msgid "package [green]{pkg}[/] uninstalled"
 msgstr "软件包 [green]{pkg}[/] 已被卸载"
@@ -1591,26 +1644,30 @@ msgstr "* 软件包类型：{kind}"
 msgid "* Vendor: {vendor}"
 msgstr "* 供应商：{vendor}"
 
-#: ruyi/ruyipkg/list.py:125
+#: ruyi/ruyipkg/list.py:124
+msgid "* [bold green]RuyiSDK Certified[/] package"
+msgstr "* [bold green]RuyiSDK 认证[/]软件包"
+
+#: ruyi/ruyipkg/list.py:127
 #, python-brace-format
 msgid "* Download size for {host}: {size}"
 msgstr "* {host} 的下载大小：{size}"
 
-#: ruyi/ruyipkg/list.py:132
+#: ruyi/ruyipkg/list.py:134
 #, python-brace-format
 msgid "* Installed size: {size}"
 msgstr "* 安装后大小：{size}"
 
-#: ruyi/ruyipkg/list.py:138
+#: ruyi/ruyipkg/list.py:140
 #, python-brace-format
 msgid "* Upstream version number: {version}"
 msgstr "* 上游版本号：{version}"
 
-#: ruyi/ruyipkg/list.py:141
+#: ruyi/ruyipkg/list.py:143
 msgid "* Upstream version number: (undeclared)"
 msgstr "* 上游版本号：（未声明）"
 
-#: ruyi/ruyipkg/list.py:146
+#: ruyi/ruyipkg/list.py:148
 msgid ""
 "\n"
 "Package has known issue(s):\n"
@@ -1618,17 +1675,17 @@ msgstr ""
 "\n"
 "软件包有已知问题：\n"
 
-#: ruyi/ruyipkg/list.py:151
+#: ruyi/ruyipkg/list.py:153
 #, python-brace-format
 msgid "Package declares {count} distfile(s):\n"
 msgstr "软件包声明了 {count} 个分发文件：\n"
 
-#: ruyi/ruyipkg/list.py:154
+#: ruyi/ruyipkg/list.py:156
 #, python-brace-format
 msgid "    - Size: [yellow]{size}[/] bytes"
 msgstr "    - 大小：[yellow]{size}[/] 字节"
 
-#: ruyi/ruyipkg/list.py:159
+#: ruyi/ruyipkg/list.py:161
 msgid ""
 "\n"
 "### Binary artifacts\n"
@@ -1636,21 +1693,21 @@ msgstr ""
 "\n"
 "### 二进制制品\n"
 
-#: ruyi/ruyipkg/list.py:161
+#: ruyi/ruyipkg/list.py:163
 #, python-brace-format
 msgid "* Host [green]{host}[/]:"
 msgstr "* 主机 [green]{host}[/]："
 
-#: ruyi/ruyipkg/list.py:163
+#: ruyi/ruyipkg/list.py:165
 #, python-brace-format
 msgid "    - Distfiles: {distfiles}"
 msgstr "    - 分发文件：{distfiles}"
 
-#: ruyi/ruyipkg/list.py:166
+#: ruyi/ruyipkg/list.py:168
 msgid "    - Available command(s):"
 msgstr "    - 可用命令："
 
-#: ruyi/ruyipkg/list.py:171
+#: ruyi/ruyipkg/list.py:173
 msgid ""
 "\n"
 "### Toolchain metadata\n"
@@ -1658,30 +1715,30 @@ msgstr ""
 "\n"
 "### 工具链元数据\n"
 
-#: ruyi/ruyipkg/list.py:172
+#: ruyi/ruyipkg/list.py:174
 #, python-brace-format
 msgid "* Target: [bold green]{target}[/]"
 msgstr "* 目标：[bold green]{target}[/]"
 
-#: ruyi/ruyipkg/list.py:173
+#: ruyi/ruyipkg/list.py:175
 #, python-brace-format
 msgid "* Quirks: {quirks}"
 msgstr "* 特殊特性：{quirks}"
 
-#: ruyi/ruyipkg/list.py:174
+#: ruyi/ruyipkg/list.py:176
 msgid "* Components:"
 msgstr "* 组件："
 
-#: ruyi/ruyipkg/list.py:201
+#: ruyi/ruyipkg/list.py:203
 msgid "(unknown)"
 msgstr "（未知）"
 
-#: ruyi/ruyipkg/list.py:208
+#: ruyi/ruyipkg/list.py:210
 #, python-brace-format
 msgid " download: [yellow]{size}[/] for {host}"
 msgstr " 下载量：[yellow]{size}[/] ({host})"
 
-#: ruyi/ruyipkg/list.py:217
+#: ruyi/ruyipkg/list.py:219
 #, python-brace-format
 msgid " install: [yellow]{size}[/]"
 msgstr " 安装后大小：[yellow]{size}[/]"

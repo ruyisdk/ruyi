@@ -207,6 +207,11 @@ class AdminBuildPackageCommand(
             default=None,
             help=_("Override the recipe project's output directory"),
         )
+        p.add_argument(
+            "--no-abi-scan",
+            action="store_true",
+            help=_("Do not generate ELF ABI sidecars for built artifacts"),
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -225,6 +230,7 @@ class AdminBuildPackageCommand(
         output_dir = (
             pathlib.Path(output_dir_raw) if output_dir_raw is not None else None
         )
+        skip_abi_scan = cast(bool, args.no_abi_scan)
 
         user_vars: dict[str, str] = {}
         for v in var_strs:
@@ -249,6 +255,7 @@ class AdminBuildPackageCommand(
                 selected_names=selected_names,
                 dry_run=dry_run,
                 output_dir_override=output_dir,
+                skip_abi_scan=skip_abi_scan,
             )
         except BuildFailure as e:
             logger.F(str(e))
@@ -267,3 +274,105 @@ class AdminBuildPackageCommand(
             print(format_build_report(r))
 
         return 0
+
+
+class AdminRescanPackageAbiCommand(
+    AdminCommand,
+    cmd="rescan-package-abi",
+    help=_("Scan a built archive or directory for ELF ABI information"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument(
+            "path",
+            type=str,
+            help=_("Path to the built archive or extracted directory to scan"),
+        )
+        p.add_argument(
+            "--exclude",
+            action="append",
+            default=[],
+            metavar="GLOB",
+            help=_(
+                "Exclude members matching the .gitignore-style pattern "
+                "(repeatable); use @FILE to load patterns from a file"
+            ),
+        )
+        p.add_argument(
+            "-o",
+            "--output",
+            type=str,
+            default=None,
+            metavar="PATH",
+            help=_(
+                "Write the report to PATH; '-' writes to stdout; "
+                "default writes a <path>.abi.toml sidecar next to the input"
+            ),
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .abi import dump_abi_report_toml
+        from .abi.sidecar import (
+            is_scannable,
+            scan_path,
+            sidecar_path_for,
+            write_sidecar,
+        )
+
+        logger = cfg.logger
+        target = pathlib.Path(cast(str, args.path))
+        raw_excludes = cast("list[str]", args.exclude)
+        output = cast("str | None", args.output)
+
+        try:
+            exclude = _expand_excludes(raw_excludes)
+        except (OSError, ValueError) as e:
+            logger.F(_("cannot read exclude file: {err}").format(err=str(e)))
+            return 1
+
+        if not is_scannable(target):
+            logger.F(
+                _(
+                    "{path} is neither a directory nor a recognized archive "
+                    "(tar/zip/deb)"
+                ).format(path=str(target))
+            )
+            return 1
+
+        try:
+            report = scan_path(logger, target, exclude=exclude)
+        except Exception as e:  # noqa: BLE001
+            logger.F(
+                _("failed to scan {path}: {err}").format(path=str(target), err=str(e))
+            )
+            return 1
+
+        try:
+            if output == "-":
+                print(dump_abi_report_toml(report), end="")
+            elif output is not None:
+                write_sidecar(report, pathlib.Path(output))
+            else:
+                sidecar = sidecar_path_for(target)
+                write_sidecar(report, sidecar)
+                logger.I(_("wrote ABI sidecar to {path}").format(path=str(sidecar)))
+        except OSError as e:
+            logger.F(_("failed to write ABI report: {err}").format(err=str(e)))
+            return 1
+        return 0
+
+
+def _expand_excludes(tokens: "list[str]") -> "list[str]":
+    out: list[str] = []
+    for token in tokens:
+        if token.startswith("@"):
+            with open(token[1:], "r", encoding="utf-8") as fp:
+                for line in fp:
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("#"):
+                        continue
+                    out.append(stripped)
+        else:
+            out.append(token)
+    return out

@@ -1,0 +1,27 @@
+[summary]
+e_machines = [243]
+needed = []
+elf_count = 1
+file_count = 1
+excluded_count = 0
+
+[summary.parsed_attrs_rollup]
+243 = {isa_strings = ["rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0"]}
+
+[[record]]
+paths = ["wlink-0.1.2-ruyi.20260501+git.249f2c10/bin/wlink"]
+sha256 = "f90899fcda10d2edd6b1a5e4820e6e86850d48c685d5e7b9d9203fc5ad5c25be"
+e_machine = 243
+elf_class = 64
+endianness = "little"
+elf_type = "exec"
+is_dynamic = false
+soname = ""
+needed = []
+needs_unversioned = false
+parsed_attrs = {isa = "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0", stack_align = 16}
+
+[[record.elf_attributes]]
+vendor = "riscv"
+data_hex = "016d00000004100572763634693270315f6d3270305f613270315f663270325f643270325f633270305f7a696373723270305f7a6966656e6365693270305f7a6d6d756c3170305f7a61616d6f3170305f7a616c7273633170305f7a63613170305f7a63643170300008010a0b"
+truncated = false

@@ -42,6 +42,7 @@ class ArtifactReport:
     path: pathlib.Path
     size: int
     checksums: Mapping[str, str]
+    abi_sidecar: pathlib.Path | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ def run_recipe(
     selected_names: Sequence[str] | None = None,
     dry_run: bool = False,
     output_dir_override: pathlib.Path | None = None,
+    skip_abi_scan: bool = False,
 ) -> list[BuildReport]:
     """Load the recipe and execute (or plan, if ``dry_run``) each selected
     scheduled build.
@@ -107,6 +109,7 @@ def run_recipe(
                 sb,
                 user_vars=user_vars or {},
                 dry_run=dry_run,
+                skip_abi_scan=skip_abi_scan,
             )
         )
     return reports
@@ -164,6 +167,7 @@ def _execute_one_build(
     *,
     user_vars: Mapping[str, str],
     dry_run: bool,
+    skip_abi_scan: bool,
 ) -> BuildReport:
     ctx = RecipeBuildCtx(
         project=project,
@@ -193,7 +197,9 @@ def _execute_one_build(
         if last_exit != 0:
             raise BuildFailure(sb.name, last_exit)
 
-    artifact_reports = _resolve_artifacts(invocations)
+    artifact_reports = _resolve_artifacts(
+        logger, invocations, skip_abi_scan=skip_abi_scan
+    )
 
     return BuildReport(
         recipe_file=sb.recipe_file,
@@ -249,11 +255,20 @@ def _run_invocation(logger: RuyiLogger, inv: Invocation) -> int:
 
 
 def _resolve_artifacts(
+    logger: RuyiLogger,
     invocations: Iterable[Invocation],
+    *,
+    skip_abi_scan: bool,
 ) -> list[ArtifactReport]:
     import os
 
     from . import checksum
+    from .abi.sidecar import (
+        is_scannable,
+        scan_path,
+        sidecar_path_for,
+        write_sidecar,
+    )
 
     reports: list[ArtifactReport] = []
     for inv in invocations:
@@ -271,11 +286,41 @@ def _resolve_artifacts(
                     csums = checksum.Checksummer(fp, {}).compute(
                         kinds=checksum.SUPPORTED_CHECKSUM_KINDS,
                     )
+
+                abi_sidecar: pathlib.Path | None = None
+                if not skip_abi_scan and is_scannable(match):
+                    # Sidecar generation is auxiliary: a scan or write failure
+                    # (e.g. a placeholder file with an archive extension, or an
+                    # unwritable output directory) must never fail an
+                    # otherwise-successful build. Warn and continue.
+                    try:
+                        report = scan_path(logger, match, exclude=art.exclude)
+                        sidecar = sidecar_path_for(match)
+                        write_sidecar(report, sidecar)
+                    except Exception as e:  # noqa: BLE001
+                        # A sidecar left over from a previous build would now
+                        # describe different content, so drop it instead of
+                        # letting stale metadata linger next to the artifact.
+                        try:
+                            sidecar_path_for(match).unlink()
+                        except OSError:
+                            pass
+                        logger.W(
+                            f"ABI sidecar generation for artifact {match} failed, "
+                            f"no sidecar written: {e}"
+                        )
+                    else:
+                        abi_sidecar = sidecar
+                        logger.I(f"wrote ABI sidecar to {abi_sidecar}")
+                elif not skip_abi_scan:
+                    logger.D(f"skipping ABI scan for non-archive artifact {match}")
+
                 reports.append(
                     ArtifactReport(
                         path=match,
                         size=size,
                         checksums=csums,
+                        abi_sidecar=abi_sidecar,
                     )
                 )
     return reports
@@ -304,4 +349,6 @@ def format_build_report(report: BuildReport) -> str:
         lines.append(f"size = {art.size}")
         for kind in sorted(art.checksums):
             lines.append(f'{kind} = "{art.checksums[kind]}"')
+        if art.abi_sidecar is not None:
+            lines.append(f'abi_sidecar = "{art.abi_sidecar}"')
     return "\n".join(lines) + "\n"

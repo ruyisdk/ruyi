@@ -44,6 +44,8 @@ dependencies = [
   "fastjsonschema>=2.16.3",
   "jinja2>=3.1.2",
   "lz4>=4.0.2",
+  "pathspec>=0.10.3",
+  "pyelftools>=0.29",
   "pygit2>=1.11.1",
   "pyyaml>=6.0",
   "requests>=2.28.1",
@@ -113,6 +115,7 @@ safe_licenses = [
   "MIT License",
   "Mozilla Public License 2.0 (MPL 2.0)", # needs mention in license notices
   "PSF-2.0",  # typing_extensions 4.13
+  "Public Domain",  # pyelftools 0.33
 
   # not ruyi deps, but brought in by pylic which unfortunately cannot live
   # outside of the project venv in order to work.
