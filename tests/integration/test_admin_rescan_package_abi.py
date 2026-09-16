@@ -87,3 +87,13 @@ def test_rescan_unrecognized_path_errors(
     bogus.write_text("deadbeef\n", encoding="utf-8")
     result = ruyi_cli_runner("admin", "rescan-package-abi", str(bogus))
     assert result.exit_code != 0
+
+
+def test_rescan_corrupt_archive_errors_cleanly(
+    tmp_path: pathlib.Path, ruyi_cli_runner: IntegrationTestHarness
+) -> None:
+    archive = tmp_path / "corrupt.tar"
+    archive.write_bytes(b"not a tar archive at all\n")
+    result = ruyi_cli_runner("admin", "rescan-package-abi", str(archive))
+    assert result.exit_code != 0
+    assert "Traceback" not in result.stderr

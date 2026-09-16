@@ -327,7 +327,7 @@ class AdminRescanPackageAbiCommand(
 
         try:
             exclude = _expand_excludes(raw_excludes)
-        except OSError as e:
+        except (OSError, ValueError) as e:
             logger.F(_("cannot read exclude file: {err}").format(err=str(e)))
             return 1
 
@@ -340,16 +340,28 @@ class AdminRescanPackageAbiCommand(
             )
             return 1
 
-        report = scan_path(logger, target, exclude=exclude)
+        try:
+            report = scan_path(logger, target, exclude=exclude)
+        except Exception as e:  # noqa: BLE001
+            logger.F(
+                _("failed to scan {path}: {err}").format(
+                    path=str(target), err=str(e)
+                )
+            )
+            return 1
 
-        if output == "-":
-            print(dump_abi_report_toml(report))
-        elif output is not None:
-            write_sidecar(report, pathlib.Path(output))
-        else:
-            sidecar = sidecar_path_for(target)
-            write_sidecar(report, sidecar)
-            logger.I(_("wrote ABI sidecar to {path}").format(path=str(sidecar)))
+        try:
+            if output == "-":
+                print(dump_abi_report_toml(report), end="")
+            elif output is not None:
+                write_sidecar(report, pathlib.Path(output))
+            else:
+                sidecar = sidecar_path_for(target)
+                write_sidecar(report, sidecar)
+                logger.I(_("wrote ABI sidecar to {path}").format(path=str(sidecar)))
+        except OSError as e:
+            logger.F(_("failed to write ABI report: {err}").format(err=str(e)))
+            return 1
         return 0
 
 
