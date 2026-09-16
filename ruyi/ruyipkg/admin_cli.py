@@ -207,6 +207,11 @@ class AdminBuildPackageCommand(
             default=None,
             help=_("Override the recipe project's output directory"),
         )
+        p.add_argument(
+            "--no-abi-scan",
+            action="store_true",
+            help=_("Do not generate ELF ABI sidecars for built artifacts"),
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -225,6 +230,7 @@ class AdminBuildPackageCommand(
         output_dir = (
             pathlib.Path(output_dir_raw) if output_dir_raw is not None else None
         )
+        skip_abi_scan = cast(bool, args.no_abi_scan)
 
         user_vars: dict[str, str] = {}
         for v in var_strs:
@@ -249,6 +255,7 @@ class AdminBuildPackageCommand(
                 selected_names=selected_names,
                 dry_run=dry_run,
                 output_dir_override=output_dir,
+                skip_abi_scan=skip_abi_scan,
             )
         except BuildFailure as e:
             logger.F(str(e))

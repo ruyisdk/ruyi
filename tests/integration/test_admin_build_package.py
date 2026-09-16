@@ -109,3 +109,67 @@ def test_admin_build_package_build_failure_exits_nonzero(
     )
     result = ruyi_cli_runner("admin", "build-package", str(recipe))
     assert result.exit_code != 0
+
+
+def test_admin_build_package_emits_abi_sidecar(
+    tmp_path: pathlib.Path,
+    ruyi_cli_runner: IntegrationTestHarness,
+) -> None:
+    from tests.ruyipkg.abi._elfbuilder import build_elf
+
+    proj = tmp_path / "recipes-proj"
+    proj.mkdir()
+    (proj / "ruyi-build-recipes.toml").write_text(
+        'format = "v1"\n[project]\nname = "integ"\n'
+    )
+    out = proj / "out"
+    out.mkdir()
+    # Pre-place an ELF so the recipe can pack it into a tar via `tar`.
+    (proj / "r").write_bytes(build_elf(e_machine=243))
+    recipe = proj / "pkg.star"
+    recipe.write_text(
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['tar', '-cf', 'out/pkg.tar', 'r'],\n"
+        "        produces = [ctx.artifact('pkg.tar')],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n"
+    )
+
+    result = ruyi_cli_runner("admin", "build-package", str(recipe))
+    assert result.exit_code == 0, result.stderr
+    sidecar = out / "pkg.tar.abi.toml"
+    assert sidecar.is_file()
+    assert "e_machines = [243]" in sidecar.read_text(encoding="utf-8")
+    assert "abi_sidecar" in result.stdout
+
+
+def test_admin_build_package_no_abi_scan_flag(
+    tmp_path: pathlib.Path,
+    ruyi_cli_runner: IntegrationTestHarness,
+) -> None:
+    from tests.ruyipkg.abi._elfbuilder import build_elf
+
+    proj = tmp_path / "recipes-proj"
+    proj.mkdir()
+    (proj / "ruyi-build-recipes.toml").write_text(
+        'format = "v1"\n[project]\nname = "integ"\n'
+    )
+    out = proj / "out"
+    out.mkdir()
+    (proj / "r").write_bytes(build_elf(e_machine=243))
+    recipe = proj / "pkg.star"
+    recipe.write_text(
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['tar', '-cf', 'out/pkg.tar', 'r'],\n"
+        "        produces = [ctx.artifact('pkg.tar')],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n"
+    )
+
+    result = ruyi_cli_runner("admin", "build-package", "--no-abi-scan", str(recipe))
+    assert result.exit_code == 0, result.stderr
+    assert not (out / "pkg.tar.abi.toml").exists()
