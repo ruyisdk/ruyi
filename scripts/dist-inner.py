@@ -102,7 +102,7 @@ def main() -> None:
         "--include-package-data=ruyi.resources",
         "--windows-icon-from-ico=resources/ruyi.ico",
         "--show-scons",
-        "./ruyi/__main__.py",
+        "./ruyi",
     )
     end_group()
 
