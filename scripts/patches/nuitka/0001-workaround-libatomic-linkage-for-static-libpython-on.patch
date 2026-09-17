@@ -1,4 +1,4 @@
-From 74a33553ca1a684cb89d2ded049c16436b74c5bb Mon Sep 17 00:00:00 2001
+From 4b06393e6e5fa5272550f0f646c7b0f66fa521da Mon Sep 17 00:00:00 2001
 From: WANG Xuerui <git@xen0n.name>
 Date: Tue, 8 Apr 2025 21:26:00 +0800
 Subject: [PATCH] workaround libatomic linkage for static libpython on riscv
@@ -8,18 +8,18 @@ Subject: [PATCH] workaround libatomic linkage for static libpython on riscv
  1 file changed, 4 insertions(+)
 
 diff --git a/nuitka/build/Backend.scons b/nuitka/build/Backend.scons
-index 112ca8cbbf98..f62bbf108686 100644
+index a724006f70a6..889eaa49ae4e 100644
 --- a/nuitka/build/Backend.scons
 +++ b/nuitka/build/Backend.scons
-@@ -14,6 +14,7 @@ build process for itself, although it can be compiled using the same method.
+@@ -13,6 +13,7 @@ build process for itself, although it can be compiled using the same method.
+ # Make nuitka package importable from calling installation
  
- import sys
  import os
 +import platform
+ import sys
  import types
  
- sys.modules["nuitka"] = types.ModuleType("nuitka")
-@@ -273,6 +274,9 @@ elif env.exe_mode or env.dll_mode:
+@@ -275,6 +276,9 @@ elif env.exe_mode or env.dll_mode:
      if env.python_prefix_external != "/usr" and isLinux():
          env.Append(LIBS=["dl", "pthread", "util", "rt", "m"])
  
@@ -30,5 +30,5 @@ index 112ca8cbbf98..f62bbf108686 100644
              if env.clang_mode:
                  env.Append(LINKFLAGS=["-Wl,--export-dynamic"])
 -- 
-2.54.0
+2.55.0
 
