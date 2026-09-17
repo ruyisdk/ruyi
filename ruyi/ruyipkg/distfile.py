@@ -202,14 +202,16 @@ class Distfile:
         resume: bool = False,
     ) -> None:
         fetcher = BaseFetcher.new(logger, self.urls, self.dest)
-        fetcher.fetch(resume=resume)
 
-        if not self.ensure_integrity_or_rm(logger):
-            raise RuntimeError(
-                _("failed to fetch distfile: {file} failed integrity checks").format(
-                    file=self.dest,
-                )
-            )
+        # Validate integrity right after each URL is fetched, so that a mirror
+        # serving a complete-but-wrong file (e.g. an HTTP 200 error page) causes
+        # a fall-through to the next mirror instead of aborting the whole fetch.
+        # If the fetcher exhausts every mirror it raises, covering both download
+        # and checksum failures. See https://github.com/ruyisdk/ruyi/issues/498.
+        fetcher.fetch(
+            resume=resume,
+            post_fetch_validator=lambda: self.ensure_integrity_or_rm(logger),
+        )
 
     def unpack(
         self,

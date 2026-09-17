@@ -129,12 +129,13 @@ name = "My Vendor Overlay"
 @dataclass
 class RepoEntry:
     """已配置的软件源指针。"""
+
     id: str
     name: str
     remote: str | None
     branch: str
-    local_path: str | None   # 绝对路径覆盖
-    priority: int             # 值越高 = 冲突时优先
+    local_path: str | None  # 绝对路径覆盖
+    priority: int  # 值越高 = 冲突时优先
     active: bool
 
     @cached_property
@@ -188,6 +189,7 @@ class CompositeRepo(ProvidesPackageManifests):
 ```python
 class GlobalConfig:
     ...
+
     @cached_property
     def repo_entries(self) -> list[RepoEntry]:
         """所有已配置的软件源条目，包括默认条目。"""
@@ -200,8 +202,7 @@ class GlobalConfig:
 
     # 为兼容性保留 — 仅返回默认/官方软件源。
     @cached_property
-    def default_repo(self) -> MetadataRepo:
-        ...
+    def default_repo(self) -> MetadataRepo: ...
 ```
 
 `repo` 属性的返回类型从 `MetadataRepo` 变更为 `CompositeRepo`。由于 `CompositeRepo` 实现了 `ProvidesPackageManifests` — 即代码库中已广泛使用的同一协议 — 大多数调用点无需修改。需要访问特定软件源功能（插件、profile、配置、新闻、实体存储）的调用点，须通过 `CompositeRepo.iter_repos()` 改为对单个 `MetadataRepo` 实例进行操作。
