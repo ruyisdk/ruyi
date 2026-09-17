@@ -192,7 +192,7 @@ jobs:
         if: success() && !matrix.baseline
         run: |
           sudo apt-get update
-          sudo apt-get install -y bzip2 gzip lz4 make patch pipx tar unzip xz-utils zstd
+          sudo apt-get install -y bzip2 gzip lz4 make pipx tar unzip xz-utils zstd
           sudo apt-get clean
 
           export PIPX_BIN_DIR=/usr/local/bin
@@ -273,14 +273,6 @@ jobs:
       - name: Run integration tests
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
-          # Temporarily reconcile the pinned ruyi-pytest submodule with local
-          # behavior changes that have not landed upstream yet. The patches are
-          # idempotent and safely skipped when they do not apply.
-          # See scripts/patches/ruyi-pytest/ for details.
-          for patch_file in scripts/patches/ruyi-pytest/*.patch; do
-            echo "applying patch: $(basename "$patch_file")"
-            patch -Np1 --batch -r - -d tests/ruyi-pytest < "$patch_file" || true
-          done
           cd tests/ruyi-pytest
           uv run --with ../.. pytest
 
