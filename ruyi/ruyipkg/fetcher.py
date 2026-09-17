@@ -2,7 +2,7 @@ import abc
 import mmap
 import os
 import subprocess
-from typing import Any, Final
+from typing import Any, Callable, Final
 
 import requests
 from rich import progress
@@ -51,7 +51,20 @@ class BaseFetcher:
                 return True
         return False
 
-    def fetch(self, *, resume: bool = False, retries: int = 3) -> None:
+    def fetch(
+        self,
+        *,
+        resume: bool = False,
+        retries: int = 3,
+        post_fetch_validator: Callable[[], bool] | None = None,
+    ) -> None:
+        # A download that exits successfully is not necessarily a good file: a
+        # mirror may serve an HTTP 200 error/redirect page, a truncated body, or
+        # otherwise wrong content. When a validator is supplied (e.g. a checksum
+        # check), a URL that downloads but fails validation is treated as failed
+        # so we fall through to the next mirror instead of giving up.
+        #
+        # See: https://github.com/ruyisdk/ruyi/issues/498
         for url in self.urls:
             self._logger.I(
                 _("downloading {url} to {dest}").format(
@@ -59,8 +72,15 @@ class BaseFetcher:
                     dest=self.dest,
                 )
             )
-            if self.fetch_one_with_retry(url, self.dest, resume, retries):
-                return
+            if not self.fetch_one_with_retry(url, self.dest, resume, retries):
+                continue
+            if post_fetch_validator is not None and not post_fetch_validator():
+                # the downloaded file is bad and has been discarded by the
+                # validator, so any partial file is gone: do not try to resume
+                # from the next mirror
+                resume = False
+                continue
+            return
         # all URLs have been tried and all have failed
         raise RuntimeError(
             _("failed to fetch '{dest}': all source URLs have failed").format(
