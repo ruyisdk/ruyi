@@ -120,36 +120,39 @@ load("ruyi-build://lib/images.star", "pkgbuilder_image_tag")
 
 
 def build_qemu_riscv_upstream(ctx):
-    arch = ctx.var("arch", default = "amd64")
-    flavor = ctx.var("flavor", default = "both")
+    arch = ctx.var("arch", default="amd64")
+    flavor = ctx.var("flavor", default="both")
 
     produces = []
     if flavor in ("both", "system"):
-        produces.append(ctx.artifact(
-            glob = "qemu-system-riscv-upstream-*.%s.tar.zst" % arch))
+        produces.append(
+            ctx.artifact(glob="qemu-system-riscv-upstream-*.%s.tar.zst" % arch)
+        )
     if flavor in ("both", "user"):
-        produces.append(ctx.artifact(
-            glob = "qemu-user-riscv-upstream-*.%s.tar.zst" % arch))
+        produces.append(
+            ctx.artifact(glob="qemu-user-riscv-upstream-*.%s.tar.zst" % arch)
+        )
 
     return ctx.subprocess(
-        argv = docker_run(
-            image = pkgbuilder_image_tag("unified", "amd64"),
-            mounts_rw = [
+        argv=docker_run(
+            image=pkgbuilder_image_tag("unified", "amd64"),
+            mounts_rw=[
                 (ctx.repo_path("out"), "/out"),
                 (ctx.repo_path("work"), "/work"),
             ],
-            mounts_ro = [
-                (ctx.repo_path("ruyi-build-qemu-inner"),
-                 "/usr/local/bin/ruyi-build-qemu-inner"),
-                (ctx.repo_path("qemu-configs/upstream-20250908.sh"),
-                 "/tmp/config.sh"),
+            mounts_ro=[
+                (
+                    ctx.repo_path("ruyi-build-qemu-inner"),
+                    "/usr/local/bin/ruyi-build-qemu-inner",
+                ),
+                (ctx.repo_path("qemu-configs/upstream-20250908.sh"), "/tmp/config.sh"),
                 (ctx.repo_path("qemu-10.0.4.tar.xz"), "/tmp/src.tar.xz"),
             ],
-            tmpfs = ["/tmp/mem"],
-            argv = ["ruyi-build-qemu-inner", "/tmp/config.sh", arch, flavor],
+            tmpfs=["/tmp/mem"],
+            argv=["ruyi-build-qemu-inner", "/tmp/config.sh", arch, flavor],
         ),
-        cwd = ctx.repo_root,
-        produces = produces,
+        cwd=ctx.repo_root,
+        produces=produces,
     )
 
 
@@ -160,7 +163,7 @@ RUYI.build.schedule_build(build_qemu_riscv_upstream)
 
 ```python
 for host in ("amd64", "arm64", "riscv64"):
-    RUYI.build.schedule_build(_make_plan(host), name = host)
+    RUYI.build.schedule_build(_make_plan(host), name=host)
 ```
 
 Starlark 本身提供的 `if/for/字符串格式化`等能力足以覆盖所有分支/矩阵场景，无需在配方格式之外再引入 TOML schema 或占位符插值语言。
