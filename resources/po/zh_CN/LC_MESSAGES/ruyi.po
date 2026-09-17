@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.53.0-alpha.20260828\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-09-16 12:49+0800\n"
+"POT-Creation-Date: 2026-09-17 10:26+0800\n"
 "PO-Revision-Date: 2026-09-16 13:00+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -352,37 +352,37 @@ msgstr ""
 msgid "This Ruyi installation is externally managed."
 msgstr "该 Ruyi 安装由外部管理。"
 
-#: ruyi/config/__init__.py:176
+#: ruyi/config/__init__.py:178
 #, python-brace-format
 msgid "the config section [yellow]'{section}'[/] cannot be set from user config; ignoring"
 msgstr "配置章节 [yellow]'{section}'[/] 不能从用户配置文件被设置；忽略"
 
-#: ruyi/config/__init__.py:197
+#: ruyi/config/__init__.py:202
 #, python-brace-format
 msgid "the local repo path '{path}' is not absolute; ignoring"
 msgstr "本地仓库路径 '{path}' 不是绝对路径；忽略"
 
-#: ruyi/config/__init__.py:239
+#: ruyi/config/__init__.py:244
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with invalid id: '{id}'"
 msgstr "忽略具有无效 id 的 \\[\\[repos]] 条目：'{id}'"
 
-#: ruyi/config/__init__.py:248
+#: ruyi/config/__init__.py:253
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry with reserved id '{id}'; use \\[repo] to configure the default repository"
 msgstr "忽略具有保留 id '{id}' 的 \\[\\[repos]] 条目；请使用 \\[repo] 来配置默认仓库"
 
-#: ruyi/config/__init__.py:286 ruyi/config/__init__.py:293
+#: ruyi/config/__init__.py:291 ruyi/config/__init__.py:298
 #, python-brace-format
 msgid "ignoring duplicate \\[\\[repos]] entry with id '{id}'"
 msgstr "忽略具有重复 id '{id}' 的 \\[\\[repos]] 条目"
 
-#: ruyi/config/__init__.py:303
+#: ruyi/config/__init__.py:308
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': at least one of 'remote' or 'local' must be set"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：'remote' 和 'local' 至少要设置一个"
 
-#: ruyi/config/__init__.py:312
+#: ruyi/config/__init__.py:317
 #, python-brace-format
 msgid "ignoring \\[\\[repos]] entry '{id}': the local path '{path}' is not absolute"
 msgstr "忽略 \\[\\[repos]] 条目 '{id}'：本地路径 '{path}' 不是绝对路径"
@@ -1060,7 +1060,7 @@ msgstr "命令名称"
 msgid "Arguments to pass to the plugin command"
 msgstr "要传递给插件命令的参数"
 
-#: ruyi/ruyipkg/abi/scanner.py:215 ruyi/ruyipkg/abi/scanner.py:221
+#: ruyi/ruyipkg/abi/scanner.py:215 ruyi/ruyipkg/abi/scanner.py:227
 msgid "member exceeds size limit"
 msgstr "成员大小超限"
 
@@ -1200,12 +1200,12 @@ msgstr "{path} 既不是目录，也不是认识的归档文件（tar/zip/deb）
 msgid "failed to scan {path}: {err}"
 msgstr "扫描 {path} 失败：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:361
+#: ruyi/ruyipkg/admin_cli.py:359
 #, python-brace-format
 msgid "wrote ABI sidecar to {path}"
 msgstr "已将 ABI 挎斗文件写入 {path}"
 
-#: ruyi/ruyipkg/admin_cli.py:363
+#: ruyi/ruyipkg/admin_cli.py:361
 #, python-brace-format
 msgid "failed to write ABI report: {err}"
 msgstr "写入 ABI 报告失败：{err}"
@@ -1323,11 +1323,6 @@ msgstr "文件 [yellow]'{file}'[/] 无法被自动获取"
 msgid "instructions on fetching this file:"
 msgstr "获取此文件的方法说明："
 
-#: ruyi/ruyipkg/distfile.py:209
-#, python-brace-format
-msgid "failed to fetch distfile: {file} failed integrity checks"
-msgstr "获取分发文件失败：{file} 未通过完整性检查"
-
 #: ruyi/ruyipkg/entity.py:68
 #, python-brace-format
 msgid "no schema found for entity type: {entity_type}"
@@ -1403,31 +1398,31 @@ msgstr "从 {path} 加载实体失败：{reason}"
 msgid "retrying download ({current} of {total} times)"
 msgstr "正在重试下载（第 {current} 次，共 {total} 次）"
 
-#: ruyi/ruyipkg/fetcher.py:57
+#: ruyi/ruyipkg/fetcher.py:70
 #, python-brace-format
 msgid "downloading {url} to {dest}"
 msgstr "正在将 {url} 下载到 {dest}"
 
-#: ruyi/ruyipkg/fetcher.py:66
+#: ruyi/ruyipkg/fetcher.py:86
 #, python-brace-format
 msgid "failed to fetch '{dest}': all source URLs have failed"
 msgstr "获取 '{dest}' 失败：所有源 URL 均失败"
 
-#: ruyi/ruyipkg/fetcher.py:94 ruyi/ruyipkg/fetcher.py:125
+#: ruyi/ruyipkg/fetcher.py:114 ruyi/ruyipkg/fetcher.py:145
 msgid "no fetcher is available on the system"
 msgstr "系统上没有可用的下载器"
 
-#: ruyi/ruyipkg/fetcher.py:105
+#: ruyi/ruyipkg/fetcher.py:125
 #, python-brace-format
 msgid "unknown fetcher '{name}'"
 msgstr "未知的下载器 '{name}'"
 
-#: ruyi/ruyipkg/fetcher.py:111
+#: ruyi/ruyipkg/fetcher.py:131
 #, python-brace-format
 msgid "the requested fetcher '{name}' is unavailable on the system"
 msgstr "请求的下载器 '{name}' 在当前系统不可用"
 
-#: ruyi/ruyipkg/fetcher.py:175 ruyi/ruyipkg/fetcher.py:218
+#: ruyi/ruyipkg/fetcher.py:195 ruyi/ruyipkg/fetcher.py:238
 #, python-brace-format
 msgid "failed to fetch distfile: command '{cmd}' returned {retcode}"
 msgstr "获取分发文件失败：命令 '{cmd}' 返回 {retcode}"
@@ -2036,7 +2031,7 @@ msgid "cannot remove system-provided repo '{id}'; use 'repo disable' instead"
 msgstr "无法移除由系统提供的仓库 '{id}'；请使用 'repo disable' 来禁用它"
 
 #: ruyi/ruyipkg/repo_cli.py:224 ruyi/ruyipkg/repo_cli.py:274
-#: ruyi/ruyipkg/repo_cli.py:333 ruyi/ruyipkg/repo_cli.py:370
+#: ruyi/ruyipkg/repo_cli.py:333 ruyi/ruyipkg/repo_cli.py:398
 #, python-brace-format
 msgid "no repo with id '{id}' found in user config"
 msgstr "在用户配置中未找到 ID 为 '{id}' 的软件包仓库"
@@ -2089,7 +2084,7 @@ msgstr "软件包仓库标识符"
 msgid "new priority value"
 msgstr "新的优先级取值"
 
-#: ruyi/ruyipkg/repo_cli.py:376
+#: ruyi/ruyipkg/repo_cli.py:406
 #, python-brace-format
 msgid "repo '{id}' priority set to {priority}"
 msgstr "软件包仓库 '{id}' 的优先级已设置为 {priority}"
@@ -2405,4 +2400,7 @@ msgstr ""
 "授权的代码。您可以从相应项目的官方网站获取源代码：\n"
 "\n"
 "* certifi: https://github.com/certifi/python-certifi\n"
+
+#~ msgid "failed to fetch distfile: {file} failed integrity checks"
+#~ msgstr "获取分发文件失败：{file} 未通过完整性检查"
 
