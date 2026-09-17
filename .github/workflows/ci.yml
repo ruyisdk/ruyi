@@ -274,6 +274,8 @@ jobs:
         if: success() && !matrix.baseline && matrix.poetry == 2
         run: |
           cd tests/ruyi-pytest
+          # We're not released yet, so no standalone builds with our version
+          export RUYI_PYTEST_SKIP_STANDALONE_TESTS=1
           uv run --with ../.. pytest
 
   shellcheck:
