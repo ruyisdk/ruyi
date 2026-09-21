@@ -66,6 +66,23 @@ class PackageInstallationInfo:
         )
 
 
+def _matches_installation_identity(
+    info: PackageInstallationInfo,
+    category: str,
+    name: str,
+    version: str,
+    host: str,
+) -> bool:
+    """Check whether an installation record describes the given installation,
+    regardless of the repo the record was made under."""
+    return (
+        info.category == category
+        and info.name == name
+        and info.version == version
+        and info.host == host
+    )
+
+
 class RuyipkgGlobalStateStore:
     def __init__(self, root: os.PathLike[Any]) -> None:
         self.root = pathlib.Path(root)
@@ -183,15 +200,26 @@ class RuyipkgGlobalStateStore:
         version: str,
         host: str = "",
     ) -> bool:
-        """Remove an installation record."""
-        installs = self._load_installs()
-        key = self._get_installation_key(repo_id, category, name, version, host)
+        """Remove installation records for a package.
 
-        if key in installs:
+        Because installation locations are shared between repos, all records
+        describing the installation are removed regardless of the repo they
+        were recorded under; ``repo_id`` is not used for matching.
+        """
+        installs = self._load_installs()
+        keys_to_remove = [
+            key
+            for key, info in installs.items()
+            if _matches_installation_identity(info, category, name, version, host)
+        ]
+
+        if not keys_to_remove:
+            return False
+
+        for key in keys_to_remove:
             del installs[key]
-            self._save_installs()
-            return True
-        return False
+        self._save_installs()
+        return True
 
     def get_installation(
         self,
@@ -201,10 +229,20 @@ class RuyipkgGlobalStateStore:
         version: str,
         host: str = "",
     ) -> PackageInstallationInfo | None:
-        """Get information about a specific installation."""
+        """Get information about a specific installation.
+
+        Installation locations are shared between repos, so a record is
+        returned if it matches regardless of the repo it was recorded under;
+        a record recorded under ``repo_id`` is preferred if one exists.
+        """
         installs = self._load_installs()
         key = self._get_installation_key(repo_id, category, name, version, host)
-        return installs.get(key)
+        if info := installs.get(key):
+            return info
+        for info in installs.values():
+            if _matches_installation_identity(info, category, name, version, host):
+                return info
+        return None
 
     def is_package_installed(
         self,
