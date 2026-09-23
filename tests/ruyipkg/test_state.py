@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 from typing import Iterable, TYPE_CHECKING
 from unittest.mock import Mock
 
@@ -8,7 +9,11 @@ except ModuleNotFoundError:
     # semver 2.x
     from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
 
-from ruyi.ruyipkg.state import BoundInstallationStateStore, PackageInstallationInfo
+from ruyi.ruyipkg.state import (
+    BoundInstallationStateStore,
+    PackageInstallationInfo,
+    RuyipkgGlobalStateStore,
+)
 
 if TYPE_CHECKING:
     from ruyi.ruyipkg.pkg_manifest import BoundPackageManifest
@@ -148,3 +153,113 @@ def test_bound_installation_state_store_with_installed_packages() -> None:
 
     result = store.get_pkg("gcc", "toolchain", "99.0.0")
     assert result is None
+
+
+class TestCrossRepoInstallationState:
+    """Regression tests for https://github.com/ruyisdk/ruyi/issues/501.
+
+    Installation locations are shared between repos, so installation
+    records must be queryable and removable regardless of the repo they
+    were originally recorded under. Otherwise, after switching to a
+    different repo carrying the same package version, installed packages
+    would forever appear as not installed.
+    """
+
+    @staticmethod
+    def _record_test_pkg(store: RuyipkgGlobalStateStore, repo_id: str) -> None:
+        store.record_installation(
+            repo_id=repo_id,
+            category="board-image",
+            name="uboot-revyos-milkv-meles-8g",
+            version="1.0.0",
+            host="",
+            install_path="/fake/install/root",
+        )
+
+    def test_installation_recorded_under_other_repo_is_recognized(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        store = RuyipkgGlobalStateStore(tmp_path)
+        self._record_test_pkg(store, "repo-a")
+
+        # The same package version is now queried in the context of another
+        # repo, e.g. after the user switched to a different repo.
+        assert store.is_package_installed(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+
+        info = store.get_installation(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+        assert info is not None
+        # the original provenance must be preserved
+        assert info.repo_id == "repo-a"
+
+    def test_cross_repo_recognition_survives_reload(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        store = RuyipkgGlobalStateStore(tmp_path)
+        self._record_test_pkg(store, "repo-a")
+
+        # Each ruyi invocation reloads the state from disk, so the
+        # cross-repo recognition must work with a fresh store instance.
+        fresh_store = RuyipkgGlobalStateStore(tmp_path)
+        assert fresh_store.is_package_installed(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+
+    def test_installation_identity_still_distinct(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        store = RuyipkgGlobalStateStore(tmp_path)
+        self._record_test_pkg(store, "repo-a")
+
+        # Records must not be conflated across distinct installation
+        # identities even when queried cross-repo.
+        assert not store.is_package_installed(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "2.0.0", ""
+        )
+        assert not store.is_package_installed(
+            "repo-b", "board-image", "other-pkg", "1.0.0", ""
+        )
+        assert not store.is_package_installed(
+            "repo-b", "other-category", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+        assert not store.is_package_installed(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", "riscv64"
+        )
+
+    def test_remove_installation_recorded_under_other_repo(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        store = RuyipkgGlobalStateStore(tmp_path)
+        self._record_test_pkg(store, "repo-a")
+
+        # Uninstalling while another repo is active must still remove the
+        # record, because the files on disk are shared between repos.
+        assert store.remove_installation(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+        assert not store.is_package_installed(
+            "repo-a", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+        assert store.list_installed_packages() == []
+
+    def test_remove_installation_covers_duplicate_cross_repo_records(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        store = RuyipkgGlobalStateStore(tmp_path)
+        # Such duplicates exist in the wild, e.g. created by a --reinstall
+        # after switching repos with older ruyi versions.
+        self._record_test_pkg(store, "repo-a")
+        self._record_test_pkg(store, "repo-b")
+
+        assert store.remove_installation(
+            "repo-b", "board-image", "uboot-revyos-milkv-meles-8g", "1.0.0", ""
+        )
+        assert store.list_installed_packages() == []
