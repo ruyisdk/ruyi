@@ -144,3 +144,28 @@ def test_roundtrip_full_report() -> None:
     )
 
     assert load_abi_report_toml(dump_abi_report_toml(report)) == report
+
+
+def test_roundtrip_empty_report() -> None:
+    """An empty report must survive the round-trip too.
+
+    The dumper omits the ``record`` key entirely when there are no records
+    (an empty tomlkit AoT is not serialized), so the loader must not assume
+    it is present.
+    """
+    report = ABIReport(
+        records=(),
+        summary=ABISummary(
+            e_machines=(),
+            needed=(),
+            version_needs=(),
+            well_known_maxima={},
+            parsed_attrs_rollup={},
+            elf_count=0,
+            file_count=0,
+            excluded_count=0,
+        ),
+        errors=(),
+    )
+
+    assert load_abi_report_toml(dump_abi_report_toml(report)) == report

@@ -54,7 +54,7 @@ def load_abi_report_toml(text: str) -> ABIReport:
     data: Any = tomlkit.parse(text).unwrap()
 
     summary = data["summary"]
-    records = data["record"]
+    records = data.get("record", ())
 
     return ABIReport(
         records=tuple(_load_record(r) for r in records),
