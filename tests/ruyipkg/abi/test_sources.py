@@ -27,6 +27,23 @@ def test_directory_skips_symlinks(tmp_path: pathlib.Path) -> None:
     assert paths == ["real.bin"]
 
 
+def test_from_paths_follows_symlinks_and_skips_missing(
+    tmp_path: pathlib.Path,
+) -> None:
+    real = tmp_path / "libreal.so.1.0"
+    real.write_bytes(b"\x7fELF-payload")
+    link = tmp_path / "libreal.so.1"
+    link.symlink_to(real.name)
+
+    src = ABISource.from_paths([link, tmp_path / "missing.so"])
+    members = list(src.iter_members())
+    assert len(members) == 1
+    name, size, read = members[0]
+    assert name == str(link)
+    assert size == len(b"\x7fELF-payload")
+    assert read() == b"\x7fELF-payload"
+
+
 def test_tar_gz_source(tmp_path: pathlib.Path) -> None:
     (tmp_path / "x.bin").write_bytes(b"hello")
     arc = tmp_path / "a.tar.gz"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import functools
 import pathlib
-from typing import BinaryIO, Callable, cast, Iterator, TYPE_CHECKING
+from typing import BinaryIO, Callable, cast, Iterable, Iterator, TYPE_CHECKING
 
 from ..unpack_method import UnpackMethod, determine_unpack_method
 
@@ -53,6 +53,10 @@ class ABISource(abc.ABC):
         unpack_method: UnpackMethod = UnpackMethod.AUTO,
     ) -> "ABISource":
         return _ArchiveSource(pathlib.Path(path), unpack_method)
+
+    @staticmethod
+    def from_paths(paths: Iterable[pathlib.Path | str]) -> ABISource:
+        return _PathsSource(paths)
 
 
 class _DirectorySource(ABISource):
@@ -156,3 +160,18 @@ class _ArchiveSource(ABISource):
                 return
         finally:
             ar.close()
+
+
+class _PathsSource(ABISource):
+    """Explicit file list; symlinks are followed (sonames are symlinks)."""
+
+    def __init__(self, paths: Iterable[pathlib.Path | str]) -> None:
+        self._paths = sorted(pathlib.Path(p) for p in paths)
+
+    def iter_members(self) -> Iterator[MemberEntry]:
+        for p in self._paths:
+            # Paths that vanished after the resolver picked them up are not an
+            # error here; the caller reports them separately.
+            if not p.is_file():
+                continue
+            yield str(p), p.stat().st_size, _path_reader(p)
