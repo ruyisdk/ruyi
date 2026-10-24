@@ -47,6 +47,12 @@ def test_host_attrs_levels() -> None:
     }
 
 
+def test_host_attrs_without_flags_line_is_undetermined() -> None:
+    interp = X86_64Interpreter()
+    assert interp.host_attrs(cpuinfo="") == {}
+    assert interp.host_attrs(cpuinfo="processor\t: 0\n") == {}
+
+
 def test_host_attrs_v2_needs_lzcnt_alias() -> None:
     interp = X86_64Interpreter()
     # v2 flag set alone, with neither abm nor lzcnt, is not enough.

@@ -69,11 +69,17 @@ class X86_64Interpreter:
 
         text = read_cpuinfo() if cpuinfo is None else cpuinfo
         flags: frozenset[str] = frozenset()
+        have_flags = False
         for line in text.splitlines():
             key, sep, val = line.partition(":")
             if sep and key.strip() == "flags":
                 flags = frozenset(val.split())
+                have_flags = True
                 break
+        if not have_flags:
+            # No flags line at all: the read failed or this is not an
+            # x86-64 host, so the level cannot be determined.
+            return {}
         level = 1
         if _level_ok(flags, _V2_FLAGS) and _lzcnt_ok(flags):
             level = 2
