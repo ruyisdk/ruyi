@@ -47,15 +47,37 @@ class AArch64Interpreter:
             "pac": all(bool(f.get("pac")) for f in per_file),
         }
 
-    def host_attrs(self) -> dict[str, str | int | bool]:
-        return {}
+    def host_attrs(
+        self, *, auxv: Mapping[int, int] | None = None
+    ) -> dict[str, str | int | bool]:
+        from ._hostread import read_auxv
+
+        values = read_auxv() if auxv is None else auxv
+        if not values:
+            return {}
+        hwcap = values.get(16, 0)  # AT_HWCAP
+        hwcap2 = values.get(26, 0)  # AT_HWCAP2
+        return {
+            "bti": bool(hwcap2 & (1 << 1)),  # HWCAP2_BTI
+            "pac": bool(hwcap & ((1 << 30) | (1 << 31))),  # HWCAP_PACA|HWCAP_PACG
+        }
 
     def check(
         self,
         host: Mapping[str, object],
         required: Mapping[str, object],
     ) -> bool | None:
-        return None
+        degraded = False
+        for key in ("bti", "pac"):
+            if not required.get(key):
+                continue
+            if key not in host:
+                return None
+            if not host[key]:
+                # Both features live in hint space, so a host without
+                # support executes the instructions as no-ops.
+                degraded = True
+        return None if degraded else True
 
 
 register(AArch64Interpreter())

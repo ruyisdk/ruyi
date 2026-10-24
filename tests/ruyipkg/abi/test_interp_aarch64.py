@@ -3,6 +3,10 @@ import struct
 from ruyi.ruyipkg.abi.interp.aarch64 import AArch64Interpreter
 from ruyi.ruyipkg.abi.model import GnuProperty
 
+_AT_HWCAP, _AT_HWCAP2 = 16, 26
+_HWCAP_PACA, _HWCAP_PACG = 1 << 30, 1 << 31
+_HWCAP2_BTI = 1 << 1
+
 
 def _feature(mask: int, *, little_endian: bool = True) -> GnuProperty:
     fmt = "<I" if little_endian else ">I"
@@ -40,3 +44,32 @@ def test_rollup_conservative_and() -> None:
     out = interp.rollup([{"bti": True, "pac": True}, {"bti": True, "pac": False}])
     assert out["bti"] is True
     assert out["pac"] is False
+
+
+def test_host_attrs_from_auxv() -> None:
+    interp = AArch64Interpreter()
+    assert interp.host_attrs(
+        auxv={_AT_HWCAP: _HWCAP_PACA, _AT_HWCAP2: _HWCAP2_BTI}
+    ) == {
+        "bti": True,
+        "pac": True,
+    }
+    assert interp.host_attrs(auxv={_AT_HWCAP: 0, _AT_HWCAP2: 0}) == {
+        "bti": False,
+        "pac": False,
+    }
+    assert interp.host_attrs(auxv={}) == {}
+
+
+def test_check_degrades_to_unknown_not_incompatible() -> None:
+    interp = AArch64Interpreter()
+    # BTI required, host has it: fine.
+    assert (
+        interp.check({"bti": True, "pac": False}, {"bti": True, "pac": False}) is True
+    )
+    # BTI required, host lacks it: runs (hint space), feature inert -> None.
+    assert (
+        interp.check({"bti": False, "pac": False}, {"bti": True, "pac": False}) is None
+    )
+    # Nothing required: fine regardless.
+    assert interp.check({}, {"bti": False, "pac": False}) is True
