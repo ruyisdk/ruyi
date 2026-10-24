@@ -99,6 +99,14 @@ def scan_elf_stream(
                 )
             )
 
+    version_defs: tuple[str, ...] = ()
+    verdef = elf.get_section_by_name(".gnu.version_d")
+    if verdef is not None:
+        defs: set[str] = set()
+        for _vd, aux in verdef.iter_versions():  # type: ignore[attr-defined]
+            defs.update(a.name for a in aux)
+        version_defs = tuple(sorted(defs))
+
     needs_unversioned = _compute_needs_unversioned(elf)
 
     gnu_properties = _extract_gnu_properties(  # type: ignore[no-untyped-call]
@@ -137,6 +145,7 @@ def scan_elf_stream(
         soname=soname,
         needed=needed,
         version_needs=tuple(version_needs),
+        version_defs=version_defs,
         needs_unversioned=needs_unversioned,
         gnu_properties=tuple(gnu_properties),
         elf_attributes=tuple(elf_attributes),

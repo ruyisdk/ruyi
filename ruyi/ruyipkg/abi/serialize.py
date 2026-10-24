@@ -79,6 +79,9 @@ def _record_table(record: ElfABIRecord) -> Table:
     t.add("needed", list(record.needed))
     t.add("needs_unversioned", record.needs_unversioned)
 
+    if record.version_defs:
+        t.add("version_defs", list(record.version_defs))
+
     pa = inline_table()
     for key in sorted(record.parsed_attrs):
         pa[key] = record.parsed_attrs[key]

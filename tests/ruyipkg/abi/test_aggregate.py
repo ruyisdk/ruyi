@@ -15,6 +15,7 @@ def _rec(**kw: object) -> ElfABIRecord:
         soname=None,
         needed=(),
         version_needs=(),
+        version_defs=(),
         needs_unversioned=False,
         gnu_properties=(),
         elf_attributes=(),

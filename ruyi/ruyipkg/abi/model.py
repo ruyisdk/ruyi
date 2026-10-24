@@ -51,6 +51,7 @@ class ElfABIRecord:
     soname: str | None
     needed: tuple[str, ...]
     version_needs: tuple[VersionNeed, ...]
+    version_defs: tuple[str, ...]
     needs_unversioned: bool
     gnu_properties: tuple[GnuProperty, ...]
     elf_attributes: tuple[AttributeVendorBlob, ...]

@@ -3,6 +3,7 @@ import tomllib
 
 from ruyi.log import RuyiLogger
 from ruyi.ruyipkg.abi import scan_source
+from ruyi.ruyipkg.abi.model import ABIReport, ABISummary, ElfABIRecord, ElfType
 from ruyi.ruyipkg.abi.serialize import dump_abi_report_toml
 from ruyi.ruyipkg.abi.sources import ABISource
 from tests.ruyipkg.abi._elfbuilder import build_elf
@@ -39,3 +40,48 @@ def test_empty_parsed_attrs_still_present(
     parsed = tomllib.loads(dump_abi_report_toml(report))
     assert parsed["record"][0]["parsed_attrs"] == {}
     assert parsed["record"][0]["e_machine"] == 0x9999
+
+
+def _record_for(version_defs: tuple[str, ...]) -> ElfABIRecord:
+    return ElfABIRecord(
+        paths=("bin/x",),
+        sha256="0" * 64,
+        e_machine=62,
+        elf_class=64,
+        endianness="little",
+        elf_type=ElfType.DYN,
+        is_dynamic=True,
+        interpreter=None,
+        soname=None,
+        needed=(),
+        version_needs=(),
+        version_defs=version_defs,
+        needs_unversioned=False,
+        gnu_properties=(),
+        elf_attributes=(),
+        parsed_attrs={},
+    )
+
+
+def _report_for(version_defs: tuple[str, ...]) -> ABIReport:
+    summary = ABISummary(
+        e_machines=(62,),
+        needed=(),
+        version_needs=(),
+        well_known_maxima={},
+        parsed_attrs_rollup={},
+        elf_count=1,
+        file_count=1,
+        excluded_count=0,
+    )
+    return ABIReport(records=(_record_for(version_defs),), summary=summary, errors=())
+
+
+def test_version_defs_serialized_when_present() -> None:
+    text = dump_abi_report_toml(_report_for(("GLIBC_2.34",)))
+    assert 'version_defs = ["GLIBC_2.34"]' in text
+
+
+def test_version_defs_omitted_when_empty() -> None:
+    text = dump_abi_report_toml(_report_for(()))
+    assert "version_defs" not in text
