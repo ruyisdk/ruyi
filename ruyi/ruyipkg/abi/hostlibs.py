@@ -11,9 +11,10 @@ installed packages and must stay invisible here.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import pathlib
 import struct
-from collections.abc import Sequence
+from typing import Protocol
 
 _CACHE_MAGIC = b"glibc-ld.so.cache"
 _CACHE_VERSION = b"1.1"
@@ -63,7 +64,13 @@ def parse_ld_so_cache(data: bytes) -> list[tuple[str, str, int]]:
     return entries
 
 
-class HostLibResolver:
+class ResolvesHostLibs(Protocol):
+    def resolve(self, soname: str) -> pathlib.Path | None: ...
+
+    def resolvable_sonames(self) -> frozenset[str]: ...
+
+
+class HostLibResolver(ResolvesHostLibs):
     def __init__(
         self,
         e_machine: int,

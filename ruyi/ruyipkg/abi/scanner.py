@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import io
-from typing import BinaryIO, Sequence, TYPE_CHECKING
+from typing import Any, BinaryIO, Sequence, TYPE_CHECKING
 
 from ...i18n import _
 from ...log import RuyiLogger
@@ -20,6 +20,8 @@ from .model import (
 )
 
 if TYPE_CHECKING:
+    from rich.console import RenderableType
+
     from .sources import ABISource
 
 _E_TYPE_MAP = {
@@ -197,7 +199,7 @@ def _extract_attributes(elf, little_endian, max_bytes, parse):  # type: ignore[n
 def scan_source(
     source: "ABISource",
     *,
-    logger: RuyiLogger,
+    logger: RuyiLogger | None = None,
     exclude: Sequence[str] = (),
     max_member_bytes: int = DEFAULT_MAX_MEMBER_BYTES,
     max_raw_attr_bytes: int = DEFAULT_MAX_RAW_ATTR_BYTES,
@@ -212,6 +214,10 @@ def scan_source(
     file_count = 0
     excluded_count = 0
 
+    def _D(message: "RenderableType", *objects: Any) -> None:
+        if logger is not None:
+            return logger.D(message, *objects)
+
     for path, size, reader in source.iter_members():
         if matcher.is_excluded(path):
             excluded_count += 1
@@ -220,19 +226,19 @@ def scan_source(
         file_count += 1
 
         if size is not None and size > max_member_bytes:
-            logger.D(f"skipping oversized member {path} ({size} bytes)")
+            _D(f"skipping oversized member {path} ({size} bytes)")
             errors.append(ABIScanError(path, _("member exceeds size limit")))
             continue
 
         try:
             data = reader()
         except Exception as exc:  # noqa: BLE001 - a bad member must not abort
-            logger.D(f"failed to read member {path}: {exc}")
+            _D(f"failed to read member {path}: {exc}")
             errors.append(ABIScanError(path, f"failed to read member: {exc}"))
             continue
 
         if len(data) > max_member_bytes:
-            logger.D(f"skipping oversized member {path} ({len(data)} bytes)")
+            _D(f"skipping oversized member {path} ({len(data)} bytes)")
             errors.append(ABIScanError(path, _("member exceeds size limit")))
             continue
 
@@ -255,7 +261,7 @@ def scan_source(
                 max_raw_attr_bytes=max_raw_attr_bytes,
             )
         except Exception as exc:  # noqa: BLE001 - a malformed ELF must not abort
-            logger.D(f"failed to scan member {path}: {exc}")
+            _D(f"failed to scan member {path}: {exc}")
             errors.append(ABIScanError(path, f"failed to scan member: {exc}"))
             continue
         errors.extend(errs)
@@ -266,7 +272,7 @@ def scan_source(
     summary = build_summary(
         records, file_count=file_count, excluded_count=excluded_count
     )
-    logger.D(
+    _D(
         f"ABI scan: {summary.elf_count} distinct ELF(s), "
         f"{file_count} member(s), {excluded_count} excluded"
     )
