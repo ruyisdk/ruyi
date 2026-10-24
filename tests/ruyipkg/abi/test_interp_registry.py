@@ -18,6 +18,16 @@ class _FakeInterp:
     def rollup(self, per_file: Sequence[Mapping[str, object]]) -> dict[str, object]:
         return {}
 
+    def host_attrs(self) -> dict[str, str | int | bool]:
+        return {}
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        return None
+
 
 def test_unknown_machine_returns_none() -> None:
     assert get_interpreter(0x0FFF) is None

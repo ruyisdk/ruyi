@@ -55,5 +55,15 @@ class X86_64Interpreter:
             out["isa_levels"] = levels
         return out
 
+    def host_attrs(self) -> dict[str, str | int | bool]:
+        return {}
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        return None
+
 
 register(X86_64Interpreter())

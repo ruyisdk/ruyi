@@ -1,5 +1,7 @@
 import struct
 
+import pytest
+
 from ruyi.ruyipkg.abi.interp.riscv import RiscVInterpreter
 from ruyi.ruyipkg.abi.model import AttributeVendorBlob
 
@@ -70,3 +72,36 @@ def test_rollup_distinct_isa_set() -> None:
     interp = RiscVInterpreter()
     out = interp.rollup([{"isa": "rv64gc"}, {"isa": "rv64imac"}, {"isa": "rv64gc"}])
     assert out["isa_strings"] == ["rv64gc", "rv64imac"]
+
+
+def test_host_attrs_from_cpuinfo() -> None:
+    cpuinfo = "processor\t: 0\nhart\t\t: 0\nisa\t\t: rv64imafdc_zicsr_zifencei_zba\n"
+    attrs = RiscVInterpreter().host_attrs(cpuinfo=cpuinfo)
+    assert attrs == {"isa": "rv64imafdc_zicsr_zifencei_zba"}
+
+
+def test_host_attrs_missing_isa_line() -> None:
+    assert RiscVInterpreter().host_attrs(cpuinfo="processor\t: 0\n") == {}
+
+
+@pytest.mark.parametrize(
+    "need,have,expected",
+    [
+        ("rv64gc", "rv64imafdc_zicsr_zifencei", True),  # g expands
+        ("rv64gc_zba", "rv64imafdc_zicsr_zifencei", False),
+        ("rv64imafdc", "rv64gc", True),
+        ("rv32i", "rv64i", False),  # XLEN mismatch
+        ("rv64i2p1_m2p0_a2p1", "rv64imafdc_zicsr_zifencei", True),  # versioned base
+        (
+            "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zba1p0",
+            "rv64imafdc_zicsr_zifencei",
+            False,
+        ),  # versioned, extra zba
+    ],
+)
+def test_check_isa_subset(need: str, have: str, expected: bool) -> None:
+    assert RiscVInterpreter().check({"isa": have}, {"isa": need}) is expected
+
+
+def test_check_unknown_without_host_isa() -> None:
+    assert RiscVInterpreter().check({}, {"isa": "rv64gc"}) is None

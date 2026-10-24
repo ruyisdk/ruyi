@@ -47,5 +47,15 @@ class AArch64Interpreter:
             "pac": all(bool(f.get("pac")) for f in per_file),
         }
 
+    def host_attrs(self) -> dict[str, str | int | bool]:
+        return {}
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        return None
+
 
 register(AArch64Interpreter())

@@ -99,5 +99,67 @@ class RiscVInterpreter:
         isas = sorted({str(f["isa"]) for f in per_file if "isa" in f})
         return {"isa_strings": isas} if isas else {}
 
+    def host_attrs(self, *, cpuinfo: str | None = None) -> dict[str, str | int | bool]:
+        from ._hostread import read_cpuinfo
+
+        text = read_cpuinfo() if cpuinfo is None else cpuinfo
+        for line in text.splitlines():
+            key, sep, val = line.partition(":")
+            if sep and key.strip() == "isa":
+                isa = val.strip().lower()
+                if isa:
+                    return {"isa": isa}
+        return {}
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        need, have = required.get("isa"), host.get("isa")
+        if not isinstance(need, str) or not isinstance(have, str):
+            return None
+        need_set, have_set = _isa_extensions(need), _isa_extensions(have)
+        if need_set is None or have_set is None:
+            return None
+        return need_set <= have_set
+
+
+_G_EXPANSION = frozenset({"i", "m", "a", "f", "d", "zicsr", "zifencei"})
+
+
+def _isa_extensions(isa: str) -> frozenset[str] | None:
+    """Split a RISC-V ISA string into an extension set, or None if unparsable.
+
+    Handles the canonical form rvNN[i|e|g]<letters>[_<multi>...] with optional
+    version suffixes; 'g' expands per the base spec. XLEN is folded into the
+    result as xlenNN, so a cross-XLEN requirement is a definite mismatch.
+    """
+    import re
+
+    m = re.fullmatch(r"rv(32|64|128)([a-z0-9]+(?:_[a-z0-9]+)*)", isa)
+    if m is None:
+        return None
+    xlen, rest = m.group(1), m.group(2)
+    first, *multi = rest.split("_")
+    if not first or first[0] not in "ieg":
+        return None
+
+    def strip_ver(tok: str) -> str:
+        return re.sub(r"\d+p\d+$|\d+$", "", tok)
+
+    exts: set[str] = set()
+    base = first[0]
+    exts |= _G_EXPANSION if base == "g" else {base}
+    for ch in strip_ver(first[1:]):
+        exts.add(ch)
+    for tok in multi:
+        tok = strip_ver(tok)
+        if not tok:
+            return None
+        exts.add(tok)
+    exts.discard("")
+    return frozenset(exts) | {f"xlen{xlen}"}
+
 
 register(RiscVInterpreter())

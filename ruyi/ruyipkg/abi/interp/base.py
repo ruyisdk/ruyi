@@ -28,6 +28,20 @@ class AttrInterpreter(Protocol):
         per_file: Sequence[Mapping[str, object]],
     ) -> dict[str, object]: ...
 
+    def host_attrs(self) -> dict[str, str | int | bool]:
+        """Probe the running host, in the same key vocabulary as interpret().
+        An empty dict means 'cannot determine'."""
+        ...
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        """True: host satisfies required; False: definite mismatch;
+        None: undetermined."""
+        ...
+
 
 _REGISTRY: dict[int, AttrInterpreter] = {}
 
