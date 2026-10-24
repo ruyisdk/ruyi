@@ -18,6 +18,15 @@ _ISA_BITS = [
     (3, "v4", 4),
 ]
 
+# CPU flag sets required for each ISA level, following the glibc hwcaps
+# classification.  The v2 baseline also needs the LZCNT instruction; Intel
+# reports it as 'abm', AMD usually reports both, so either alias suffices.
+_V2_FLAGS = frozenset({"cx16", "lahf_lm", "popcnt", "pni", "sse4_1", "sse4_2", "ssse3"})
+_V3_FLAGS = frozenset(
+    {"avx", "avx2", "bmi1", "bmi2", "f16c", "fma", "movbe", "osxsave", "xsave"}
+)
+_V4_FLAGS = frozenset({"avx512f", "avx512bw", "avx512cd", "avx512dq", "avx512vl"})
+
 
 class X86_64Interpreter:
     e_machines = frozenset({_EM_X86_64})
@@ -55,14 +64,52 @@ class X86_64Interpreter:
             out["isa_levels"] = levels
         return out
 
-    def host_attrs(self) -> dict[str, str | int | bool]:
-        return {}
+    def host_attrs(self, *, cpuinfo: str | None = None) -> dict[str, str | int | bool]:
+        from ._hostread import read_cpuinfo
+
+        text = read_cpuinfo() if cpuinfo is None else cpuinfo
+        flags: frozenset[str] = frozenset()
+        for line in text.splitlines():
+            key, sep, val = line.partition(":")
+            if sep and key.strip() == "flags":
+                flags = frozenset(val.split())
+                break
+        level = 1
+        if _level_ok(flags, _V2_FLAGS) and _lzcnt_ok(flags):
+            level = 2
+        if level == 2 and _level_ok(flags, _V3_FLAGS):
+            level = 3
+        if level == 3 and _level_ok(flags, _V4_FLAGS):
+            level = 4
+        return {"isa_level": f"v{level}"}
 
     def check(
         self,
         host: Mapping[str, object],
         required: Mapping[str, object],
     ) -> bool | None:
+        need_level = _isa_level_number(required.get("isa_level"))
+        have_level = _isa_level_number(host.get("isa_level"))
+        if need_level is None or have_level is None:
+            return None
+        return need_level <= have_level
+
+
+def _level_ok(flags: frozenset[str], required: frozenset[str]) -> bool:
+    return required <= flags
+
+
+def _lzcnt_ok(flags: frozenset[str]) -> bool:
+    return bool({"abm", "lzcnt"} & flags)
+
+
+def _isa_level_number(value: object) -> int | None:
+    """Parse a 'vN' ISA level, or None if the value is not one."""
+    if not isinstance(value, str) or not value.startswith("v"):
+        return None
+    try:
+        return int(value[1:])
+    except ValueError:
         return None
 
 
