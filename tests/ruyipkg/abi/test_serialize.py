@@ -3,8 +3,17 @@ import tomllib
 
 from ruyi.log import RuyiLogger
 from ruyi.ruyipkg.abi import scan_source
-from ruyi.ruyipkg.abi.model import ABIReport, ABISummary, ElfABIRecord, ElfType
-from ruyi.ruyipkg.abi.serialize import dump_abi_report_toml
+from ruyi.ruyipkg.abi.model import (
+    ABIReport,
+    ABIScanError,
+    ABISummary,
+    AttributeVendorBlob,
+    ElfABIRecord,
+    ElfType,
+    GnuProperty,
+    VersionNeed,
+)
+from ruyi.ruyipkg.abi.serialize import dump_abi_report_toml, load_abi_report_toml
 from ruyi.ruyipkg.abi.sources import ABISource
 from tests.ruyipkg.abi._elfbuilder import build_elf
 
@@ -85,3 +94,53 @@ def test_version_defs_serialized_when_present() -> None:
 def test_version_defs_omitted_when_empty() -> None:
     text = dump_abi_report_toml(_report_for(()))
     assert "version_defs" not in text
+
+
+def test_roundtrip_full_report() -> None:
+    """load_abi_report_toml(dump_abi_report_toml(report)) == report.
+
+    Exercises every field the dumper can emit, including the optional keys it
+    omits when empty (version_defs, gnu_properties, elf_attributes, the
+    summary version_needs/well_known_maxima/parsed_attrs_rollup tables, and
+    errors).
+    """
+    record = ElfABIRecord(
+        paths=("bin/x", "bin/x-copy"),
+        sha256="1" * 64,
+        e_machine=243,
+        elf_class=64,
+        endianness="little",
+        elf_type=ElfType.DYN,
+        is_dynamic=True,
+        interpreter="/lib/ld-linux-riscv64-lp64d.so.1",
+        soname="libwlink.so.1",
+        needed=("libc.so.6", "libm.so.6"),
+        version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34", "GLIBC_2.40")),),
+        version_defs=("WLINK_1.0",),
+        needs_unversioned=True,
+        gnu_properties=(
+            GnuProperty(0xC0000000, "01000000", True),
+            GnuProperty(0xC0008002, "01000000", False),
+        ),
+        elf_attributes=(AttributeVendorBlob("riscv", "016d00000004", False),),
+        parsed_attrs={"isa": "rv64i2p1", "stack_align": 16, "has_flag": True},
+    )
+    summary = ABISummary(
+        e_machines=(243,),
+        needed=("libc.so.6", "libm.so.6"),
+        version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34", "GLIBC_2.40")),),
+        well_known_maxima={"GLIBC": "2.40"},
+        parsed_attrs_rollup={
+            "243": {"isa_strings": ["rv64i2p1"], "stack_align": 16},
+        },
+        elf_count=1,
+        file_count=3,
+        excluded_count=1,
+    )
+    report = ABIReport(
+        records=(record,),
+        summary=summary,
+        errors=(ABIScanError("bin/bad", "not a valid ELF"),),
+    )
+
+    assert load_abi_report_toml(dump_abi_report_toml(report)) == report

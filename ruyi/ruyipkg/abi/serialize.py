@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Any, Mapping
 
 import tomlkit
 from tomlkit import aot, document, inline_table, table
 from tomlkit.items import Table
 
-from .model import ABIReport, ABISummary, ElfABIRecord
+from .model import (
+    ABIReport,
+    ABIScanError,
+    ABISummary,
+    AttributeVendorBlob,
+    ElfABIRecord,
+    ElfType,
+    GnuProperty,
+    VersionNeed,
+)
 
 
 def dump_abi_report_toml(report: ABIReport) -> str:
@@ -30,6 +39,72 @@ def dump_abi_report_toml(report: ABIReport) -> str:
         doc.add("error", errors)
 
     return tomlkit.dumps(doc)
+
+
+def load_abi_report_toml(text: str) -> ABIReport:
+    """Parse a canonical ``.abi.toml`` sidecar back into an ABIReport.
+
+    This is the exact inverse of dump_abi_report_toml(): every field the
+    dumper emits is reconstructed, and the optional keys it omits when empty
+    (version_defs, gnu_properties, elf_attributes, the summary
+    version_needs/well_known_maxima/parsed_attrs_rollup tables, and errors)
+    default back to empty. ``.unwrap()`` turns the tomlkit document into plain
+    Python values, which are then narrowed into the frozen model types.
+    """
+    data: Any = tomlkit.parse(text).unwrap()
+
+    summary = data["summary"]
+    records = data["record"]
+
+    return ABIReport(
+        records=tuple(_load_record(r) for r in records),
+        summary=ABISummary(
+            e_machines=tuple(summary["e_machines"]),
+            needed=tuple(summary["needed"]),
+            version_needs=tuple(
+                VersionNeed(vn["soname"], tuple(vn["versions"]))
+                for vn in summary.get("version_needs", ())
+            ),
+            well_known_maxima=dict(summary.get("well_known_maxima", {})),
+            parsed_attrs_rollup=dict(summary.get("parsed_attrs_rollup", {})),
+            elf_count=summary["elf_count"],
+            file_count=summary["file_count"],
+            excluded_count=summary["excluded_count"],
+        ),
+        errors=tuple(
+            ABIScanError(err["path"], err["reason"]) for err in data.get("error", ())
+        ),
+    )
+
+
+def _load_record(record: Any) -> ElfABIRecord:
+    return ElfABIRecord(
+        paths=tuple(record["paths"]),
+        sha256=record["sha256"],
+        e_machine=record["e_machine"],
+        elf_class=record["elf_class"],
+        endianness=record["endianness"],
+        elf_type=ElfType(record["elf_type"]),
+        is_dynamic=record["is_dynamic"],
+        interpreter=record.get("interpreter"),
+        soname=record.get("soname") or None,
+        needed=tuple(record["needed"]),
+        version_needs=tuple(
+            VersionNeed(vn["soname"], tuple(vn["versions"]))
+            for vn in record.get("version_needs", ())
+        ),
+        version_defs=tuple(record.get("version_defs", ())),
+        needs_unversioned=record["needs_unversioned"],
+        gnu_properties=tuple(
+            GnuProperty(p["pr_type"], p["data_hex"], p["truncated"])
+            for p in record.get("gnu_properties", ())
+        ),
+        elf_attributes=tuple(
+            AttributeVendorBlob(a["vendor"], a["data_hex"], a["truncated"])
+            for a in record.get("elf_attributes", ())
+        ),
+        parsed_attrs=dict(record["parsed_attrs"]),
+    )
 
 
 def _summary_table(summary: ABISummary) -> Table:
