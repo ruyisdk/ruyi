@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.53.0-alpha.20260828\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-09-17 10:26+0800\n"
+"POT-Creation-Date: 2026-10-28 17:04+0800\n"
 "PO-Revision-Date: 2026-09-16 13:00+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -1060,7 +1060,7 @@ msgstr "命令名称"
 msgid "Arguments to pass to the plugin command"
 msgstr "要传递给插件命令的参数"
 
-#: ruyi/ruyipkg/abi/scanner.py:215 ruyi/ruyipkg/abi/scanner.py:227
+#: ruyi/ruyipkg/abi/scanner.py:230 ruyi/ruyipkg/abi/scanner.py:242
 msgid "member exceeds size limit"
 msgstr "成员大小超限"
 
@@ -1181,34 +1181,74 @@ msgstr "要扫描的已构建归档文件或解压目录的路径"
 msgid "Exclude members matching the .gitignore-style pattern (repeatable); use @FILE to load patterns from a file"
 msgstr "排除以 .gitignore 风格指定的成员（可重复）；使用 @FILE 写法以从文件加载排除模式"
 
-#: ruyi/ruyipkg/admin_cli.py:308
+#: ruyi/ruyipkg/admin_cli.py:307
+msgid "Strip N leading path components from archive members before matching excludes and recording paths (default: 0; archives only)"
+msgstr "对每个归档文件成员，在排除或记录路径前，先从它的路径起始一端移除 N 层目录（默认：0；仅用于归档文件）"
+
+#: ruyi/ruyipkg/admin_cli.py:318
 msgid "Write the report to PATH; '-' writes to stdout; default writes a <path>.abi.toml sidecar next to the input"
 msgstr "将报告写入 PATH；'-' 写入标准输出；默认情况下在输入文件旁生成 <path>.abi.toml 挎斗文件"
 
-#: ruyi/ruyipkg/admin_cli.py:331
+#: ruyi/ruyipkg/admin_cli.py:342
 #, python-brace-format
 msgid "cannot read exclude file: {err}"
 msgstr "无法读取排除模式文件：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:337
+#: ruyi/ruyipkg/admin_cli.py:348
 #, python-brace-format
 msgid "{path} is neither a directory nor a recognized archive (tar/zip/deb)"
 msgstr "{path} 既不是目录，也不是认识的归档文件（tar/zip/deb）"
 
-#: ruyi/ruyipkg/admin_cli.py:347
+#: ruyi/ruyipkg/admin_cli.py:355
+msgid "--strip-components is only valid for archive inputs"
+msgstr "--strip-components 仅对归档文件输入有意义"
+
+#: ruyi/ruyipkg/admin_cli.py:367
 #, python-brace-format
 msgid "failed to scan {path}: {err}"
 msgstr "扫描 {path} 失败：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:359
+#: ruyi/ruyipkg/admin_cli.py:379
 #, python-brace-format
 msgid "wrote ABI sidecar to {path}"
 msgstr "已将 ABI 挎斗文件写入 {path}"
 
-#: ruyi/ruyipkg/admin_cli.py:361
+#: ruyi/ruyipkg/admin_cli.py:381
 #, python-brace-format
 msgid "failed to write ABI report: {err}"
 msgstr "写入 ABI 报告失败：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:389
+msgid "Check a package ABI sidecar against the current host"
+msgstr "检查一个软件包 ABI 挎斗文件是否兼容当前主机"
+
+#: ruyi/ruyipkg/admin_cli.py:396
+msgid "Path to the .abi.toml sidecar to check"
+msgstr "要检查的 .abi.toml 挎斗文件的路径"
+
+#: ruyi/ruyipkg/admin_cli.py:412
+#, python-brace-format
+msgid "cannot read sidecar {path}: {err}"
+msgstr "无法读取挎斗文件 {path}：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:422
+#, python-brace-format
+msgid "failed to parse sidecar {path}: {err}"
+msgstr "解析挎斗文件 {path} 失败：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:433
+#, python-brace-format
+msgid "failed to probe host ABI: {err}"
+msgstr "探测主机 ABI 失败：{err}"
+
+#: ruyi/ruyipkg/admin_cli.py:440
+msgid "no ABI compatibility problems detected"
+msgstr "未检测到 ABI 兼容性问题"
+
+#: ruyi/ruyipkg/admin_cli.py:445
+#, python-brace-format
+msgid "{check}: {message}"
+msgstr "{check}：{message}"
 
 #: ruyi/ruyipkg/augmented_pkg.py:26
 msgid "latest"
