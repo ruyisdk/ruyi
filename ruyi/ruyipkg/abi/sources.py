@@ -81,6 +81,9 @@ class _ArchiveSource(ABISource):
         self._method = method
 
     def iter_members(self) -> Iterator[MemberEntry]:
+        yield from self._iter_raw_members()
+
+    def _iter_raw_members(self) -> Iterator[MemberEntry]:
         if self._method in _TAR_METHODS:
             yield from self._iter_tar()
         elif self._method == UnpackMethod.ZIP:
