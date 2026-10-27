@@ -39,6 +39,15 @@ def _bytes_reader(data: bytes) -> Callable[[], bytes]:
     return lambda: data
 
 
+def _strip_leading_components(path: str, count: int) -> str | None:
+    if count == 0:
+        return path
+    parts = path.split("/")
+    if len(parts) <= count:
+        return None
+    return "/".join(parts[count:])
+
+
 class ABISource(abc.ABC):
     @abc.abstractmethod
     def iter_members(self) -> Iterator[MemberEntry]: ...
@@ -51,8 +60,10 @@ class ABISource(abc.ABC):
     def from_archive(
         path: pathlib.Path | str,
         unpack_method: UnpackMethod = UnpackMethod.AUTO,
+        *,
+        strip_components: int = 0,
     ) -> "ABISource":
-        return _ArchiveSource(pathlib.Path(path), unpack_method)
+        return _ArchiveSource(pathlib.Path(path), unpack_method, strip_components)
 
     @staticmethod
     def from_paths(paths: Iterable[pathlib.Path | str]) -> ABISource:
@@ -73,15 +84,27 @@ class _DirectorySource(ABISource):
 
 
 class _ArchiveSource(ABISource):
-    def __init__(self, path: pathlib.Path, unpack_method: UnpackMethod) -> None:
+    def __init__(
+        self,
+        path: pathlib.Path,
+        unpack_method: UnpackMethod,
+        strip_components: int = 0,
+    ) -> None:
+        if strip_components < 0:
+            raise ValueError("strip_components must be non-negative")
         method = unpack_method
         if method in (UnpackMethod.AUTO, UnpackMethod.TAR_AUTO):
             method = determine_unpack_method(path.name)
         self._path = path
         self._method = method
+        self._strip_components = strip_components
 
     def iter_members(self) -> Iterator[MemberEntry]:
-        yield from self._iter_raw_members()
+        for path, size, reader in self._iter_raw_members():
+            normalized = _strip_leading_components(path, self._strip_components)
+            if normalized is None:
+                continue
+            yield normalized, size, reader
 
     def _iter_raw_members(self) -> Iterator[MemberEntry]:
         if self._method in _TAR_METHODS:
