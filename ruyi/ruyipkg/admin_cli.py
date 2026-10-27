@@ -299,6 +299,16 @@ class AdminRescanPackageAbiCommand(
             ),
         )
         p.add_argument(
+            "--strip-components",
+            type=_non_negative_int,
+            default=0,
+            metavar="N",
+            help=_(
+                "Strip N leading path components from archive members before "
+                "matching excludes and recording paths (default: 0; archives only)"
+            ),
+        )
+        p.add_argument(
             "-o",
             "--output",
             type=str,
@@ -323,6 +333,7 @@ class AdminRescanPackageAbiCommand(
         logger = cfg.logger
         target = pathlib.Path(cast(str, args.path))
         raw_excludes = cast("list[str]", args.exclude)
+        strip_components = cast(int, args.strip_components)
         output = cast("str | None", args.output)
 
         try:
@@ -340,8 +351,17 @@ class AdminRescanPackageAbiCommand(
             )
             return 1
 
+        if target.is_dir() and strip_components:
+            logger.F(_("--strip-components is only valid for archive inputs"))
+            return 1
+
         try:
-            report = scan_path(logger, target, exclude=exclude)
+            report = scan_path(
+                logger,
+                target,
+                exclude=exclude,
+                strip_components=strip_components,
+            )
         except Exception as e:  # noqa: BLE001
             logger.F(
                 _("failed to scan {path}: {err}").format(path=str(target), err=str(e))
@@ -426,6 +446,13 @@ class AdminCheckAbiCommand(
                 )
 
         return 0 if bool(report) else 1
+
+
+def _non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be non-negative")
+    return parsed
 
 
 def _expand_excludes(tokens: "list[str]") -> "list[str]":
