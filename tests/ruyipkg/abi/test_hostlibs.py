@@ -4,7 +4,7 @@ import struct
 import pytest
 from pytest import MonkeyPatch
 
-from ruyi.ruyipkg.abi.hostlibs import HostLibResolver
+from ruyi.ruyipkg.abi.hostlibs import HostLibResolver, _system_lib_dirs
 
 _CACHE_MAGIC = b"glibc-ld.so.cache"
 _CACHE_VERSION = b"1.1"
@@ -98,6 +98,21 @@ def test_multilib_cache_entry_filtered_by_flags(tmp_path: pathlib.Path) -> None:
     r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
     assert r.resolve("libc.so.6") is None
     assert "libc.so.6" not in r.resolvable_sonames()
+
+
+def test_system_lib_dirs_prefer_64_bit_on_64_bit_arches() -> None:
+    # On multilib hosts /lib and /usr/lib hold the 32-bit libraries, so the
+    # 64-bit directories must be searched first.
+    for e_machine in (62, 183, 243):
+        dirs = _system_lib_dirs(e_machine)
+        assert dirs.index(pathlib.Path("/lib64")) < dirs.index(pathlib.Path("/lib"))
+        assert dirs.index(pathlib.Path("/usr/lib64")) < dirs.index(
+            pathlib.Path("/usr/lib")
+        )
+
+
+def test_system_lib_dirs_skip_lib64_on_32_bit_arch() -> None:
+    assert pathlib.Path("/lib64") not in _system_lib_dirs(3)
 
 
 def test_malformed_cache_falls_back_to_dirs(tmp_path: pathlib.Path) -> None:
