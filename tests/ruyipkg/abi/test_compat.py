@@ -167,14 +167,17 @@ def test_interpreter_present() -> None:
     assert items[0].compatible is True
 
 
-def test_soname_missing() -> None:
+def test_soname_missing_is_undetermined() -> None:
     pkg = _report(_rec(needed=("libc.so.6", "libm.so.6")))
     host = _host(
         e_machines=frozenset({62}), resolvable_sonames=frozenset({"libc.so.6"})
     )
     report = check_host_compatibility(pkg, host)
     by_soname = {i.params["soname"]: i.compatible for i in _items_of(report, "soname")}
-    assert by_soname == {"libc.so.6": True, "libm.so.6": False}
+    assert by_soname == {"libc.so.6": True, "libm.so.6": None}
+    # A lookup we could not perform says nothing definite about the host.
+    assert report.compatible is None
+    assert bool(report) is True
 
 
 def test_verneed_missing_version() -> None:

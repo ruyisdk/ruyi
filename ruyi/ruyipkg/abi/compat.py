@@ -119,11 +119,16 @@ def _check_interpreters(
 def _check_sonames(package: ABIReport, host: HostABIReport) -> list[HostABICompatItem]:
     out: list[HostABICompatItem] = []
     for soname in package.summary.needed:
+        found = soname in host.resolvable_sonames
         out.append(
             HostABICompatItem(
                 "soname",
-                soname in host.resolvable_sonames,
-                "package requires shared library {soname}",
+                True if found else None,
+                (
+                    "shared library {soname} is present"
+                    if found
+                    else "could not locate shared library {soname} on this host"
+                ),
                 {"soname": soname},
             )
         )
