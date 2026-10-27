@@ -29,6 +29,15 @@ _ARCH_FLAGS: dict[int, frozenset[int]] = {
     243: frozenset({0x0F00, 0x1000}),  # RISC-V float-ABI soft / double
 }
 
+# ELF class of the native libraries for each supported e_machine.  Only these
+# architectures have their candidate files cross-checked, matching the way the
+# loader's open_verify() rejects a library of a foreign class or machine.
+_ARCH_ELF_CLASS: dict[int, int] = {
+    62: 64,
+    183: 64,
+    243: 64,
+}
+
 _TRIPLET_DIRS: dict[int, tuple[str, ...]] = {
     62: ("x86_64-linux-gnu",),
     183: ("aarch64-linux-gnu",),
@@ -96,7 +105,9 @@ class HostLibResolver(ResolvesHostLibs):
         musl_path_file: pathlib.Path | None = None,
     ) -> None:
         self._e_machine = e_machine
-        self._index: dict[str, pathlib.Path] = {}
+        self._elf_class = _ARCH_ELF_CLASS.get(e_machine, 0)
+        self._candidates: dict[str, list[pathlib.Path]] = {}
+        self._resolved: dict[str, pathlib.Path | None] = {}
         entries: list[tuple[str, str, int]] = []
         try:
             entries = parse_ld_so_cache(cache_path.read_bytes())
@@ -108,7 +119,7 @@ class HostLibResolver(ResolvesHostLibs):
                 continue
             if accepted is not None and (flags & _FLAG_REQUIRED_MASK) not in accepted:
                 continue
-            self._index.setdefault(soname, pathlib.Path(path))
+            self._add_candidate(soname, pathlib.Path(path))
         dirs: list[pathlib.Path] = []
         if lib_dirs is not None:
             dirs = list(lib_dirs)
@@ -124,18 +135,51 @@ class HostLibResolver(ResolvesHostLibs):
         for d in dirs:
             try:
                 for child in d.iterdir():
-                    if ".so" not in child.name:
-                        continue
-                    if child.name not in self._index and child.is_file():
-                        self._index[child.name] = child
+                    if ".so" in child.name and child.is_file():
+                        self._add_candidate(child.name, child)
             except OSError:
                 continue
 
+    def _add_candidate(self, soname: str, path: pathlib.Path) -> None:
+        candidates = self._candidates.setdefault(soname, [])
+        if path not in candidates:
+            candidates.append(path)
+
     def resolve(self, soname: str) -> pathlib.Path | None:
-        return self._index.get(soname)
+        if soname not in self._resolved:
+            self._resolved[soname] = next(
+                (
+                    path
+                    for path in self._candidates.get(soname, ())
+                    if self._candidate_matches(path)
+                ),
+                None,
+            )
+        return self._resolved[soname]
 
     def resolvable_sonames(self) -> frozenset[str]:
-        return frozenset(self._index)
+        return frozenset(s for s in self._candidates if self.resolve(s) is not None)
+
+    def _candidate_matches(self, path: pathlib.Path) -> bool:
+        """Reject candidates the host's loader would not accept.
+
+        This mirrors the class and machine checks of open_verify(): a stale
+        cache entry or a wrong-class file in a multilib directory must not be
+        mistaken for a usable provider.
+        """
+        if self._elf_class == 0:
+            return True
+        try:
+            with path.open("rb") as fp:
+                head = fp.read(20)
+        except OSError:
+            return False
+        if len(head) < 20 or head[:4] != b"\x7fELF":
+            return False
+        expected_class = 1 if self._elf_class == 32 else 2
+        if head[4] != expected_class or head[5] != 1:
+            return False
+        return int.from_bytes(head[18:20], "little") == self._e_machine
 
 
 def _musl_arch(e_machine: int) -> str:

@@ -120,7 +120,7 @@ def test_malformed_cache_falls_back_to_dirs(tmp_path: pathlib.Path) -> None:
     bad.write_bytes(b"glibc-ld.so.cache1.1" + b"\x00" * 8)  # truncated
     libdir = tmp_path / "lib"
     libdir.mkdir()
-    (libdir / "libm.so.6").write_bytes(b"")
+    (libdir / "libm.so.6").write_bytes(_elf_header(62))
     r = HostLibResolver(62, cache_path=bad, lib_dirs=[libdir])
     assert r.resolve("libm.so.6") == libdir / "libm.so.6"
     assert "libm.so.6" in r.resolvable_sonames()
@@ -131,7 +131,7 @@ def test_unknown_version_cache_falls_back_to_dirs(tmp_path: pathlib.Path) -> Non
     bad.write_bytes(b"glibc-ld.so.cache1.0" + b"\x00" * 8)  # unsupported version
     libdir = tmp_path / "lib"
     libdir.mkdir()
-    (libdir / "libz.so.1").write_bytes(b"")
+    (libdir / "libz.so.1").write_bytes(_elf_header(62))
     r = HostLibResolver(62, cache_path=bad, lib_dirs=[libdir])
     assert r.resolve("libz.so.1") == libdir / "libz.so.1"
 
@@ -140,11 +140,57 @@ def test_non_library_files_in_lib_dir_not_resolvable(tmp_path: pathlib.Path) -> 
     libdir = tmp_path / "lib"
     libdir.mkdir()
     (libdir / "readme.txt").write_bytes(b"")
-    (libdir / "libc.so.6").write_bytes(b"")
+    (libdir / "libc.so.6").write_bytes(_elf_header(62))
     r = HostLibResolver(62, cache_path=tmp_path / "absent", lib_dirs=[libdir])
     assert r.resolve("readme.txt") is None
     assert "readme.txt" not in r.resolvable_sonames()
     assert r.resolve("libc.so.6") == libdir / "libc.so.6"
+
+
+def test_resolve_skips_wrong_class_cache_candidate(tmp_path: pathlib.Path) -> None:
+    # A stale or bogus cache entry must not mask a usable directory fallback.
+    wrong = tmp_path / "lib32" / "libc.so.6"
+    wrong.parent.mkdir()
+    wrong.write_bytes(_elf_header(3, elf_class=1))
+    libdir = tmp_path / "lib64"
+    libdir.mkdir()
+    right = libdir / "libc.so.6"
+    right.write_bytes(_elf_header(62))
+    cache = build_cache(
+        [("libc.so.6", str(wrong), _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64)]
+    )
+    (tmp_path / "ld.so.cache").write_bytes(cache)
+    r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=[libdir])
+    assert r.resolve("libc.so.6") == right
+
+
+def test_resolve_skips_stale_cache_candidate(tmp_path: pathlib.Path) -> None:
+    libdir = tmp_path / "lib64"
+    libdir.mkdir()
+    right = libdir / "libc.so.6"
+    right.write_bytes(_elf_header(62))
+    cache = build_cache(
+        [
+            (
+                "libc.so.6",
+                str(tmp_path / "gone" / "libc.so.6"),
+                _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64,
+            )
+        ]
+    )
+    (tmp_path / "ld.so.cache").write_bytes(cache)
+    r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=[libdir])
+    assert r.resolve("libc.so.6") == right
+
+
+def test_resolve_rejects_wrong_class_only_candidate(tmp_path: pathlib.Path) -> None:
+    lib = tmp_path / "libc.so.6"
+    lib.write_bytes(_elf_header(3, elf_class=1))
+    cache = build_cache([("libc.so.6", str(lib), _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64)])
+    (tmp_path / "ld.so.cache").write_bytes(cache)
+    r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
+    assert r.resolve("libc.so.6") is None
+    assert "libc.so.6" not in r.resolvable_sonames()
 
 
 def test_never_uses_process_env_or_own_bundle(
