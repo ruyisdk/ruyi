@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal, Mapping, Sequence
 
 from ..model import AttributeVendorBlob, GnuProperty
-from .base import register
+from .base import ArchMetadata, register
 
 _EM_X86_64 = 62
 _GNU_PROPERTY_X86_ISA_1_NEEDED = 0xC0008002
@@ -30,6 +30,12 @@ _V4_FLAGS = frozenset({"avx512f", "avx512bw", "avx512cd", "avx512dq", "avx512vl"
 
 class X86_64Interpreter:
     e_machines = frozenset({_EM_X86_64})
+
+    def recognize_arch(self, uname_machine: str) -> ArchMetadata | None:
+        if uname_machine != "x86_64":
+            return None
+        # Assume little-endian.
+        return ArchMetadata(_EM_X86_64, 64, "little")
 
     def interpret(
         self,
