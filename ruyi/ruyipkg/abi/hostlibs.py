@@ -24,9 +24,9 @@ _FLAG_REQUIRED_MASK = 0xFF00
 
 # Accepted FLAG_REQUIRED_MASK values per e_machine; absent = accept any.
 _ARCH_FLAGS: dict[int, frozenset[int]] = {
-    62: frozenset({0x0200}),  # FLAG_X8664_LIB64
-    183: frozenset({0x0800}),  # FLAG_AARCH64_LIB64
-    243: frozenset({0x0400, 0x0200}),  # RISC-V float-ABI soft / double
+    62: frozenset({0x0300}),  # FLAG_X8664_LIB64
+    183: frozenset({0x0A00}),  # FLAG_AARCH64_LIB64
+    243: frozenset({0x0F00, 0x1000}),  # RISC-V float-ABI soft / double
 }
 
 _TRIPLET_DIRS: dict[int, tuple[str, ...]] = {
