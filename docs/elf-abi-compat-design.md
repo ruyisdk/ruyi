@@ -120,10 +120,11 @@ data_hex = "410000001872697363760001000000000572763634..."
 `foo-0.1.0.tar.zst.abi.toml`）。`-o FILE` 指定其他输出路径；`-o -` 则把
 TOML 写到标准输出，便于与管道、diff 工具配合。
 
-排除模式与 `scan_source()` 的 `exclude` 语义一致，均为 `.gitignore` 风格：
+排除模式与 `scan_source()` 的 `exclude` 语义一致，均为 `.gitignore` 风格，匹配路径相对于包镜像根：
 
 * `--exclude GLOB` 可重复给出，逐条累加；
-* `--exclude @FILE` 从文件中读取模式，每行一条；空行与以 `#` 开头的注释行会被跳过。
+* `--exclude @FILE` 从文件中读取模式，每行一条；空行与以 `#` 开头的注释行会被跳过；
+* `--strip-components N` 仅对归档输入有效：在匹配排除规则与记录路径之前，丢弃每个成员路径的前 N 段；默认 0。目录输入本身已以给定目录为根，不接受该选项。
 
 需要注意的是，文件扫描排除的只是 `pathspec` 层面的成员匹配，与 Ruyi 运行时
 对 `_` 前缀条目的忽略是两回事（后者由仓库结构约定，见下）。
@@ -135,8 +136,8 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 相同。
 
 * `--no-abi-scan` 关闭这一默认行为，只构建产物、不生成 sidecar。
-* recipe 可以按产物粒度定制排除规则：`ctx.artifact(glob, root, exclude=[...])`，
-  其中 `exclude` 的含义同 `scan_source()`。
+* recipe 可以按产物粒度定制排除规则：`ctx.artifact(glob, root, exclude=[...], strip_components=N)`，
+  其中 `exclude` 的含义同 `scan_source()`，`strip_components` 用于去掉归档产物内部的顶层目录。
 
 ### 产物在软件源中的摆放
 
