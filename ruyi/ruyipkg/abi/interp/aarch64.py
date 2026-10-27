@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal, Mapping, Sequence
 
 from ..model import AttributeVendorBlob, GnuProperty
-from .base import register
+from .base import ArchMetadata, register
 
 _EM_AARCH64 = 183
 _GNU_PROPERTY_AARCH64_FEATURE_1_AND = 0xC0000000
@@ -15,6 +15,12 @@ _FEATURE_1_PAC = 1 << 1
 
 class AArch64Interpreter:
     e_machines = frozenset({_EM_AARCH64})
+
+    def recognize_arch(self, uname_machine: str) -> ArchMetadata | None:
+        if uname_machine not in ("aarch64", "arm64"):
+            return None
+        # Assume little-endian.
+        return ArchMetadata(_EM_AARCH64, 64, "little")
 
     def interpret(
         self,

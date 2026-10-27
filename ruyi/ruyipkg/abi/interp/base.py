@@ -7,14 +7,22 @@ registered interpreter still gets full raw capture, just no decoded keys.
 
 from __future__ import annotations
 
-from typing import Mapping, Protocol, Sequence, runtime_checkable
+from typing import Mapping, NamedTuple, Protocol, Sequence, runtime_checkable
 
 from ..model import AttributeVendorBlob, GnuProperty
+
+
+class ArchMetadata(NamedTuple):
+    elf_machine: int
+    bitness: int
+    endianness: str
 
 
 @runtime_checkable
 class AttrInterpreter(Protocol):
     e_machines: frozenset[int]
+
+    def recognize_arch(self, uname_machine: str) -> ArchMetadata | None: ...
 
     def interpret(
         self,
@@ -53,3 +61,24 @@ def register(interp: AttrInterpreter) -> None:
 
 def get_interpreter(e_machine: int) -> AttrInterpreter | None:
     return _REGISTRY.get(e_machine)
+
+
+def recognize_arch_by_uname(uname_machine: str | None) -> ArchMetadata | None:
+    probe_native = not uname_machine
+    if probe_native:
+        import platform
+        import sys
+
+        uname_machine = platform.machine()
+        bitness = sys.maxsize.bit_length() + 1
+
+    assert uname_machine is not None
+
+    for interp in _REGISTRY.values():
+        if data := interp.recognize_arch(uname_machine):
+            if probe_native:
+                # use the bitness and endianness from the running host
+                return ArchMetadata(data.elf_machine, bitness, sys.byteorder)
+            return data
+
+    return None

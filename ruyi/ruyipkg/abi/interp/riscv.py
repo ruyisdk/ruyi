@@ -6,7 +6,7 @@ import struct
 from typing import Mapping, Sequence
 
 from ..model import AttributeVendorBlob, GnuProperty
-from .base import register
+from .base import ArchMetadata, register
 
 _EM_RISCV = 243
 _TAG_FILE = 1
@@ -36,6 +36,17 @@ def _read_ntbs(data: bytes, off: int) -> tuple[str, int]:
 
 class RiscVInterpreter:
     e_machines = frozenset({_EM_RISCV})
+
+    def recognize_arch(self, uname_machine: str) -> ArchMetadata | None:
+        if not uname_machine.startswith("riscv"):
+            return None
+        try:
+            bitness = int(uname_machine[5:])
+        except ValueError:
+            return None
+        # XXX Big-endian RISC-V is not widespread, and isn't detectable from
+        # utsname.machine alone. Assume little-endian for now.
+        return ArchMetadata(_EM_RISCV, bitness, "little")
 
     def interpret(
         self,
