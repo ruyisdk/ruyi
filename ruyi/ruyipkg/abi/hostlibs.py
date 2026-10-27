@@ -37,6 +37,22 @@ _TRIPLET_DIRS: dict[int, tuple[str, ...]] = {
 
 _DEFAULT_LIB_DIRS = ("/lib", "/usr/lib", "/usr/local/lib")
 
+# Architectures whose 64-bit libraries may live in dedicated directories that
+# coexist with 32-bit ones, so they must be searched before the generic list.
+_LIB64_ARCHES = frozenset({62, 183, 243})  # x86-64, AArch64, RISC-V
+_LIB64_DIRS = ("/lib64", "/usr/lib64")
+
+
+def _system_lib_dirs(e_machine: int) -> tuple[pathlib.Path, ...]:
+    dirs: list[pathlib.Path] = []
+    if e_machine in _LIB64_ARCHES:
+        dirs.extend(pathlib.Path(d) for d in _LIB64_DIRS)
+    dirs.extend(pathlib.Path(d) for d in _DEFAULT_LIB_DIRS)
+    for triplet in _TRIPLET_DIRS.get(e_machine, ()):
+        dirs.append(pathlib.Path("/lib") / triplet)
+        dirs.append(pathlib.Path("/usr/lib") / triplet)
+    return tuple(dirs)
+
 
 def parse_ld_so_cache(data: bytes) -> list[tuple[str, str, int]]:
     """Parse a glibc new-format cache into (soname, path, flags) tuples.
@@ -104,10 +120,7 @@ class HostLibResolver(ResolvesHostLibs):
                 dirs.extend(pathlib.Path(p) for p in musl.read_text().split(":") if p)
             except OSError:
                 pass
-            dirs.extend(pathlib.Path(d) for d in _DEFAULT_LIB_DIRS)
-            for triplet in _TRIPLET_DIRS.get(e_machine, ()):
-                dirs.append(pathlib.Path("/lib") / triplet)
-                dirs.append(pathlib.Path("/usr/lib") / triplet)
+            dirs.extend(_system_lib_dirs(e_machine))
         for d in dirs:
             try:
                 for child in d.iterdir():
