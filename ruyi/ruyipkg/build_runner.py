@@ -294,7 +294,12 @@ def _resolve_artifacts(
                     # unwritable output directory) must never fail an
                     # otherwise-successful build. Warn and continue.
                     try:
-                        report = scan_path(logger, match, exclude=art.exclude)
+                        report = scan_path(
+                            logger,
+                            match,
+                            exclude=art.exclude,
+                            strip_components=art.strip_components,
+                        )
                         sidecar = sidecar_path_for(match)
                         write_sidecar(report, sidecar)
                     except Exception as e:  # noqa: BLE001
