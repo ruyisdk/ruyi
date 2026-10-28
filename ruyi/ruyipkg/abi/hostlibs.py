@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 import pathlib
 import struct
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 _CACHE_MAGIC = b"glibc-ld.so.cache"
 _CACHE_VERSION = b"1.1"
@@ -63,8 +63,15 @@ def _system_lib_dirs(e_machine: int) -> tuple[pathlib.Path, ...]:
     return tuple(dirs)
 
 
-def parse_ld_so_cache(data: bytes) -> list[tuple[str, str, int]]:
-    """Parse a glibc new-format cache into (soname, path, flags) tuples.
+class CacheEntry(NamedTuple):
+    soname: str
+    path: str
+    flags: int
+    hwcap: int
+
+
+def parse_ld_so_cache(data: bytes) -> list[CacheEntry]:
+    """Parse a glibc new-format cache into entries.
 
     Raises ValueError or struct.error on any format deviation; callers
     fall back to the directory walk.
@@ -75,9 +82,9 @@ def parse_ld_so_cache(data: bytes) -> list[tuple[str, str, int]]:
     if data[17:20] != _CACHE_VERSION:
         raise ValueError("unsupported cache version")
     nlibs, _len_strings = struct.unpack_from("<II", data, 20)
-    entries: list[tuple[str, str, int]] = []
+    entries: list[CacheEntry] = []
     for i in range(nlibs):
-        flags, key, value, _pad, _hwcap = struct.unpack_from(
+        flags, key, value, _pad, hwcap = struct.unpack_from(
             "<iIIIQ", data, header_len + 24 * i
         )
 
@@ -85,7 +92,7 @@ def parse_ld_so_cache(data: bytes) -> list[tuple[str, str, int]]:
             end = data.index(b"\x00", off)
             return data[off:end].decode("utf-8", "replace")
 
-        entries.append((read_str(key), read_str(value), flags))
+        entries.append(CacheEntry(read_str(key), read_str(value), flags, hwcap))
     return entries
 
 
@@ -115,18 +122,27 @@ class HostLibResolver(ResolvesHostLibs):
         self._elf_class = _ARCH_ELF_CLASS.get(e_machine, 0)
         self._candidates: dict[str, list[pathlib.Path]] = {}
         self._resolved: dict[str, pathlib.Path | None] = {}
-        entries: list[tuple[str, str, int]] = []
+        entries: list[CacheEntry] = []
         try:
             entries = parse_ld_so_cache(cache_path.read_bytes())
         except (OSError, ValueError, struct.error):
             entries = []
         accepted = _ARCH_FLAGS.get(e_machine)
-        for soname, path, flags in entries:
-            if flags & _FLAG_TYPE_MASK != _FLAG_ELF_LIBC6:
+        for entry in entries:
+            if entry.hwcap != 0:
+                # In this cache format the field is either legacy hwcap bits
+                # (removed from glibc in 2.37) or an index into the
+                # glibc-hwcaps extension, which we do not decode. Ignore the
+                # entry instead of scanning a library the loader may skip.
                 continue
-            if accepted is not None and (flags & _FLAG_REQUIRED_MASK) not in accepted:
+            if entry.flags & _FLAG_TYPE_MASK != _FLAG_ELF_LIBC6:
                 continue
-            self._add_candidate(soname, pathlib.Path(path))
+            if (
+                accepted is not None
+                and (entry.flags & _FLAG_REQUIRED_MASK) not in accepted
+            ):
+                continue
+            self._add_candidate(entry.soname, pathlib.Path(entry.path))
         dirs: list[pathlib.Path] = []
         if lib_dirs is not None:
             dirs = list(lib_dirs)
