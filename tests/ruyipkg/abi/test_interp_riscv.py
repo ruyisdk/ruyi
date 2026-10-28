@@ -93,6 +93,17 @@ def test_host_attrs_missing_isa_line() -> None:
         ("rv32i", "rv64i", False),  # XLEN mismatch
         ("rv64i2p1_m2p0_a2p1", "rv64imafdc_zicsr_zifencei", True),  # versioned base
         (
+            "rv64i2p1m2p0a2p1c2p0",
+            "rv64imac",
+            True,
+        ),  # versioned single letters in compact form
+        (
+            "rv64i2p1m2p0a2p1c2p0",
+            "rv64ima",
+            False,
+        ),  # the version on 'c' must not swallow it
+        ("rv64i2p1_zba1p0", "rv64i_zba", True),  # versioned multi-letter
+        (
             "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zba1p0",
             "rv64imafdc_zicsr_zifencei",
             False,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import struct
 from typing import Mapping, Sequence
 
@@ -138,6 +139,21 @@ class RiscVInterpreter:
 
 _G_EXPANSION = frozenset({"i", "m", "a", "f", "d", "zicsr", "zifencei"})
 
+_SINGLE_EXT_RE = re.compile(r"([a-z])(\d+(?:p\d+)?)?")
+
+
+def _split_single_letters(tok: str) -> list[str] | None:
+    """Split a run of single-letter extensions, dropping version suffixes."""
+    out: list[str] = []
+    pos = 0
+    while pos < len(tok):
+        m = _SINGLE_EXT_RE.match(tok, pos)
+        if m is None:
+            return None
+        out.append(m.group(1))
+        pos = m.end()
+    return out
+
 
 def _isa_extensions(isa: str) -> frozenset[str] | None:
     """Split a RISC-V ISA string into an extension set, or None if unparsable.
@@ -146,29 +162,35 @@ def _isa_extensions(isa: str) -> frozenset[str] | None:
     version suffixes; 'g' expands per the base spec. XLEN is folded into the
     result as xlenNN, so a cross-XLEN requirement is a definite mismatch.
     """
-    import re
-
     m = re.fullmatch(r"rv(32|64|128)([a-z0-9]+(?:_[a-z0-9]+)*)", isa)
     if m is None:
         return None
     xlen, rest = m.group(1), m.group(2)
-    first, *multi = rest.split("_")
-    if not first or first[0] not in "ieg":
-        return None
+    tokens = rest.split("_")
 
     def strip_ver(tok: str) -> str:
         return re.sub(r"\d+p\d+$|\d+$", "", tok)
 
+    first_letters = _split_single_letters(tokens[0])
+    if not first_letters or first_letters[0] not in "ieg":
+        return None
+
     exts: set[str] = set()
-    base = first[0]
+    base = first_letters[0]
     exts |= _G_EXPANSION if base == "g" else {base}
-    for ch in strip_ver(first[1:]):
-        exts.add(ch)
-    for tok in multi:
-        tok = strip_ver(tok)
-        if not tok:
-            return None
-        exts.add(tok)
+    exts.update(first_letters[1:])
+    for tok in tokens[1:]:
+        if tok[0] in "zsx":
+            # Multi-letter extensions are kept whole, minus their version.
+            name = strip_ver(tok)
+            if not name:
+                return None
+            exts.add(name)
+        else:
+            letters = _split_single_letters(tok)
+            if letters is None:
+                return None
+            exts.update(letters)
     exts.discard("")
     return frozenset(exts) | {f"xlen{xlen}"}
 
