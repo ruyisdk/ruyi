@@ -1,6 +1,5 @@
 import ctypes
 import pathlib
-from typing import cast
 
 from pytest import MonkeyPatch
 
@@ -17,11 +16,36 @@ def test_read_cpuinfo_missing_returns_empty(tmp_path: pathlib.Path) -> None:
     assert read_cpuinfo(str(tmp_path / "does-not-exist")) == ""
 
 
-def test_read_auxv_returns_dict_of_ints() -> None:
-    # don't trust the return value's declared shape
-    result = cast(object, read_auxv())
-    assert isinstance(result, dict)
-    assert all(isinstance(k, int) and isinstance(v, int) for k, v in result.items())
+class _FakeGetauxval:
+    restype: object = None
+
+    def __call__(self, at: ctypes.c_ulong) -> int:
+        return {16: 0x1234, 26: 0x5678}.get(at.value, 0)
+
+
+class _FakeLibc:
+    def __init__(self) -> None:
+        self.getauxval = _FakeGetauxval()
+
+
+def test_read_auxv_reads_expected_entries(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(ctypes, "CDLL", lambda name: _FakeLibc())
+    assert read_auxv() == {16: 0x1234, 26: 0x5678}
+
+
+def test_read_auxv_falls_back_to_libc_soname(monkeypatch: MonkeyPatch) -> None:
+    calls: list[str | None] = []
+
+    def fake_cdll(name: str | None) -> _FakeLibc:
+        calls.append(name)
+        if name is None:
+            # No process-local symbol table, as on a statically linked libc.
+            raise OSError("no such process symbols")
+        return _FakeLibc()
+
+    monkeypatch.setattr(ctypes, "CDLL", fake_cdll)
+    assert read_auxv() == {16: 0x1234, 26: 0x5678}
+    assert calls == [None, "libc.so.6"]
 
 
 def test_read_auxv_swallows_failure(monkeypatch: MonkeyPatch) -> None:

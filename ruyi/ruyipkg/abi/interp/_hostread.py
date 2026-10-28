@@ -16,14 +16,24 @@ def read_cpuinfo(path: str = "/proc/cpuinfo") -> str:
 
 
 def read_auxv() -> dict[int, int]:
-    """Return selected auxv entries via getauxval(3); empty on failure."""
+    """Return selected auxv entries via getauxval(3); empty on failure.
+
+    Look the symbol up in the running process first, so that musl (which has
+    no ``libc.so.6`` compatibility name) is handled like glibc. Fall back to
+    the glibc soname for environments where the process symbol is hidden.
+    """
     import ctypes
 
-    try:
-        libc = ctypes.CDLL("libc.so.6")
-        getauxval = libc.getauxval
-        getauxval.restype = ctypes.c_ulong
-    except (AttributeError, OSError):
+    getauxval = None
+    for name in (None, "libc.so.6"):
+        try:
+            libc = ctypes.CDLL(name)
+            getauxval = libc.getauxval
+            getauxval.restype = ctypes.c_ulong
+            break
+        except (AttributeError, OSError):
+            getauxval = None
+    if getauxval is None:
         return {}
     out: dict[int, int] = {}
     for at in (16, 26):  # AT_HWCAP, AT_HWCAP2
