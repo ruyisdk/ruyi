@@ -53,12 +53,16 @@ def test_host_attrs_without_flags_line_is_undetermined() -> None:
     assert interp.host_attrs(cpuinfo="processor\t: 0\n") == {}
 
 
-def test_host_attrs_v2_needs_lzcnt_alias() -> None:
+def test_host_attrs_v3_needs_lzcnt_alias() -> None:
     interp = X86_64Interpreter()
-    # v2 flag set alone, with neither abm nor lzcnt, is not enough.
-    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2)) == {"isa_level": "v1"}
-    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2 | {"lzcnt"})) == {"isa_level": "v2"}
-    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2 | {"abm"} | _V3)) == {
+    # v2 does not require LZCNT, so its flag set alone is enough.
+    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2)) == {"isa_level": "v2"}
+    # v3 does, so the v3 flag set alone stays at v2.
+    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2 | _V3)) == {"isa_level": "v2"}
+    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2 | _V3 | {"lzcnt"})) == {
+        "isa_level": "v3"
+    }
+    assert interp.host_attrs(cpuinfo=_cpuinfo(_V2 | _V3 | {"abm"})) == {
         "isa_level": "v3"
     }
 

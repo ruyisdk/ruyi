@@ -19,8 +19,9 @@ _ISA_BITS = [
 ]
 
 # CPU flag sets required for each ISA level, following the glibc hwcaps
-# classification.  The v2 baseline also needs the LZCNT instruction; Intel
-# reports it as 'abm', AMD usually reports both, so either alias suffices.
+# classification.  The v3 baseline additionally needs the LZCNT instruction;
+# Intel reports it as 'abm', AMD usually reports both, so either alias
+# suffices.
 _V2_FLAGS = frozenset({"cx16", "lahf_lm", "popcnt", "pni", "sse4_1", "sse4_2", "ssse3"})
 _V3_FLAGS = frozenset(
     {"avx", "avx2", "bmi1", "bmi2", "f16c", "fma", "movbe", "osxsave", "xsave"}
@@ -87,9 +88,9 @@ class X86_64Interpreter:
             # x86-64 host, so the level cannot be determined.
             return {}
         level = 1
-        if _level_ok(flags, _V2_FLAGS) and _lzcnt_ok(flags):
+        if _level_ok(flags, _V2_FLAGS):
             level = 2
-        if level == 2 and _level_ok(flags, _V3_FLAGS):
+        if level == 2 and _level_ok(flags, _V3_FLAGS) and _lzcnt_ok(flags):
             level = 3
         if level == 3 and _level_ok(flags, _V4_FLAGS):
             level = 4
