@@ -65,7 +65,10 @@ class AArch64Interpreter:
         hwcap2 = values.get(26, 0)  # AT_HWCAP2
         return {
             "bti": bool(hwcap2 & (1 << 17)),  # HWCAP2_BTI
-            "pac": bool(hwcap & ((1 << 30) | (1 << 31))),  # HWCAP_PACA|HWCAP_PACG
+            # The GNU property only records that the object uses PAC, without
+            # telling address (PACA) and generic (PACG) forms apart, so both
+            # have to be available before support can be claimed.
+            "pac": bool(hwcap & (1 << 30)) and bool(hwcap & (1 << 31)),
         }
 
     def check(

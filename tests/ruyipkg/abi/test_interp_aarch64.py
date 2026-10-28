@@ -50,7 +50,7 @@ def test_rollup_conservative_and() -> None:
 def test_host_attrs_from_auxv() -> None:
     interp = AArch64Interpreter()
     assert interp.host_attrs(
-        auxv={_AT_HWCAP: _HWCAP_PACA, _AT_HWCAP2: _HWCAP2_BTI}
+        auxv={_AT_HWCAP: _HWCAP_PACA | _HWCAP_PACG, _AT_HWCAP2: _HWCAP2_BTI}
     ) == {
         "bti": True,
         "pac": True,
@@ -68,6 +68,15 @@ def test_bti_is_not_hwcap2_sve2() -> None:
         auxv={_AT_HWCAP: 0, _AT_HWCAP2: _HWCAP2_SVE2}
     )
     assert out == {"bti": False, "pac": False}
+
+
+def test_pac_requires_both_address_and_generic_forms() -> None:
+    interp = AArch64Interpreter()
+    for hwcap in (_HWCAP_PACA, _HWCAP_PACG):
+        assert interp.host_attrs(auxv={_AT_HWCAP: hwcap, _AT_HWCAP2: 0}) == {
+            "bti": False,
+            "pac": False,
+        }
 
 
 def test_check_degrades_to_unknown_not_incompatible() -> None:
