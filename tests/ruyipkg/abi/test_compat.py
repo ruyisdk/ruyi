@@ -9,7 +9,13 @@ from ruyi.ruyipkg.abi.compat import (
     check_host_compatibility,
 )
 from ruyi.ruyipkg.abi.hostprobe import HostABIReport
-from ruyi.ruyipkg.abi.model import ABIReport, ElfABIRecord, ElfType, VersionNeed
+from ruyi.ruyipkg.abi.model import (
+    ABIReport,
+    ABIScanError,
+    ElfABIRecord,
+    ElfType,
+    VersionNeed,
+)
 
 
 def _rec(**kw: object) -> ElfABIRecord:
@@ -35,11 +41,13 @@ def _rec(**kw: object) -> ElfABIRecord:
     return ElfABIRecord(**base)  # type: ignore[arg-type]
 
 
-def _report(*records: ElfABIRecord) -> ABIReport:
+def _report(
+    *records: ElfABIRecord, errors: tuple[ABIScanError, ...] = ()
+) -> ABIReport:
     return ABIReport(
         records=records,
         summary=build_summary(records, file_count=len(records), excluded_count=0),
-        errors=(),
+        errors=errors,
     )
 
 
@@ -247,6 +255,23 @@ def test_unversioned_absent_no_item() -> None:
     host = _host(e_machines=frozenset({62}), elf_class=64, endianness="little")
     report = check_host_compatibility(pkg, host)
     assert _items_of(report, "unversioned") == []
+
+
+def test_scan_errors_are_undetermined() -> None:
+    pkg = _report(errors=(ABIScanError("bin/broken", "failed to read member"),))
+    host = _host(e_machines=frozenset({62}), elf_class=64, endianness="little")
+    report = check_host_compatibility(pkg, host)
+    items = _items_of(report, "scan-error")
+    assert len(items) == 1
+    assert items[0].compatible is None
+    assert items[0].params == {
+        "path": "bin/broken",
+        "reason": "failed to read member",
+    }
+    # Missing ABI data must not look strictly compatible.
+    assert report.compatible is None
+    assert report.strictly_compatible is False
+    assert bool(report) is True
 
 
 def test_attrs_empty_parsed_produce_no_item() -> None:
