@@ -134,10 +134,21 @@ class RiscVInterpreter:
         need_set, have_set = _isa_extensions(need), _isa_extensions(have)
         if need_set is None or have_set is None:
             return None
-        return need_set <= have_set
+        if not need_set <= have_set:
+            return False
+        # The psABI guarantees 16-byte stack alignment at function entry; the
+        # ELF attribute only records the minimum the object assumes. Anything
+        # stricter than that baseline cannot be confirmed from the host.
+        align = required.get("stack_align")
+        if isinstance(align, int) and align > _STACK_ALIGN:
+            return None
+        return True
 
 
 _G_EXPANSION = frozenset({"i", "m", "a", "f", "d", "zicsr", "zifencei"})
+
+_STACK_ALIGN = 16
+"""Stack alignment guaranteed by the RISC-V psABI on every XLEN."""
 
 _SINGLE_EXT_RE = re.compile(r"([a-z])(\d+(?:p\d+)?)?")
 
