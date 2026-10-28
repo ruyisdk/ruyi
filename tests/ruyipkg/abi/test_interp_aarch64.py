@@ -5,7 +5,8 @@ from ruyi.ruyipkg.abi.model import GnuProperty
 
 _AT_HWCAP, _AT_HWCAP2 = 16, 26
 _HWCAP_PACA, _HWCAP_PACG = 1 << 30, 1 << 31
-_HWCAP2_BTI = 1 << 1
+_HWCAP2_SVE2 = 1 << 1
+_HWCAP2_BTI = 1 << 17
 
 
 def _feature(mask: int, *, little_endian: bool = True) -> GnuProperty:
@@ -59,6 +60,14 @@ def test_host_attrs_from_auxv() -> None:
         "pac": False,
     }
     assert interp.host_attrs(auxv={}) == {}
+
+
+def test_bti_is_not_hwcap2_sve2() -> None:
+    # HWCAP2 bit 1 advertises SVE2, not BTI. Only bit 17 means BTI.
+    out = AArch64Interpreter().host_attrs(
+        auxv={_AT_HWCAP: 0, _AT_HWCAP2: _HWCAP2_SVE2}
+    )
+    assert out == {"bti": False, "pac": False}
 
 
 def test_check_degrades_to_unknown_not_incompatible() -> None:

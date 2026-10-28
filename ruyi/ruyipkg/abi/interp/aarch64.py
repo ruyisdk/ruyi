@@ -64,7 +64,7 @@ class AArch64Interpreter:
         hwcap = values.get(16, 0)  # AT_HWCAP
         hwcap2 = values.get(26, 0)  # AT_HWCAP2
         return {
-            "bti": bool(hwcap2 & (1 << 1)),  # HWCAP2_BTI
+            "bti": bool(hwcap2 & (1 << 17)),  # HWCAP2_BTI
             "pac": bool(hwcap & ((1 << 30) | (1 << 31))),  # HWCAP_PACA|HWCAP_PACG
         }
 
