@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.53.0-alpha.20260828\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-10-28 17:04+0800\n"
+"POT-Creation-Date: 2026-10-28 18:43+0800\n"
 "PO-Revision-Date: 2026-09-16 13:00+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -1060,7 +1060,69 @@ msgstr "命令名称"
 msgid "Arguments to pass to the plugin command"
 msgstr "要传递给插件命令的参数"
 
-#: ruyi/ruyipkg/abi/scanner.py:230 ruyi/ruyipkg/abi/scanner.py:242
+#: ruyi/ruyipkg/abi/compat.py:70
+#, python-brace-format
+msgid "could not scan {path}: {reason}"
+msgstr "扫描 {path} 失败：{reason}"
+
+#: ruyi/ruyipkg/abi/compat.py:82
+msgid "host architecture is unknown"
+msgstr "无法确定主机架构"
+
+#: ruyi/ruyipkg/abi/compat.py:90
+#, python-brace-format
+msgid "package targets e_machine(s) {want}, host is {got}"
+msgstr "软件包面向的 e_machine 为 {want}，主机为 {got}"
+
+#: ruyi/ruyipkg/abi/compat.py:107
+#, python-brace-format
+msgid "{count} record(s) mismatch host ELF class/endianness"
+msgstr "{count} 条记录的 ELF 类别/字节序与主机不符"
+
+#: ruyi/ruyipkg/abi/compat.py:126
+#, python-brace-format
+msgid "package requires interpreter {path}"
+msgstr "软件包需要动态链接器 {path}"
+
+#: ruyi/ruyipkg/abi/compat.py:142
+#, python-brace-format
+msgid "shared library {soname} is present"
+msgstr "存在共享库 {soname}"
+
+#: ruyi/ruyipkg/abi/compat.py:144
+#, python-brace-format
+msgid "could not locate shared library {soname} on this host"
+msgstr "无法在本机找到共享库 {soname}"
+
+#: ruyi/ruyipkg/abi/compat.py:159
+msgid "provider library scan is unavailable"
+msgstr "无法扫描提供者库"
+
+#: ruyi/ruyipkg/abi/compat.py:175
+#, python-brace-format
+msgid "provider of {soname} was not scanned"
+msgstr "未扫描 {soname} 的提供者"
+
+#: ruyi/ruyipkg/abi/compat.py:187
+#, python-brace-format
+msgid "provider of {soname} lacks version(s) {missing}"
+msgstr "{soname} 的提供者缺少版本 {missing}"
+
+#: ruyi/ruyipkg/abi/compat.py:198
+msgid "package needs unversioned symbols"
+msgstr "软件包需要未版本化的符号"
+
+#: ruyi/ruyipkg/abi/compat.py:220
+#, python-brace-format
+msgid "no attribute interpreter for e_machine {machine}"
+msgstr "没有可用于 e_machine {machine} 的属性解释器"
+
+#: ruyi/ruyipkg/abi/compat.py:232
+#, python-brace-format
+msgid "package requires e_machine {machine} attributes {required}, host has {host}"
+msgstr "软件包要求 e_machine {machine} 具备属性 {required}，主机为 {host}"
+
+#: ruyi/ruyipkg/abi/scanner.py:240 ruyi/ruyipkg/abi/scanner.py:252
 msgid "member exceeds size limit"
 msgstr "成员大小超限"
 
@@ -1226,26 +1288,31 @@ msgstr "检查一个软件包 ABI 挎斗文件是否兼容当前主机"
 msgid "Path to the .abi.toml sidecar to check"
 msgstr "要检查的 .abi.toml 挎斗文件的路径"
 
-#: ruyi/ruyipkg/admin_cli.py:412
+#: ruyi/ruyipkg/admin_cli.py:412 ruyi/ruyipkg/admin_cli.py:433
 #, python-brace-format
 msgid "cannot read sidecar {path}: {err}"
 msgstr "无法读取挎斗文件 {path}：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:422
+#: ruyi/ruyipkg/admin_cli.py:420
+#, python-brace-format
+msgid "sidecar {path} is too large ({size} bytes, limit is {limit})"
+msgstr "挎斗文件 {path} 过大（{size} 字节，上限为 {limit}）"
+
+#: ruyi/ruyipkg/admin_cli.py:443
 #, python-brace-format
 msgid "failed to parse sidecar {path}: {err}"
 msgstr "解析挎斗文件 {path} 失败：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:433
+#: ruyi/ruyipkg/admin_cli.py:454
 #, python-brace-format
 msgid "failed to probe host ABI: {err}"
 msgstr "探测主机 ABI 失败：{err}"
 
-#: ruyi/ruyipkg/admin_cli.py:440
+#: ruyi/ruyipkg/admin_cli.py:461
 msgid "no ABI compatibility problems detected"
 msgstr "未检测到 ABI 兼容性问题"
 
-#: ruyi/ruyipkg/admin_cli.py:445
+#: ruyi/ruyipkg/admin_cli.py:466
 #, python-brace-format
 msgid "{check}: {message}"
 msgstr "{check}：{message}"
