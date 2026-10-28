@@ -199,7 +199,10 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 各探测步骤都会吞掉 I/O 失败而不是把异常抛进匹配器，但降级方式因类别而异：
 
 * provider 库扫描失败与属性探测失败会降级为 `None`（无法判定）；
-* 动态库解析与动态链接器存在性检查是二元的，一次读取失败会让索引不完整、存在性检查返回负结果，从而在 `soname` / `interp` 条目上表现为确定的 `False`。
+* 动态库解析失败同样降级为 `None`：无法区分“主机确实没有这个库”与“解析过程出错”，
+  因此不给出确定结论；
+* 动态链接器存在性检查是二元的：一次读取失败会让存在性检查返回负结果，从而在 `interp`
+  条目上表现为确定的 `False`。
 
 ### 主机库解析策略
 
@@ -247,7 +250,7 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 | 扫描错误 | `scan-error` | `package.errors` 中的每条记录 | 恒为 `None` |
 | 架构 | `e-machine` / `elf-class` | 包的 `summary.e_machines` 必须是主机 `e_machines` 的子集；另按记录数统计 `elf_class` / 字节序与主机不符的条数 | 子集成立 `True`、不成立 `False`、主机架构未知 `None`；`elf-class` 条目只在主机 `elf_class` 已知时产出，结果只有 `True`/`False` |
 | 动态链接器 | `interp` | 包内每个 `PT_INTERP` 路径都必须在 `interpreter_paths_present` 中 | `True`/`False` |
-| 动态库 | `soname` | 每个 `summary.needed` 都必须在 `resolvable_sonames` 中 | `True`/`False` |
+| 动态库 | `soname` | 每个 `summary.needed` 是否出现在 `resolvable_sonames` 中 | 找到 `True`、找不到 `None` |
 | 符号版本 | `verneed` | 每个 `summary.version_needs` 所要求的强版本都必须出现在对应 provider 记录的 `version_defs` 中；弱版本引用（`weak_versions`）不参与判定 | 全有 `True`、缺版本 `False`、provider 扫描失败或未扫到 `None` |
 | 未版本化符号 | `unversioned` | 任一记录 `needs_unversioned` 为真 | 恒为 `None` |
 | 架构属性 | `attrs` | 对每个去重后的 `(e_machine, parsed_attrs)` 组合，用解释器 `check(host_attrs, required)` 比对 | `True`/`False`/`None` |
@@ -286,8 +289,8 @@ AArch64 的 BTI 与 PAC 都位于 hint space：不支持的主机执行这些指
   解释器（如 qemu 模拟）没有对应真实文件，会被判为缺失。
 * **不做传递性 NEEDED 检查**：只核对包自身的 `DT_NEEDED` 可解析性与 `version_needs` 版本
   要求；provider 库自身的依赖（其 `DT_NEEDED`）不做递归检查。
-* **探测失败的降级不对称**：provider 扫描与属性探测失败会降级为 `None`，而动态库解析与
-  动态链接器存在性检查失败会留下（可能是错误的）负结果，表现为确定的 `False`。一次瞬时的
-  读库失败可能把本可运行的包误判为不兼容。
+* **探测失败的降级不对称**：provider 扫描、属性探测与动态库解析失败都会降级为 `None`；
+  只有动态链接器存在性检查失败会留下（可能是错误的）负结果，表现为确定的 `False`。一次
+  瞬时的读取失败可能把本可运行的包误判为不兼容。
 * **无磁盘缓存**：探测结果只在进程内记忆化，不落盘。这是刻意为之（避免陈旧缓存掩盖系统
   更新），代价是每个进程都要重读主机状态。
