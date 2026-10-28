@@ -13,6 +13,7 @@ from .model import (
     ABIScanError,
     ABISummary,
     AttributeVendorBlob,
+    DEFAULT_MAX_SIDECAR_BYTES,
     ElfABIRecord,
     ElfType,
     GnuProperty,
@@ -41,7 +42,9 @@ def dump_abi_report_toml(report: ABIReport) -> str:
     return tomlkit.dumps(doc)
 
 
-def load_abi_report_toml(text: str) -> ABIReport:
+def load_abi_report_toml(
+    text: str, *, max_bytes: int = DEFAULT_MAX_SIDECAR_BYTES
+) -> ABIReport:
     """Parse a canonical ``.abi.toml`` sidecar back into an ABIReport.
 
     This is the exact inverse of dump_abi_report_toml(): every field the
@@ -50,7 +53,13 @@ def load_abi_report_toml(text: str) -> ABIReport:
     version_needs/well_known_maxima/parsed_attrs_rollup tables, and errors)
     default back to empty. ``.unwrap()`` turns the tomlkit document into plain
     Python values, which are then narrowed into the frozen model types.
+
+    Oversized input is rejected before parsing; a sidecar is a small metadata
+    file, and letting an arbitrarily large one through would only make the
+    parser allocate more structures for no benefit.
     """
+    if len(text) > max_bytes:
+        raise ValueError(f"sidecar exceeds the {max_bytes}-byte size limit")
     data: Any = tomlkit.parse(text).unwrap()
 
     summary = data["summary"]

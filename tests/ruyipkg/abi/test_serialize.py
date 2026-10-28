@@ -1,6 +1,8 @@
 import pathlib
 import tomllib
 
+import pytest
+
 from ruyi.log import RuyiLogger
 from ruyi.ruyipkg.abi import scan_source
 from ruyi.ruyipkg.abi.model import (
@@ -157,6 +159,11 @@ def test_roundtrip_full_report() -> None:
     )
 
     assert load_abi_report_toml(dump_abi_report_toml(report)) == report
+
+
+def test_loader_rejects_oversized_text() -> None:
+    with pytest.raises(ValueError, match="size limit"):
+        load_abi_report_toml("x" * 100, max_bytes=50)
 
 
 def test_roundtrip_empty_report() -> None:

@@ -398,12 +398,33 @@ class AdminCheckAbiCommand(
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
-        from .abi import load_abi_report_toml
+        from .abi import DEFAULT_MAX_SIDECAR_BYTES, load_abi_report_toml
         from .abi.compat import check_host_compatibility
         from .abi.hostprobe import HostABIProber
 
         logger = cfg.logger
         sidecar = pathlib.Path(cast(str, args.sidecar))
+
+        try:
+            size = sidecar.stat().st_size
+        except OSError as e:
+            logger.F(
+                _("cannot read sidecar {path}: {err}").format(
+                    path=str(sidecar), err=str(e)
+                )
+            )
+            return 1
+        if size > DEFAULT_MAX_SIDECAR_BYTES:
+            logger.F(
+                _(
+                    "sidecar {path} is too large ({size} bytes, limit is {limit})"
+                ).format(
+                    path=str(sidecar),
+                    size=size,
+                    limit=DEFAULT_MAX_SIDECAR_BYTES,
+                )
+            )
+            return 1
 
         try:
             text = sidecar.read_text(encoding="utf-8")

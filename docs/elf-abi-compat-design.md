@@ -162,6 +162,10 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
   纯函数，不产生任何 I/O，把包的 `ABIReport` 与主机的 `HostABIReport` 逐规则比对，产出
   `HostABICompatReport`。
 
+命令行入口是 `ruyi admin check-abi <sidecar>`。读入 sidecar 前会先检查文件大小，超过
+`DEFAULT_MAX_SIDECAR_BYTES`（64 MiB）的输入直接报错；解析器自身也会拒绝超过该限制的
+文本，避免为异常大的输入分配更多内存结构。
+
 `HostABICompatReport` 给出一组 `HostABICompatItem`（每项对应一条规则的一次判定），以及几个
 汇总视图：
 
