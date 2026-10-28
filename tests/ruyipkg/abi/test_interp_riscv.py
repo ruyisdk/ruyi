@@ -116,3 +116,20 @@ def test_check_isa_subset(need: str, have: str, expected: bool) -> None:
 
 def test_check_unknown_without_host_isa() -> None:
     assert RiscVInterpreter().check({}, {"isa": "rv64gc"}) is None
+
+
+def test_check_stack_align_requirement() -> None:
+    interp = RiscVInterpreter()
+    # The psABI baseline is enough for objects assuming it.
+    assert (
+        interp.check({"isa": "rv64gc"}, {"isa": "rv64gc", "stack_align": 16}) is True
+    )
+    # A stricter requirement than the host guarantees is undetermined.
+    assert (
+        interp.check({"isa": "rv64gc"}, {"isa": "rv64gc", "stack_align": 32}) is None
+    )
+    # An ISA mismatch stays a definite incompatibility.
+    assert (
+        interp.check({"isa": "rv64gc"}, {"isa": "rv64gcv", "stack_align": 32})
+        is False
+    )
