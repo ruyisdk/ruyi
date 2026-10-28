@@ -147,6 +147,36 @@ def test_non_library_files_in_lib_dir_not_resolvable(tmp_path: pathlib.Path) -> 
     assert r.resolve("libc.so.6") == libdir / "libc.so.6"
 
 
+def test_resolve_soname_without_so_in_the_name(tmp_path: pathlib.Path) -> None:
+    # Sonames are not required to contain ".so"; only the requested name is
+    # looked up now, so nothing needs a filename filter any more.
+    libdir = tmp_path / "lib"
+    libdir.mkdir()
+    lib = libdir / "libweird"
+    lib.write_bytes(_elf_header(62))
+    r = HostLibResolver(62, cache_path=tmp_path / "absent", lib_dirs=[libdir])
+    assert r.resolve("libweird") == lib
+
+
+def test_soname_with_path_separator_is_not_joined(tmp_path: pathlib.Path) -> None:
+    libdir = tmp_path / "lib"
+    libdir.mkdir()
+    (tmp_path / "evil.so").write_bytes(_elf_header(62))
+    r = HostLibResolver(62, cache_path=tmp_path / "absent", lib_dirs=[libdir])
+    assert r.resolve("../evil.so") is None
+
+
+def test_only_requested_sonames_are_looked_up_in_dirs(
+    tmp_path: pathlib.Path,
+) -> None:
+    libdir = tmp_path / "lib"
+    libdir.mkdir()
+    (libdir / "libother.so").write_bytes(_elf_header(62))
+    r = HostLibResolver(62, cache_path=tmp_path / "absent", lib_dirs=[libdir])
+    assert "libother.so" not in r.resolvable_sonames()
+    assert r.resolve("libother.so") == libdir / "libother.so"
+
+
 def test_resolve_skips_wrong_class_cache_candidate(tmp_path: pathlib.Path) -> None:
     # A stale or bogus cache entry must not mask a usable directory fallback.
     wrong = tmp_path / "lib32" / "libc.so.6"

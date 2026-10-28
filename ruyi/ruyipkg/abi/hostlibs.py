@@ -96,6 +96,13 @@ class ResolvesHostLibs(Protocol):
 
 
 class HostLibResolver(ResolvesHostLibs):
+    """Resolve installed libraries, querying only the requested sonames.
+
+    The ld.so.cache is parsed eagerly, but the configured library directories
+    are consulted per soname from resolve(), so a manifest without
+    dependencies does not cause a directory walk.
+    """
+
     def __init__(
         self,
         e_machine: int,
@@ -132,21 +139,35 @@ class HostLibResolver(ResolvesHostLibs):
             except OSError:
                 pass
             dirs.extend(_system_lib_dirs(e_machine))
-        for d in dirs:
-            try:
-                for child in d.iterdir():
-                    if ".so" in child.name and child.is_file():
-                        self._add_candidate(child.name, child)
-            except OSError:
-                continue
+        self._lib_dirs = tuple(dirs)
 
     def _add_candidate(self, soname: str, path: pathlib.Path) -> None:
         candidates = self._candidates.setdefault(soname, [])
         if path not in candidates:
             candidates.append(path)
 
+    def _index_dir_candidate(self, soname: str) -> None:
+        """Add the requested soname from the library directories, if present.
+
+        Looking the name up directly avoids enumerating entire directories
+        for libraries the manifest never asks about, and also covers sonames
+        that do not contain ``.so``.
+        """
+        if not soname or pathlib.PurePath(soname).name != soname:
+            # A DT_NEEDED entry containing a slash is a path, not an
+            # installed soname; never join it onto a library directory.
+            return
+        for d in self._lib_dirs:
+            candidate = d / soname
+            try:
+                if candidate.is_file():
+                    self._add_candidate(soname, candidate)
+            except OSError:
+                continue
+
     def resolve(self, soname: str) -> pathlib.Path | None:
         if soname not in self._resolved:
+            self._index_dir_candidate(soname)
             self._resolved[soname] = next(
                 (
                     path
