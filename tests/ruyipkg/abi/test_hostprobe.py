@@ -177,3 +177,23 @@ def test_unknown_host_arch(monkeypatch: MonkeyPatch) -> None:
     assert report.e_machines == frozenset()
     assert report.elf_class == 64
     assert report.endianness == "little"
+
+
+def test_probe_rebuilds_the_owned_resolver(monkeypatch: MonkeyPatch) -> None:
+    created: list[_FakeResolver] = []
+
+    def make_resolver(e_machine: int) -> _FakeResolver:
+        r = _FakeResolver({})
+        created.append(r)
+        return r
+
+    monkeypatch.setattr(hostprobe, "HostLibResolver", make_resolver)
+    _stub_interpreters(monkeypatch)
+
+    prober = HostABIProber(host_arch="x86_64", exists=lambda _p: False)
+    manifest = _manifest()
+    prober.probe(manifest)
+    prober.probe(manifest)
+
+    # A reused prober must not keep an index from before the host changed.
+    assert len(created) == 2

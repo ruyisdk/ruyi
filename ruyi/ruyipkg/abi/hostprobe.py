@@ -1,9 +1,9 @@
 """Focused host ABI probing driven by a package ABI manifest.
 
 The manifest is the query plan: only the sonames, interpreter paths, and
-e_machines it mentions cause any host I/O. All probe state is memoized
-per prober instance; this is deliberately not persisted to disk so users
-may freely update their systems without anything our side becoming stale.
+e_machines it mentions cause any host I/O. Probe state is memoized for the
+duration of one probe and never persisted to disk, so users may freely update
+their systems without anything our side becoming stale.
 """
 
 from __future__ import annotations
@@ -31,6 +31,13 @@ class HostABIReport:
 
 
 class HostABIProber:
+    """Probe host facts for one manifest.
+
+    The resolver is rebuilt for each probe so libraries installed or removed
+    between calls are taken into account; facts are memoized only while a
+    single probe runs.
+    """
+
     def __init__(
         self,
         *,
@@ -42,7 +49,8 @@ class HostABIProber:
         am = recognize_arch_by_uname(host_arch) or ArchMetadata(0, 64, "little")
         self._arch_metadata = am
         self._host_arch = host_arch or get_native_host().arch
-        self._resolver = resolver or HostLibResolver(self._arch_metadata.elf_machine)
+        self._owns_resolver = resolver is None
+        self._resolver: ResolvesHostLibs | None = resolver
         self._exists = exists
         self._logger = logger
 
@@ -51,6 +59,10 @@ class HostABIProber:
         return self._arch_metadata.elf_machine
 
     def probe(self, manifest: ABIReport) -> HostABIReport:
+        if self._owns_resolver:
+            self._resolver = HostLibResolver(self._arch_metadata.elf_machine)
+        assert self._resolver is not None
+
         interpreters = {
             r.interpreter for r in manifest.records if r.interpreter is not None
         }
