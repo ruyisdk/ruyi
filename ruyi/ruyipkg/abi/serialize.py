@@ -62,7 +62,11 @@ def load_abi_report_toml(text: str) -> ABIReport:
             e_machines=tuple(summary["e_machines"]),
             needed=tuple(summary["needed"]),
             version_needs=tuple(
-                VersionNeed(vn["soname"], tuple(vn["versions"]))
+                VersionNeed(
+                    vn["soname"],
+                    tuple(vn["versions"]),
+                    tuple(vn.get("weak_versions", ())),
+                )
                 for vn in summary.get("version_needs", ())
             ),
             well_known_maxima=dict(summary.get("well_known_maxima", {})),
@@ -90,7 +94,11 @@ def _load_record(record: Any) -> ElfABIRecord:
         soname=record.get("soname") or None,
         needed=tuple(record["needed"]),
         version_needs=tuple(
-            VersionNeed(vn["soname"], tuple(vn["versions"]))
+            VersionNeed(
+                vn["soname"],
+                tuple(vn["versions"]),
+                tuple(vn.get("weak_versions", ())),
+            )
             for vn in record.get("version_needs", ())
         ),
         version_defs=tuple(record.get("version_defs", ())),
@@ -133,6 +141,8 @@ def _summary_table(summary: ABISummary) -> Table:
             sub = table()
             sub.add("soname", vn.soname)
             sub.add("versions", list(vn.versions))
+            if vn.weak_versions:
+                sub.add("weak_versions", list(vn.weak_versions))
             vns.append(sub)
         t.add("version_needs", vns)
 
@@ -168,6 +178,8 @@ def _record_table(record: ElfABIRecord) -> Table:
             sub = table()
             sub.add("soname", vn.soname)
             sub.add("versions", list(vn.versions))
+            if vn.weak_versions:
+                sub.add("weak_versions", list(vn.weak_versions))
             vns.append(sub)
         t.add("version_needs", vns)
 

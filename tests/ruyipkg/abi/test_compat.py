@@ -234,6 +234,48 @@ def test_verneed_soname_unscanned() -> None:
     assert items[0].compatible is None
 
 
+def test_verneed_missing_weak_version_is_not_fatal() -> None:
+    pkg = _report(
+        _rec(
+            version_needs=(
+                VersionNeed("libc.so.6", (), ("GLIBC_2.40", "GLIBC_2.41")),
+            )
+        )
+    )
+    providers = _report(
+        _rec(soname="libc.so.6", version_defs=("GLIBC_2.34", "GLIBC_2.35"))
+    )
+    host = _host(e_machines=frozenset({62}), providers=providers)
+    report = check_host_compatibility(pkg, host)
+    items = _items_of(report, "verneed")
+    assert len(items) == 1
+    # The loader does not require weak definitions; this must not be False.
+    assert items[0].compatible is True
+
+
+def test_verneed_strong_versions_checked_alongside_weak_ones() -> None:
+    pkg = _report(
+        _rec(
+            version_needs=(
+                VersionNeed(
+                    "libc.so.6",
+                    ("GLIBC_2.34", "GLIBC_2.40"),
+                    ("GLIBC_2.41",),
+                ),
+            )
+        )
+    )
+    providers = _report(
+        _rec(soname="libc.so.6", version_defs=("GLIBC_2.34", "GLIBC_2.35"))
+    )
+    host = _host(e_machines=frozenset({62}), providers=providers)
+    report = check_host_compatibility(pkg, host)
+    items = _items_of(report, "verneed")
+    assert len(items) == 1
+    assert items[0].compatible is False
+    assert items[0].params["missing"] == ["GLIBC_2.40"]
+
+
 def test_unversioned_single_none_item_and_lenient_bool() -> None:
     pkg = _report(
         _rec(e_machine=62, needs_unversioned=True),

@@ -94,6 +94,7 @@ def test_version_defs_serialized_when_present() -> None:
 def test_version_defs_omitted_when_empty() -> None:
     text = dump_abi_report_toml(_report_for(()))
     assert "version_defs" not in text
+    assert "weak_versions" not in text
 
 
 def test_roundtrip_full_report() -> None:
@@ -115,7 +116,13 @@ def test_roundtrip_full_report() -> None:
         interpreter="/lib/ld-linux-riscv64-lp64d.so.1",
         soname="libwlink.so.1",
         needed=("libc.so.6", "libm.so.6"),
-        version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34", "GLIBC_2.40")),),
+        version_needs=(
+            VersionNeed(
+                "libc.so.6",
+                ("GLIBC_2.34", "GLIBC_2.40"),
+                ("GLIBC_2.41",),
+            ),
+        ),
         version_defs=("WLINK_1.0",),
         needs_unversioned=True,
         gnu_properties=(
@@ -128,7 +135,13 @@ def test_roundtrip_full_report() -> None:
     summary = ABISummary(
         e_machines=(243,),
         needed=("libc.so.6", "libm.so.6"),
-        version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34", "GLIBC_2.40")),),
+        version_needs=(
+            VersionNeed(
+                "libc.so.6",
+                ("GLIBC_2.34", "GLIBC_2.40"),
+                ("GLIBC_2.41",),
+            ),
+        ),
         well_known_maxima={"GLIBC": "2.40"},
         parsed_attrs_rollup={
             "243": {"isa_strings": ["rv64i2p1"], "stack_align": 16},

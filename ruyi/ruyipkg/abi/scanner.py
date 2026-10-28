@@ -31,6 +31,8 @@ _E_TYPE_MAP = {
     "ET_CORE": ElfType.CORE,
 }
 
+_VER_FLG_WEAK = 0x2
+
 
 def _e_machine_int(value: object) -> int:
     if isinstance(value, int):
@@ -94,10 +96,18 @@ def scan_elf_stream(
     verneed = elf.get_section_by_name(".gnu.version_r")
     if verneed is not None:
         for vn, aux in verneed.iter_versions():  # type: ignore[attr-defined]
+            strong: list[str] = []
+            weak: list[str] = []
+            for a in aux:
+                if int(a["vna_flags"]) & _VER_FLG_WEAK:
+                    weak.append(a.name)
+                else:
+                    strong.append(a.name)
             version_needs.append(
                 VersionNeed(
                     soname=vn.name,
-                    versions=tuple(sorted(a.name for a in aux)),
+                    versions=tuple(sorted(strong)),
+                    weak_versions=tuple(sorted(weak)),
                 )
             )
 

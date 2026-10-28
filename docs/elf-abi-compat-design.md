@@ -21,7 +21,8 @@ AArch64 的 BTI/PAC、RISC-V 的 ISA 串等等）。这些信息此前散落在�
 * 位宽（32 / 64）、字节序（little / big）、ELF 类型（exec / dyn / rel / core / other）。
 * `PT_INTERP`（动态链接器路径，若有）。
 * `DT_SONAME`、`DT_NEEDED`（按链接顺序）。
-* verneed：按 soname 归组的所需符号版本集合。
+* verneed：按 soname 归组的所需符号版本集合，并单独记录 `VER_FLG_WEAK`
+  的弱版本引用。
 * 是否存在未版本化的未定义符号（`needs_unversioned`）。
 
 **架构相关的 ABI 属性容器**，对任何架构都完整采集：
@@ -101,6 +102,8 @@ data_hex = "410000001872697363760001000000000572763634..."
   求与，RISC-V 记录 ISA 串集合）。
 * `[[record]]` 里，`parsed_attrs` 是扁平内联表；无对应解码器时为空表 `{}`，`gnu_properties`
   / `elf_attributes` 原始数据照常存在。`gnu_properties`、`elf_attributes` 以数组表形式给出，排序稳定。
+* `version_needs` 的 `versions` 只包含强版本引用；若同一个 soname 还有 `VER_FLG_WEAK`
+  引用，会额外给出可选键 `weak_versions`。弱版本缺失不影响动态加载，因此不参与兼容性判定。
 
 入口是 `scan_source()`（产出 `ABIReport`），序列化用 `dump_abi_report_toml()`。
 
@@ -238,7 +241,7 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 | 架构 | `e-machine` / `elf-class` | 包的 `summary.e_machines` 必须是主机 `e_machines` 的子集；另按记录数统计 `elf_class` / 字节序与主机不符的条数 | 子集成立 `True`、不成立 `False`、主机架构未知 `None`；`elf-class` 条目只在主机 `elf_class` 已知时产出，结果只有 `True`/`False` |
 | 动态链接器 | `interp` | 包内每个 `PT_INTERP` 路径都必须在 `interpreter_paths_present` 中 | `True`/`False` |
 | 动态库 | `soname` | 每个 `summary.needed` 都必须在 `resolvable_sonames` 中 | `True`/`False` |
-| 符号版本 | `verneed` | 每个 `summary.version_needs` 所要求的版本都必须出现在对应 provider 记录的 `version_defs` 中 | 全有 `True`、缺版本 `False`、provider 扫描失败或未扫到 `None` |
+| 符号版本 | `verneed` | 每个 `summary.version_needs` 所要求的强版本都必须出现在对应 provider 记录的 `version_defs` 中；弱版本引用（`weak_versions`）不参与判定 | 全有 `True`、缺版本 `False`、provider 扫描失败或未扫到 `None` |
 | 未版本化符号 | `unversioned` | 任一记录 `needs_unversioned` 为真 | 恒为 `None` |
 | 架构属性 | `attrs` | 对每个去重后的 `(e_machine, parsed_attrs)` 组合，用解释器 `check(host_attrs, required)` 比对 | `True`/`False`/`None` |
 

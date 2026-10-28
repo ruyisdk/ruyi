@@ -176,6 +176,8 @@ def _check_verneeds(package: ABIReport, host: HostABIReport) -> list[HostABIComp
                 )
             )
             continue
+        # Weak version references live in vn.weak_versions: the loader does
+        # not require those definitions to exist, so only strong needs count.
         missing = sorted(set(vn.versions) - defs)
         out.append(
             HostABICompatItem(
