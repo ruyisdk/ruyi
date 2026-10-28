@@ -8,6 +8,7 @@ from typing import Mapping
 
 DEFAULT_MAX_MEMBER_BYTES = 256 * 1024 * 1024
 DEFAULT_MAX_RAW_ATTR_BYTES = 4096
+DEFAULT_MAX_SIDECAR_BYTES = 64 * 1024 * 1024
 
 
 class ElfType(StrEnum):
