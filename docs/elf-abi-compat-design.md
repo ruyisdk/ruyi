@@ -229,11 +229,12 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 
 ### 判定规则描述
 
-`check_host_compatibility()` 依次执行六条规则，每条规则为每个受检对象产出一条
+`check_host_compatibility()` 依次执行七条规则，每条规则为每个受检对象产出一条
 `HostABICompatItem`（`check` 字段标识规则，`msgid` 与 `params` 供上层用 i18n 机制渲染解释）：
 
 | 规则 | `check` | 判定依据 | 可能结果 |
 | --- | --- | --- | --- |
+| 扫描错误 | `scan-error` | `package.errors` 中的每条记录 | 恒为 `None` |
 | 架构 | `e-machine` / `elf-class` | 包的 `summary.e_machines` 必须是主机 `e_machines` 的子集；另按记录数统计 `elf_class` / 字节序与主机不符的条数 | 子集成立 `True`、不成立 `False`、主机架构未知 `None`；`elf-class` 条目只在主机 `elf_class` 已知时产出，结果只有 `True`/`False` |
 | 动态链接器 | `interp` | 包内每个 `PT_INTERP` 路径都必须在 `interpreter_paths_present` 中 | `True`/`False` |
 | 动态库 | `soname` | 每个 `summary.needed` 都必须在 `resolvable_sonames` 中 | `True`/`False` |
@@ -245,6 +246,8 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 
 * `attrs` 规则对 `(e_machine, parsed_attrs)` 组合去重，因此一个由 50 个同类 ELF
   组成的包只会产生一条属性条目。
+* `scan-error` 规则把 `package.errors` 里未能成功扫描的成员也变为 `None` 条目，避免
+  缺失 ABI 数据的包因为其余规则都通过而被当作（严格）兼容。
 * `unversioned` 规则恒产出 `None`：一个需要未版本化符号的包，其兼容性无法在本组件的能力
   范围内判定，于是 `strictly_compatible` 永远不为 `True`，但只要其他规则都通过，
   `bool(report)` 仍为 `True`。

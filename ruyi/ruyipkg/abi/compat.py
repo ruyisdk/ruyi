@@ -51,6 +51,7 @@ def check_host_compatibility(
     host: HostABIReport,
 ) -> HostABICompatReport:
     items: list[HostABICompatItem] = []
+    items.extend(_check_errors(package))
     items.extend(_check_e_machine(package, host))
     items.extend(_check_interpreters(package, host))
     items.extend(_check_sonames(package, host))
@@ -58,6 +59,18 @@ def check_host_compatibility(
     items.extend(_check_unversioned(package))
     items.extend(_check_attrs(package, host))
     return HostABICompatReport(items=tuple(items))
+
+
+def _check_errors(package: ABIReport) -> list[HostABICompatItem]:
+    return [
+        HostABICompatItem(
+            "scan-error",
+            None,
+            "could not scan {path}: {reason}",
+            {"path": err.path, "reason": err.reason},
+        )
+        for err in package.errors
+    ]
 
 
 def _check_e_machine(
