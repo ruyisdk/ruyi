@@ -20,8 +20,10 @@ def _elf_header(e_machine: int, elf_class: int = 2, data: int = 1) -> bytes:
     return ident + struct.pack("<HH", 1, e_machine)
 
 
-def build_cache(entries: list[tuple[str, str, int]]) -> bytes:
-    """entries: (soname, path, flags); glibc new-format layout."""
+def build_cache(
+    entries: list[tuple[str, str, int] | tuple[str, str, int, int]],
+) -> bytes:
+    """entries: (soname, path, flags[, hwcap]); glibc new-format layout."""
     header_len = 17 + 3 + 4 + 4 + 5 * 4
     entry_len = 24
     strtab = bytearray()
@@ -35,8 +37,15 @@ def build_cache(entries: list[tuple[str, str, int]]) -> bytes:
         return offs[s]
 
     ents = b"".join(
-        struct.pack("<iIIIQ", flags, intern(k), intern(v), 0, 0)
-        for k, v, flags in entries
+        struct.pack(
+            "<iIIIQ",
+            e[2],
+            intern(e[0]),
+            intern(e[1]),
+            0,
+            e[3] if len(e) > 3 else 0,
+        )
+        for e in entries
     )
     header = (
         _CACHE_MAGIC
@@ -221,6 +230,38 @@ def test_resolve_rejects_wrong_class_only_candidate(tmp_path: pathlib.Path) -> N
     r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
     assert r.resolve("libc.so.6") is None
     assert "libc.so.6" not in r.resolvable_sonames()
+
+
+def test_hwcap_cache_entry_is_skipped(tmp_path: pathlib.Path) -> None:
+    # We do not decode the glibc-hwcaps extension, so an entry carrying a
+    # non-zero hwcap must not shadow a plain entry the loader would use.
+    hwcap_lib = tmp_path / "v3" / "libc.so.6"
+    hwcap_lib.parent.mkdir()
+    hwcap_lib.write_bytes(_elf_header(62))
+    plain = tmp_path / "plain" / "libc.so.6"
+    plain.parent.mkdir()
+    plain.write_bytes(_elf_header(62))
+    cache = build_cache(
+        [
+            ("libc.so.6", str(hwcap_lib), _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64, 0x10),
+            ("libc.so.6", str(plain), _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64),
+        ]
+    )
+    (tmp_path / "ld.so.cache").write_bytes(cache)
+    r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
+    assert r.resolve("libc.so.6") == plain
+
+
+def test_hwcap_only_cache_entry_is_not_used(tmp_path: pathlib.Path) -> None:
+    lib = tmp_path / "v3" / "libc.so.6"
+    lib.parent.mkdir()
+    lib.write_bytes(_elf_header(62))
+    cache = build_cache(
+        [("libc.so.6", str(lib), _FLAG_ELF_LIBC6 | _FLAG_X8664_LIB64, 0x10)]
+    )
+    (tmp_path / "ld.so.cache").write_bytes(cache)
+    r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
+    assert r.resolve("libc.so.6") is None
 
 
 def test_never_uses_process_env_or_own_bundle(

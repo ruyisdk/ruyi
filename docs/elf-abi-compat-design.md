@@ -204,7 +204,9 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 
 * glibc 的 `ld.so.cache`（`/etc/ld.so.cache`）：仅当魔数与版本匹配时才解析；条目按 ELF 类型
   标志（libc6）与按架构的 required 标志（x86-64 的 `FLAG_X8664_LIB64`、AArch64 的
-  `FLAG_AARCH64_LIB64`、RISC-V 的 float-ABI soft/double）过滤。
+  `FLAG_AARCH64_LIB64`、RISC-V 的 float-ABI soft/double）过滤。带有非零 hwcap 的条目会被
+  跳过：它们要么属于已废弃的 legacy hwcap 机制，要么是尚未解码的 glibc-hwcaps 扩展索引，
+  盲目采用可能选中 loader 实际会跳过的库。
 * musl 的路径文件（`/etc/ld-musl-<arch>.path`）。
 * 标准目录 `/lib`、`/usr/lib`、`/usr/local/lib`，以及 triplet 目录 `/lib/<triplet>`、
   `/usr/lib/<triplet>`。
