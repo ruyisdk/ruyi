@@ -11,6 +11,7 @@ _CACHE_VERSION = b"1.1"
 _FLAG_ELF_LIBC6 = 0x0003
 _FLAG_X8664_LIB64 = 0x0300
 _FLAG_AARCH64_LIB64 = 0x0A00
+_FLAG_RISCV_FLOAT_ABI_SOFT = 0x0F00
 _FLAG_RISCV_FLOAT_ABI_DOUBLE = 0x1000
 
 
@@ -89,7 +90,13 @@ def test_resolve_from_cache_for_other_arches(
     lib.write_bytes(_elf_header(e_machine))
     cache = build_cache([("libc.so.6", str(lib), _FLAG_ELF_LIBC6 | arch_flag)])
     (tmp_path / "ld.so.cache").write_bytes(cache)
-    r = HostLibResolver(e_machine, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
+    cache_path = tmp_path / "ld.so.cache"
+    if e_machine == 243:
+        r = HostLibResolver(
+            243, cache_path=cache_path, lib_dirs=(), riscv_float_abi="double"
+        )
+    else:
+        r = HostLibResolver(e_machine, cache_path=cache_path, lib_dirs=())
     assert r.resolve("libc.so.6") == lib
 
 
@@ -262,6 +269,49 @@ def test_hwcap_only_cache_entry_is_not_used(tmp_path: pathlib.Path) -> None:
     (tmp_path / "ld.so.cache").write_bytes(cache)
     r = HostLibResolver(62, cache_path=tmp_path / "ld.so.cache", lib_dirs=())
     assert r.resolve("libc.so.6") is None
+
+
+def test_riscv_cache_entries_filtered_by_native_float_abi(
+    tmp_path: pathlib.Path,
+) -> None:
+    soft = tmp_path / "soft" / "libc.so.6"
+    soft.parent.mkdir()
+    soft.write_bytes(_elf_header(243))
+    double = tmp_path / "double" / "libc.so.6"
+    double.parent.mkdir()
+    double.write_bytes(_elf_header(243))
+    cache = build_cache(
+        [
+            (
+                "libc.so.6",
+                str(soft),
+                _FLAG_ELF_LIBC6 | _FLAG_RISCV_FLOAT_ABI_SOFT,
+            ),
+            (
+                "libc.so.6",
+                str(double),
+                _FLAG_ELF_LIBC6 | _FLAG_RISCV_FLOAT_ABI_DOUBLE,
+            ),
+        ]
+    )
+    cache_path = tmp_path / "ld.so.cache"
+    cache_path.write_bytes(cache)
+
+    soft_host = HostLibResolver(
+        243,
+        cache_path=cache_path,
+        lib_dirs=(),
+        riscv_float_abi="soft",
+    )
+    assert soft_host.resolve("libc.so.6") == soft
+
+    double_host = HostLibResolver(
+        243,
+        cache_path=cache_path,
+        lib_dirs=(),
+        riscv_float_abi="double",
+    )
+    assert double_host.resolve("libc.so.6") == double
 
 
 def test_never_uses_process_env_or_own_bundle(

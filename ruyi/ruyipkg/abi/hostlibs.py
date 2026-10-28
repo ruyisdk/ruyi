@@ -22,11 +22,24 @@ _FLAG_TYPE_MASK = 0x0003
 _FLAG_ELF_LIBC6 = 0x0003
 _FLAG_REQUIRED_MASK = 0xFF00
 
+_FLAG_RISCV_FLOAT_ABI_SOFT = 0x0F00
+_FLAG_RISCV_FLOAT_ABI_DOUBLE = 0x1000
+
+_EM_RISCV = 243
+_EF_RISCV_FLOAT_ABI = 0x6
+_EF_RISCV_FLOAT_ABI_SOFT = 0x0
+_EF_RISCV_FLOAT_ABI_DOUBLE = 0x4
+
 # Accepted FLAG_REQUIRED_MASK values per e_machine; absent = accept any.
 _ARCH_FLAGS: dict[int, frozenset[int]] = {
     62: frozenset({0x0300}),  # FLAG_X8664_LIB64
     183: frozenset({0x0A00}),  # FLAG_AARCH64_LIB64
-    243: frozenset({0x0F00, 0x1000}),  # RISC-V float-ABI soft / double
+    243: frozenset({_FLAG_RISCV_FLOAT_ABI_SOFT, _FLAG_RISCV_FLOAT_ABI_DOUBLE}),
+}
+
+_RISCV_FLOAT_ABI_FLAGS: dict[str, frozenset[int]] = {
+    "soft": frozenset({_FLAG_RISCV_FLOAT_ABI_SOFT}),
+    "double": frozenset({_FLAG_RISCV_FLOAT_ABI_DOUBLE}),
 }
 
 # ELF class of the native libraries for each supported e_machine.  Only these
@@ -117,6 +130,7 @@ class HostLibResolver(ResolvesHostLibs):
         cache_path: pathlib.Path = pathlib.Path("/etc/ld.so.cache"),
         lib_dirs: Sequence[pathlib.Path] | None = None,
         musl_path_file: pathlib.Path | None = None,
+        riscv_float_abi: str | None = None,
     ) -> None:
         self._e_machine = e_machine
         self._elf_class = _ARCH_ELF_CLASS.get(e_machine, 0)
@@ -128,6 +142,12 @@ class HostLibResolver(ResolvesHostLibs):
         except (OSError, ValueError, struct.error):
             entries = []
         accepted = _ARCH_FLAGS.get(e_machine)
+        if e_machine == _EM_RISCV:
+            # The cache only carries entries for the float ABI ldconfig was
+            # built for, so narrow the accepted flags to the running host's.
+            abi = riscv_float_abi or _native_riscv_float_abi()
+            if abi in _RISCV_FLOAT_ABI_FLAGS:
+                accepted = _RISCV_FLOAT_ABI_FLAGS[abi]
         for entry in entries:
             if entry.hwcap != 0:
                 # In this cache format the field is either legacy hwcap bits
@@ -221,3 +241,31 @@ class HostLibResolver(ResolvesHostLibs):
 
 def _musl_arch(e_machine: int) -> str:
     return {62: "x86_64", 183: "aarch64", 243: "riscv64"}.get(e_machine, "unknown")
+
+
+def _native_riscv_float_abi() -> str | None:
+    """Return the running executable's RISC-V float ABI, if determinable.
+
+    The cache contains entries for the float ABI of the ldconfig that wrote
+    it, which on a native host is the ABI the running program was built for.
+    Read it from /proc/self/exe's e_flags, and give up on any other machine.
+    """
+    try:
+        with open("/proc/self/exe", "rb") as fp:
+            head = fp.read(52)
+    except OSError:
+        return None
+    if len(head) < 52 or head[:4] != b"\x7fELF":
+        return None
+    endian = "<" if head[5] == 1 else ">"
+    (machine,) = struct.unpack_from(endian + "H", head, 18)
+    if machine != _EM_RISCV:
+        return None
+    flags_offset = 36 if head[4] == 1 else 48
+    (flags,) = struct.unpack_from(endian + "I", head, flags_offset)
+    abi = flags & _EF_RISCV_FLOAT_ABI
+    if abi == _EF_RISCV_FLOAT_ABI_SOFT:
+        return "soft"
+    if abi == _EF_RISCV_FLOAT_ABI_DOUBLE:
+        return "double"
+    return None
