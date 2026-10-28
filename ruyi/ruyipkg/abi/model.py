@@ -22,6 +22,7 @@ class ElfType(StrEnum):
 class VersionNeed:
     soname: str
     versions: tuple[str, ...]
+    weak_versions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
