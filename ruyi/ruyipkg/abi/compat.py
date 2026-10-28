@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from ...i18n import d_
 from .hostprobe import HostABIReport
 from .interp import get_interpreter
 from .model import ABIReport
@@ -66,7 +67,7 @@ def _check_errors(package: ABIReport) -> list[HostABICompatItem]:
         HostABICompatItem(
             "scan-error",
             None,
-            "could not scan {path}: {reason}",
+            d_("could not scan {path}: {reason}"),
             {"path": err.path, "reason": err.reason},
         )
         for err in package.errors
@@ -78,7 +79,7 @@ def _check_e_machine(
 ) -> list[HostABICompatItem]:
     if not host.e_machines:
         return [
-            HostABICompatItem("e-machine", None, "host architecture is unknown", {})
+            HostABICompatItem("e-machine", None, d_("host architecture is unknown"), {})
         ]
     out: list[HostABICompatItem] = []
     ok = set(package.summary.e_machines) <= set(host.e_machines)
@@ -86,7 +87,7 @@ def _check_e_machine(
         HostABICompatItem(
             "e-machine",
             ok,
-            "package targets e_machine(s) {want}, host is {got}",
+            d_("package targets e_machine(s) {want}, host is {got}"),
             {
                 "want": sorted(package.summary.e_machines),
                 "got": sorted(host.e_machines),
@@ -103,7 +104,7 @@ def _check_e_machine(
             HostABICompatItem(
                 "elf-class",
                 mismatched == 0,
-                "{count} record(s) mismatch host ELF class/endianness",
+                d_("{count} record(s) mismatch host ELF class/endianness"),
                 {"count": mismatched},
             )
         )
@@ -122,7 +123,7 @@ def _check_interpreters(
             HostABICompatItem(
                 "interp",
                 path in host.interpreter_paths_present,
-                "package requires interpreter {path}",
+                d_("package requires interpreter {path}"),
                 {"path": path},
             )
         )
@@ -138,9 +139,9 @@ def _check_sonames(package: ABIReport, host: HostABIReport) -> list[HostABICompa
                 "soname",
                 True if found else None,
                 (
-                    "shared library {soname} is present"
+                    d_("shared library {soname} is present")
                     if found
-                    else "could not locate shared library {soname} on this host"
+                    else d_("could not locate shared library {soname} on this host")
                 ),
                 {"soname": soname},
             )
@@ -155,7 +156,7 @@ def _check_verneeds(package: ABIReport, host: HostABIReport) -> list[HostABIComp
     if host.providers is None:
         return [
             HostABICompatItem(
-                "verneed", None, "provider library scan is unavailable", {}
+                "verneed", None, d_("provider library scan is unavailable"), {}
             )
         ]
     provided = {
@@ -171,7 +172,7 @@ def _check_verneeds(package: ABIReport, host: HostABIReport) -> list[HostABIComp
                 HostABICompatItem(
                     "verneed",
                     None,
-                    "provider of {soname} was not scanned",
+                    d_("provider of {soname} was not scanned"),
                     {"soname": vn.soname},
                 )
             )
@@ -183,7 +184,7 @@ def _check_verneeds(package: ABIReport, host: HostABIReport) -> list[HostABIComp
             HostABICompatItem(
                 "verneed",
                 not missing,
-                "provider of {soname} lacks version(s) {missing}",
+                d_("provider of {soname} lacks version(s) {missing}"),
                 {"soname": vn.soname, "missing": missing},
             )
         )
@@ -194,7 +195,7 @@ def _check_unversioned(package: ABIReport) -> list[HostABICompatItem]:
     if any(r.needs_unversioned for r in package.records):
         return [
             HostABICompatItem(
-                "unversioned", None, "package needs unversioned symbols", {}
+                "unversioned", None, d_("package needs unversioned symbols"), {}
             )
         ]
     return []
@@ -216,7 +217,7 @@ def _check_attrs(package: ABIReport, host: HostABIReport) -> list[HostABICompatI
                 HostABICompatItem(
                     "attrs",
                     None,
-                    "no attribute interpreter for e_machine {machine}",
+                    d_("no attribute interpreter for e_machine {machine}"),
                     {"machine": record.e_machine},
                 )
             )
@@ -227,7 +228,10 @@ def _check_attrs(package: ABIReport, host: HostABIReport) -> list[HostABICompatI
             HostABICompatItem(
                 "attrs",
                 result,
-                "package requires e_machine {machine} attributes {required}, host has {host}",
+                d_(
+                    "package requires e_machine {machine} attributes {required}, "
+                    "host has {host}"
+                ),
                 {
                     "machine": record.e_machine,
                     "required": dict(record.parsed_attrs),
