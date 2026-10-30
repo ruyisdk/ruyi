@@ -25,14 +25,18 @@ RuyiSDK 体系内的命名作出一些约定。
 | 供应商 ID | 供应商名称 |
 |-----------|------------|
 | `awol` | Allwinner |
+| `bananapi` | BananaPi |
 | `canaan` | Canaan |
 | `milkv` | Milk-V |
+| `orangepi` | OrangePi |
 | `pine64` | Pine64 |
 | `sifive` | SiFive |
 | `sipeed` | Sipeed |
 | `spacemit` | SpacemiT |
 | `starfive` | StarFive |
 | `wch` | WinChipHead |
+| `xiangshan` | XiangShan |
+| `zhihe` | ZhiheComputing |
 
 如后续有增加适配其他未在列表中的供应商，请同步更新此文档。
 
