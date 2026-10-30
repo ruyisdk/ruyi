@@ -64,6 +64,56 @@ def test_rescan_directory_input(
     assert "e_machines = [243]" in result.stdout
 
 
+def test_rescan_strip_components_normalizes_paths_and_excludes(
+    tmp_path: pathlib.Path, ruyi_cli_runner: IntegrationTestHarness
+) -> None:
+    keep = tmp_path / "keep"
+    drop = tmp_path / "drop"
+    keep.write_bytes(build_elf(e_machine=62))
+    drop.write_bytes(build_elf(e_machine=243))
+
+    archive = tmp_path / "pkg.tar"
+    with tarfile.open(archive, mode="w") as tf:
+        tf.add(keep, arcname="pkg/bin/keep")
+        tf.add(drop, arcname="pkg/lib/gcc/x/libtools/drop")
+
+    result = ruyi_cli_runner(
+        "admin",
+        "rescan-package-abi",
+        str(archive),
+        "--strip-components",
+        "1",
+        "--exclude",
+        "lib/gcc/**/lib*/",
+        "-o",
+        "-",
+    )
+    assert result.exit_code == 0, result.stderr
+    assert 'paths = ["bin/keep"]' in result.stdout
+    assert "e_machines = [62]" in result.stdout
+    assert "243" not in result.stdout
+
+
+def test_rescan_strip_components_rejects_directory_input(
+    tmp_path: pathlib.Path, ruyi_cli_runner: IntegrationTestHarness
+) -> None:
+    tree = tmp_path / "tree"
+    (tree / "bin").mkdir(parents=True)
+    (tree / "bin" / "r").write_bytes(build_elf(e_machine=243))
+
+    result = ruyi_cli_runner(
+        "admin",
+        "rescan-package-abi",
+        str(tree),
+        "--strip-components",
+        "1",
+        "-o",
+        "-",
+    )
+    assert result.exit_code != 0
+    assert "strip-components" in result.stderr
+
+
 def test_rescan_exclude_from_file(
     tmp_path: pathlib.Path, ruyi_cli_runner: IntegrationTestHarness
 ) -> None:

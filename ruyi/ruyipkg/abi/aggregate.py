@@ -35,15 +35,31 @@ def build_summary(
     needed = tuple(sorted(needed_set))
 
     versions_by_soname: dict[str, set[str]] = {}
+    weak_versions_by_soname: dict[str, set[str]] = {}
     for r in records:
         for vn in r.version_needs:
             versions_by_soname.setdefault(vn.soname, set()).update(vn.versions)
-    version_needs = tuple(
-        VersionNeed(soname=soname, versions=tuple(sorted(vers)))
-        for soname, vers in sorted(versions_by_soname.items())
-    )
+            weak_versions_by_soname.setdefault(vn.soname, set()).update(
+                vn.weak_versions
+            )
+    sonames = sorted(set(versions_by_soname) | set(weak_versions_by_soname))
+    version_needs_list: list[VersionNeed] = []
+    for soname in sonames:
+        strong = versions_by_soname.get(soname, set())
+        # A version needed strongly by any record is not weak any more.
+        weak = weak_versions_by_soname.get(soname, set()) - strong
+        version_needs_list.append(
+            VersionNeed(
+                soname=soname,
+                versions=tuple(sorted(strong)),
+                weak_versions=tuple(sorted(weak)),
+            )
+        )
+    version_needs = tuple(version_needs_list)
 
-    all_versions = [v for vn in version_needs for v in vn.versions]
+    all_versions = [
+        v for vn in version_needs for v in (*vn.versions, *vn.weak_versions)
+    ]
     well_known_maxima: dict[str, str] = {}
     for prefix in _WELL_KNOWN_PREFIXES:
         candidates = [

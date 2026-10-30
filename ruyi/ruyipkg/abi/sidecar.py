@@ -42,12 +42,18 @@ def is_scannable(target: pathlib.Path) -> bool:
     return determine_unpack_method(target.name) in _SCANNABLE_ARCHIVE_METHODS
 
 
-def make_source(target: pathlib.Path) -> "ABISource":
+def make_source(
+    target: pathlib.Path,
+    *,
+    strip_components: int = 0,
+) -> "ABISource":
     from .sources import ABISource
 
     if target.is_dir():
+        if strip_components:
+            raise ValueError("strip_components only applies to archive sources")
         return ABISource.from_directory(target)
-    return ABISource.from_archive(target)
+    return ABISource.from_archive(target, strip_components=strip_components)
 
 
 def scan_path(
@@ -55,10 +61,15 @@ def scan_path(
     target: pathlib.Path,
     *,
     exclude: Sequence[str] = (),
+    strip_components: int = 0,
 ) -> "ABIReport":
     from . import scan_source
 
-    return scan_source(make_source(target), logger=logger, exclude=exclude)
+    return scan_source(
+        make_source(target, strip_components=strip_components),
+        logger=logger,
+        exclude=exclude,
+    )
 
 
 def write_sidecar(report: "ABIReport", path: pathlib.Path) -> None:

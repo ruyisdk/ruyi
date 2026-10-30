@@ -3,6 +3,8 @@ import pathlib
 import tarfile
 import zipfile
 
+import pytest
+
 from ruyi.ruyipkg.abi.sources import ABISource
 from ruyi.ruyipkg.unpack_method import UnpackMethod
 from tests.ruyipkg.abi._elfbuilder import build_elf
@@ -27,6 +29,23 @@ def test_directory_skips_symlinks(tmp_path: pathlib.Path) -> None:
     assert paths == ["real.bin"]
 
 
+def test_from_paths_follows_symlinks_and_skips_missing(
+    tmp_path: pathlib.Path,
+) -> None:
+    real = tmp_path / "libreal.so.1.0"
+    real.write_bytes(b"\x7fELF-payload")
+    link = tmp_path / "libreal.so.1"
+    link.symlink_to(real.name)
+
+    src = ABISource.from_paths([link, tmp_path / "missing.so"])
+    members = list(src.iter_members())
+    assert len(members) == 1
+    name, size, read = members[0]
+    assert name == str(link)
+    assert size == len(b"\x7fELF-payload")
+    assert read() == b"\x7fELF-payload"
+
+
 def test_tar_gz_source(tmp_path: pathlib.Path) -> None:
     (tmp_path / "x.bin").write_bytes(b"hello")
     arc = tmp_path / "a.tar.gz"
@@ -44,6 +63,48 @@ def test_zip_source(tmp_path: pathlib.Path) -> None:
     src = ABISource.from_archive(arc, UnpackMethod.ZIP)
     members = {p: r() for p, _s, r in src.iter_members()}
     assert members["y.bin"] == b"world!"
+
+
+def test_tar_source_strips_components(tmp_path: pathlib.Path) -> None:
+    (tmp_path / "keep").write_bytes(b"K")
+    arc = tmp_path / "a.tar"
+    with tarfile.open(arc, "w") as tf:
+        tf.add(tmp_path / "keep", arcname="pkg/keep")
+        tf.add(tmp_path / "keep", arcname="README")
+
+    src = ABISource.from_archive(arc, UnpackMethod.TAR, strip_components=1)
+    members = {p: r() for p, _s, r in src.iter_members()}
+    assert members == {"keep": b"K"}
+
+
+def test_tar_source_keeps_prefix_without_strip(tmp_path: pathlib.Path) -> None:
+    (tmp_path / "keep").write_bytes(b"K")
+    arc = tmp_path / "a.tar"
+    with tarfile.open(arc, "w") as tf:
+        tf.add(tmp_path / "keep", arcname="pkg/keep")
+
+    src = ABISource.from_archive(arc, UnpackMethod.TAR)
+    members = {p: r() for p, _s, r in src.iter_members()}
+    assert members == {"pkg/keep": b"K"}
+
+
+def test_zip_source_strips_components(tmp_path: pathlib.Path) -> None:
+    arc = tmp_path / "a.zip"
+    with zipfile.ZipFile(arc, "w") as zf:
+        zf.writestr("pkg/y.bin", b"world!")
+
+    src = ABISource.from_archive(arc, UnpackMethod.ZIP, strip_components=1)
+    members = {p: r() for p, _s, r in src.iter_members()}
+    assert members == {"y.bin": b"world!"}
+
+
+def test_archive_rejects_negative_strip_components(tmp_path: pathlib.Path) -> None:
+    arc = tmp_path / "a.tar"
+    with tarfile.open(arc, "w"):
+        pass
+
+    with pytest.raises(ValueError):
+        ABISource.from_archive(arc, UnpackMethod.TAR, strip_components=-1)
 
 
 def _make_tar(tmp_path: pathlib.Path) -> pathlib.Path:
@@ -120,5 +181,31 @@ def test_deb_source_streams_compressed_data_tar(tmp_path: pathlib.Path) -> None:
 
     src = ABISource.from_archive(deb, UnpackMethod.DEB)
     # Read each member before advancing, per the lazy MemberEntry contract.
+    members = [(path, size, reader()) for path, size, reader in src.iter_members()]
+    assert members == [("bin/r", len(payload), payload)]
+
+
+def test_deb_source_strips_components(tmp_path: pathlib.Path) -> None:
+    import zstandard
+
+    payload = build_elf(e_machine=243)
+    tar_buf = io.BytesIO()
+    with tarfile.open(fileobj=tar_buf, mode="w") as tf:
+        info = tarfile.TarInfo("pkg/bin/r")
+        info.size = len(payload)
+        tf.addfile(info, io.BytesIO(payload))
+
+    deb = tmp_path / "pkg.deb"
+    with open(deb, "wb") as fout:
+        fout.write(b"!<arch>\n")
+        fout.write(_ar_member("debian-binary", b"2.0\n"))
+        fout.write(
+            _ar_member(
+                "data.tar.zst",
+                zstandard.ZstdCompressor().compress(tar_buf.getvalue()),
+            )
+        )
+
+    src = ABISource.from_archive(deb, UnpackMethod.DEB, strip_components=1)
     members = [(path, size, reader()) for path, size, reader in src.iter_members()]
     assert members == [("bin/r", len(payload), payload)]

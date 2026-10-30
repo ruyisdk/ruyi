@@ -9,6 +9,25 @@ from ruyi.ruyipkg.abi.model import ElfType
 from ruyi.ruyipkg.abi.scanner import scan_elf_stream
 from tests.ruyipkg.abi._elfbuilder import build_elf
 
+_SHT_STRTAB = 3
+_SHT_GNU_VERDEF = 0x6FFFFFFD
+
+
+def _verdef_section(names: list[str]) -> tuple[bytes, bytes]:
+    """One verdef entry, vd_cnt = len(names), aux chain listing all names."""
+    dynstr = b"\x00" + b"".join(n.encode() + b"\x00" for n in names)
+    # offsets into dynstr
+    offs, pos = [], 1
+    for n in names:
+        offs.append(pos)
+        pos += len(n) + 1
+    aux = b""
+    for i, o in enumerate(offs):
+        nxt = 8 if i + 1 < len(offs) else 0
+        aux += struct.pack("<II", o, nxt)
+    vd = struct.pack("<HHHHIII", 1, 0, 2, len(names), 0, 20, 0)
+    return dynstr, vd + aux  # caller places dynstr in its own section
+
 
 def _riscv_attr_section(arch: str = "rv64gc") -> bytes:
     attrs = b"\x05" + arch.encode() + b"\x00"  # Tag_RISCV_arch(5)=str
@@ -99,6 +118,25 @@ def test_corrupt_stream_yields_error() -> None:
     )
     assert rec is None
     assert errors and errors[0].path == "bin/z"
+
+
+def test_scan_elf_captures_version_defs() -> None:
+    dynstr, verdef = _verdef_section(["libc.so.6", "GLIBC_2.34"])
+    data = build_elf(
+        e_machine=62,
+        sections={
+            ".dynstr": (_SHT_STRTAB, dynstr),
+            # sh_link = 1 → index of ".dynstr" (first section after NULL);
+            # sh_info = 1 → one verdef entry.
+            ".gnu.version_d": (_SHT_GNU_VERDEF, verdef, 1, 1),
+        },
+    )
+    record, errors = scan_elf_stream(
+        io.BytesIO(data), paths=("x",), sha256="0" * 64, max_raw_attr_bytes=4096
+    )
+    assert errors == []
+    assert record is not None
+    assert record.version_defs == ("GLIBC_2.34", "libc.so.6")
 
 
 def _has_elf_magic(path: str) -> bool:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal, Mapping, Sequence
 
 from ..model import AttributeVendorBlob, GnuProperty
-from .base import register
+from .base import ArchMetadata, register
 
 _EM_AARCH64 = 183
 _GNU_PROPERTY_AARCH64_FEATURE_1_AND = 0xC0000000
@@ -15,6 +15,12 @@ _FEATURE_1_PAC = 1 << 1
 
 class AArch64Interpreter:
     e_machines = frozenset({_EM_AARCH64})
+
+    def recognize_arch(self, uname_machine: str) -> ArchMetadata | None:
+        if uname_machine not in ("aarch64", "arm64"):
+            return None
+        # Assume little-endian.
+        return ArchMetadata(_EM_AARCH64, 64, "little")
 
     def interpret(
         self,
@@ -46,6 +52,41 @@ class AArch64Interpreter:
             "bti": all(bool(f.get("bti")) for f in per_file),
             "pac": all(bool(f.get("pac")) for f in per_file),
         }
+
+    def host_attrs(
+        self, *, auxv: Mapping[int, int] | None = None
+    ) -> dict[str, str | int | bool]:
+        from ._hostread import read_auxv
+
+        values = read_auxv() if auxv is None else auxv
+        if not values:
+            return {}
+        hwcap = values.get(16, 0)  # AT_HWCAP
+        hwcap2 = values.get(26, 0)  # AT_HWCAP2
+        return {
+            "bti": bool(hwcap2 & (1 << 17)),  # HWCAP2_BTI
+            # The GNU property only records that the object uses PAC, without
+            # telling address (PACA) and generic (PACG) forms apart, so both
+            # have to be available before support can be claimed.
+            "pac": bool(hwcap & (1 << 30)) and bool(hwcap & (1 << 31)),
+        }
+
+    def check(
+        self,
+        host: Mapping[str, object],
+        required: Mapping[str, object],
+    ) -> bool | None:
+        degraded = False
+        for key in ("bti", "pac"):
+            if not required.get(key):
+                continue
+            if key not in host:
+                return None
+            if not host[key]:
+                # Both features live in hint space, so a host without
+                # support executes the instructions as no-ops.
+                degraded = True
+        return None if degraded else True
 
 
 register(AArch64Interpreter())

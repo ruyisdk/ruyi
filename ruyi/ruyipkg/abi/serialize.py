@@ -2,13 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Any, Mapping
 
 import tomlkit
 from tomlkit import aot, document, inline_table, table
 from tomlkit.items import Table
 
-from .model import ABIReport, ABISummary, ElfABIRecord
+from .model import (
+    ABIReport,
+    ABIScanError,
+    ABISummary,
+    AttributeVendorBlob,
+    DEFAULT_MAX_SIDECAR_BYTES,
+    ElfABIRecord,
+    ElfType,
+    GnuProperty,
+    VersionNeed,
+)
 
 
 def dump_abi_report_toml(report: ABIReport) -> str:
@@ -30,6 +40,88 @@ def dump_abi_report_toml(report: ABIReport) -> str:
         doc.add("error", errors)
 
     return tomlkit.dumps(doc)
+
+
+def load_abi_report_toml(
+    text: str, *, max_bytes: int = DEFAULT_MAX_SIDECAR_BYTES
+) -> ABIReport:
+    """Parse a canonical ``.abi.toml`` sidecar back into an ABIReport.
+
+    This is the exact inverse of dump_abi_report_toml(): every field the
+    dumper emits is reconstructed, and the optional keys it omits when empty
+    (version_defs, gnu_properties, elf_attributes, the summary
+    version_needs/well_known_maxima/parsed_attrs_rollup tables, and errors)
+    default back to empty. ``.unwrap()`` turns the tomlkit document into plain
+    Python values, which are then narrowed into the frozen model types.
+
+    Oversized input is rejected before parsing; a sidecar is a small metadata
+    file, and letting an arbitrarily large one through would only make the
+    parser allocate more structures for no benefit.
+    """
+    if len(text) > max_bytes:
+        raise ValueError(f"sidecar exceeds the {max_bytes}-byte size limit")
+    data: Any = tomlkit.parse(text).unwrap()
+
+    summary = data["summary"]
+    records = data.get("record", ())
+
+    return ABIReport(
+        records=tuple(_load_record(r) for r in records),
+        summary=ABISummary(
+            e_machines=tuple(summary["e_machines"]),
+            needed=tuple(summary["needed"]),
+            version_needs=tuple(
+                VersionNeed(
+                    vn["soname"],
+                    tuple(vn["versions"]),
+                    tuple(vn.get("weak_versions", ())),
+                )
+                for vn in summary.get("version_needs", ())
+            ),
+            well_known_maxima=dict(summary.get("well_known_maxima", {})),
+            parsed_attrs_rollup=dict(summary.get("parsed_attrs_rollup", {})),
+            elf_count=summary["elf_count"],
+            file_count=summary["file_count"],
+            excluded_count=summary["excluded_count"],
+        ),
+        errors=tuple(
+            ABIScanError(err["path"], err["reason"]) for err in data.get("error", ())
+        ),
+    )
+
+
+def _load_record(record: Any) -> ElfABIRecord:
+    return ElfABIRecord(
+        paths=tuple(record["paths"]),
+        sha256=record["sha256"],
+        e_machine=record["e_machine"],
+        elf_class=record["elf_class"],
+        endianness=record["endianness"],
+        elf_type=ElfType(record["elf_type"]),
+        is_dynamic=record["is_dynamic"],
+        interpreter=record.get("interpreter"),
+        soname=record.get("soname") or None,
+        needed=tuple(record["needed"]),
+        version_needs=tuple(
+            VersionNeed(
+                vn["soname"],
+                tuple(vn["versions"]),
+                tuple(vn.get("weak_versions", ())),
+            )
+            for vn in record.get("version_needs", ())
+        ),
+        version_defs=tuple(record.get("version_defs", ())),
+        needs_unversioned=record["needs_unversioned"],
+        gnu_properties=tuple(
+            GnuProperty(p["pr_type"], p["data_hex"], p["truncated"])
+            for p in record.get("gnu_properties", ())
+        ),
+        elf_attributes=tuple(
+            AttributeVendorBlob(a["vendor"], a["data_hex"], a["truncated"])
+            for a in record.get("elf_attributes", ())
+        ),
+        parsed_attrs=dict(record["parsed_attrs"]),
+    )
 
 
 def _summary_table(summary: ABISummary) -> Table:
@@ -58,6 +150,8 @@ def _summary_table(summary: ABISummary) -> Table:
             sub = table()
             sub.add("soname", vn.soname)
             sub.add("versions", list(vn.versions))
+            if vn.weak_versions:
+                sub.add("weak_versions", list(vn.weak_versions))
             vns.append(sub)
         t.add("version_needs", vns)
 
@@ -79,6 +173,9 @@ def _record_table(record: ElfABIRecord) -> Table:
     t.add("needed", list(record.needed))
     t.add("needs_unversioned", record.needs_unversioned)
 
+    if record.version_defs:
+        t.add("version_defs", list(record.version_defs))
+
     pa = inline_table()
     for key in sorted(record.parsed_attrs):
         pa[key] = record.parsed_attrs[key]
@@ -90,6 +187,8 @@ def _record_table(record: ElfABIRecord) -> Table:
             sub = table()
             sub.add("soname", vn.soname)
             sub.add("versions", list(vn.versions))
+            if vn.weak_versions:
+                sub.add("weak_versions", list(vn.weak_versions))
             vns.append(sub)
         t.add("version_needs", vns)
 
