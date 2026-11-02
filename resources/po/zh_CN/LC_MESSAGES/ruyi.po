@@ -2083,7 +2083,7 @@ msgstr "未识别的分发 URL 协议：{scheme}"
 #: ruyi/ruyipkg/repo.py:435
 #, python-brace-format
 msgid "the package repository at [yellow]{root}[/] is not a valid Git repository"
-msgstr "位于 [yellow]{atom}[/] 的软件包仓库不是合法的 Git 仓库"
+msgstr "位于 [yellow]{root}[/] 的软件包仓库不是合法的 Git 仓库"
 
 #: ruyi/ruyipkg/repo.py:440
 msgid "it may be corrupt or left incomplete by an interrupted update"
