@@ -321,6 +321,22 @@ included_sysroot = "riscv64-plct-linux-gnu/sysroot"
 * 目前 Zip 压缩包的解压工作由系统的 `unzip` 命令提供。由于该命令不支持类似 `tar` 的
   `--strip-components` 选项，因此 Zip 格式的分发文件的 `strip_components` 配置目前不会被尊重。
 
+#### `_abi/`
+
+软件包目录下可以选择性地包含 `_abi/`，用于存放 ABI sidecar：
+
+```plain
+packages/<category>/<name>/_abi/<distfile-name>.abi.toml
+```
+
+文件名中的 `<distfile-name>` 必须与版本定义文件里 `[[distfiles]]` 的 `name` 完全一致。
+内容就是 `ruyi admin build-package` 为对应产物生成的同名 `.abi.toml` 文件，发布者将其
+原样移入 `_abi/` 即可。
+
+sidecar 只应描述预期在宿主上执行的 ELF。交叉工具链等包含目标侧 ELF 的产物，必须在生成
+sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）排除目标目录；否则
+严格的 `e_machine` 判定会把目标侧 ELF 当作与宿主不兼容。
+
 ### `news`
 
 此目录内含 0 或多份 Markdown 格式的通知消息。

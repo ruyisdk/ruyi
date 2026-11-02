@@ -1,5 +1,8 @@
+import pathlib
+
 from ruyi.ruyipkg.pkg_manifest import (
     ALL_SERVICE_LEVEL_KINDS,
+    BoundPackageManifest,
     InputPackageManifestType,
     PackageManifest,
     PackageServiceLevel,
@@ -128,3 +131,84 @@ def test_validate_certified_rejects_non_bool() -> None:
     )
     with pytest.raises(ValueError, match="certified"):
         pm.validate_vendor_data()
+
+
+class _RepoWithRoot:
+    repo_id = "test-repo"
+    messages = None
+
+    def __init__(self, root: pathlib.Path) -> None:
+        self.root = str(root)
+
+
+def _make_bound(root: pathlib.Path) -> BoundPackageManifest:
+    data: InputPackageManifestType = {
+        "format": "v1",
+        "metadata": {
+            "desc": "test package",
+            "vendor": {"name": "Acme", "eula": None},
+        },
+        "distfiles": [],
+    }
+    return BoundPackageManifest(
+        "dev-tools",
+        "sample-cli",
+        "1.0.0",
+        data,
+        _RepoWithRoot(root),  # type: ignore[arg-type]
+    )
+
+
+def test_abi_sidecar_found_under_packages(tmp_path: pathlib.Path) -> None:
+    sidecar = (
+        tmp_path
+        / "packages"
+        / "dev-tools"
+        / "sample-cli"
+        / "_abi"
+        / "sample-cli.tar.zst.abi.toml"
+    )
+    sidecar.parent.mkdir(parents=True)
+    sidecar.write_text("", encoding="utf-8")
+
+    assert (
+        _make_bound(tmp_path).abi_sidecar_for_distfile("sample-cli.tar.zst") == sidecar
+    )
+
+
+def test_abi_sidecar_falls_back_to_manifests(tmp_path: pathlib.Path) -> None:
+    sidecar = (
+        tmp_path
+        / "manifests"
+        / "dev-tools"
+        / "sample-cli"
+        / "_abi"
+        / "sample-cli.tar.zst.abi.toml"
+    )
+    sidecar.parent.mkdir(parents=True)
+    sidecar.write_text("", encoding="utf-8")
+
+    assert (
+        _make_bound(tmp_path).abi_sidecar_for_distfile("sample-cli.tar.zst") == sidecar
+    )
+
+
+def test_abi_sidecar_missing_returns_none(tmp_path: pathlib.Path) -> None:
+    assert _make_bound(tmp_path).abi_sidecar_for_distfile("sample-cli.tar.zst") is None
+
+
+def test_abi_sidecar_rejects_path_like_distfile_name(tmp_path: pathlib.Path) -> None:
+    sidecar = (
+        tmp_path
+        / "packages"
+        / "dev-tools"
+        / "sample-cli"
+        / "_abi"
+        / "sample-cli.tar.zst.abi.toml"
+    )
+    sidecar.parent.mkdir(parents=True)
+    sidecar.write_text("", encoding="utf-8")
+
+    assert (
+        _make_bound(tmp_path).abi_sidecar_for_distfile("../sample-cli.tar.zst") is None
+    )
