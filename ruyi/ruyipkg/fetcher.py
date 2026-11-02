@@ -17,6 +17,101 @@ def _is_url_ftp(url: str) -> bool:
     return url.lower().startswith("ftp://")
 
 
+def _is_url_http(url: str) -> bool:
+    return url.lower().startswith(("http://", "https://"))
+
+
+def _parse_http_code(stdout: str) -> str | None:
+    """Extract the HTTP status code printed by ``curl --write-out``."""
+
+    code = stdout.strip()
+    # curl reports 000 when no HTTP response was received, e.g. for FTP
+    # transfers or connection failures
+    if len(code) != 3 or not code.isdigit() or code == "000":
+        return None
+    return code
+
+
+def _remove_if_exists(path: str) -> None:
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
+_ACCESS_DENIED_CODES: Final = frozenset({"401", "403", "407", "429", "451", "511"})
+
+# wget's documented exit statuses for authentication and server errors
+_WGET_EXIT_AUTH_ERROR: Final = 6
+_WGET_EXIT_SERVER_ERROR: Final = 8
+
+# a resume request that starts beyond the remote object's length
+_HTTP_RANGE_NOT_SATISFIABLE: Final = "416"
+
+
+def _is_http_success_code(code: str) -> bool:
+    return code.startswith("2")
+
+
+def _http_error_warning(url: str, code: str) -> str:
+    if code in _ACCESS_DENIED_CODES:
+        return _(
+            "failed to fetch distfile: '{url}' returned HTTP {code}; this may be caused by your network location (VPN/proxy exit), by the server's access policy, or by bot protection"
+        ).format(
+            url=url,
+            code=code,
+        )
+    if code.startswith("5"):
+        return _(
+            "failed to fetch distfile: '{url}' returned HTTP {code}; this usually indicates a problem on the server side"
+        ).format(
+            url=url,
+            code=code,
+        )
+    return _("failed to fetch distfile: '{url}' returned HTTP {code}").format(
+        url=url,
+        code=code,
+    )
+
+
+def _server_error_warning(url: str) -> str:
+    """Warning for backends that do not expose the HTTP status code."""
+
+    return _(
+        "failed to fetch distfile: '{url}': the server returned an error response; this may be an access restriction or a server-side problem"
+    ).format(
+        url=url,
+    )
+
+
+def _curl_failure_warning(
+    url: str,
+    argv: list[str],
+    retcode: int,
+    code: str | None,
+) -> str:
+    # A non-zero exit with a 2xx status means the transfer broke after the
+    # response headers arrived; reporting it as an HTTP error would be
+    # misleading, since the status itself was fine.
+    if code is not None and not _is_http_success_code(code):
+        return _http_error_warning(url, code)
+    return _("failed to fetch distfile: command '{cmd}' returned {retcode}").format(
+        cmd=" ".join(argv),
+        retcode=retcode,
+    )
+
+
+def _fetch_exception_warning(url: str, exc: requests.RequestException) -> str:
+    if exc.response is not None and not _is_http_success_code(
+        str(exc.response.status_code)
+    ):
+        return _http_error_warning(url, str(exc.response.status_code))
+    return _("failed to fetch distfile: '{url}': {reason}").format(
+        url=url,
+        reason=exc,
+    )
+
+
 class BaseFetcher:
     def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
         self._logger = logger
@@ -177,27 +272,48 @@ class CurlFetcher(BaseFetcher):
         if _is_url_ftp(url):
             argv.append("--ftp-pasv")
 
+        # `--fail` makes curl exit with an error on HTTP statuses >= 400
+        # instead of saving the response body as if it were the file we
+        # asked for.  The status code is still reported on stdout via
+        # `--write-out`, so we can tell the user what the server said.
+        #
+        # See: https://github.com/ruyisdk/ruyi/issues/506
         argv.extend(
             (
                 "-L",
+                "--fail",
                 "--connect-timeout",
                 "60",
+                "--write-out",
+                "%{http_code}",
                 "-o",
                 dest,
                 url,
             )
         )
 
-        retcode = subprocess.call(argv)
-        if retcode != 0:
-            self._logger.W(
-                _(
-                    "failed to fetch distfile: command '{cmd}' returned {retcode}"
-                ).format(
-                    cmd=" ".join(argv),
-                    retcode=retcode,
-                )
-            )
+        proc = subprocess.run(argv, stdout=subprocess.PIPE, text=True)
+        code = _parse_http_code(proc.stdout)
+
+        if proc.returncode != 0:
+            self._logger.W(_curl_failure_warning(url, argv, proc.returncode, code))
+            return False
+
+        # Be defensive even if curl exits successfully: an unfollowed
+        # redirect or a misbehaving proxy can still yield a non-2xx final
+        # status, and curl does not consider every such response a failure
+        # (e.g. 3xx without a Location header, or 401/407 with some auth
+        # schemes).  Whatever body it wrote is not the distfile, so drop it,
+        # including any pre-existing partial that it may have been appended
+        # to.
+        #
+        # The one exception is a 416 while resuming: curl leaves the partial
+        # untouched, and the next mirror may still be able to continue from
+        # it, so keep it.
+        if _is_url_http(url) and code is not None and not _is_http_success_code(code):
+            self._logger.W(_http_error_warning(url, code))
+            if not (resume and code == _HTTP_RANGE_NOT_SATISFIABLE):
+                _remove_if_exists(dest)
             return False
 
         return True
@@ -233,6 +349,16 @@ class WgetFetcher(BaseFetcher):
 
         retcode = subprocess.call(argv)
         if retcode != 0:
+            if retcode in (_WGET_EXIT_AUTH_ERROR, _WGET_EXIT_SERVER_ERROR):
+                # On a fresh download wget truncates the output file before
+                # it learns about the error response, leaving an empty file
+                # behind.  With -c it leaves an existing partial untouched,
+                # and that one is still useful for resuming.
+                if not resume:
+                    _remove_if_exists(dest)
+                self._logger.W(_server_error_warning(url))
+                return False
+
             self._logger.W(
                 _(
                     "failed to fetch distfile: command '{cmd}' returned {retcode}"
@@ -272,7 +398,28 @@ class PythonRequestsFetcher(BaseFetcher):
             start_from = filesize
             headers["Range"] = f"bytes={filesize}-"
 
-        r = requests.get(url, headers=headers, stream=True)
+        try:
+            r = requests.get(url, headers=headers, stream=True)
+        except requests.RequestException as exc:
+            self._logger.W(_fetch_exception_warning(url, exc))
+            return False
+
+        try:
+            r.raise_for_status()
+        except requests.RequestException as exc:
+            # an HTTP error response is not the distfile, and the body must
+            # not be kept either
+            r.close()
+            self._logger.W(_fetch_exception_warning(url, exc))
+            return False
+
+        # requests only raises for 4xx/5xx; an unfollowed redirect or a
+        # broken proxy can still hand us a 3xx body
+        if not _is_http_success_code(str(r.status_code)):
+            r.close()
+            self._logger.W(_http_error_warning(url, str(r.status_code)))
+            return False
+
         total_len: int | None = None
         if total_len_str := r.headers.get("Content-Length"):
             total_len = int(total_len_str) + start_from
@@ -294,25 +441,35 @@ class PythonRequestsFetcher(BaseFetcher):
             trc,
         )
         dest_filename = os.path.basename(dest)
-        with open(dest, open_mode) as f:
-            with progress.Progress(*columns, console=self._logger.log_console) as pg:
-                indeterminate = total_len is None
-                kwargs: dict[str, Any]
-                if indeterminate:
-                    # be compatible with rich <= 12.3.0 where add_task()'s `total`
-                    # parameter cannot be None
-                    # see https://github.com/Textualize/rich/commit/052b15785876ad85
-                    kwargs = {"start": False}
-                else:
-                    kwargs = {"total": total_len}
+        try:
+            with open(dest, open_mode) as f:
+                with progress.Progress(
+                    *columns, console=self._logger.log_console
+                ) as pg:
+                    indeterminate = total_len is None
+                    kwargs: dict[str, Any]
+                    if indeterminate:
+                        # be compatible with rich <= 12.3.0 where add_task()'s `total`
+                        # parameter cannot be None
+                        # see https://github.com/Textualize/rich/commit/052b15785876ad85
+                        kwargs = {"start": False}
+                    else:
+                        kwargs = {"total": total_len}
 
-                task = pg.add_task(dest_filename, completed=start_from, **kwargs)
-                for chunk in r.iter_content(self.chunk_size):
-                    f.write(chunk)
-                    # according to the docs it's probably not okay to pulse the
-                    # progress bar if the total number of steps is not yet known
-                    if not indeterminate:
-                        pg.advance(task, len(chunk))
+                    task = pg.add_task(dest_filename, completed=start_from, **kwargs)
+                    for chunk in r.iter_content(self.chunk_size):
+                        f.write(chunk)
+                        # according to the docs it's probably not okay to pulse the
+                        # progress bar if the total number of steps is not yet known
+                        if not indeterminate:
+                            pg.advance(task, len(chunk))
+        except requests.RequestException as exc:
+            # keep the partial file, if any, so that the next attempt can
+            # resume from where this one broke off
+            self._logger.W(_fetch_exception_warning(url, exc))
+            return False
+        finally:
+            r.close()
 
         return True
 
