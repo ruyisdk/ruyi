@@ -144,10 +144,17 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 
 ### 产物在软件源中的摆放
 
-生成的 sidecar 需要随软件源一起提交，具体放在保留的、以 `_` 开头的位置下
-（约定见 `docs/repo-structure.md`：软件包目录内任何 `_` 开头的条目都是保留的
-辅助内容，`ruyi` 运行时忽略、`ruyi admin check` 接受）。在哪个版本、以什么
-文件名被 Ruyi 摄入（ingest），属于后续工作，本文暂不约定。
+生成的 sidecar 需要随软件源一起提交，放在软件包目录下保留的 `_abi/` 子目录中，文件名与
+`[[distfiles]]` 的 `name` 一致：
+
+```plain
+packages/<category>/<name>/_abi/<distfile-name>.abi.toml
+```
+
+`ruyi admin build-package` 在产物旁边生成的 `<archive>.abi.toml` 可以原样移入该目录。
+sidecar 只应描述预期在宿主上执行的 ELF；交叉工具链等包含目标侧 ELF 的产物，必须在生成
+sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）排除目标目录，否则严格
+的 `e_machine` 判定会把目标侧 ELF 当作与宿主不兼容。
 
 ## ABI 兼容性匹配
 
@@ -194,8 +201,10 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 * **架构相关属性**：对清单中出现的每个 `e_machine`，调用对应解释器的 `host_attrs()` 读取
   主机 CPU 能力（x86-64 的 ISA level、AArch64 的 BTI/PAC、RISC-V 的 ISA 串等）。
 
-探测状态不会被持久化到磁盘，且每次 probe 都会重建库索引；这样在用户的系统被更新之后，
-不会有任何缓存结果因此过时。
+探测状态不会被持久化到磁盘。默认情况下每次 probe 都会重建库索引，但调用方若确信一次命令
+执行期间宿主状态稳定，可以关掉这一刷新、复用首次探测时建立的索引；无论是否刷新，provider
+库扫描都会在 prober 的生命周期内按解析到的 provider 路径集合记忆化。这样在用户的系统被更新
+之后，不会有任何跨命令的缓存结果因此过时。
 
 各探测步骤都会吞掉 I/O 失败而不是把异常抛进匹配器，但降级方式因类别而异：
 
@@ -240,6 +249,27 @@ TOML 写到标准输出，便于与管道、diff 工具配合。
 
 如前所述，`bool(report)` 等价于 `compatible is not False`，`strictly_compatible` 等价于
 `compatible is True`。
+
+### 在用户命令中的集成
+
+`ruyi list` 与 `ruyi install` 通过 `ruyi/ruyipkg/host_compat.py` 复用上述判定结果。对用户
+暴露的状态有五种：
+
+| 状态 | 含义 |
+| --- | --- |
+| `unchecked` | 未进行探测：`list` 未给 `--allow-probing-host`、`install` 给了 `--no-allow-probing-host`，或 `--host` 不是本机。 |
+| `no-abi-info` | 已请求探测，但当前宿主对应的产物没有可用的 sidecar（缺失、损坏、超限，或包不是二进制包）。 |
+| `likely-compatible` | 所有检查都确定通过。 |
+| `compatibility-unknown` | 没有确定失败，但至少一项无法判定，或部分宿主产物缺少可用 sidecar。 |
+| `likely-incompatible` | 至少一项检查确定失败。 |
+
+`list` 默认不探测。给出 `--allow-probing-host` 后，短格式会在每个版本行尾追加状态标签，
+详细格式始终显示 `Host compatibility` 条目；`--porcelain` 输出总是带有 `host_compat`
+对象，未探测时状态为 `unchecked`。
+
+`install` 默认探测二进制包并在确定不兼容时发出警告，但继续安装，退出码不变；
+`--no-allow-probing-host` 可关闭探测。非本机 `--host` 永远跳过探测。`ruyi extract`
+不参与这套检查。
 
 ### 判定规则描述
 
@@ -293,5 +323,7 @@ AArch64 的 BTI 与 PAC 都位于 hint space：不支持的主机执行这些指
 * **探测失败的降级不对称**：provider 扫描、属性探测与动态库解析失败都会降级为 `None`；
   只有动态链接器存在性检查失败会留下（可能是错误的）负结果，表现为确定的 `False`。一次
   瞬时的读取失败可能把本可运行的包误判为不兼容。
-* **无磁盘缓存**：探测结果只在单次 probe 内记忆化，不落盘。这是刻意为之（避免陈旧缓存掩盖系统
-  更新），代价是每次 probe 都要重读主机状态。
+* **无磁盘缓存**：探测结果不落盘，只在 prober 实例的生命周期内记忆化：provider 库扫描按
+  解析到的 provider 路径集合缓存，库索引默认每次 probe 重建，调用方也可以在一次命令执行
+  期间复用首次建立的索引。这是刻意为之（避免陈旧缓存掩盖系统更新），代价是新建一个
+  prober 就要重读主机状态。
