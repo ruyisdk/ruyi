@@ -151,12 +151,14 @@ class HostCompatChecker:
         if not reports:
             return PackageHostCompat(HostCompatStatus.NoABIInfo)
 
-        merged = _merge_reports(reports)
         try:
+            merged = _merge_reports(reports)
             host_abi = self._prober.probe(merged)
             compat = check_host_compatibility(merged, host_abi)
         except Exception as exc:  # noqa: BLE001 - never break list/install
-            self._logger.D(f"host compatibility probe failed: {exc}")
+            self._logger.W(
+                _("failed to merge or check ABI sidecars: {err}").format(err=str(exc))
+            )
             return PackageHostCompat(
                 HostCompatStatus.CompatibilityUnknown,
                 sidecars=tuple(sidecars),

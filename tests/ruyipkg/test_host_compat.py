@@ -416,6 +416,30 @@ def test_checker_merges_multiple_sidecars_before_probing(
     assert len(prober.manifests[0].records) == 1
 
 
+def test_checker_degrades_on_type_invalid_sidecar(tmp_path: pathlib.Path) -> None:
+    sidecar = _write_sidecar(tmp_path, "pkg.tar.zst", _report())
+    text = sidecar.read_text(encoding="utf-8")
+    sidecar.write_text(
+        text.replace("file_count = 0", 'file_count = "not-an-int"'),
+        encoding="utf-8",
+    )
+    logger = _FakeLogger()
+    checker = HostCompatChecker(
+        logger=logger,  # type: ignore[arg-type]
+        prober=_FakeProber(_host()),  # type: ignore[arg-type]
+    )
+
+    compat = checker.check(
+        _manifest(tmp_path),
+        "x86_64",
+        allow_probing=True,
+    )
+
+    assert compat.status is HostCompatStatus.CompatibilityUnknown
+    assert compat.problems == ()
+    assert len(logger.warnings) >= 1
+
+
 def test_checker_degrades_when_probing_raises(tmp_path: pathlib.Path) -> None:
     _write_sidecar(tmp_path, "pkg.tar.zst", _report())
     checker = HostCompatChecker(
