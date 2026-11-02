@@ -134,10 +134,10 @@ def _native_host(monkeypatch: MonkeyPatch) -> None:
     )
 
 
-def _record(e_machine: int = 62) -> ElfABIRecord:
+def _record(e_machine: int = 62, sha: str = "0" * 64) -> ElfABIRecord:
     return ElfABIRecord(
         paths=("bin/x",),
-        sha256="0" * 64,
+        sha256=sha,
         e_machine=e_machine,
         elf_class=64,
         endianness="little",
@@ -275,8 +275,30 @@ def test_checker_reports_no_abi_info_without_sidecar(tmp_path: pathlib.Path) -> 
     assert compat.problems == ()
 
 
-def test_checker_reports_likely_compatible(tmp_path: pathlib.Path) -> None:
+def test_checker_treats_empty_sidecar_as_no_abi_info(
+    tmp_path: pathlib.Path,
+) -> None:
     _write_sidecar(tmp_path, "pkg.tar.zst", _report())
+    logger = _FakeLogger()
+    prober = _FakeProber(_host())
+    checker = HostCompatChecker(
+        logger=logger,  # type: ignore[arg-type]
+        prober=prober,  # type: ignore[arg-type]
+    )
+
+    compat = checker.check(
+        _manifest(tmp_path),
+        "x86_64",
+        allow_probing=True,
+    )
+
+    assert compat.status is HostCompatStatus.NoABIInfo
+    assert prober.manifests == []
+    assert logger.warnings == []
+
+
+def test_checker_reports_likely_compatible(tmp_path: pathlib.Path) -> None:
+    _write_sidecar(tmp_path, "pkg.tar.zst", _report(_record()))
     checker = HostCompatChecker(
         logger=_FakeLogger(),  # type: ignore[arg-type]
         prober=_FakeProber(_host()),  # type: ignore[arg-type]
@@ -313,7 +335,7 @@ def test_checker_reports_likely_incompatible(tmp_path: pathlib.Path) -> None:
 def test_checker_reports_unknown_when_the_probe_is_undetermined(
     tmp_path: pathlib.Path,
 ) -> None:
-    _write_sidecar(tmp_path, "pkg.tar.zst", _report())
+    _write_sidecar(tmp_path, "pkg.tar.zst", _report(_record()))
     checker = HostCompatChecker(
         logger=_FakeLogger(),  # type: ignore[arg-type]
         prober=_FakeProber(_host(e_machines=())),  # type: ignore[arg-type]
@@ -333,7 +355,7 @@ def test_checker_reports_unknown_when_the_probe_is_undetermined(
 def test_checker_reports_unknown_for_partial_sidecar_coverage(
     tmp_path: pathlib.Path,
 ) -> None:
-    _write_sidecar(tmp_path, "a.tar.zst", _report())
+    _write_sidecar(tmp_path, "a.tar.zst", _report(_record()))
     checker = HostCompatChecker(
         logger=_FakeLogger(),  # type: ignore[arg-type]
         prober=_FakeProber(_host()),  # type: ignore[arg-type]
@@ -400,8 +422,8 @@ def test_checker_degrades_on_oversized_sidecar(
 def test_checker_merges_multiple_sidecars_before_probing(
     tmp_path: pathlib.Path,
 ) -> None:
-    _write_sidecar(tmp_path, "a.tar.zst", _report())
-    _write_sidecar(tmp_path, "b.tar.zst", _report(_record(62)))
+    _write_sidecar(tmp_path, "a.tar.zst", _report(_record(sha="1" * 64)))
+    _write_sidecar(tmp_path, "b.tar.zst", _report(_record(sha="2" * 64)))
     prober = _FakeProber(_host())
     checker = HostCompatChecker(logger=_FakeLogger(), prober=prober)  # type: ignore[arg-type]
 
@@ -413,7 +435,7 @@ def test_checker_merges_multiple_sidecars_before_probing(
 
     assert compat.status is HostCompatStatus.LikelyCompatible
     assert len(prober.manifests) == 1
-    assert len(prober.manifests[0].records) == 1
+    assert len(prober.manifests[0].records) == 2
 
 
 def test_checker_degrades_on_type_invalid_sidecar(tmp_path: pathlib.Path) -> None:
@@ -435,13 +457,13 @@ def test_checker_degrades_on_type_invalid_sidecar(tmp_path: pathlib.Path) -> Non
         allow_probing=True,
     )
 
-    assert compat.status is HostCompatStatus.CompatibilityUnknown
+    assert compat.status is HostCompatStatus.NoABIInfo
     assert compat.problems == ()
-    assert len(logger.warnings) >= 1
+    assert len(logger.warnings) == 1
 
 
 def test_checker_degrades_when_probing_raises(tmp_path: pathlib.Path) -> None:
-    _write_sidecar(tmp_path, "pkg.tar.zst", _report())
+    _write_sidecar(tmp_path, "pkg.tar.zst", _report(_record()))
     checker = HostCompatChecker(
         logger=_FakeLogger(),  # type: ignore[arg-type]
         prober=_FailingProber(),  # type: ignore[arg-type]
