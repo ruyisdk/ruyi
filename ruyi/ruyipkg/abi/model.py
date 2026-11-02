@@ -8,6 +8,7 @@ from typing import Mapping
 
 DEFAULT_MAX_MEMBER_BYTES = 256 * 1024 * 1024
 DEFAULT_MAX_RAW_ATTR_BYTES = 4096
+DEFAULT_MAX_SIDECAR_BYTES = 64 * 1024 * 1024
 
 
 class ElfType(StrEnum):
@@ -22,6 +23,7 @@ class ElfType(StrEnum):
 class VersionNeed:
     soname: str
     versions: tuple[str, ...]
+    weak_versions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -51,7 +53,7 @@ class ElfABIRecord:
     soname: str | None
     needed: tuple[str, ...]
     version_needs: tuple[VersionNeed, ...]
-    needs_unversioned: bool
+    version_defs: tuple[str, ...]
     gnu_properties: tuple[GnuProperty, ...]
     elf_attributes: tuple[AttributeVendorBlob, ...]
     parsed_attrs: Mapping[str, str | int | bool]

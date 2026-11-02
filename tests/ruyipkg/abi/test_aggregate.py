@@ -15,7 +15,7 @@ def _rec(**kw: object) -> ElfABIRecord:
         soname=None,
         needed=(),
         version_needs=(),
-        needs_unversioned=False,
+        version_defs=(),
         gnu_properties=(),
         elf_attributes=(),
         parsed_attrs={},
@@ -37,6 +37,25 @@ def test_well_known_maxima_picks_highest_glibc() -> None:
     ]
     summary = build_summary(recs, file_count=2, excluded_count=0)
     assert summary.well_known_maxima["GLIBC"] == "2.34"
+
+
+def test_weak_versions_kept_separate_and_shadowed_by_strong() -> None:
+    recs = [
+        _rec(
+            version_needs=(
+                VersionNeed("libc.so.6", ("GLIBC_2.17",), ("GLIBC_2.9", "ZLIB_1.2")),
+            )
+        ),
+        _rec(version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.9",)),)),
+    ]
+    summary = build_summary(recs, file_count=2, excluded_count=0)
+    assert summary.version_needs == (
+        VersionNeed(
+            "libc.so.6",
+            ("GLIBC_2.17", "GLIBC_2.9"),
+            ("ZLIB_1.2",),
+        ),
+    )
 
 
 def test_rollup_x86_minimum_level() -> None:

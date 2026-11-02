@@ -164,6 +164,34 @@ def test_run_recipe_removes_stale_sidecar_when_scan_fails(
     assert not stale.exists()
 
 
+def test_run_recipe_removes_stale_sidecar_before_build(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    artifact = out / "pkg-1.0.tar.zst"
+    artifact.write_bytes(b"dummy")
+    stale = out / "pkg-1.0.tar.zst.abi.toml"
+    stale.write_text("# stale sidecar\n", encoding="utf-8")
+
+    recipe = _make_project(
+        tmp_path,
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        f"        argv = ['test', '!', '-e', '{stale}'],\n"
+        "        produces = [ctx.artifact(glob = 'pkg-*.tar.zst')],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n",
+    )
+
+    # The test command fails the build if the sidecar is still present, so a
+    # successful run proves it was invalidated before the build started.
+    reports = run_recipe(ruyi_logger, recipe)
+    assert reports[0].exit_code == 0
+    assert not stale.exists()
+
+
 def test_run_recipe_forwards_artifact_exclude_to_abi_scan(
     tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
 ) -> None:
@@ -204,6 +232,56 @@ def test_run_recipe_forwards_artifact_exclude_to_abi_scan(
     sidecar = out / "pkg.tar.abi.toml"
     assert sidecar.is_file()
     text = sidecar.read_text(encoding="utf-8")
+    assert "e_machines = [62]" in text
+    assert "excluded_count = 1" in text
+    assert "243" not in text
+
+
+def test_run_recipe_forwards_artifact_strip_components_to_abi_scan(
+    tmp_path: pathlib.Path, ruyi_logger: RuyiLogger
+) -> None:
+    import tarfile
+
+    from tests.ruyipkg.abi._elfbuilder import build_elf
+
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+
+    staging = tmp_path / "staging"
+    (staging / "pkg" / "bin").mkdir(parents=True)
+    (staging / "pkg" / "drop").mkdir(parents=True)
+    (staging / "pkg" / "bin" / "keep").write_bytes(build_elf(e_machine=62))
+    (staging / "pkg" / "drop" / "skip").write_bytes(build_elf(e_machine=243))
+
+    archive = out / "pkg.tar"
+    with tarfile.open(archive, mode="w") as tf:
+        tf.add(staging / "pkg" / "bin" / "keep", arcname="pkg/bin/keep")
+        tf.add(staging / "pkg" / "drop" / "skip", arcname="pkg/drop/skip")
+
+    recipe = _make_project(
+        tmp_path,
+        "RUYI = ruyi_plugin_rev(1)\n"
+        "def build_it(ctx):\n"
+        "    return ctx.subprocess(\n"
+        "        argv = ['true'],\n"
+        "        produces = [\n"
+        "            ctx.artifact(\n"
+        "                glob = 'pkg.tar',\n"
+        "                exclude = ['drop/**'],\n"
+        "                strip_components = 1,\n"
+        "            ),\n"
+        "        ],\n"
+        "    )\n"
+        "RUYI.build.schedule_build(build_it)\n",
+    )
+
+    reports = run_recipe(ruyi_logger, recipe)
+    assert len(reports) == 1
+
+    sidecar = out / "pkg.tar.abi.toml"
+    assert sidecar.is_file()
+    text = sidecar.read_text(encoding="utf-8")
+    assert 'paths = ["bin/keep"]' in text
     assert "e_machines = [62]" in text
     assert "excluded_count = 1" in text
     assert "243" not in text

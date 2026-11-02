@@ -159,6 +159,21 @@ def _filter_by_name(
     return [by_name[n] for n in wanted]
 
 
+def _invalidate_stale_sidecars(invocations: Sequence[Invocation]) -> None:
+    """Drop existing sidecars for artifacts that are about to be rebuilt."""
+    from .abi.sidecar import sidecar_path_for
+
+    for inv in invocations:
+        for art in inv.produces:
+            for match in art.root.glob(art.glob):
+                if not match.is_file():
+                    continue
+                try:
+                    sidecar_path_for(match).unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+
 def _execute_one_build(
     logger: RuyiLogger,
     phctx: "PluginHostContext[Any, Any]",
@@ -192,6 +207,12 @@ def _execute_one_build(
         )
 
     last_exit = 0
+    if not skip_abi_scan:
+        # Artifacts are produced by external commands, so there is no way to
+        # publish them and their sidecars together. Drop old sidecars before
+        # the build can replace the artifacts they describe: if this run is
+        # interrupted, missing metadata is safer than stale metadata.
+        _invalidate_stale_sidecars(invocations)
     for inv in invocations:
         last_exit = _run_invocation(logger, inv)
         if last_exit != 0:
@@ -294,7 +315,12 @@ def _resolve_artifacts(
                     # unwritable output directory) must never fail an
                     # otherwise-successful build. Warn and continue.
                     try:
-                        report = scan_path(logger, match, exclude=art.exclude)
+                        report = scan_path(
+                            logger,
+                            match,
+                            exclude=art.exclude,
+                            strip_components=art.strip_components,
+                        )
                         sidecar = sidecar_path_for(match)
                         write_sidecar(report, sidecar)
                     except Exception as e:  # noqa: BLE001

@@ -733,6 +733,25 @@ class BoundPackageManifest(PackageManifest):
     def name_for_installation(self) -> str:
         return f"{self.name}-{self.ver}"
 
+    def abi_sidecar_for_distfile(self, distfile_name: str) -> pathlib.Path | None:
+        """Return the repository sidecar for ``distfile_name``, if present.
+
+        Sidecars live under the package's reserved ``_abi/`` directory and are
+        named after the distfile they describe. The legacy ``manifests/``
+        package root is probed as well, mirroring repository iteration.
+        """
+        if not distfile_name or pathlib.PurePath(distfile_name).name != distfile_name:
+            return None
+
+        rel = pathlib.Path(self.category) / self.name / "_abi"
+        rel = rel / f"{distfile_name}.abi.toml"
+        root = pathlib.Path(self.repo.root)
+        for root_name in ("packages", "manifests"):
+            candidate = root / root_name / rel
+            if candidate.is_file():
+                return candidate
+        return None
+
 
 PRERELEASE_TAGS_RE: Final = re.compile(r"^(?:alpha|beta|pre|rc)")
 

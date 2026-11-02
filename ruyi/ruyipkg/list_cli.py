@@ -28,6 +28,13 @@ class ListCommand(
         )
 
         p.add_argument(
+            "--allow-probing-host",
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help=_("Probe the native host when reporting compatibility (default: off)"),
+        )
+
+        p.add_argument(
             "--all",
             action=ListFilterAction,
             nargs=0,
@@ -84,9 +91,11 @@ class ListCommand(
 
         verbose: bool = args.verbose
         filters: ListFilter = args.filters
+        allow_probing_host: bool = args.allow_probing_host
 
         return do_list(
             cfg,
             filters=filters,
             verbose=verbose,
+            allow_probing_host=allow_probing_host,
         )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import io
-from typing import BinaryIO, Sequence, TYPE_CHECKING
+from typing import Any, BinaryIO, Sequence, TYPE_CHECKING
 
 from ...i18n import _
 from ...log import RuyiLogger
@@ -20,6 +20,8 @@ from .model import (
 )
 
 if TYPE_CHECKING:
+    from rich.console import RenderableType
+
     from .sources import ABISource
 
 _E_TYPE_MAP = {
@@ -28,6 +30,8 @@ _E_TYPE_MAP = {
     "ET_REL": ElfType.REL,
     "ET_CORE": ElfType.CORE,
 }
+
+_VER_FLG_WEAK = 0x2
 
 
 def _e_machine_int(value: object) -> int:
@@ -92,14 +96,28 @@ def scan_elf_stream(
     verneed = elf.get_section_by_name(".gnu.version_r")
     if verneed is not None:
         for vn, aux in verneed.iter_versions():  # type: ignore[attr-defined]
+            strong: list[str] = []
+            weak: list[str] = []
+            for a in aux:
+                if int(a["vna_flags"]) & _VER_FLG_WEAK:
+                    weak.append(a.name)
+                else:
+                    strong.append(a.name)
             version_needs.append(
                 VersionNeed(
                     soname=vn.name,
-                    versions=tuple(sorted(a.name for a in aux)),
+                    versions=tuple(sorted(strong)),
+                    weak_versions=tuple(sorted(weak)),
                 )
             )
 
-    needs_unversioned = _compute_needs_unversioned(elf)
+    version_defs: tuple[str, ...] = ()
+    verdef = elf.get_section_by_name(".gnu.version_d")
+    if verdef is not None:
+        defs: set[str] = set()
+        for _vd, aux in verdef.iter_versions():  # type: ignore[attr-defined]
+            defs.update(a.name for a in aux)
+        version_defs = tuple(sorted(defs))
 
     gnu_properties = _extract_gnu_properties(  # type: ignore[no-untyped-call]
         elf,
@@ -137,30 +155,12 @@ def scan_elf_stream(
         soname=soname,
         needed=needed,
         version_needs=tuple(version_needs),
-        needs_unversioned=needs_unversioned,
+        version_defs=version_defs,
         gnu_properties=tuple(gnu_properties),
         elf_attributes=tuple(elf_attributes),
         parsed_attrs=parsed_attrs,
     )
     return record, errors
-
-
-def _compute_needs_unversioned(elf: object) -> bool:
-    dynsym = elf.get_section_by_name(".dynsym")  # type: ignore[attr-defined]
-    if dynsym is None:
-        return False
-    versym = elf.get_section_by_name(".gnu.version")  # type: ignore[attr-defined]
-    for i, sym in enumerate(dynsym.iter_symbols()):
-        if sym["st_shndx"] != "SHN_UNDEF" or not sym.name:
-            continue
-        if sym["st_info"]["bind"] not in ("STB_GLOBAL", "STB_WEAK"):
-            continue
-        if versym is None:
-            return True
-        ndx = versym.get_symbol(i)["ndx"]
-        if ndx in ("VER_NDX_LOCAL", "VER_NDX_GLOBAL", 0, 1):
-            return True
-    return False
 
 
 def _extract_gnu_properties(elf, is_64bit, little_endian, max_bytes, parse):  # type: ignore[no-untyped-def]
@@ -188,7 +188,7 @@ def _extract_attributes(elf, little_endian, max_bytes, parse):  # type: ignore[n
 def scan_source(
     source: "ABISource",
     *,
-    logger: RuyiLogger,
+    logger: RuyiLogger | None = None,
     exclude: Sequence[str] = (),
     max_member_bytes: int = DEFAULT_MAX_MEMBER_BYTES,
     max_raw_attr_bytes: int = DEFAULT_MAX_RAW_ATTR_BYTES,
@@ -203,6 +203,10 @@ def scan_source(
     file_count = 0
     excluded_count = 0
 
+    def _D(message: "RenderableType", *objects: Any) -> None:
+        if logger is not None:
+            return logger.D(message, *objects)
+
     for path, size, reader in source.iter_members():
         if matcher.is_excluded(path):
             excluded_count += 1
@@ -211,19 +215,19 @@ def scan_source(
         file_count += 1
 
         if size is not None and size > max_member_bytes:
-            logger.D(f"skipping oversized member {path} ({size} bytes)")
+            _D(f"skipping oversized member {path} ({size} bytes)")
             errors.append(ABIScanError(path, _("member exceeds size limit")))
             continue
 
         try:
             data = reader()
         except Exception as exc:  # noqa: BLE001 - a bad member must not abort
-            logger.D(f"failed to read member {path}: {exc}")
+            _D(f"failed to read member {path}: {exc}")
             errors.append(ABIScanError(path, f"failed to read member: {exc}"))
             continue
 
         if len(data) > max_member_bytes:
-            logger.D(f"skipping oversized member {path} ({len(data)} bytes)")
+            _D(f"skipping oversized member {path} ({len(data)} bytes)")
             errors.append(ABIScanError(path, _("member exceeds size limit")))
             continue
 
@@ -246,7 +250,7 @@ def scan_source(
                 max_raw_attr_bytes=max_raw_attr_bytes,
             )
         except Exception as exc:  # noqa: BLE001 - a malformed ELF must not abort
-            logger.D(f"failed to scan member {path}: {exc}")
+            _D(f"failed to scan member {path}: {exc}")
             errors.append(ABIScanError(path, f"failed to scan member: {exc}"))
             continue
         errors.extend(errs)
@@ -257,7 +261,7 @@ def scan_source(
     summary = build_summary(
         records, file_count=file_count, excluded_count=excluded_count
     )
-    logger.D(
+    _D(
         f"ABI scan: {summary.elf_count} distinct ELF(s), "
         f"{file_count} member(s), {excluded_count} excluded"
     )

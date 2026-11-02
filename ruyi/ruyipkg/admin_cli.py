@@ -3,7 +3,7 @@ import pathlib
 from typing import TYPE_CHECKING, cast
 
 from ..cli.cmd import AdminCommand
-from ..i18n import _
+from ..i18n import DeferredI18nString, _
 
 if TYPE_CHECKING:
     from ..cli.completion import ArgumentParser
@@ -299,6 +299,16 @@ class AdminRescanPackageAbiCommand(
             ),
         )
         p.add_argument(
+            "--strip-components",
+            type=_non_negative_int,
+            default=0,
+            metavar="N",
+            help=_(
+                "Strip N leading path components from archive members before "
+                "matching excludes and recording paths (default: 0; archives only)"
+            ),
+        )
+        p.add_argument(
             "-o",
             "--output",
             type=str,
@@ -323,6 +333,7 @@ class AdminRescanPackageAbiCommand(
         logger = cfg.logger
         target = pathlib.Path(cast(str, args.path))
         raw_excludes = cast("list[str]", args.exclude)
+        strip_components = cast(int, args.strip_components)
         output = cast("str | None", args.output)
 
         try:
@@ -340,8 +351,17 @@ class AdminRescanPackageAbiCommand(
             )
             return 1
 
+        if target.is_dir() and strip_components:
+            logger.F(_("--strip-components is only valid for archive inputs"))
+            return 1
+
         try:
-            report = scan_path(logger, target, exclude=exclude)
+            report = scan_path(
+                logger,
+                target,
+                exclude=exclude,
+                strip_components=strip_components,
+            )
         except Exception as e:  # noqa: BLE001
             logger.F(
                 _("failed to scan {path}: {err}").format(path=str(target), err=str(e))
@@ -361,6 +381,99 @@ class AdminRescanPackageAbiCommand(
             logger.F(_("failed to write ABI report: {err}").format(err=str(e)))
             return 1
         return 0
+
+
+class AdminCheckAbiCommand(
+    AdminCommand,
+    cmd="check-abi",
+    help=_("Check a package ABI sidecar against the current host"),
+):
+    @classmethod
+    def configure_args(cls, gc: "GlobalConfig", p: "ArgumentParser") -> None:
+        p.add_argument(
+            "sidecar",
+            type=str,
+            help=_("Path to the .abi.toml sidecar to check"),
+        )
+
+    @classmethod
+    def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
+        from .abi import DEFAULT_MAX_SIDECAR_BYTES, load_abi_report_toml
+        from .abi.compat import check_host_compatibility
+        from .abi.hostprobe import HostABIProber
+
+        logger = cfg.logger
+        sidecar = pathlib.Path(cast(str, args.sidecar))
+
+        try:
+            size = sidecar.stat().st_size
+        except OSError as e:
+            logger.F(
+                _("cannot read sidecar {path}: {err}").format(
+                    path=str(sidecar), err=str(e)
+                )
+            )
+            return 1
+        if size > DEFAULT_MAX_SIDECAR_BYTES:
+            logger.F(
+                _(
+                    "sidecar {path} is too large ({size} bytes, limit is {limit})"
+                ).format(
+                    path=str(sidecar),
+                    size=size,
+                    limit=DEFAULT_MAX_SIDECAR_BYTES,
+                )
+            )
+            return 1
+
+        try:
+            text = sidecar.read_text(encoding="utf-8")
+        except OSError as e:
+            logger.F(
+                _("cannot read sidecar {path}: {err}").format(
+                    path=str(sidecar), err=str(e)
+                )
+            )
+            return 1
+
+        try:
+            package_abi = load_abi_report_toml(text)
+        except Exception as e:  # noqa: BLE001 - report malformed sidecar, do not raise
+            logger.F(
+                _("failed to parse sidecar {path}: {err}").format(
+                    path=str(sidecar),
+                    err=str(e),
+                )
+            )
+            return 1
+
+        prober = HostABIProber(logger=logger)
+        try:
+            host_abi = prober.probe(package_abi)
+        except Exception as e:  # noqa: BLE001 - degrade to a fatal error, not a crash
+            logger.F(_("failed to probe host ABI: {err}").format(err=str(e)))
+            return 1
+
+        report = check_host_compatibility(package_abi, host_abi)
+
+        problems = report.problems()
+        if not problems:
+            logger.stdout(_("no ABI compatibility problems detected"))
+        else:
+            for item in problems:
+                message = _(cast(DeferredI18nString, item.msgid)).format(**item.params)
+                logger.stdout(
+                    _("{check}: {message}").format(check=item.check, message=message)
+                )
+
+        return 0 if bool(report) else 1
+
+
+def _non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be non-negative")
+    return parsed
 
 
 def _expand_excludes(tokens: "list[str]") -> "list[str]":

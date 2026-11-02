@@ -32,7 +32,7 @@ def test_record_is_frozen() -> None:
         soname=None,
         needed=("libc.so.6",),
         version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34",)),),
-        needs_unversioned=False,
+        version_defs=(),
         gnu_properties=(GnuProperty(0xC0008002, "07000000", False),),
         elf_attributes=(AttributeVendorBlob("riscv", "41", False),),
         parsed_attrs={"isa": "rv64gc"},

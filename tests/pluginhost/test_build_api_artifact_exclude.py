@@ -29,6 +29,26 @@ def test_artifact_default_exclude_is_empty(tmp_path: pathlib.Path) -> None:
     assert art.exclude == ()
 
 
+def test_artifact_default_strip_components_is_zero(tmp_path: pathlib.Path) -> None:
+    art = _ctx(tmp_path).artifact("*.tar.gz")
+    assert art.strip_components == 0
+
+
+def test_artifact_stores_strip_components(tmp_path: pathlib.Path) -> None:
+    art = _ctx(tmp_path).artifact("*.tar.gz", strip_components=1)
+    assert art.strip_components == 1
+
+
+def test_artifact_rejects_non_int_strip_components(tmp_path: pathlib.Path) -> None:
+    with pytest.raises(RuntimeError):
+        _ctx(tmp_path).artifact("*.tar.gz", strip_components="1")  # type: ignore[arg-type]
+
+
+def test_artifact_rejects_negative_strip_components(tmp_path: pathlib.Path) -> None:
+    with pytest.raises(RuntimeError):
+        _ctx(tmp_path).artifact("*.tar.gz", strip_components=-1)
+
+
 def test_artifact_stores_exclude_patterns(tmp_path: pathlib.Path) -> None:
     art = _ctx(tmp_path).artifact("*.tar.gz", exclude=["tests/**", "*.debug"])
     assert art.exclude == ("tests/**", "*.debug")

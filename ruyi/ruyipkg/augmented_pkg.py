@@ -6,6 +6,11 @@ from ..i18n import _
 from ..utils.porcelain import PorcelainEntity, PorcelainEntityType
 from .distfile import Distfile
 from .host import canonicalize_host_str, get_native_host
+from .host_compat import (
+    HostCompatStatus,
+    PackageHostCompat,
+    PorcelainHostCompatV1,
+)
 from .list_filter import ListFilter
 from .pkg_manifest import BoundPackageManifest, PackageManifestType
 from .composite_repo import CompositeRepo
@@ -47,12 +52,14 @@ class AugmentedPkgManifest:
         download_size_host_bytes: int | None,
         download_size_host: str | None,
         install_size: int | None = None,
+        host_compat: PackageHostCompat | None = None,
     ) -> None:
         self.pm = pm
         self.remarks = remarks
         self.download_size_host_bytes = download_size_host_bytes
         self.download_size_host = download_size_host
         self.install_size = install_size
+        self.host_compat = host_compat or PackageHostCompat(HostCompatStatus.Unchecked)
         self._is_downloaded = PkgRemark.Downloaded in remarks
         self._is_installed = PkgRemark.Installed in remarks
 
@@ -66,6 +73,7 @@ class AugmentedPkgManifest:
             "download_size_host_bytes": self.download_size_host_bytes,
             "download_size_host": self.download_size_host,
             "install_size": self.install_size,
+            "host_compat": self.host_compat.to_porcelain(),
         }
 
 
@@ -177,6 +185,7 @@ class PorcelainPkgVersionV1(TypedDict):
     download_size_host_bytes: int | None
     download_size_host: str | None
     install_size: int | None
+    host_compat: PorcelainHostCompatV1
 
 
 class PorcelainPkgListOutputV1(PorcelainEntity):

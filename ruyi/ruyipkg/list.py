@@ -5,6 +5,13 @@ from ..i18n import _
 from ..log import RuyiLogger
 from ..utils.porcelain import PorcelainOutput
 from .augmented_pkg import AugmentedPkg
+from .host import get_native_host
+from .host_compat import (
+    HostCompatChecker,
+    HostCompatStatus,
+    PackageHostCompat,
+    format_problem,
+)
 from .list_filter import ListFilter
 from .pkg_manifest import BoundPackageManifest
 
@@ -13,6 +20,7 @@ def do_list(
     cfg: GlobalConfig,
     filters: ListFilter,
     verbose: bool,
+    allow_probing_host: bool = False,
 ) -> int:
     logger = cfg.logger
 
@@ -34,11 +42,27 @@ def do_list(
     augmented_pkgs = list(AugmentedPkg.yield_from_repo(cfg, cfg.repo, filters))
     multi_repo = len(cfg.repo_entries) > 1
 
+    if allow_probing_host:
+        checker = HostCompatChecker(logger=logger, refresh_resolver=False)
+        native_host = get_native_host()
+        for ap in augmented_pkgs:
+            for ver in ap.versions:
+                ver.host_compat = checker.check(
+                    ver.pm,
+                    native_host,
+                    allow_probing=True,
+                )
+
     if cfg.is_porcelain:
         return _do_list_porcelain(augmented_pkgs)
 
     if not verbose:
-        return _do_list_non_verbose(logger, augmented_pkgs, multi_repo)
+        return _do_list_non_verbose(
+            logger,
+            augmented_pkgs,
+            multi_repo,
+            show_host_compat=allow_probing_host,
+        )
 
     for i, ver in enumerate(chain(*(ap.versions for ap in augmented_pkgs))):
         if i > 0:
@@ -53,6 +77,7 @@ def do_list(
             download_size_host=ver.download_size_host,
             install_size=ver.install_size,
             is_installed=ver._is_installed,
+            host_compat=ver.host_compat,
         )
 
     return 0
@@ -62,18 +87,22 @@ def _do_list_non_verbose(
     logger: RuyiLogger,
     augmented_pkgs: list[AugmentedPkg],
     multi_repo: bool = False,
+    *,
+    show_host_compat: bool = False,
 ) -> int:
     logger.stdout(_("List of available packages:\n"))
 
     for ap in augmented_pkgs:
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/]")
         for ver in ap.versions:
-            if ver.remarks:
-                comments_str = (
-                    f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
-                )
-            else:
-                comments_str = ""
+            labels = [r.as_rich_markup() for r in ver.remarks]
+            if (
+                show_host_compat
+                and ver.pm.binary_metadata is not None
+                and ver.host_compat.status is not HostCompatStatus.NoABIInfo
+            ):
+                labels.append(ver.host_compat.status.as_rich_markup())
+            comments_str = f" ({', '.join(labels)})" if labels else ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
             if ver._is_installed:
                 size_str = _format_install_size_inline(ver.install_size, True)
@@ -108,6 +137,7 @@ def _print_pkg_detail(
     download_size_host: str | None = None,
     install_size: int | None = None,
     is_installed: bool = False,
+    host_compat: PackageHostCompat | None = None,
 ) -> None:
     repo_tag = f" [dim]\\[{pm.repo_id}][/]" if multi_repo else ""
     logger.stdout(
@@ -122,6 +152,19 @@ def _print_pkg_detail(
     logger.stdout(_("* Vendor: {vendor}").format(vendor=pm.vendor_name))
     if pm.is_ruyisdk_certified:
         logger.stdout(_("* [bold green]RuyiSDK Certified[/] package"))
+    if host_compat is not None and pm.binary_metadata is not None:
+        if host_compat.status is HostCompatStatus.Unchecked:
+            logger.stdout(
+                _("* Host compatibility: unchecked (use --allow-probing-host)")
+            )
+        else:
+            logger.stdout(
+                _("* Host compatibility: {status}").format(
+                    status=host_compat.status.as_rich_markup()
+                )
+            )
+        for problem in host_compat.problems:
+            logger.stdout(f"    - {format_problem(problem)}")
     if download_size_host is not None:
         logger.stdout(
             _("* Download size for {host}: {size}").format(

@@ -70,6 +70,20 @@ class PorcelainPkgVersionV1(TypedDict):
     """Host architecture used for resolving host-specific distfiles."""
     install_size: int | None
     """Declared unpacked install size in bytes, or None if not available."""
+    host_compat: PorcelainHostCompatV1
+
+
+class PorcelainHostCompatV1(TypedDict):
+    status: str
+    """One of unchecked, no-abi-info, likely-compatible, likely-incompatible, compatibility-unknown."""
+    problems: list[PorcelainHostCompatProblemV1]
+
+
+class PorcelainHostCompatProblemV1(TypedDict):
+    check: str
+    compatible: bool | None
+    msgid: str
+    params: dict[str, object]
 
 
 # ty: "entitylistoutput-v1"
@@ -82,6 +96,9 @@ class PorcelainEntityListOutputV1(PorcelainEntity):
     related_refs: list[str]
     reverse_refs: list[str]
 ```
+
+`host_compat` 总是存在。未给出 `--allow-probing-host` 时，`status` 为 `unchecked`，
+`problems` 为空；探测后 `problems` 包含所有未确定通过的检查项，供调用方自行渲染。
 
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
 每条消息都带时间戳、日志级别，消息正文末尾不会被自动附加 1 个换行（但如果某条日志的末尾碰巧有一个或一些换行，那么这些换行将不会被删除）。

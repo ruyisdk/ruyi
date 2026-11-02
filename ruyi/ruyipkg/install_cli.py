@@ -114,6 +114,12 @@ class InstallCommand(
             action="store_true",
             help=_("Force re-installation of already installed packages"),
         )
+        p.add_argument(
+            "--allow-probing-host",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help=_("Probe the native host and warn about compatibility (default: on)"),
+        )
 
     @classmethod
     def main(cls, cfg: "GlobalConfig", args: argparse.Namespace) -> int:
@@ -125,6 +131,7 @@ class InstallCommand(
         fetch_only: bool = args.fetch_only
         reinstall: bool = args.reinstall
 
+        allow_probing_host: bool = args.allow_probing_host
         return do_install_atoms(
             cfg,
             cfg.repo,
@@ -132,6 +139,7 @@ class InstallCommand(
             canonicalized_host=canonicalize_host_str(host),
             fetch_only=fetch_only,
             reinstall=reinstall,
+            allow_probing_host=allow_probing_host,
         )
 
 
