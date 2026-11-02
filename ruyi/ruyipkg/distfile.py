@@ -27,6 +27,10 @@ accordingly if one of them turns out to be the case:
 * Organizational and/or ISP restrictions
     - is there a [yellow]firewall[/] preventing Ruyi traffic?
     - is your [yellow]ISP blocking access[/] to the source website?
+    - is your [yellow]VPN or proxy exit[/] blocked or challenged by the server?
+* Server-side problems and access policies
+    - is the server returning an [yellow]HTTP error[/] (4xx/5xx)?
+    - is the server serving a [yellow]bot challenge page[/] instead of the file?
 * Volatile upstream
     - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)
 """
