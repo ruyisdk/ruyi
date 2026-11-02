@@ -14,6 +14,12 @@ from ..telemetry.scope import TelemetryScope
 from .atom import Atom
 from .distfile import Distfile
 from .host import RuyiHost
+from .host_compat import (
+    HostCompatChecker,
+    HostCompatStatus,
+    PackageHostCompat,
+    format_problem,
+)
 from .pkg_manifest import BoundPackageManifest
 from .composite_repo import CompositeRepo
 from .unpack import ensure_unpack_cmd_for_method
@@ -186,6 +192,23 @@ def _log_preinstall_notices(
         logger.I(_("this package is [bold green]RuyiSDK Certified[/]"))
 
 
+def _warn_host_compat(
+    logger: RuyiLogger,
+    pm: BoundPackageManifest,
+    compat: PackageHostCompat,
+) -> None:
+    if compat.status is not HostCompatStatus.LikelyIncompatible:
+        return
+
+    logger.W(
+        _("package [green]{pkg}[/] may not be compatible with this host").format(
+            pkg=pm.name_for_installation,
+        )
+    )
+    for problem in compat.problems:
+        logger.I(format_problem(problem))
+
+
 def do_install_atoms(
     config: GlobalConfig,
     mr: CompositeRepo,
@@ -194,9 +217,12 @@ def do_install_atoms(
     canonicalized_host: str | RuyiHost,
     fetch_only: bool,
     reinstall: bool,
+    allow_probing_host: bool = True,
 ) -> int:
     logger = config.logger
     logger.D(f"about to install for host {canonicalized_host}: {atom_strs}")
+
+    checker = HostCompatChecker(logger=logger) if allow_probing_host else None
 
     for a_str in atom_strs:
         a = Atom.parse(a_str)
@@ -209,6 +235,14 @@ def do_install_atoms(
         pkg_name = pm.name_for_installation
 
         _log_preinstall_notices(logger, pm, config.lang_code)
+
+        if checker is not None and pm.binary_metadata is not None:
+            compat = checker.check(
+                pm,
+                canonicalized_host,
+                allow_probing=allow_probing_host,
+            )
+            _warn_host_compat(logger, pm, compat)
 
         config.telemetry.record(
             TelemetryScope(mr.repo_id),

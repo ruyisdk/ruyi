@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
+from pytest import MonkeyPatch
+
 from ruyi.ruyipkg.abi import ABIReport, ElfABIRecord, ElfType
 from ruyi.ruyipkg.abi.aggregate import build_summary
 from ruyi.ruyipkg.abi.serialize import dump_abi_report_toml
+from ruyi.ruyipkg.distfile import Distfile
 from ruyi.ruyipkg.host import get_native_host
 
 from tests.fixtures import IntegrationTestHarness
@@ -152,3 +155,54 @@ def test_porcelain_reports_unchecked_without_flag_and_status_with_flag(
         _pkg_version(checked.stdout, "abi-cli")["host_compat"]["status"]
         == "likely-incompatible"
     )
+
+
+def test_install_warns_but_continues_on_incompatible_package(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    native = get_native_host()
+    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _write_sidecar(
+        ruyi_cli_runner,
+        distfile="abi-cli.tar",
+        e_machine=_other_e_machine(),
+    )
+    monkeypatch.setattr(Distfile, "ensure", lambda self, logger: None)
+    monkeypatch.setattr(
+        "ruyi.ruyipkg.install.ensure_unpack_cmd_for_method",
+        lambda logger, method: None,
+    )
+
+    result = ruyi_cli_runner("install", "--fetch-only", "abi-cli")
+
+    assert result.exit_code == 0
+    assert "e-machine" in result.stderr
+
+
+def test_install_can_disable_probing(
+    ruyi_cli_runner: IntegrationTestHarness,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    native = get_native_host()
+    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _write_sidecar(
+        ruyi_cli_runner,
+        distfile="abi-cli.tar",
+        e_machine=_other_e_machine(),
+    )
+    monkeypatch.setattr(Distfile, "ensure", lambda self, logger: None)
+    monkeypatch.setattr(
+        "ruyi.ruyipkg.install.ensure_unpack_cmd_for_method",
+        lambda logger, method: None,
+    )
+
+    result = ruyi_cli_runner(
+        "install",
+        "--fetch-only",
+        "--no-allow-probing-host",
+        "abi-cli",
+    )
+
+    assert result.exit_code == 0
+    assert "e-machine" not in result.stderr
