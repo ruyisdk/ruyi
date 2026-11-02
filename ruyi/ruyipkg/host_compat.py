@@ -197,11 +197,14 @@ class HostCompatChecker:
                 raise ValueError(
                     f"sidecar exceeds the {DEFAULT_MAX_SIDECAR_BYTES}-byte limit"
                 )
-            report = load_abi_report_toml(path.read_text(encoding="utf-8"))
+            loaded = load_abi_report_toml(path.read_text(encoding="utf-8"))
             # The loader does not type-check scalar fields, so prove the
             # report is mergeable here; otherwise a schema-broken sidecar
             # would only blow up later, discarding its valid siblings too.
-            _merge_reports((report,))
+            # Only assign once validation succeeds, so a rejected sidecar is
+            # cached as None and never reaches the merge guard.
+            _merge_reports((loaded,))
+            report = loaded
         except Exception as exc:  # noqa: BLE001 - sidecars are optional metadata
             self._logger.W(
                 _("failed to load ABI sidecar {path}: {err}").format(

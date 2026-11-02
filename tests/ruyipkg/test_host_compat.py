@@ -462,6 +462,43 @@ def test_checker_degrades_on_type_invalid_sidecar(tmp_path: pathlib.Path) -> Non
     assert len(logger.warnings) == 1
 
 
+def test_checker_drops_invalid_non_empty_sidecar_before_caching(
+    tmp_path: pathlib.Path,
+) -> None:
+    sidecar = _write_sidecar(tmp_path, "pkg.tar.zst", _report(_record()))
+    text = sidecar.read_text(encoding="utf-8")
+    sidecar.write_text(
+        text.replace("file_count = 1", 'file_count = "bad"'),
+        encoding="utf-8",
+    )
+    logger = _FakeLogger()
+    prober = _FakeProber(_host())
+    checker = HostCompatChecker(
+        logger=logger,  # type: ignore[arg-type]
+        prober=prober,  # type: ignore[arg-type]
+    )
+
+    compat = checker.check(
+        _manifest(tmp_path),
+        "x86_64",
+        allow_probing=True,
+    )
+
+    assert compat.status is HostCompatStatus.NoABIInfo
+    assert len(logger.warnings) == 1
+    assert prober.manifests == []
+
+    again = checker.check(
+        _manifest(tmp_path),
+        "x86_64",
+        allow_probing=True,
+    )
+
+    assert again.status is HostCompatStatus.NoABIInfo
+    assert len(logger.warnings) == 1
+    assert prober.manifests == []
+
+
 def test_checker_degrades_when_probing_raises(tmp_path: pathlib.Path) -> None:
     _write_sidecar(tmp_path, "pkg.tar.zst", _report(_record()))
     checker = HostCompatChecker(
