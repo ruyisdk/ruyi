@@ -126,6 +126,8 @@ def test_curl_asks_curl_to_fail_on_http_errors(
     # requested on stdout, where the response body does not go
     assert "%{http_code}" in fake.argv
     assert fake.kwargs[-1]["stdout"] == _FakeSubprocess.PIPE
+    assert "--speed-limit" in fake.argv
+    assert "--speed-time" in fake.argv
 
 
 @pytest.mark.parametrize(
@@ -186,6 +188,46 @@ def test_curl_keeps_partial_file_when_resume_is_rejected(
         f.write(partial)
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(0, "416"))
+    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, True)
+    with open(dest, "rb") as f:
+        assert f.read() == partial
+
+
+def test_curl_discards_body_left_by_failed_http_response(
+    ruyi_logger: RuyiLogger,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # a failed fresh download must not leave an error body that a later
+    # run would try to resume
+    dest = os.path.join(tmp_path, "distfile")
+
+    def write_body(argv: list[str]) -> None:
+        with open(dest, "wb") as f:
+            f.write(b"<html>unauthorized</html>")
+
+    _patch_subprocess(monkeypatch, _FakeProcessResult(22, "401"), write_body)
+    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+    assert not os.path.exists(dest)
+
+
+def test_curl_keeps_partial_on_failed_http_response_when_resuming(
+    ruyi_logger: RuyiLogger,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # curl does not write the error response when resuming, so the
+    # existing partial is still worth continuing from
+    dest = os.path.join(tmp_path, "distfile")
+    partial = b"HELLO"
+    with open(dest, "wb") as f:
+        f.write(partial)
+
+    _patch_subprocess(monkeypatch, _FakeProcessResult(22, "502"))
     fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, True)
@@ -360,14 +402,19 @@ def test_requests_returns_false_on_connection_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
+    calls: list[dict[str, Any]] = []
 
     def raise_connection_error(*args: Any, **kwargs: Any) -> Any:
+        calls.append(kwargs)
         raise requests.ConnectionError("connection reset")
 
     monkeypatch.setattr(requests, "get", raise_connection_error)
     fetcher = PythonRequestsFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+    # the request must actually have been attempted, with finite timeouts
+    assert len(calls) == 1
+    assert calls[0]["timeout"] == (60, 60)
 
 
 def test_fetch_falls_through_to_next_url_on_http_error(
@@ -380,7 +427,8 @@ def test_fetch_falls_through_to_next_url_on_http_error(
     fake = _patch_subprocess(
         monkeypatch,
         [
-            _FakeProcessResult(22, "502"),
+            # a zero-exit 502 must still fail and fall through
+            _FakeProcessResult(0, "502"),
             _FakeProcessResult(0, "200"),
         ],
     )

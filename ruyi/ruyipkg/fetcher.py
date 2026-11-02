@@ -48,6 +48,9 @@ _WGET_EXIT_SERVER_ERROR: Final = 8
 # a resume request that starts beyond the remote object's length
 _HTTP_RANGE_NOT_SATISFIABLE: Final = "416"
 
+# connect and read timeout for the requests-based fetcher, in seconds
+_DOWNLOAD_TIMEOUT: Final = 60
+
 
 def _is_http_success_code(code: str) -> bool:
     return code.startswith("2")
@@ -284,6 +287,12 @@ class CurlFetcher(BaseFetcher):
                 "--fail",
                 "--connect-timeout",
                 "60",
+                # give up on a transfer that makes no meaningful progress,
+                # so that a stalled server does not block mirror fallback
+                "--speed-limit",
+                "1",
+                "--speed-time",
+                "60",
                 "--write-out",
                 "%{http_code}",
                 "-o",
@@ -297,6 +306,14 @@ class CurlFetcher(BaseFetcher):
 
         if proc.returncode != 0:
             self._logger.W(_curl_failure_warning(url, argv, proc.returncode, code))
+            # A failed fresh download may have left an error body or an
+            # empty file behind (e.g. 401 with some auth schemes), and that
+            # must not be mistaken for a partial download later on.  Keep
+            # partials from ordinary transfer failures, and keep the file
+            # when resuming, where curl does not write the error response
+            # and the existing partial is still worth continuing from.
+            if not resume and code is not None and not _is_http_success_code(code):
+                _remove_if_exists(dest)
             return False
 
         # Be defensive even if curl exits successfully: an unfollowed
@@ -369,6 +386,11 @@ class WgetFetcher(BaseFetcher):
             )
             return False
 
+        # wget still exits successfully for a few non-2xx responses, such as
+        # a 300 without a Location header, and its status cannot be inspected
+        # without capturing stderr, which would disable its progress display.
+        # Distfile always runs a checksum check afterwards, so such a body is
+        # rejected there instead.
         return True
 
 
@@ -399,7 +421,12 @@ class PythonRequestsFetcher(BaseFetcher):
             headers["Range"] = f"bytes={filesize}-"
 
         try:
-            r = requests.get(url, headers=headers, stream=True)
+            r = requests.get(
+                url,
+                headers=headers,
+                stream=True,
+                timeout=(_DOWNLOAD_TIMEOUT, _DOWNLOAD_TIMEOUT),
+            )
         except requests.RequestException as exc:
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
