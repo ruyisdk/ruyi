@@ -33,9 +33,12 @@ class HostABIReport:
 class HostABIProber:
     """Probe host facts for one manifest.
 
-    The resolver is rebuilt for each probe so libraries installed or removed
-    between calls are taken into account; facts are memoized only while a
-    single probe runs.
+    The resolver is rebuilt for each probe by default so libraries installed or
+    removed between calls are taken into account. Callers that know the host
+    is stable across a command may pass ``refresh_resolver=False`` to keep the
+    index built by the first probe instead. Provider library scans are cached
+    for the lifetime of the prober either way, keyed by the resolved provider
+    path set.
     """
 
     def __init__(
@@ -45,21 +48,24 @@ class HostABIProber:
         exists: Callable[[str], bool] = lambda p: pathlib.Path(p).exists(),
         host_arch: str | None = None,
         logger: RuyiLogger | None = None,
+        refresh_resolver: bool = True,
     ) -> None:
         am = recognize_arch_by_uname(host_arch) or ArchMetadata(0, 64, "little")
         self._arch_metadata = am
         self._host_arch = host_arch or get_native_host().arch
         self._owns_resolver = resolver is None
+        self._refresh_resolver = refresh_resolver
         self._resolver: ResolvesHostLibs | None = resolver
         self._exists = exists
         self._logger = logger
+        self._provider_cache: dict[tuple[str, ...], ABIReport | None] = {}
 
     @property
     def e_machine(self) -> int:
         return self._arch_metadata.elf_machine
 
     def probe(self, manifest: ABIReport) -> HostABIReport:
-        if self._owns_resolver:
+        if self._owns_resolver and (self._refresh_resolver or self._resolver is None):
             self._resolver = HostLibResolver(self._arch_metadata.elf_machine)
         assert self._resolver is not None
 
@@ -79,19 +85,24 @@ class HostABIProber:
                 if (p := self._resolver.resolve(vn.soname)) is not None
             }
         )
-        providers: ABIReport | None = None
-        try:
-            from . import scan_source
-            from .sources import ABISource
-
-            providers = scan_source(
-                ABISource.from_paths(provider_paths),
-                logger=self._logger,
-            )
-        except Exception as exc:  # noqa: BLE001 - degrade, never raise
-            if self._logger is not None:
-                self._logger.D(f"provider library ABI scan failed: {exc}")
+        cache_key = tuple(provider_paths)
+        if cache_key in self._provider_cache:
+            providers = self._provider_cache[cache_key]
+        else:
             providers = None
+            try:
+                from . import scan_source
+                from .sources import ABISource
+
+                providers = scan_source(
+                    ABISource.from_paths(provider_paths),
+                    logger=self._logger,
+                )
+            except Exception as exc:  # noqa: BLE001 - degrade, never raise
+                if self._logger is not None:
+                    self._logger.D(f"provider library ABI scan failed: {exc}")
+                providers = None
+            self._provider_cache[cache_key] = providers
 
         attrs: dict[str, Mapping[str, object]] = {}
         for m in manifest.summary.e_machines:

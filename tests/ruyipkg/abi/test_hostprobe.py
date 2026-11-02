@@ -197,3 +197,47 @@ def test_probe_rebuilds_the_owned_resolver(monkeypatch: MonkeyPatch) -> None:
 
     # A reused prober must not keep an index from before the host changed.
     assert len(created) == 2
+
+
+def test_probe_can_reuse_the_owned_resolver(monkeypatch: MonkeyPatch) -> None:
+    created: list[_FakeResolver] = []
+
+    def make_resolver(e_machine: int) -> _FakeResolver:
+        r = _FakeResolver({})
+        created.append(r)
+        return r
+
+    monkeypatch.setattr(hostprobe, "HostLibResolver", make_resolver)
+    _stub_interpreters(monkeypatch)
+
+    prober = HostABIProber(
+        host_arch="x86_64",
+        exists=lambda _p: False,
+        refresh_resolver=False,
+    )
+    manifest = _manifest()
+    prober.probe(manifest)
+    prober.probe(manifest)
+
+    assert len(created) == 1
+
+
+def test_provider_scan_is_cached(monkeypatch: MonkeyPatch) -> None:
+    scanned: list[object] = []
+
+    def fake_scan(source: ABISource, *, logger: RuyiLogger) -> ABIReport:
+        scanned.append(source)
+        return _empty_report()
+
+    monkeypatch.setattr(abi_pkg, "scan_source", fake_scan)
+    _stub_interpreters(monkeypatch)
+
+    manifest = _manifest(version_needs=(VersionNeed("libc.so.6", ("GLIBC_2.34",)),))
+    prober = HostABIProber(
+        resolver=_FakeResolver({"libc.so.6": pathlib.Path("/lib/libc.so.6")}),
+        host_arch="x86_64",
+    )
+    prober.probe(manifest)
+    prober.probe(manifest)
+
+    assert len(scanned) == 1
