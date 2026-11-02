@@ -6,6 +6,7 @@ import pathlib
 import shutil
 
 from tests.fixtures import IntegrationTestHarness, RuyiFileFixtureFactory
+from tests.helpers import requires_linux_procfs, requires_supported_libc
 
 
 def _build_sidecar(
@@ -32,6 +33,8 @@ def _build_sidecar(
     return sidecar
 
 
+@requires_linux_procfs
+@requires_supported_libc
 def test_check_abi_cross_arch_reports_problem(
     tmp_path: pathlib.Path,
     ruyi_cli_runner: IntegrationTestHarness,
@@ -52,6 +55,8 @@ def test_check_abi_cross_arch_reports_problem(
     assert "e-machine" in result.stdout
 
 
+@requires_linux_procfs
+@requires_supported_libc
 def test_check_abi_matching_arch_is_clean(
     tmp_path: pathlib.Path,
     ruyi_cli_runner: IntegrationTestHarness,

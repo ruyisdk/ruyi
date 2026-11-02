@@ -14,6 +14,7 @@ from ruyi.ruyipkg.distfile import Distfile
 from ruyi.ruyipkg.host import get_native_host
 
 from tests.fixtures import IntegrationTestHarness
+from tests.helpers import requires_linux_procfs, requires_supported_libc
 
 
 def _record(e_machine: int) -> ElfABIRecord:
@@ -98,11 +99,13 @@ def _other_e_machine() -> int:
     return 243 if get_native_host().arch != "riscv64" else 62
 
 
+@requires_linux_procfs
+@requires_supported_libc
 def test_list_shows_incompatible_status_when_probing_is_allowed(
     ruyi_cli_runner: IntegrationTestHarness,
 ) -> None:
     native = get_native_host()
-    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _add_binary_package(ruyi_cli_runner, host=str(native))
     _write_sidecar(
         ruyi_cli_runner,
         distfile="abi-cli.tar",
@@ -117,11 +120,13 @@ def test_list_shows_incompatible_status_when_probing_is_allowed(
     assert "likely incompatible" in result.stdout
 
 
+@requires_linux_procfs
+@requires_supported_libc
 def test_porcelain_reports_unchecked_without_flag_and_status_with_flag(
     ruyi_cli_runner: IntegrationTestHarness,
 ) -> None:
     native = get_native_host()
-    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _add_binary_package(ruyi_cli_runner, host=str(native))
     _write_sidecar(
         ruyi_cli_runner,
         distfile="abi-cli.tar",
@@ -157,12 +162,14 @@ def test_porcelain_reports_unchecked_without_flag_and_status_with_flag(
     )
 
 
+@requires_linux_procfs
+@requires_supported_libc
 def test_install_warns_but_continues_on_incompatible_package(
     ruyi_cli_runner: IntegrationTestHarness,
     monkeypatch: MonkeyPatch,
 ) -> None:
     native = get_native_host()
-    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _add_binary_package(ruyi_cli_runner, host=str(native))
     _write_sidecar(
         ruyi_cli_runner,
         distfile="abi-cli.tar",
@@ -185,7 +192,7 @@ def test_install_can_disable_probing(
     monkeypatch: MonkeyPatch,
 ) -> None:
     native = get_native_host()
-    _add_binary_package(ruyi_cli_runner, host=native.arch)
+    _add_binary_package(ruyi_cli_runner, host=str(native))
     _write_sidecar(
         ruyi_cli_runner,
         distfile="abi-cli.tar",
