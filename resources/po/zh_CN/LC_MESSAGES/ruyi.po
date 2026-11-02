@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ruyi 0.53.0-alpha.20260828\n"
 "Report-Msgid-Bugs-To: https://github.com/ruyisdk/ruyi/issues\n"
-"POT-Creation-Date: 2026-10-28 18:43+0800\n"
+"POT-Creation-Date: 2026-11-02 09:52+0800\n"
 "PO-Revision-Date: 2026-09-16 13:00+0800\n"
 "Last-Translator: WANG Xuerui <wangxuerui@iscas.ac.cn>\n"
 "Language: zh_Hans_CN\n"
@@ -1312,36 +1312,36 @@ msgstr "探测主机 ABI 失败：{err}"
 msgid "no ABI compatibility problems detected"
 msgstr "未检测到 ABI 兼容性问题"
 
-#: ruyi/ruyipkg/admin_cli.py:466
+#: ruyi/ruyipkg/admin_cli.py:466 ruyi/ruyipkg/host_compat.py:99
 #, python-brace-format
 msgid "{check}: {message}"
 msgstr "{check}：{message}"
 
-#: ruyi/ruyipkg/augmented_pkg.py:26
+#: ruyi/ruyipkg/augmented_pkg.py:31
 msgid "latest"
 msgstr "最新"
 
-#: ruyi/ruyipkg/augmented_pkg.py:28
+#: ruyi/ruyipkg/augmented_pkg.py:33
 msgid "latest-prerelease"
 msgstr "最新预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:30
+#: ruyi/ruyipkg/augmented_pkg.py:35
 msgid "[red]no binary for current host[/]"
 msgstr "[red]无适用当前主机的二进制文件[/]"
 
-#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:32
+#: ruyi/device/provision.py:620 ruyi/ruyipkg/augmented_pkg.py:37
 msgid "prerelease"
 msgstr "预发布"
 
-#: ruyi/ruyipkg/augmented_pkg.py:34
+#: ruyi/ruyipkg/augmented_pkg.py:39
 msgid "[yellow]has known issue[/]"
 msgstr "[yellow]有已知问题[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:36
+#: ruyi/ruyipkg/augmented_pkg.py:41
 msgid "[green]downloaded[/]"
 msgstr "[green]已下载[/]"
 
-#: ruyi/ruyipkg/augmented_pkg.py:38
+#: ruyi/ruyipkg/augmented_pkg.py:43
 msgid "[green]installed[/]"
 msgstr "[green]已安装[/]"
 
@@ -1534,134 +1534,169 @@ msgstr "请求的下载器 '{name}' 在当前系统不可用"
 msgid "failed to fetch distfile: command '{cmd}' returned {retcode}"
 msgstr "获取分发文件失败：命令 '{cmd}' 返回 {retcode}"
 
-#: ruyi/ruyipkg/install.py:49 ruyi/ruyipkg/install.py:206
+#: ruyi/ruyipkg/host_compat.py:40
+msgid "unchecked"
+msgstr "未检查"
+
+#: ruyi/ruyipkg/host_compat.py:42
+msgid "[dim]no ABI info[/]"
+msgstr "[dim]无 ABI 信息[/]"
+
+#: ruyi/ruyipkg/host_compat.py:44
+msgid "[green]likely compatible[/]"
+msgstr "[green]可能兼容[/]"
+
+#: ruyi/ruyipkg/host_compat.py:46
+msgid "[red]likely incompatible[/]"
+msgstr "[red]可能不兼容[/]"
+
+#: ruyi/ruyipkg/host_compat.py:48
+msgid "[yellow]compatibility unknown[/]"
+msgstr "[yellow]兼容性未知[/]"
+
+#: ruyi/ruyipkg/host_compat.py:160
+#, python-brace-format
+msgid "failed to merge or check ABI sidecars: {err}"
+msgstr "合并或检查 ABI 挎斗文件失败：{err}"
+
+#: ruyi/ruyipkg/host_compat.py:199
+#, python-brace-format
+msgid "failed to load ABI sidecar {path}: {err}"
+msgstr "加载 ABI 挎斗文件 {path} 失败：{err}"
+
+#: ruyi/ruyipkg/install.py:55 ruyi/ruyipkg/install.py:232
 #, python-brace-format
 msgid "atom {atom} matches no package in the repository"
 msgstr "atom {atom} 在仓库中未匹配到任何软件包"
 
-#: ruyi/ruyipkg/install.py:57 ruyi/ruyipkg/install.py:181
+#: ruyi/ruyipkg/install.py:63 ruyi/ruyipkg/install.py:187
 msgid "package has known issue(s)"
 msgstr "软件包有已知问题"
 
-#: ruyi/ruyipkg/install.py:107
+#: ruyi/ruyipkg/install.py:113
 #, python-brace-format
 msgid "don't know how to extract package [green]{pkg}[/]"
 msgstr "不知道如何解压缩软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:116
+#: ruyi/ruyipkg/install.py:122
 #, python-brace-format
 msgid "cannot handle package [green]{pkg}[/]: package is both binary and source"
 msgstr "无法处理软件包 [green]{pkg}[/]：软件包既是二进制又是源码"
 
-#: ruyi/ruyipkg/install.py:131
+#: ruyi/ruyipkg/install.py:137
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no distfile for host {host}"
 msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明分发文件"
 
-#: ruyi/ruyipkg/install.py:151 ruyi/ruyipkg/install.py:396
-#: ruyi/ruyipkg/install.py:523
+#: ruyi/ruyipkg/install.py:157 ruyi/ruyipkg/install.py:430
+#: ruyi/ruyipkg/install.py:557
 #, python-brace-format
 msgid "extracting [green]{distfile}[/] for package [green]{pkg}[/]"
 msgstr "正在为软件包 [green]{pkg}[/] 解压缩 [green]{distfile}[/]"
 
-#: ruyi/ruyipkg/install.py:163
+#: ruyi/ruyipkg/install.py:169
 #, python-brace-format
 msgid "package [green]{pkg}[/] has been extracted to {dest_dir}"
 msgstr "软件包 [green]{pkg}[/] 已被解压缩到 {dest_dir}"
 
-#: ruyi/ruyipkg/install.py:186
+#: ruyi/ruyipkg/install.py:192
 msgid "this package is [bold green]RuyiSDK Certified[/]"
 msgstr "该软件包[bold green]已通过 RuyiSDK 认证[/]"
 
-#: ruyi/ruyipkg/install.py:259 ruyi/ruyipkg/install.py:609
+#: ruyi/ruyipkg/install.py:204
+#, python-brace-format
+msgid "package [green]{pkg}[/] may not be compatible with this host"
+msgstr "软件包 [green]{pkg}[/] 可能与本机不兼容"
+
+#: ruyi/ruyipkg/install.py:293 ruyi/ruyipkg/install.py:643
 #, python-brace-format
 msgid "don't know how to handle non-binary package [green]{pkg}[/]"
 msgstr "不知道如何处理非二进制软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:299 ruyi/ruyipkg/install.py:436
+#: ruyi/ruyipkg/install.py:333 ruyi/ruyipkg/install.py:470
 #, python-brace-format
 msgid "skipping already installed package [green]{pkg}[/]"
 msgstr "跳过已安装的软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:307 ruyi/ruyipkg/install.py:444
+#: ruyi/ruyipkg/install.py:341 ruyi/ruyipkg/install.py:478
 #, python-brace-format
 msgid "package [green]{pkg}[/] seems already installed; purging and re-installing due to [yellow]--reinstall[/]"
 msgstr "软件包 [green]{pkg}[/] 似乎已安装；由于传入了 [yellow]--reinstall[/]，将移除并重新安装它"
 
-#: ruyi/ruyipkg/install.py:348
+#: ruyi/ruyipkg/install.py:382
 #, python-brace-format
 msgid "package [green]{pkg}[/]{repo_tag} installed to [yellow]{install_root}[/]"
 msgstr "软件包 [green]{pkg}[/]{repo_tag} 已安装到 [yellow]{install_root}[/]"
 
-#: ruyi/ruyipkg/install.py:376
+#: ruyi/ruyipkg/install.py:410
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no binary for host {host}"
 msgstr "软件包 [green]{pkg}[/] 未为主机 {host} 声明二进制文件"
 
-#: ruyi/ruyipkg/install.py:391 ruyi/ruyipkg/install.py:518
+#: ruyi/ruyipkg/install.py:425 ruyi/ruyipkg/install.py:552
 msgid "skipping installation because [yellow]--fetch-only[/] is given"
 msgstr "由于传入了 [yellow]--fetch-only[/]，跳过安装"
 
-#: ruyi/ruyipkg/install.py:482
+#: ruyi/ruyipkg/install.py:516
 #, python-brace-format
 msgid "package [green]{pkg}[/] installed to [yellow]{install_root}[/]"
 msgstr "软件包 [green]{pkg}[/] 已安装到 [yellow]{install_root}[/]"
 
-#: ruyi/ruyipkg/install.py:506
+#: ruyi/ruyipkg/install.py:540
 #, python-brace-format
 msgid "package [green]{pkg}[/] declares no blob distfile"
 msgstr "软件包 [green]{pkg}[/] 未声明 blob 分发文件"
 
-#: ruyi/ruyipkg/install.py:552
+#: ruyi/ruyipkg/install.py:586
 #, python-brace-format
 msgid "atom [yellow]{atom}[/] is non-existent or not installed"
 msgstr "atom [yellow]{atom}[/] 不存在或未安装"
 
-#: ruyi/ruyipkg/install.py:560
+#: ruyi/ruyipkg/install.py:594
 msgid "no packages to uninstall"
 msgstr "没有要卸载的软件包"
 
-#: ruyi/ruyipkg/install.py:563
+#: ruyi/ruyipkg/install.py:597
 msgid "the following packages will be uninstalled:"
 msgstr "以下软件包将被卸载："
 
-#: ruyi/ruyipkg/install.py:566
+#: ruyi/ruyipkg/install.py:600
 #, python-brace-format
 msgid "  - [green]{category}/{name}[/] ({version})"
 msgstr "  - [green]{category}/{name}[/]（{version}）"
 
-#: ruyi/device/provision.py:180 ruyi/ruyipkg/install.py:574
+#: ruyi/device/provision.py:180 ruyi/ruyipkg/install.py:608
 msgid "Proceed?"
 msgstr "继续吗？"
 
-#: ruyi/ruyipkg/install.py:575
+#: ruyi/ruyipkg/install.py:609
 msgid "uninstallation aborted"
 msgstr "卸载已中止"
 
-#: ruyi/ruyipkg/install.py:643 ruyi/ruyipkg/install.py:705
+#: ruyi/ruyipkg/install.py:677 ruyi/ruyipkg/install.py:739
 #, python-brace-format
 msgid "skipping not-installed package [green]{pkg}[/]"
 msgstr "跳过未安装的软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:653 ruyi/ruyipkg/install.py:715
+#: ruyi/ruyipkg/install.py:687 ruyi/ruyipkg/install.py:749
 #, python-brace-format
 msgid "package [green]{pkg}[/] is not tracked as installed, but its directory [yellow]{install_root}[/] exists."
 msgstr "软件包 [green]{pkg}[/] 未被记录为已安装，但其目录 [yellow]{install_root}[/] 存在。"
 
-#: ruyi/ruyipkg/install.py:656 ruyi/ruyipkg/install.py:718
+#: ruyi/ruyipkg/install.py:690 ruyi/ruyipkg/install.py:752
 msgid "Please remove it manually if you are sure it's safe to do so."
 msgstr "如果您确定这样做是安全的，请手动移除它。"
 
-#: ruyi/ruyipkg/install.py:659 ruyi/ruyipkg/install.py:721
+#: ruyi/ruyipkg/install.py:693 ruyi/ruyipkg/install.py:755
 msgid "If you believe this is a bug, please file an issue at [yellow]https://github.com/ruyisdk/ruyi/issues[/]."
 msgstr "如果您认为这是一个 bug，请在 [yellow]https://github.com/ruyisdk/ruyi/issues[/] 提交工单。"
 
-#: ruyi/ruyipkg/install.py:664 ruyi/ruyipkg/install.py:726
+#: ruyi/ruyipkg/install.py:698 ruyi/ruyipkg/install.py:760
 #, python-brace-format
 msgid "uninstalling package [green]{pkg}[/]"
 msgstr "正在卸载软件包 [green]{pkg}[/]"
 
-#: ruyi/ruyipkg/install.py:677 ruyi/ruyipkg/install.py:739
+#: ruyi/ruyipkg/install.py:711 ruyi/ruyipkg/install.py:773
 #, python-brace-format
 msgid "package [green]{pkg}[/] uninstalled"
 msgstr "软件包 [green]{pkg}[/] 已被卸载"
@@ -1687,7 +1722,7 @@ msgid "Fetch distribution files only without installing"
 msgstr "仅获取分发文件而不安装"
 
 #: ruyi/ruyipkg/install_cli.py:56 ruyi/ruyipkg/install_cli.py:110
-#: ruyi/ruyipkg/install_cli.py:156
+#: ruyi/ruyipkg/install_cli.py:164
 msgid "Override the host architecture (normally not needed)"
 msgstr "覆盖主机架构（通常不需要）"
 
@@ -1703,73 +1738,86 @@ msgstr "要安装的软件包的指示表达式（atom）"
 msgid "Force re-installation of already installed packages"
 msgstr "强制重新安装已安装的软件包"
 
-#: ruyi/ruyipkg/install_cli.py:142
+#: ruyi/ruyipkg/install_cli.py:121
+msgid "Probe the native host and warn about compatibility (default: on)"
+msgstr "探测本机并对兼容性发出警告（默认：开启）"
+
+#: ruyi/ruyipkg/install_cli.py:150
 msgid "Uninstall installed packages"
 msgstr "卸载已安装的软件包"
 
-#: ruyi/ruyipkg/install_cli.py:150
+#: ruyi/ruyipkg/install_cli.py:158
 msgid "Specifier (atom) of the package to uninstall"
 msgstr "要卸载的软件包的指示表达式（atom）"
 
-#: ruyi/ruyipkg/install_cli.py:163
+#: ruyi/ruyipkg/install_cli.py:171
 msgid "Assume yes to all prompts"
 msgstr "对所有问题都回答“是”"
 
-#: ruyi/ruyipkg/list.py:26
+#: ruyi/ruyipkg/list.py:34
 msgid "no filter specified for list operation"
 msgstr "未为 list 操作指定过滤器"
 
-#: ruyi/ruyipkg/list.py:29
+#: ruyi/ruyipkg/list.py:37
 msgid "for the old behavior of listing all packages, try [yellow]ruyi list --all[/]"
 msgstr "如果您意图唤起“列出所有软件包”这一旧版行为，请尝试 [yellow]ruyi list --all[/]"
 
-#: ruyi/ruyipkg/list.py:66
+#: ruyi/ruyipkg/list.py:93
 msgid "List of available packages:\n"
 msgstr "可用软件包列表：\n"
 
-#: ruyi/ruyipkg/list.py:118
+#: ruyi/ruyipkg/list.py:149
 #, python-brace-format
 msgid "* Slug: [yellow]{slug}[/]"
 msgstr "* Slug：[yellow]{slug}[/]"
 
-#: ruyi/ruyipkg/list.py:120
+#: ruyi/ruyipkg/list.py:151
 msgid "* Slug: (none)"
 msgstr "* Slug：（无）"
 
-#: ruyi/ruyipkg/list.py:121
+#: ruyi/ruyipkg/list.py:152
 #, python-brace-format
 msgid "* Package kind: {kind}"
 msgstr "* 软件包类型：{kind}"
 
-#: ruyi/ruyipkg/list.py:122
+#: ruyi/ruyipkg/list.py:153
 #, python-brace-format
 msgid "* Vendor: {vendor}"
 msgstr "* 供应商：{vendor}"
 
-#: ruyi/ruyipkg/list.py:124
+#: ruyi/ruyipkg/list.py:155
 msgid "* [bold green]RuyiSDK Certified[/] package"
 msgstr "* [bold green]RuyiSDK 认证[/]软件包"
 
-#: ruyi/ruyipkg/list.py:127
+#: ruyi/ruyipkg/list.py:159
+msgid "* Host compatibility: unchecked (use --allow-probing-host)"
+msgstr "* 主机兼容性：未检查（使用 --allow-probing-host）"
+
+#: ruyi/ruyipkg/list.py:163
+#, python-brace-format
+msgid "* Host compatibility: {status}"
+msgstr "* 主机兼容性：{status}"
+
+#: ruyi/ruyipkg/list.py:171
 #, python-brace-format
 msgid "* Download size for {host}: {size}"
 msgstr "* {host} 的下载大小：{size}"
 
-#: ruyi/ruyipkg/list.py:134
+#: ruyi/ruyipkg/list.py:178
 #, python-brace-format
 msgid "* Installed size: {size}"
 msgstr "* 安装后大小：{size}"
 
-#: ruyi/ruyipkg/list.py:140
+#: ruyi/ruyipkg/list.py:184
 #, python-brace-format
 msgid "* Upstream version number: {version}"
 msgstr "* 上游版本号：{version}"
 
-#: ruyi/ruyipkg/list.py:143
+#: ruyi/ruyipkg/list.py:187
 msgid "* Upstream version number: (undeclared)"
 msgstr "* 上游版本号：（未声明）"
 
-#: ruyi/ruyipkg/list.py:148
+#: ruyi/ruyipkg/list.py:192
 msgid ""
 "\n"
 "Package has known issue(s):\n"
@@ -1777,17 +1825,17 @@ msgstr ""
 "\n"
 "软件包有已知问题：\n"
 
-#: ruyi/ruyipkg/list.py:153
+#: ruyi/ruyipkg/list.py:197
 #, python-brace-format
 msgid "Package declares {count} distfile(s):\n"
 msgstr "软件包声明了 {count} 个分发文件：\n"
 
-#: ruyi/ruyipkg/list.py:156
+#: ruyi/ruyipkg/list.py:200
 #, python-brace-format
 msgid "    - Size: [yellow]{size}[/] bytes"
 msgstr "    - 大小：[yellow]{size}[/] 字节"
 
-#: ruyi/ruyipkg/list.py:161
+#: ruyi/ruyipkg/list.py:205
 msgid ""
 "\n"
 "### Binary artifacts\n"
@@ -1795,21 +1843,21 @@ msgstr ""
 "\n"
 "### 二进制制品\n"
 
-#: ruyi/ruyipkg/list.py:163
+#: ruyi/ruyipkg/list.py:207
 #, python-brace-format
 msgid "* Host [green]{host}[/]:"
 msgstr "* 主机 [green]{host}[/]："
 
-#: ruyi/ruyipkg/list.py:165
+#: ruyi/ruyipkg/list.py:209
 #, python-brace-format
 msgid "    - Distfiles: {distfiles}"
 msgstr "    - 分发文件：{distfiles}"
 
-#: ruyi/ruyipkg/list.py:168
+#: ruyi/ruyipkg/list.py:212
 msgid "    - Available command(s):"
 msgstr "    - 可用命令："
 
-#: ruyi/ruyipkg/list.py:173
+#: ruyi/ruyipkg/list.py:217
 msgid ""
 "\n"
 "### Toolchain metadata\n"
@@ -1817,30 +1865,30 @@ msgstr ""
 "\n"
 "### 工具链元数据\n"
 
-#: ruyi/ruyipkg/list.py:174
+#: ruyi/ruyipkg/list.py:218
 #, python-brace-format
 msgid "* Target: [bold green]{target}[/]"
 msgstr "* 目标：[bold green]{target}[/]"
 
-#: ruyi/ruyipkg/list.py:175
+#: ruyi/ruyipkg/list.py:219
 #, python-brace-format
 msgid "* Quirks: {quirks}"
 msgstr "* 特殊特性：{quirks}"
 
-#: ruyi/ruyipkg/list.py:176
+#: ruyi/ruyipkg/list.py:220
 msgid "* Components:"
 msgstr "* 组件："
 
-#: ruyi/ruyipkg/list.py:203
+#: ruyi/ruyipkg/list.py:247
 msgid "(unknown)"
 msgstr "（未知）"
 
-#: ruyi/ruyipkg/list.py:210
+#: ruyi/ruyipkg/list.py:254
 #, python-brace-format
 msgid " download: [yellow]{size}[/] for {host}"
 msgstr " 下载量：[yellow]{size}[/] ({host})"
 
-#: ruyi/ruyipkg/list.py:219
+#: ruyi/ruyipkg/list.py:263
 #, python-brace-format
 msgid " install: [yellow]{size}[/]"
 msgstr " 安装后大小：[yellow]{size}[/]"
@@ -1853,27 +1901,31 @@ msgstr "列出已配置仓库中的可用软件包"
 msgid "Also show details for every package"
 msgstr "也显示每个软件包的详细信息"
 
-#: ruyi/ruyipkg/list_cli.py:35
+#: ruyi/ruyipkg/list_cli.py:34
+msgid "Probe the native host when reporting compatibility (default: off)"
+msgstr "在报告兼容性时探测本机（默认：关闭）"
+
+#: ruyi/ruyipkg/list_cli.py:42
 msgid "Match and show all packages"
 msgstr "匹配、显示所有软件包"
 
-#: ruyi/ruyipkg/list_cli.py:45
+#: ruyi/ruyipkg/list_cli.py:52
 msgid "Match packages that are installed (y/true/1) or not installed (n/false/0)"
 msgstr "匹配已安装（y/true/1）或未安装（n/false/0）的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:54
+#: ruyi/ruyipkg/list_cli.py:61
 msgid "Match packages from categories whose names contain the given string"
 msgstr "匹配属于特定类别的软件包，其中类别的名称包含给定字符串"
 
-#: ruyi/ruyipkg/list_cli.py:62
+#: ruyi/ruyipkg/list_cli.py:69
 msgid "Match packages from the given category"
 msgstr "匹配来自给定类别的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:69
+#: ruyi/ruyipkg/list_cli.py:76
 msgid "Match packages whose names contain the given string"
 msgstr "匹配名称包含给定字符串的软件包"
 
-#: ruyi/ruyipkg/list_cli.py:78
+#: ruyi/ruyipkg/list_cli.py:85
 msgid "Match packages related to the given entity"
 msgstr "匹配与给定实体相关的软件包"
 
