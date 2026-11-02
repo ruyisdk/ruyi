@@ -95,12 +95,10 @@ def _do_list_non_verbose(
     for ap in augmented_pkgs:
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/]")
         for ver in ap.versions:
-            if ver.remarks:
-                comments_str = (
-                    f" ({', '.join(r.as_rich_markup() for r in ver.remarks)})"
-                )
-            else:
-                comments_str = ""
+            labels = [r.as_rich_markup() for r in ver.remarks]
+            if show_host_compat:
+                labels.append(ver.host_compat.status.as_rich_markup())
+            comments_str = f" ({', '.join(labels)})" if labels else ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
             if ver._is_installed:
                 size_str = _format_install_size_inline(ver.install_size, True)
@@ -110,11 +108,8 @@ def _do_list_non_verbose(
                     ver.download_size_host,
                 )
             repo_str = f" [dim]\\[{ver.pm.repo_id}][/]" if multi_repo else ""
-            status_str = ""
-            if show_host_compat:
-                status_str = f" ({ver.host_compat.status.as_rich_markup()})"
             logger.stdout(
-                f"  - [blue]{ver.pm.semver}[/]{comments_str}{status_str}{slug_str}{size_str}{repo_str}"
+                f"  - [blue]{ver.pm.semver}[/]{comments_str}{slug_str}{size_str}{repo_str}"
             )
 
     return 0

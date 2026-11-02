@@ -261,7 +261,8 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 | `compatibility-unknown` | 没有确定失败，但至少一项无法判定，或部分宿主产物缺少可用 sidecar。 |
 | `likely-incompatible` | 至少一项检查确定失败。 |
 
-`list` 默认不探测。给出 `--allow-probing-host` 后，短格式会在每个版本行尾追加状态标签，
+`list` 默认不探测。给出 `--allow-probing-host` 后，短格式会把状态标签并入该版本行已有的
+括号备注列表（没有备注时单独成括号），
 详细格式始终显示 `Host compatibility` 条目；`--porcelain` 输出总是带有 `host_compat`
 对象，未探测时状态为 `unchecked`。
 

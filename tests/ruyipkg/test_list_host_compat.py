@@ -1,6 +1,6 @@
 from typing import Any
 
-from ruyi.ruyipkg.augmented_pkg import AugmentedPkg, AugmentedPkgManifest
+from ruyi.ruyipkg.augmented_pkg import AugmentedPkg, AugmentedPkgManifest, PkgRemark
 from ruyi.ruyipkg.host_compat import HostCompatStatus, PackageHostCompat
 from ruyi.ruyipkg.list import _do_list_non_verbose
 from ruyi.ruyipkg.pkg_manifest import (
@@ -40,12 +40,16 @@ def _make_pm() -> BoundPackageManifest:
     )
 
 
-def _make_pkg(compat: PackageHostCompat) -> AugmentedPkg:
+def _make_pkg(
+    compat: PackageHostCompat,
+    *,
+    remarks: list[PkgRemark] | None = None,
+) -> AugmentedPkg:
     pkg = AugmentedPkg()
     pkg.add_version(
         AugmentedPkgManifest(
             _make_pm(),
-            [],
+            remarks or [],
             None,
             None,
             host_compat=compat,
@@ -74,6 +78,19 @@ def test_status_is_shown_with_the_flag() -> None:
     assert HostCompatStatus.LikelyIncompatible.as_rich_markup() in "\n".join(
         logger.lines
     )
+
+
+def test_status_is_combined_with_existing_remarks() -> None:
+    logger = _CapturingLogger()
+    pkg = _make_pkg(
+        PackageHostCompat(HostCompatStatus.LikelyCompatible),
+        remarks=[PkgRemark.Latest],
+    )
+
+    _do_list_non_verbose(logger, [pkg], show_host_compat=True)  # type: ignore[arg-type]
+
+    expected = f"(latest, {HostCompatStatus.LikelyCompatible.as_rich_markup()})"
+    assert expected in "\n".join(logger.lines)
 
 
 def test_porcelain_always_contains_host_compat() -> None:
