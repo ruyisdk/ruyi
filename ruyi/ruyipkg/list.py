@@ -96,7 +96,11 @@ def _do_list_non_verbose(
         logger.stdout(f"* [bold green]{ap.category}/{ap.name}[/]")
         for ver in ap.versions:
             labels = [r.as_rich_markup() for r in ver.remarks]
-            if show_host_compat:
+            if (
+                show_host_compat
+                and ver.pm.binary_metadata is not None
+                and ver.host_compat.status is not HostCompatStatus.NoABIInfo
+            ):
                 labels.append(ver.host_compat.status.as_rich_markup())
             comments_str = f" ({', '.join(labels)})" if labels else ""
             slug_str = f" slug: [yellow]{ver.pm.slug}[/]" if ver.pm.slug else ""
@@ -148,7 +152,7 @@ def _print_pkg_detail(
     logger.stdout(_("* Vendor: {vendor}").format(vendor=pm.vendor_name))
     if pm.is_ruyisdk_certified:
         logger.stdout(_("* [bold green]RuyiSDK Certified[/] package"))
-    if host_compat is not None:
+    if host_compat is not None and pm.binary_metadata is not None:
         if host_compat.status is HostCompatStatus.Unchecked:
             logger.stdout(
                 _("* Host compatibility: unchecked (use --allow-probing-host)")

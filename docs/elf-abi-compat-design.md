@@ -262,9 +262,10 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 | `likely-incompatible` | 至少一项检查确定失败。 |
 
 `list` 默认不探测。给出 `--allow-probing-host` 后，短格式会把状态标签并入该版本行已有的
-括号备注列表（没有备注时单独成括号），
-详细格式始终显示 `Host compatibility` 条目；`--porcelain` 输出总是带有 `host_compat`
-对象，未探测时状态为 `unchecked`。
+括号备注列表（没有备注时单独成括号）；非二进制包不显示状态，`no-abi-info` 在短格式中也
+不显示。详细格式只对二进制包显示 `Host compatibility` 条目（二进制包缺少 sidecar 时仍会
+显示 `no ABI info`）。`--porcelain` 输出总是带有 `host_compat` 对象，未探测时状态为
+`unchecked`。
 
 `install` 默认探测二进制包并在确定不兼容时发出警告，但继续安装，退出码不变；
 `--no-allow-probing-host` 可关闭探测。非本机 `--host` 永远跳过探测。`ruyi extract`
