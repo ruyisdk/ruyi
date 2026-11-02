@@ -1381,6 +1381,10 @@ msgid ""
 "* Organizational and/or ISP restrictions\n"
 "    - is there a [yellow]firewall[/] preventing Ruyi traffic?\n"
 "    - is your [yellow]ISP blocking access[/] to the source website?\n"
+"    - is your [yellow]VPN or proxy exit[/] blocked or challenged by the server?\n"
+"* Server-side problems and access policies\n"
+"    - is the server returning an [yellow]HTTP error[/] (4xx/5xx)?\n"
+"    - is the server serving a [yellow]bot challenge page[/] instead of the file?\n"
 "* Volatile upstream\n"
 "    - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)\n"
 msgstr ""
@@ -1395,6 +1399,10 @@ msgstr ""
 "* 您的组织 和/或 互联网服务提供商（ISP）限制\n"
 "    - 是否有[yellow]防火墙[/]阻止 Ruyi 流量？\n"
 "    - 您的 [yellow]ISP 是否阻止访问[/]源网站？\n"
+"    - 您的 [yellow]VPN 或代理出口[/]是否被服务器封锁或要求验证？\n"
+"* 服务器端问题与访问策略\n"
+"    - 服务器是否返回 [yellow]HTTP 错误[/]（4xx/5xx）？\n"
+"    - 服务器是否返回[yellow]人机验证页面[/]而非文件？\n"
 "* 上游不稳定\n"
 "    - 软件包内记录的[yellow]链接是否失效[/]？（请向 Ruyi 提起工单以获取修复！）\n"
 
@@ -1525,10 +1533,35 @@ msgstr "未知的下载器 '{name}'"
 msgid "the requested fetcher '{name}' is unavailable on the system"
 msgstr "请求的下载器 '{name}' 在当前系统不可用"
 
-#: ruyi/ruyipkg/fetcher.py:195 ruyi/ruyipkg/fetcher.py:238
+#: ruyi/ruyipkg/fetcher.py:98 ruyi/ruyipkg/fetcher.py:364
 #, python-brace-format
 msgid "failed to fetch distfile: command '{cmd}' returned {retcode}"
 msgstr "获取分发文件失败：命令 '{cmd}' 返回 {retcode}"
+
+#: ruyi/ruyipkg/fetcher.py:59
+#, python-brace-format
+msgid "failed to fetch distfile: '{url}' returned HTTP {code}; this may be caused by your network location (VPN/proxy exit), by the server's access policy, or by bot protection"
+msgstr "获取分发文件失败：'{url}' 返回 HTTP {code}；这可能是由您的网络位置（VPN/代理出口）、服务器的访问策略或反爬机制导致的"
+
+#: ruyi/ruyipkg/fetcher.py:66
+#, python-brace-format
+msgid "failed to fetch distfile: '{url}' returned HTTP {code}; this usually indicates a problem on the server side"
+msgstr "获取分发文件失败：'{url}' 返回 HTTP {code}；这通常表示服务器端存在问题"
+
+#: ruyi/ruyipkg/fetcher.py:71
+#, python-brace-format
+msgid "failed to fetch distfile: '{url}' returned HTTP {code}"
+msgstr "获取分发文件失败：'{url}' 返回 HTTP {code}"
+
+#: ruyi/ruyipkg/fetcher.py:81
+#, python-brace-format
+msgid "failed to fetch distfile: '{url}': the server returned an error response; this may be an access restriction or a server-side problem"
+msgstr "获取分发文件失败：'{url}'：服务器返回了错误响应；这可能是访问限制或服务器端问题"
+
+#: ruyi/ruyipkg/fetcher.py:109
+#, python-brace-format
+msgid "failed to fetch distfile: '{url}': {reason}"
+msgstr "获取分发文件失败：'{url}'：{reason}"
 
 #: ruyi/ruyipkg/host_compat.py:40
 msgid "unchecked"
@@ -2050,7 +2083,7 @@ msgstr "未识别的分发 URL 协议：{scheme}"
 #: ruyi/ruyipkg/repo.py:435
 #, python-brace-format
 msgid "the package repository at [yellow]{root}[/] is not a valid Git repository"
-msgstr "位于 [yellow]{atom}[/] 的软件包仓库不是合法的 Git 仓库"
+msgstr "位于 [yellow]{root}[/] 的软件包仓库不是合法的 Git 仓库"
 
 #: ruyi/ruyipkg/repo.py:440
 msgid "it may be corrupt or left incomplete by an interrupted update"
