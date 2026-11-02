@@ -23,7 +23,6 @@ AArch64 的 BTI/PAC、RISC-V 的 ISA 串等等）。这些信息此前散落在�
 * `DT_SONAME`、`DT_NEEDED`（按链接顺序）。
 * verneed：按 soname 归组的所需符号版本集合，并单独记录 `VER_FLG_WEAK`
   的弱版本引用。
-* 是否存在未版本化的未定义符号（`needs_unversioned`）。
 
 **架构相关的 ABI 属性容器**，对任何架构都完整采集：
 
@@ -81,7 +80,6 @@ is_dynamic = true
 interpreter = "/lib/ld-linux-riscv64-lp64d.so.1"
 soname = ""
 needed = ["libc.so.6", "libm.so.6"]
-needs_unversioned = false
 parsed_attrs = { isa = "rv64gc", stack_align = 16 }
 
 [[record.version_needs]]
@@ -182,7 +180,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 * `problems()`：返回所有 `compatible is not True`（即 `False` 或 `None`）的条目，供上层渲染解释信息。
 
 `bool(report)` 与 `strictly_compatible` 的差别是刻意的：前者回答"有没有硬伤"，后者回答
-"能否拍板说一定行"。例如一个带有未版本化符号的包（见下文 `unversioned` 规则）会让
+"能否拍板说一定行"。例如一个所需动态库无法解析的包（见下文 `soname` 规则）会让
 `strictly_compatible` 保持 `False`，但只要没有确定不兼容的条目，`bool(report)` 仍为 `True`。
 
 ### 探测内容
@@ -273,7 +271,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 
 ### 判定规则描述
 
-`check_host_compatibility()` 依次执行七条规则，每条规则为每个受检对象产出一条
+`check_host_compatibility()` 依次执行六条规则，每条规则为每个受检对象产出一条
 `HostABICompatItem`（`check` 字段标识规则，`msgid` 与 `params` 供上层用 i18n 机制渲染解释）：
 
 | 规则 | `check` | 判定依据 | 可能结果 |
@@ -283,7 +281,6 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 | 动态链接器 | `interp` | 包内每个 `PT_INTERP` 路径都必须在 `interpreter_paths_present` 中 | `True`/`False` |
 | 动态库 | `soname` | 每个 `summary.needed` 是否出现在 `resolvable_sonames` 中 | 找到 `True`、找不到 `None` |
 | 符号版本 | `verneed` | 每个 `summary.version_needs` 所要求的强版本都必须出现在对应 provider 记录的 `version_defs` 中；弱版本引用（`weak_versions`）不参与判定 | 全有 `True`、缺版本 `False`、provider 扫描失败或未扫到 `None` |
-| 未版本化符号 | `unversioned` | 任一记录 `needs_unversioned` 为真 | 恒为 `None` |
 | 架构属性 | `attrs` | 对每个去重后的 `(e_machine, parsed_attrs)` 组合，用解释器 `check(host_attrs, required)` 比对 | `True`/`False`/`None` |
 
 几点说明：
@@ -292,9 +289,6 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
   组成的包只会产生一条属性条目。
 * `scan-error` 规则把 `package.errors` 里未能成功扫描的成员也变为 `None` 条目，避免
   缺失 ABI 数据的包因为其余规则都通过而被当作（严格）兼容。
-* `unversioned` 规则恒产出 `None`：一个需要未版本化符号的包，其兼容性无法在本组件的能力
-  范围内判定，于是 `strictly_compatible` 永远不为 `True`，但只要其他规则都通过，
-  `bool(report)` 仍为 `True`。
 * 属性比对的具体语义由各架构解释器的 `check()` 决定。x86-64 比较 ISA level 数值（要求的
   level 不超过主机 level）；RISC-V 把 ISA 串展开成扩展集合做子集判断，例如
   跨越到不同 XLEN 的需求是确定的不匹配）。

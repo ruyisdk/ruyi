@@ -18,5 +18,4 @@ elf_type = "dyn"
 is_dynamic = true
 soname = ""
 needed = []
-needs_unversioned = false
 parsed_attrs = {isa_level = "v1"}

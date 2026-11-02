@@ -57,7 +57,6 @@ def check_host_compatibility(
     items.extend(_check_interpreters(package, host))
     items.extend(_check_sonames(package, host))
     items.extend(_check_verneeds(package, host))
-    items.extend(_check_unversioned(package))
     items.extend(_check_attrs(package, host))
     return HostABICompatReport(items=tuple(items))
 
@@ -189,16 +188,6 @@ def _check_verneeds(package: ABIReport, host: HostABIReport) -> list[HostABIComp
             )
         )
     return out
-
-
-def _check_unversioned(package: ABIReport) -> list[HostABICompatItem]:
-    if any(r.needs_unversioned for r in package.records):
-        return [
-            HostABICompatItem(
-                "unversioned", None, d_("package needs unversioned symbols"), {}
-            )
-        ]
-    return []
 
 
 def _check_attrs(package: ABIReport, host: HostABIReport) -> list[HostABICompatItem]:

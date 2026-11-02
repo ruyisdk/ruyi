@@ -1108,10 +1108,6 @@ msgstr "未扫描 {soname} 的提供者"
 msgid "provider of {soname} lacks version(s) {missing}"
 msgstr "{soname} 的提供者缺少版本 {missing}"
 
-#: ruyi/ruyipkg/abi/compat.py:198
-msgid "package needs unversioned symbols"
-msgstr "软件包需要未版本化的符号"
-
 #: ruyi/ruyipkg/abi/compat.py:220
 #, python-brace-format
 msgid "no attribute interpreter for e_machine {machine}"

@@ -67,7 +67,6 @@ def _record_for(version_defs: tuple[str, ...]) -> ElfABIRecord:
         needed=(),
         version_needs=(),
         version_defs=version_defs,
-        needs_unversioned=False,
         gnu_properties=(),
         elf_attributes=(),
         parsed_attrs={},
@@ -126,7 +125,6 @@ def test_roundtrip_full_report() -> None:
             ),
         ),
         version_defs=("WLINK_1.0",),
-        needs_unversioned=True,
         gnu_properties=(
             GnuProperty(0xC0000000, "01000000", True),
             GnuProperty(0xC0008002, "01000000", False),

@@ -32,7 +32,6 @@ def _rec(**kw: object) -> ElfABIRecord:
         "needed": (),
         "version_needs": (),
         "version_defs": (),
-        "needs_unversioned": False,
         "gnu_properties": (),
         "elf_attributes": (),
         "parsed_attrs": {},
@@ -72,7 +71,7 @@ def test_bool_lenient_and_strict() -> None:
         "soname", True, "soname resolvable: {soname}", {"soname": "libc.so.6"}
     )
     item_unknown = HostABICompatItem(
-        "unversioned", None, "package needs unversioned symbols", {}
+        "soname", None, "could not locate shared library {soname} on this host", {}
     )
     item_bad = HostABICompatItem(
         "e-machine",
@@ -270,29 +269,6 @@ def test_verneed_strong_versions_checked_alongside_weak_ones() -> None:
     assert len(items) == 1
     assert items[0].compatible is False
     assert items[0].params["missing"] == ["GLIBC_2.40"]
-
-
-def test_unversioned_single_none_item_and_lenient_bool() -> None:
-    pkg = _report(
-        _rec(e_machine=62, needs_unversioned=True),
-        _rec(e_machine=62, needs_unversioned=True),
-    )
-    host = _host(e_machines=frozenset({62}), elf_class=64, endianness="little")
-    report = check_host_compatibility(pkg, host)
-    items = _items_of(report, "unversioned")
-    assert len(items) == 1
-    assert items[0].compatible is None
-    # Review Focus #6: strictly_compatible never True, but bool() still passes.
-    assert report.compatible is None
-    assert report.strictly_compatible is False
-    assert bool(report) is True
-
-
-def test_unversioned_absent_no_item() -> None:
-    pkg = _report(_rec(e_machine=62, needs_unversioned=False))
-    host = _host(e_machines=frozenset({62}), elf_class=64, endianness="little")
-    report = check_host_compatibility(pkg, host)
-    assert _items_of(report, "unversioned") == []
 
 
 def test_scan_errors_are_undetermined() -> None:

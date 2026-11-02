@@ -148,7 +148,6 @@ def _record(e_machine: int = 62, sha: str = "0" * 64) -> ElfABIRecord:
         needed=(),
         version_needs=(),
         version_defs=(),
-        needs_unversioned=False,
         gnu_properties=(),
         elf_attributes=(),
         parsed_attrs={},

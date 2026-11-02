@@ -31,7 +31,6 @@ def _record(e_machine: int) -> ElfABIRecord:
         needed=(),
         version_needs=(),
         version_defs=(),
-        needs_unversioned=False,
         gnu_properties=(),
         elf_attributes=(),
         parsed_attrs={},

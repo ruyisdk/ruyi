@@ -111,7 +111,6 @@ def _load_record(record: Any) -> ElfABIRecord:
             for vn in record.get("version_needs", ())
         ),
         version_defs=tuple(record.get("version_defs", ())),
-        needs_unversioned=record["needs_unversioned"],
         gnu_properties=tuple(
             GnuProperty(p["pr_type"], p["data_hex"], p["truncated"])
             for p in record.get("gnu_properties", ())
@@ -171,7 +170,6 @@ def _record_table(record: ElfABIRecord) -> Table:
         t.add("interpreter", record.interpreter)
     t.add("soname", record.soname or "")
     t.add("needed", list(record.needed))
-    t.add("needs_unversioned", record.needs_unversioned)
 
     if record.version_defs:
         t.add("version_defs", list(record.version_defs))

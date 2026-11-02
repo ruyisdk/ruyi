@@ -119,8 +119,6 @@ def scan_elf_stream(
             defs.update(a.name for a in aux)
         version_defs = tuple(sorted(defs))
 
-    needs_unversioned = _compute_needs_unversioned(elf)
-
     gnu_properties = _extract_gnu_properties(  # type: ignore[no-untyped-call]
         elf,
         elf_class == 64,
@@ -158,30 +156,11 @@ def scan_elf_stream(
         needed=needed,
         version_needs=tuple(version_needs),
         version_defs=version_defs,
-        needs_unversioned=needs_unversioned,
         gnu_properties=tuple(gnu_properties),
         elf_attributes=tuple(elf_attributes),
         parsed_attrs=parsed_attrs,
     )
     return record, errors
-
-
-def _compute_needs_unversioned(elf: object) -> bool:
-    dynsym = elf.get_section_by_name(".dynsym")  # type: ignore[attr-defined]
-    if dynsym is None:
-        return False
-    versym = elf.get_section_by_name(".gnu.version")  # type: ignore[attr-defined]
-    for i, sym in enumerate(dynsym.iter_symbols()):
-        if sym["st_shndx"] != "SHN_UNDEF" or not sym.name:
-            continue
-        if sym["st_info"]["bind"] not in ("STB_GLOBAL", "STB_WEAK"):
-            continue
-        if versym is None:
-            return True
-        ndx = versym.get_symbol(i)["ndx"]
-        if ndx in ("VER_NDX_LOCAL", "VER_NDX_GLOBAL", 0, 1):
-            return True
-    return False
 
 
 def _extract_gnu_properties(elf, is_64bit, little_endian, max_bytes, parse):  # type: ignore[no-untyped-def]
