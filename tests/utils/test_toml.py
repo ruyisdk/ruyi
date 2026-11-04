@@ -1,4 +1,5 @@
 import tomlkit
+import pytest
 
 from ruyi.utils.toml import (
     extract_footer_comments,
@@ -74,3 +75,8 @@ foo = 2
         "\n",
         "# quux\n",
     ]
+
+
+@pytest.mark.parametrize("contents", ["", "[empty]\n", "[parent.child]\n"])
+def test_extract_footer_comments_empty_tables(contents: str) -> None:
+    assert extract_footer_comments(tomlkit.parse(contents)) == []
