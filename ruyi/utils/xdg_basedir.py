@@ -16,7 +16,7 @@ class XDGPathEntry(NamedTuple):
 def _paths_from_env(env: str, default: str) -> Iterable[pathlib.Path]:
     v = os.environ.get(env, default)
     for p in v.split(":"):
-        if p:
+        if p and pathlib.Path(p).is_absolute():
             yield pathlib.Path(p)
 
 
@@ -27,7 +27,7 @@ class XDGBaseDir:
     @property
     def cache_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_CACHE_HOME", "")
-        if v:
+        if v and pathlib.Path(v).is_absolute():
             return pathlib.Path(v)
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Caches"
@@ -36,7 +36,7 @@ class XDGBaseDir:
     @property
     def config_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_CONFIG_HOME", "")
-        if v:
+        if v and pathlib.Path(v).is_absolute():
             return pathlib.Path(v)
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Preferences"
@@ -45,7 +45,7 @@ class XDGBaseDir:
     @property
     def data_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_DATA_HOME", "")
-        if v:
+        if v and pathlib.Path(v).is_absolute():
             return pathlib.Path(v)
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Application Support"
@@ -54,7 +54,7 @@ class XDGBaseDir:
     @property
     def state_home(self) -> pathlib.Path:
         v = os.environ.get("XDG_STATE_HOME", "")
-        if v:
+        if v and pathlib.Path(v).is_absolute():
             return pathlib.Path(v)
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Application Support"

@@ -81,6 +81,25 @@ def test_cli_version(ruyi_cli_runner: IntegrationTestHarness) -> None:
         assert "fatal error" not in result.stderr.lower()
 
 
+@pytest.mark.parametrize("env", ["XDG_CONFIG_HOME", "XDG_CONFIG_DIRS"])
+def test_cli_ignores_relative_xdg_config_path(
+    ruyi_cli_runner: IntegrationTestHarness,
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env: str,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    config_dir = tmp_path / "relative-config" / "ruyi"
+    config_dir.mkdir(parents=True)
+    (config_dir / "config.toml").write_text("[packages]\nprereleases = true\n")
+    monkeypatch.setenv(env, "relative-config")
+
+    result = ruyi_cli_runner("config", "get", "packages.prereleases")
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "false"
+
+
 def test_output_completion_script_does_not_access_repo_or_telemetry(
     ruyi_cli_runner: IntegrationTestHarness,
     monkeypatch: pytest.MonkeyPatch,
