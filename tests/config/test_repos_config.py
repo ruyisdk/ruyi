@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from ruyi.config import GlobalConfig
 
 if TYPE_CHECKING:
@@ -403,3 +405,37 @@ class TestReposConfigParsing:
         assert vendor.is_system is False
         # The remote should be preserved from the system entry
         assert vendor.remote == "https://example.invalid/vendor.git"
+
+
+@pytest.mark.parametrize("disabled", [False, True])
+def test_default_repo_disabled_config_key(
+    disabled: bool,
+    mock_gm: "MockGlobalModeProvider",
+    ruyi_logger: "RuyiLogger",
+) -> None:
+    gc = GlobalConfig(mock_gm, ruyi_logger)
+    gc._apply_config({"repo": {"disabled": disabled}}, is_global_scope=False)
+
+    assert gc.get_by_key("repo.disabled") is disabled
+
+
+def test_default_repo_disabled_config_key_default(
+    mock_gm: "MockGlobalModeProvider",
+    ruyi_logger: "RuyiLogger",
+) -> None:
+    gc = GlobalConfig(mock_gm, ruyi_logger)
+
+    assert gc.get_by_key("repo.disabled") is False
+
+
+@pytest.mark.parametrize("disabled", [False, True])
+def test_set_default_repo_disabled_config_key(
+    disabled: bool,
+    mock_gm: "MockGlobalModeProvider",
+    ruyi_logger: "RuyiLogger",
+) -> None:
+    gc = GlobalConfig(mock_gm, ruyi_logger)
+    gc.set_by_key("repo.disabled", disabled)
+
+    assert gc.get_by_key("repo.disabled") is disabled
+    assert gc.repo_entries[0].active is not disabled

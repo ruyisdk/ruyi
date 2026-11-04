@@ -504,3 +504,28 @@ active = true
         assert result.exit_code == 0
         # With multiple repos, repo ID tags should appear
         assert "[ruyisdk]" in result.stdout or "[overlay]" in result.stdout
+
+
+@pytest.mark.parametrize("disabled", [None, False, True])
+def test_config_get_default_repo_disabled_round_trip(
+    ruyi_cli_runner: IntegrationTestHarness,
+    disabled: bool | None,
+) -> None:
+    if disabled is not None:
+        _write_user_config(
+            ruyi_cli_runner, f"[repo]\ndisabled = {str(disabled).lower()}\n"
+        )
+
+    initial = ruyi_cli_runner("config", "get", "repo.disabled")
+    assert initial.exit_code == 0
+    assert initial.stdout.strip() == str(bool(disabled)).lower()
+
+    assert ruyi_cli_runner("repo", "disable", "ruyisdk").exit_code == 0
+    after_disable = ruyi_cli_runner("config", "get", "repo.disabled")
+    assert after_disable.exit_code == 0
+    assert after_disable.stdout.strip() == "true"
+
+    assert ruyi_cli_runner("repo", "enable", "ruyisdk").exit_code == 0
+    after_enable = ruyi_cli_runner("config", "get", "repo.disabled")
+    assert after_enable.exit_code == 0
+    assert after_enable.stdout.strip() == "false"
