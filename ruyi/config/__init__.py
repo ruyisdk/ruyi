@@ -402,6 +402,8 @@ class GlobalConfig:
         leaf = selector[0]
         if leaf == schema.KEY_REPO_BRANCH:
             return "override_repo_branch"
+        elif leaf == schema.KEY_REPO_DISABLED:
+            return "_repo_disabled"
         elif leaf == schema.KEY_REPO_LOCAL:
             return "override_repo_dir"
         elif leaf == schema.KEY_REPO_PRIORITY:
