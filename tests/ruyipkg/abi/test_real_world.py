@@ -1,9 +1,10 @@
 """Real-world smoke tests for the ELF ABI scanner.
 
 These scan genuine distfiles from the RuyiSDK software repository (``wlink``),
-covering the three production architectures, and pin both the decoded ABI
-facts and the canonical serialization output. The fixtures are large, but the
-scanner streams archive members without extracting them, so the tests stay
+covering the supported architectures
+(https://ruyisdk.org/docs/Other/platform-support/), and pin both the decoded
+ABI facts and the canonical serialization output. The fixtures are large, but
+the scanner streams archive members without extracting them, so the tests stay
 fast.
 """
 
