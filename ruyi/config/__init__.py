@@ -150,7 +150,7 @@ class GlobalConfig:
         self._telemetry_upload_consent: datetime.datetime | None = None
         self._telemetry_pm_telemetry_url: str | None = None
 
-        self._repo_disabled = False
+        self.is_default_repo_active = True
         self.repo_priority = 0
         self._extra_repo_entries: list["RepoEntry"] = []
 
@@ -190,7 +190,9 @@ class GlobalConfig:
             self.override_repo_dir = repo_cfg.get(schema.KEY_REPO_LOCAL, None)
             self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
             self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
-            self._repo_disabled = repo_cfg.get(schema.KEY_REPO_DISABLED, False)
+            self.is_default_repo_active = not repo_cfg.get(
+                schema.KEY_REPO_DISABLED, False
+            )
             self.repo_priority = repo_cfg.get(
                 schema.KEY_REPO_PRIORITY, self.repo_priority
             )
