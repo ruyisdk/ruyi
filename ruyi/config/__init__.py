@@ -73,8 +73,11 @@ class GlobalConfigRepoType(TypedDict):
     local: "NotRequired[str]"
     remote: "NotRequired[str]"
     branch: "NotRequired[str]"
-    disabled: "NotRequired[bool]"
+    active: "NotRequired[bool]"
     priority: "NotRequired[int]"
+
+    disabled: "NotRequired[bool]"
+    """Deprecated; use `active` instead."""
 
 
 class GlobalConfigInstallationType(TypedDict):
@@ -190,9 +193,35 @@ class GlobalConfig:
             self.override_repo_dir = repo_cfg.get(schema.KEY_REPO_LOCAL, None)
             self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
             self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
-            self.is_default_repo_active = not repo_cfg.get(
-                schema.KEY_REPO_DISABLED, False
-            )
+
+            active = repo_cfg.get(schema.KEY_REPO_ACTIVE)
+            if active is not None:
+                self.is_default_repo_active = bool(active)
+                if schema.KEY_REPO_DISABLED in repo_cfg:
+                    self.logger.W(
+                        _(
+                            "the config key [yellow]'{key}'[/] is ignored because [yellow]'{winning_key}'[/] takes priority"
+                        ).format(
+                            key=schema.KEY_REPO_DISABLED,
+                            winning_key=schema.KEY_REPO_ACTIVE,
+                        )
+                    )
+            else:
+                old_disable_status = repo_cfg.get(schema.KEY_REPO_DISABLED)
+                if old_disable_status is not None:
+                    self.is_default_repo_active = not old_disable_status
+                    self.logger.W(
+                        _(
+                            "the config key [yellow]'{old}'[/] is deprecated; please migrate to [yellow]'{new}'[/]"
+                        ).format(
+                            old=schema.KEY_REPO_DISABLED,
+                            new=schema.KEY_REPO_ACTIVE,
+                        )
+                    )
+                else:
+                    # Neither override is set, default to active
+                    self.is_default_repo_active = True
+
             self.repo_priority = repo_cfg.get(
                 schema.KEY_REPO_PRIORITY, self.repo_priority
             )

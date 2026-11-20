@@ -29,6 +29,11 @@ def test_decode_value_str() -> None:
     assert _decode_single_type_value(None, "main", str) == "main"
 
 
+def test_decode_value_repo_active() -> None:
+    assert decode_value("repo.active", "true") is True
+    assert decode_value("repo.active", "false") is False
+
+
 def test_decode_value_datetime() -> None:
     tz_aware_dt = datetime.datetime(2024, 12, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
     assert (

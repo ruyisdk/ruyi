@@ -50,6 +50,16 @@ def test_set_value(temp_config_file: pathlib.Path) -> None:
     assert content["telemetry"]["mode"] == "off"
 
 
+def test_set_value_repo_active(temp_config_file: pathlib.Path) -> None:
+    with ConfigEditor(temp_config_file) as e:
+        e.set_value("repo.active", False)
+        e.stage()
+
+    with open(temp_config_file, "rb") as fp:
+        content = tomllib.load(fp)
+    assert content["repo"]["active"] is False
+
+
 def test_unset_value_remove_section(temp_config_file: pathlib.Path) -> None:
     with ConfigEditor(temp_config_file) as e:
         e.set_value("telemetry.mode", "off")
