@@ -3,6 +3,7 @@ import mmap
 import os
 import subprocess
 import sys
+import time
 import uuid
 from typing import Any, Callable, Final
 
@@ -82,6 +83,9 @@ _HTTP_RANGE_NOT_SATISFIABLE: Final = "416"
 
 # connect and read timeout for the requests-based fetcher, in seconds
 _DOWNLOAD_TIMEOUT: Final = 60
+
+# progress reporting step for downloads of unknown total size
+_PROGRESS_BYTE_STEP: Final = 1024 * 1024
 
 
 def _is_http_success_code(code: str) -> bool:
@@ -482,6 +486,23 @@ class PythonRequestsFetcher(BaseFetcher):
 
         req_id = uuid.uuid4().hex
 
+        def progress_event(
+            *,
+            done: bool,
+            error: str | None,
+            progress_bytes: int,
+            total_bytes: int | None,
+        ) -> PorcelainDownloadProgressV1:
+            return {
+                "ty": PorcelainEntityType.DownloadProgressV1,
+                "t": int(time.time() * 1_000_000),
+                "req_id": req_id,
+                "done": done,
+                "error": error,
+                "progress_bytes": progress_bytes,
+                "total_bytes": total_bytes,
+            }
+
         open_mode = "ab" if resume else "wb"
         start_from = 0
         headers: dict[str, str] = {}
@@ -532,6 +553,22 @@ class PythonRequestsFetcher(BaseFetcher):
         if total_len_str := r.headers.get("Content-Length"):
             total_len = int(total_len_str) + start_from
 
+        progress_bytes = start_from
+        last_percent = -1
+        last_emit_bytes = start_from
+        if self._po is not None:
+            with self._po as po:
+                po.emit(
+                    progress_event(
+                        done=False,
+                        error=None,
+                        progress_bytes=progress_bytes,
+                        total_bytes=total_len,
+                    )
+                )
+            if total_len is not None and total_len > 0:
+                last_percent = progress_bytes * 100 // total_len
+
         try:
             trc = progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True)  # type: ignore[call-arg,unused-ignore]
         except TypeError:
@@ -553,7 +590,32 @@ class PythonRequestsFetcher(BaseFetcher):
             with open(dest, open_mode) as f:
                 if self._po is not None:
                     for chunk in r.iter_content(self.chunk_size):
+                        if total_len is not None and total_len > 0:
+                            percent = progress_bytes * 100 // total_len
+                            if percent < 100 and percent > last_percent:
+                                last_percent = percent
+                                with self._po as po:
+                                    po.emit(
+                                        progress_event(
+                                            done=False,
+                                            error=None,
+                                            progress_bytes=progress_bytes,
+                                            total_bytes=total_len,
+                                        )
+                                    )
+                        elif progress_bytes - last_emit_bytes >= _PROGRESS_BYTE_STEP:
+                            last_emit_bytes = progress_bytes
+                            with self._po as po:
+                                po.emit(
+                                    progress_event(
+                                        done=False,
+                                        error=None,
+                                        progress_bytes=progress_bytes,
+                                        total_bytes=total_len,
+                                    )
+                                )
                         f.write(chunk)
+                        progress_bytes += len(chunk)
                 else:
                     with progress.Progress(
                         *columns, console=self._logger.log_console
@@ -584,6 +646,17 @@ class PythonRequestsFetcher(BaseFetcher):
             return False
         finally:
             r.close()
+
+        if self._po is not None:
+            with self._po as po:
+                po.emit(
+                    progress_event(
+                        done=True,
+                        error=None,
+                        progress_bytes=progress_bytes,
+                        total_bytes=total_len,
+                    )
+                )
 
         return True
 
