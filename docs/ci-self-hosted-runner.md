@@ -1,7 +1,7 @@
 # Repo CI: Self-hosted runner 管理
 
 目前 GitHub Actions 官方提供的 runners 仅支持 amd64 架构，且官方的 self-hosted runner 支持仅覆盖
-amd64 与 arm64 架构。鉴于 `ruyi` 需要支持 amd64、arm64 与 riscv64 三种架构，并且
+amd64 与 arm64 架构。鉴于 `ruyi` 需要覆盖[受支持的架构](https://ruyisdk.org/docs/Other/platform-support/)，并且
 Nuitka [架构上无法支持交叉编译](https://github.com/Nuitka/Nuitka/issues/43)而
 QEMU 模拟下的 Nuitka 又很慢（半小时左右），因此总之我们都需要自行维护一些
 runners 以使 CI 运行速度不至于过分缓慢。

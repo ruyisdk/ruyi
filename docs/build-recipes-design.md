@@ -92,12 +92,12 @@ extra_artifact_roots = ["/tmp"]     # 可选：允许产物落在项目根之外
 * `ruyi-plugin://<id>` — 按插件 ID 定位 `packages-index/plugins/<id>/mod.star`；
 * `ruyi-plugin-data://<id>/...` — 对应的数据文件访问。
 
-本设计在此基础上新增两个 scheme，语义一致但解析根不同：
+本设计在此基础上新增以下 scheme，语义一致但解析根不同：
 
 * `ruyi-build://<project-relative-path>` — 将路径解析为**当前配方项目根**下的子路径，用于加载项目内的 Starlark 代码；
 * `ruyi-build-data://<project-relative-path>` — 同上，但走数据加载通道（`is_for_data=True`），供 `load_toml` 等场景使用。
 
-两种 scheme 在解析后均强制执行反 `..` 逃逸检查，最终路径必须仍在项目根以内。裸 `//foo` 形式（不含 scheme）继续保持拒绝，与现有策略一致。
+这些 scheme 在解析后均强制执行反 `..` 逃逸检查，最终路径必须仍在项目根以内。裸 `//foo` 形式（不含 scheme）继续保持拒绝，与现有策略一致。
 
 在配方文件中的使用示例：
 
@@ -159,7 +159,7 @@ def build_qemu_riscv_upstream(ctx):
 RUYI.build.schedule_build(build_qemu_riscv_upstream)
 ```
 
-对于需要"多主机矩阵"的场景（例如 `toolchain/gnu-upstream` 分别为 amd64/arm64/riscv64 三个主机产出 sysroot 归档），在配方顶层以 Python/Starlark 循环显式注册多次即可：
+对于需要"多主机矩阵"的场景（例如 `toolchain/gnu-upstream` 分别为各[受支持的架构](https://ruyisdk.org/docs/Other/platform-support/)产出 sysroot 归档），在配方顶层以 Python/Starlark 循环显式注册多次即可：
 
 ```python
 for host in ("amd64", "arm64", "riscv64"):

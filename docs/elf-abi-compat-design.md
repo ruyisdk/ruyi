@@ -107,7 +107,7 @@ data_hex = "410000001872697363760001000000000572763634..."
 
 ### CLI 集成
 
-采集能力通过 `ruyi admin` 下的两个子命令暴露给打包者。
+采集能力通过 `ruyi admin` 下的以下子命令暴露给打包者。
 
 #### `ruyi admin rescan-package-abi <path>`
 
@@ -158,7 +158,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 
 ### 目的与入口
 
-匹配分两步：
+匹配分为以下步骤：
 
 * **探测主机**：`HostABIProber.probe(manifest) -> HostABIReport`。以包的 `ABIReport`
   （来自 `scan_source()` 或 `.abi.toml` sidecar）为导向，只采集判定所需的事实，
@@ -227,7 +227,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 * 标准目录 `/lib`、`/usr/lib`、`/usr/local/lib`，以及 triplet 目录 `/lib/<triplet>`、
   `/usr/lib/<triplet>`。
 
-解析刻意**不做**三件事，这是 Nuitka 打包安全的关键：绝不读 `LD_LIBRARY_PATH` 环境变量；
+解析刻意**不做**以下事情，这是 Nuitka 打包安全的关键：绝不读 `LD_LIBRARY_PATH` 环境变量；
 绝不 `dlopen` 候选库去试探；绝不从 `__file__` 或 `ruyi.__compiled__` 推导路径——`ruyi`
 自身随 Nuitka onefile 携带的库对安装后的包不可消费，必须在这里保持不可见。
 
@@ -251,7 +251,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 ### 在用户命令中的集成
 
 `ruyi list` 与 `ruyi install` 通过 `ruyi/ruyipkg/host_compat.py` 复用上述判定结果。对用户
-暴露的状态有五种：
+暴露的状态包括：
 
 | 状态 | 含义 |
 | --- | --- |
@@ -273,7 +273,7 @@ sidecar 时通过 recipe 的 `exclude`（必要时配合 `strip_components`）�
 
 ### 判定规则描述
 
-`check_host_compatibility()` 依次执行六条规则，每条规则为每个受检对象产出一条
+`check_host_compatibility()` 依次执行以下规则，每条规则为每个受检对象产出一条
 `HostABICompatItem`（`check` 字段标识规则，`msgid` 与 `params` 供上层用 i18n 机制渲染解释）：
 
 | 规则 | `check` | 判定依据 | 可能结果 |
