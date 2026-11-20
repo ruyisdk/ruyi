@@ -2,6 +2,7 @@ import abc
 import mmap
 import os
 import subprocess
+import sys
 from typing import Any, Callable, Final
 
 import requests
@@ -9,7 +10,7 @@ from rich import progress
 
 from ..i18n import _
 from ..log import ProvidesLogger, ProvidesLoggerAndGlobalMode, RuyiLogger
-from ..utils.porcelain import PorcelainEntity
+from ..utils.porcelain import PorcelainEntity, PorcelainOutput
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
 
@@ -155,6 +156,10 @@ class BaseFetcher:
         self._env = env
         self.urls = urls
         self.dest = dest
+
+        self._po: PorcelainOutput | None = None
+        if self._is_porcelain:
+            self._po = PorcelainOutput.with_stream(sys.stderr)
 
     @property
     def _logger(self) -> RuyiLogger:
