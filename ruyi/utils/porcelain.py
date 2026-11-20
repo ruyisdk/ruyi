@@ -66,10 +66,7 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
-        if self._txt_out is not None:
-            self._txt_out.flush()
-        if self._bin_out is not None:
-            self._bin_out.flush()
+        self.flush()
         return None
 
     def emit(self, obj: PorcelainEntity) -> None:
@@ -81,3 +78,9 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
         assert self._bin_out is not None
         self._bin_out.write(s.encode("utf-8"))
         self._bin_out.write(b"\n")
+
+    def flush(self) -> None:
+        if self._txt_out is not None:
+            self._txt_out.flush()
+        if self._bin_out is not None:
+            self._bin_out.flush()
