@@ -9,8 +9,38 @@ from rich import progress
 
 from ..i18n import _
 from ..log import RuyiLogger
+from ..utils.porcelain import PorcelainEntity
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
+
+
+class PorcelainDownloadRequestV1(PorcelainEntity):
+    req_id: str
+    """Randomly generated string ID for this download request"""
+    url: str
+    """The URL to download from"""
+    dest_path: str
+    """The local file path to save the downloaded content to"""
+
+
+class PorcelainDownloadProgressV1(PorcelainEntity):
+    t: int
+    """Timestamp of the progress update, in microseconds"""
+    req_id: str
+    """The request ID this progress update is associated with"""
+    done: bool
+    """Whether the download is complete. A progress event with ``done=True``
+    indicates successful completion and is to be the final progress update for
+    the associated request."""
+    error: str | None
+    """Error message if the download failed, or None if everything fine so far.
+    A progress event with non-empty ``error`` indicates a failure and is to be
+    the final progress update for the associated request."""
+    progress_bytes: int
+    """The number of bytes downloaded so far, including any already existing
+    part before a resumed download"""
+    total_bytes: int | None
+    """Total number of bytes for the whole file, or None if unknown"""
 
 
 def _is_url_ftp(url: str) -> bool:

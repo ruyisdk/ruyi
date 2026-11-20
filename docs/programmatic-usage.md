@@ -95,6 +95,39 @@ class PorcelainEntityListOutputV1(PorcelainEntity):
     data: Mapping[str, Any]
     related_refs: list[str]
     reverse_refs: list[str]
+
+
+# ty: downloadrequest-v1
+# see ruyipkg/fetcher.py
+class PorcelainDownloadRequestV1(PorcelainEntity):
+    req_id: str
+    """Randomly generated string ID for this download request"""
+    url: str
+    """The URL to download from"""
+    dest_path: str
+    """The local file path to save the downloaded content to"""
+
+
+# ty: downloadprogress-v1
+# see ruyipkg/fetcher.py
+class PorcelainDownloadProgressV1(PorcelainEntity):
+    t: int
+    """Timestamp of the progress update, in microseconds"""
+    req_id: str
+    """The request ID this progress update is associated with"""
+    done: bool
+    """Whether the download is complete. A progress event with ``done=True``
+    indicates successful completion and is to be the final progress update for
+    the associated request."""
+    error: str | None
+    """Error message if the download failed, or None if everything fine so far.
+    A progress event with non-empty ``error`` indicates a failure and is to be
+    the final progress update for the associated request."""
+    progress_bytes: int
+    """The number of bytes downloaded so far, including any already existing
+    part before a resumed download"""
+    total_bytes: int | None
+    """Total number of bytes for the whole file, or None if unknown"""
 ```
 
 `host_compat` 总是存在。未给出 `--allow-probing-host` 时，`status` 为 `unchecked`，
@@ -115,8 +148,8 @@ ruyi --porcelain list
 
 输出格式：
 
-* stdout：一行一个 `pkglistoutput-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `pkglistoutput-v1` 类型的对象
+- stderr：无意义
 
 请注意：`-v` 选项在 porcelain 输出模式下会被无视。
 
@@ -132,8 +165,8 @@ ruyi --porcelain entity list -t cpu -t device
 
 输出格式：
 
-* stdout：一行一个 `entitylistoutput-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `entitylistoutput-v1` 类型的对象
+- stderr：无意义
 
 ### `ruyi news list`
 
@@ -147,8 +180,8 @@ ruyi --porcelain news list --new
 
 输出格式：
 
-* stdout：一行一个 `newsitem-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `newsitem-v1` 类型的对象
+- stderr：无意义
 
 请注意：单纯调用 `ruyi news list` 不会更新文章的已读状态。请另行进行
 `ruyi news read -q item...` 的调用以标记用户实际阅读了的文章。

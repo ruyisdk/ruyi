@@ -9,6 +9,8 @@ from typing import Protocol, Self, TypedDict
 
 class PorcelainEntityType(enum.StrEnum):
     CheckDiagnosticV1 = "checkdiagnostic-v1"
+    DownloadProgressV1 = "downloadprogress-v1"
+    DownloadRequestV1 = "downloadrequest-v1"
     EntityListOutputV1 = "entitylistoutput-v1"
     LogV1 = "log-v1"
     NewsItemV1 = "newsitem-v1"
