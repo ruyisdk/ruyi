@@ -197,7 +197,8 @@ class Distfile:
             return self._fetch_and_ensure_integrity(env, resume=resume)
         except RuntimeError as e:
             env.logger.F(f"{e}")
-            env.logger.stdout(_(HELP_ERROR_FETCHING))
+            if not env.is_porcelain:
+                env.logger.stdout(_(HELP_ERROR_FETCHING))
             raise SystemExit(1)
 
     def _fetch_and_ensure_integrity(
