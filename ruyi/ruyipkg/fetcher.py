@@ -8,7 +8,7 @@ import requests
 from rich import progress
 
 from ..i18n import _
-from ..log import RuyiLogger
+from ..log import ProvidesLogger, RuyiLogger
 from ..utils.porcelain import PorcelainEntity
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
@@ -146,14 +146,14 @@ def _fetch_exception_warning(url: str, exc: requests.RequestException) -> str:
 
 
 class BaseFetcher:
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
-        self._logger = logger
+    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
+        self._logger = logger.logger
         self.urls = urls
         self.dest = dest
 
     @classmethod
     @abc.abstractmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return False
 
     @abc.abstractmethod
@@ -217,7 +217,7 @@ class BaseFetcher:
         )
 
     @classmethod
-    def new(cls, logger: RuyiLogger, urls: list[str], dest: str) -> "BaseFetcher":
+    def new(cls, logger: ProvidesLogger, urls: list[str], dest: str) -> "BaseFetcher":
         return get_usable_fetcher_cls(logger)(logger, urls, dest)
 
 
@@ -233,7 +233,7 @@ _fetcher_cache_populated: bool = False
 _cached_usable_fetcher_class: type[BaseFetcher] | None = None
 
 
-def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
+def get_usable_fetcher_cls(logger: ProvidesLogger) -> type[BaseFetcher]:
     global _fetcher_cache_populated
     global _cached_usable_fetcher_class
 
@@ -245,7 +245,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
     _fetcher_cache_populated = True
 
     if override_name := os.environ.get(ENV_OVERRIDE_FETCHER):
-        logger.D(f"forcing fetcher '{override_name}'")
+        logger.logger.D(f"forcing fetcher '{override_name}'")
 
         cls = KNOWN_FETCHERS.get(override_name)
         if cls is None:
@@ -265,7 +265,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
     for name, cls in KNOWN_FETCHERS.items():
         if not cls.is_available(logger):
-            logger.D(f"fetcher '{name}' is unavailable")
+            logger.logger.D(f"fetcher '{name}' is unavailable")
             continue
         _cached_usable_fetcher_class = cls
         return cls
@@ -274,17 +274,17 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
         super().__init__(logger, urls, dest)
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         # try running "curl --version" and it should succeed
         try:
             retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            logger.D("exception occurred when trying to curl --version:", e)
+            logger.logger.D("exception occurred when trying to curl --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -370,17 +370,17 @@ register_fetcher("curl", CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
         super().__init__(logger, urls, dest)
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         # try running "wget --version" and it should succeed
         try:
             retcode = subprocess.call(["wget", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            logger.D("exception occurred when trying to wget --version:", e)
+            logger.logger.D("exception occurred when trying to wget --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -428,14 +428,14 @@ register_fetcher("wget", WgetFetcher)
 
 
 class PythonRequestsFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
+    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
         super().__init__(logger, urls, dest)
 
         self.chunk_size = 4 * mmap.PAGESIZE
         # TODO: User-Agent
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return True
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
