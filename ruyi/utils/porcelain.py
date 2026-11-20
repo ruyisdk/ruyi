@@ -4,7 +4,7 @@ import io
 import json
 import sys
 from types import TracebackType
-from typing import Protocol, Self, TypedDict
+from typing import Protocol, Self, TextIO, TypedDict
 
 
 class PorcelainEntityType(enum.StrEnum):
@@ -56,6 +56,12 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
 
         self._txt_out = text_out
         self._bin_out = binary_out
+
+    @classmethod
+    def with_stream(cls, stream: TextIO) -> Self:
+        if isinstance(stream, io.TextIOWrapper):
+            return cls(binary_out=stream.buffer)
+        return cls(text_out=stream)
 
     def __enter__(self) -> "Self":
         return self
