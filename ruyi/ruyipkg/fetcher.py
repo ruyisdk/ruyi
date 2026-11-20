@@ -3,6 +3,7 @@ import mmap
 import os
 import subprocess
 import sys
+import uuid
 from typing import Any, Callable, Final
 
 import requests
@@ -10,7 +11,7 @@ from rich import progress
 
 from ..i18n import _
 from ..log import ProvidesLogger, ProvidesLoggerAndGlobalMode, RuyiLogger
-from ..utils.porcelain import PorcelainEntity, PorcelainOutput
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
 
@@ -479,6 +480,8 @@ class PythonRequestsFetcher(BaseFetcher):
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
         self._logger.D(f"downloading [cyan]{url}[/] to [cyan]{dest}")
 
+        req_id = uuid.uuid4().hex
+
         open_mode = "ab" if resume else "wb"
         start_from = 0
         headers: dict[str, str] = {}
@@ -487,6 +490,16 @@ class PythonRequestsFetcher(BaseFetcher):
             self._logger.D(f"resuming from position {filesize}")
             start_from = filesize
             headers["Range"] = f"bytes={filesize}-"
+
+        if self._po is not None:
+            request_event: PorcelainDownloadRequestV1 = {
+                "ty": PorcelainEntityType.DownloadRequestV1,
+                "req_id": req_id,
+                "url": url,
+                "dest_path": dest,
+            }
+            with self._po as po:
+                po.emit(request_event)
 
         try:
             r = requests.get(

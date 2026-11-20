@@ -1,5 +1,6 @@
 """Tests for porcelain download progress reporting."""
 
+import json
 import os
 from typing import Any
 
@@ -52,6 +53,44 @@ class _FakeProgress:
 
     def advance(self, *args: Any, **kwargs: Any) -> None:
         pass
+
+
+def _download_events(stderr: str) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for line in stderr.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if str(obj.get("ty", "")).startswith("download"):
+            events.append(obj)
+    return events
+
+
+def test_request_event_announces_each_attempt(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+    url = "https://mirror.example/pkg"
+    response = _ChunkedResponse(200, [b"hello"], content_length=5)
+    monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
+
+    fetcher = PythonRequestsFetcher(porcelain_logger_and_gm, [url], dest)
+    assert fetcher.fetch_one(url, dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    request_events = [e for e in events if e["ty"] == "downloadrequest-v1"]
+
+    assert len(request_events) == 1
+    assert request_events[0]["url"] == url
+    assert request_events[0]["dest_path"] == dest
+    assert request_events[0]["req_id"]
 
 
 def test_porcelain_mode_skips_human_progress_bar(
