@@ -118,7 +118,7 @@ def extract_footer_comments(
     # if the footer comment was preceded by a table, then the comment would be
     # nested inside the table and invisible in top-level doc.body, so we would
     # have to check the last item as well
-    if not comments:
+    if not comments and doc.body:
         last_elem = doc.body[-1][1].value
         if isinstance(last_elem, Container):
             return extract_footer_comments(last_elem)
