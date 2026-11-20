@@ -4,7 +4,7 @@ from functools import cached_property
 import io
 import sys
 import time
-from typing import Any, TextIO, TYPE_CHECKING
+from typing import Any, Protocol, Self, TextIO, TYPE_CHECKING, runtime_checkable
 
 if TYPE_CHECKING:
     # too heavy at package import time
@@ -56,6 +56,10 @@ def _make_porcelain_log(
 class RuyiLogger(metaclass=abc.ABCMeta):
     def __init__(self) -> None:
         pass
+
+    @property
+    def logger(self) -> Self:
+        return self
 
     @property
     @abc.abstractmethod
@@ -112,6 +116,12 @@ class RuyiLogger(metaclass=abc.ABCMeta):
         end: str = "\n",
     ) -> None:
         raise NotImplementedError
+
+
+@runtime_checkable
+class ProvidesLogger(Protocol):
+    @property
+    def logger(self) -> RuyiLogger: ...
 
 
 class RuyiConsoleLogger(RuyiLogger):

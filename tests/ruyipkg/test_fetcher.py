@@ -10,7 +10,7 @@ from typing import Callable
 
 import pytest
 
-from ruyi.log import RuyiLogger
+from ruyi.log import ProvidesLogger, RuyiLogger
 from ruyi.ruyipkg.fetcher import BaseFetcher
 
 
@@ -19,7 +19,7 @@ class RecordingFetcher(BaseFetcher):
 
     def __init__(
         self,
-        logger: RuyiLogger,
+        logger: ProvidesLogger,
         urls: list[str],
         dest: str,
         url_content: dict[str, bytes],
@@ -29,7 +29,7 @@ class RecordingFetcher(BaseFetcher):
         self.calls: list[tuple[str, bool]] = []
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return True
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
