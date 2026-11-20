@@ -130,7 +130,7 @@ def test_cli_version_skips_first_run_oobe(
         stdout = _TTYStringIO()
         stderr = _TTYStringIO()
 
-        ctx.gc.logger = RuyiConsoleLogger(ctx.gm, stdout=stdout, stderr=stderr)
+        ctx.gc._logger = RuyiConsoleLogger(ctx.gm, stdout=stdout, stderr=stderr)
         monkeypatch.setattr(sys, "stdin", _TTYStringIO())
         monkeypatch.setattr(sys, "stdout", stdout)
         monkeypatch.setattr(sys, "stderr", stderr)

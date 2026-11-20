@@ -8,7 +8,7 @@ import requests
 from rich import progress
 
 from ..i18n import _
-from ..log import ProvidesLogger, RuyiLogger
+from ..log import ProvidesLogger, ProvidesLoggerAndGlobalMode, RuyiLogger
 from ..utils.porcelain import PorcelainEntity
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
@@ -146,10 +146,23 @@ def _fetch_exception_warning(url: str, exc: requests.RequestException) -> str:
 
 
 class BaseFetcher:
-    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
-        self._logger = logger.logger
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        self._env = env
         self.urls = urls
         self.dest = dest
+
+    @property
+    def _logger(self) -> RuyiLogger:
+        return self._env.logger
+
+    @property
+    def _is_porcelain(self) -> bool:
+        return self._env.is_porcelain
 
     @classmethod
     @abc.abstractmethod
@@ -217,8 +230,13 @@ class BaseFetcher:
         )
 
     @classmethod
-    def new(cls, logger: ProvidesLogger, urls: list[str], dest: str) -> "BaseFetcher":
-        return get_usable_fetcher_cls(logger)(logger, urls, dest)
+    def new(
+        cls,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> "BaseFetcher":
+        return get_usable_fetcher_cls(env)(env, urls, dest)
 
 
 KNOWN_FETCHERS: Final[dict[str, type[BaseFetcher]]] = {}
@@ -274,8 +292,13 @@ def get_usable_fetcher_cls(logger: ProvidesLogger) -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
     @classmethod
     def is_available(cls, logger: ProvidesLogger) -> bool:
@@ -370,8 +393,13 @@ register_fetcher("curl", CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
     @classmethod
     def is_available(cls, logger: ProvidesLogger) -> bool:
@@ -428,8 +456,13 @@ register_fetcher("wget", WgetFetcher)
 
 
 class PythonRequestsFetcher(BaseFetcher):
-    def __init__(self, logger: ProvidesLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
         self.chunk_size = 4 * mmap.PAGESIZE
         # TODO: User-Agent

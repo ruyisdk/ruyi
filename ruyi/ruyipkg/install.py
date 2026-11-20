@@ -147,7 +147,7 @@ def _do_extract_pkg(
         df_decl = dfs[df_name]
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(df_decl, pm.repo)
-        df.ensure(logger)
+        df.ensure(cfg)
 
         if fetch_only:
             logger.D("skipping extraction because [yellow]--fetch-only[/] is given")
@@ -418,7 +418,7 @@ def _do_install_binary_pkg_to(
         df_decl = dfs[df_name]
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(df_decl, pm.repo)
-        df.ensure(logger)
+        df.ensure(config)
 
         if fetch_only:
             logger.D(
@@ -545,7 +545,7 @@ def _do_install_blob_pkg_to(
         df_decl = dfs[df_name]
         ensure_unpack_cmd_for_method(logger, df_decl.unpack_method)
         df = Distfile(df_decl, pm.repo)
-        df.ensure(logger)
+        df.ensure(config)
 
         if fetch_only:
             logger.D(

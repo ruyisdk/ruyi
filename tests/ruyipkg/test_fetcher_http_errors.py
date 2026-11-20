@@ -14,7 +14,7 @@ from typing import Any, cast
 import pytest
 import requests
 
-from ruyi.log import RuyiLogger
+from ruyi.log import ProvidesLoggerAndGlobalMode
 from ruyi.ruyipkg import fetcher as fetcher_mod
 from ruyi.ruyipkg.fetcher import (
     CurlFetcher,
@@ -112,13 +112,13 @@ class _FailingStreamResponse(_FakeResponse):
 
 
 def test_curl_asks_curl_to_fail_on_http_errors(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
     fake = _patch_subprocess(monkeypatch, _FakeProcessResult(0, "200"))
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert "--fail" in fake.argv
@@ -141,7 +141,7 @@ def test_curl_asks_curl_to_fail_on_http_errors(
     ],
 )
 def test_curl_treats_non_2xx_status_as_failure(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
     status: str,
@@ -150,13 +150,13 @@ def test_curl_treats_non_2xx_status_as_failure(
     # even if curl somehow exits 0, a non-2xx response is not a distfile
     dest = os.path.join(tmp_path, "distfile")
     _patch_subprocess(monkeypatch, _FakeProcessResult(0, status))
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert fetcher.fetch_one("https://mirror.example/pkg", dest, False) is expected
 
 
 def test_curl_discards_body_written_for_non_2xx_response(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -169,14 +169,14 @@ def test_curl_discards_body_written_for_non_2xx_response(
             f.write(b"<html>redirecting</html>")
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(0, "300"), write_body)
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
 
 
 def test_curl_keeps_partial_file_when_resume_is_rejected(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -188,7 +188,7 @@ def test_curl_keeps_partial_file_when_resume_is_rejected(
         f.write(partial)
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(0, "416"))
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, True)
     with open(dest, "rb") as f:
@@ -196,7 +196,7 @@ def test_curl_keeps_partial_file_when_resume_is_rejected(
 
 
 def test_curl_discards_body_left_by_failed_http_response(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -209,14 +209,14 @@ def test_curl_discards_body_left_by_failed_http_response(
             f.write(b"<html>unauthorized</html>")
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(22, "401"), write_body)
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
 
 
 def test_curl_keeps_partial_on_failed_http_response_when_resuming(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -228,7 +228,7 @@ def test_curl_keeps_partial_on_failed_http_response_when_resuming(
         f.write(partial)
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(22, "502"))
-    fetcher = CurlFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = CurlFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, True)
     with open(dest, "rb") as f:
@@ -236,7 +236,7 @@ def test_curl_keeps_partial_on_failed_http_response_when_resuming(
 
 
 def test_curl_does_not_mistake_ftp_placeholder_status_for_failure(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -244,7 +244,7 @@ def test_curl_does_not_mistake_ftp_placeholder_status_for_failure(
     dest = os.path.join(tmp_path, "distfile")
     _patch_subprocess(monkeypatch, _FakeProcessResult(0, "000"))
     url = "ftp://mirror.example/pkg"
-    fetcher = CurlFetcher(ruyi_logger, [url], dest)
+    fetcher = CurlFetcher(logger_and_gm, [url], dest)
 
     assert fetcher.fetch_one(url, dest, False)
 
@@ -266,7 +266,7 @@ def test_curl_failure_warning_does_not_report_a_2xx_status_as_http_error() -> No
 
 
 def test_wget_discards_file_left_behind_by_server_error(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -278,14 +278,14 @@ def test_wget_discards_file_left_behind_by_server_error(
             pass
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(8), write_body)
-    fetcher = WgetFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = WgetFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
 
 
 def test_wget_discards_file_left_behind_by_auth_error(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -297,14 +297,14 @@ def test_wget_discards_file_left_behind_by_auth_error(
             pass
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(6), write_body)
-    fetcher = WgetFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = WgetFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
 
 
 def test_wget_keeps_partial_file_on_network_failure(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -317,7 +317,7 @@ def test_wget_keeps_partial_file_on_network_failure(
             f.write(partial)
 
     _patch_subprocess(monkeypatch, _FakeProcessResult(4), write_partial)
-    fetcher = WgetFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = WgetFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     with open(dest, "rb") as f:
@@ -326,7 +326,7 @@ def test_wget_keeps_partial_file_on_network_failure(
 
 @pytest.mark.parametrize("retcode", [6, 8])
 def test_wget_keeps_partial_file_when_resuming_after_server_error(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
     retcode: int,
@@ -338,7 +338,7 @@ def test_wget_keeps_partial_file_when_resuming_after_server_error(
         f.write(partial)
 
     fake = _patch_subprocess(monkeypatch, _FakeProcessResult(retcode))
-    fetcher = WgetFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = WgetFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, True)
     assert "-c" in fake.argv
@@ -347,7 +347,7 @@ def test_wget_keeps_partial_file_when_resuming_after_server_error(
 
 
 def test_requests_rejects_http_error_without_saving_body(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -356,7 +356,7 @@ def test_requests_rejects_http_error_without_saving_body(
     exc = requests.HTTPError("503 Server Error", response=response)  # type: ignore[arg-type]
     response._raise_exc = exc
     monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
-    fetcher = PythonRequestsFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = PythonRequestsFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
@@ -364,7 +364,7 @@ def test_requests_rejects_http_error_without_saving_body(
 
 
 def test_requests_rejects_non_2xx_redirect(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -373,7 +373,7 @@ def test_requests_rejects_non_2xx_redirect(
     dest = os.path.join(tmp_path, "distfile")
     response = _FakeResponse(302, b"<html>redirecting</html>")
     monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
-    fetcher = PythonRequestsFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = PythonRequestsFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     assert not os.path.exists(dest)
@@ -381,14 +381,14 @@ def test_requests_rejects_non_2xx_redirect(
 
 
 def test_requests_keeps_partial_file_when_body_breaks_off(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
     response = _FailingStreamResponse(200)
     monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
-    fetcher = PythonRequestsFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = PythonRequestsFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     with open(dest, "rb") as f:
@@ -397,7 +397,7 @@ def test_requests_keeps_partial_file_when_body_breaks_off(
 
 
 def test_requests_returns_false_on_connection_error(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -409,7 +409,7 @@ def test_requests_returns_false_on_connection_error(
         raise requests.ConnectionError("connection reset")
 
     monkeypatch.setattr(requests, "get", raise_connection_error)
-    fetcher = PythonRequestsFetcher(ruyi_logger, ["https://mirror.example/pkg"], dest)
+    fetcher = PythonRequestsFetcher(logger_and_gm, ["https://mirror.example/pkg"], dest)
 
     assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
     # the request must actually have been attempted, with finite timeouts
@@ -418,7 +418,7 @@ def test_requests_returns_false_on_connection_error(
 
 
 def test_fetch_falls_through_to_next_url_on_http_error(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -432,7 +432,7 @@ def test_fetch_falls_through_to_next_url_on_http_error(
             _FakeProcessResult(0, "200"),
         ],
     )
-    fetcher = CurlFetcher(ruyi_logger, urls, dest)
+    fetcher = CurlFetcher(logger_and_gm, urls, dest)
 
     fetcher.fetch(retries=1)
 

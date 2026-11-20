@@ -3,7 +3,7 @@ import os
 from typing import Any, Final
 
 from ..i18n import _, d_
-from ..log import RuyiLogger
+from ..log import ProvidesLoggerAndGlobalMode, RuyiLogger
 from .checksum import Checksummer
 from .fetcher import BaseFetcher
 from .pkg_manifest import DistfileDecl
@@ -11,10 +11,8 @@ from .repo import MetadataRepo
 from .unpack import do_unpack, do_unpack_or_symlink
 from .unpack_method import UnpackMethod
 
-
 # https://github.com/ruyisdk/ruyi/issues/46
-HELP_ERROR_FETCHING: Final = d_(
-    """
+HELP_ERROR_FETCHING: Final = d_("""
 Downloads can fail for a multitude of reasons, most of which should not and
 cannot be handled by [yellow]Ruyi[/]. For your convenience though, please check if any
 of the following common failure modes apply to you, and take actions
@@ -33,8 +31,7 @@ accordingly if one of them turns out to be the case:
     - is the server serving a [yellow]bot challenge page[/] instead of the file?
 * Volatile upstream
     - is the recorded [yellow]link dead[/]? (Please raise a Ruyi issue for a fix!)
-"""
-)
+""")
 
 
 class Distfile:
@@ -79,7 +76,11 @@ class Distfile:
     def urls(self) -> list[str]:
         return self._mr.get_distfile_urls(self._decl)
 
-    def render_fetch_instructions(self, logger: RuyiLogger, lang_code: str) -> str:
+    def render_fetch_instructions(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        lang_code: str,
+    ) -> str:
         fr = self._decl.fetch_restriction
         if fr is None:
             return ""
@@ -92,7 +93,7 @@ class Distfile:
                 # Don't allow package-defined params to override preset params,
                 # to reduce surprises for packagers.
                 if k in fr["params"]:
-                    logger.F(
+                    env.logger.F(
                         _(
                             "malformed package fetch instructions: the param named '{param}' is reserved and cannot be overridden by packages"
                         ).format(
@@ -115,30 +116,30 @@ class Distfile:
         except FileNotFoundError:
             return False
 
-    def ensure(self, logger: RuyiLogger) -> None:
-        logger.D(f"checking {self.dest}")
+    def ensure(self, env: ProvidesLoggerAndGlobalMode) -> None:
+        env.logger.D(f"checking {self.dest}")
         try:
             st = os.stat(self.dest)
         except FileNotFoundError:
-            logger.D(f"file {self.dest} not existent")
-            return self.fetch_and_ensure_integrity(logger)
+            env.logger.D(f"file {self.dest} not existent")
+            return self.fetch_and_ensure_integrity(env)
 
         if st.st_size < self.size:
             # assume incomplete transmission, try to resume
-            logger.D(
+            env.logger.D(
                 f"file {self.dest} appears incomplete: size {st.st_size} < {self.size}; resuming"
             )
-            return self.fetch_and_ensure_integrity(logger, resume=True)
+            return self.fetch_and_ensure_integrity(env, resume=True)
         elif st.st_size == self.size:
-            if self.ensure_integrity_or_rm(logger):
-                logger.D(f"file {self.dest} passed checks")
+            if self.ensure_integrity_or_rm(env):
+                env.logger.D(f"file {self.dest} passed checks")
                 return
 
             # the file is already gone, re-fetch
-            logger.D(f"re-fetching {self.dest}")
-            return self.fetch_and_ensure_integrity(logger)
+            env.logger.D(f"re-fetching {self.dest}")
+            return self.fetch_and_ensure_integrity(env)
 
-        logger.W(
+        env.logger.W(
             _(
                 "file {file} is corrupt: size too big ({actual_size} > {expected_size}); deleting"
             ).format(
@@ -148,16 +149,16 @@ class Distfile:
             )
         )
         os.remove(self.dest)
-        return self.fetch_and_ensure_integrity(logger)
+        return self.fetch_and_ensure_integrity(env)
 
-    def ensure_integrity_or_rm(self, logger: RuyiLogger) -> bool:
+    def ensure_integrity_or_rm(self, env: ProvidesLoggerAndGlobalMode) -> bool:
         try:
             with open(self.dest, "rb") as fp:
                 cs = Checksummer(fp, self.csums)
                 cs.check()
                 return True
         except ValueError as e:
-            logger.W(
+            env.logger.W(
                 _("file {file} is corrupt: {reason}; deleting").format(
                     file=self.dest,
                     reason=e,
@@ -168,7 +169,7 @@ class Distfile:
 
     def fetch_and_ensure_integrity(
         self,
-        logger: RuyiLogger,
+        env: ProvidesLoggerAndGlobalMode,
         *,
         resume: bool = False,
     ) -> None:
@@ -179,33 +180,33 @@ class Distfile:
             # notify the user and die
             # TODO: allow rendering instructions for all missing fetch-restricted
             # files at once
-            logger.F(
+            env.logger.F(
                 _(
                     "the file [yellow]'{file}'[/] cannot be automatically fetched"
                 ).format(
                     file=self.dest,
                 )
             )
-            logger.I(_("instructions on fetching this file:"))
-            logger.I(
-                self.render_fetch_instructions(logger, self._mr.global_config.lang_code)
+            env.logger.I(_("instructions on fetching this file:"))
+            env.logger.I(
+                self.render_fetch_instructions(env, self._mr.global_config.lang_code)
             )
             raise SystemExit(1)
 
         try:
-            return self._fetch_and_ensure_integrity(logger, resume=resume)
+            return self._fetch_and_ensure_integrity(env, resume=resume)
         except RuntimeError as e:
-            logger.F(f"{e}")
-            logger.stdout(_(HELP_ERROR_FETCHING))
+            env.logger.F(f"{e}")
+            env.logger.stdout(_(HELP_ERROR_FETCHING))
             raise SystemExit(1)
 
     def _fetch_and_ensure_integrity(
         self,
-        logger: RuyiLogger,
+        env: ProvidesLoggerAndGlobalMode,
         *,
         resume: bool = False,
     ) -> None:
-        fetcher = BaseFetcher.new(logger, self.urls, self.dest)
+        fetcher = BaseFetcher.new(env, self.urls, self.dest)
 
         # Validate integrity right after each URL is fetched, so that a mirror
         # serving a complete-but-wrong file (e.g. an HTTP 200 error page) causes
@@ -214,7 +215,7 @@ class Distfile:
         # and checksum failures. See https://github.com/ruyisdk/ruyi/issues/498.
         fetcher.fetch(
             resume=resume,
-            post_fetch_validator=lambda: self.ensure_integrity_or_rm(logger),
+            post_fetch_validator=lambda: self.ensure_integrity_or_rm(env),
         )
 
     def unpack(

@@ -124,6 +124,11 @@ class ProvidesLogger(Protocol):
     def logger(self) -> RuyiLogger: ...
 
 
+@runtime_checkable
+class ProvidesLoggerAndGlobalMode(ProvidesLogger, ProvidesGlobalMode, Protocol):
+    pass
+
+
 class RuyiConsoleLogger(RuyiLogger):
     def __init__(
         self,

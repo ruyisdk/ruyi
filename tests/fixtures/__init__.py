@@ -13,7 +13,7 @@ import pytest
 from ruyi.cli.completion import ArgumentParser
 from ruyi.cli.main import main as ruyi_main
 from ruyi.config import GlobalConfig
-from ruyi.log import RuyiConsoleLogger, RuyiLogger
+from ruyi.log import ProvidesLoggerAndGlobalMode, RuyiConsoleLogger, RuyiLogger
 from ruyi.ruyipkg.repo import MetadataRepo
 from ruyi.utils.global_mode import EnvGlobalModeProvider, GlobalModeProvider
 
@@ -166,6 +166,21 @@ def mock_gm() -> MockGlobalModeProvider:
 def ruyi_logger(mock_gm: GlobalModeProvider) -> RuyiLogger:
     """Fixture for creating a RuyiLogger instance."""
     return RuyiConsoleLogger(mock_gm)
+
+
+class MockLoggerAndGlobalMode(MockGlobalModeProvider, ProvidesLoggerAndGlobalMode):
+    def __init__(self) -> None:
+        super().__init__()
+        self._logger = RuyiConsoleLogger(self)
+
+    @property
+    def logger(self) -> RuyiLogger:
+        return self._logger
+
+
+@pytest.fixture
+def logger_and_gm() -> ProvidesLoggerAndGlobalMode:
+    return MockLoggerAndGlobalMode()
 
 
 @dataclass
