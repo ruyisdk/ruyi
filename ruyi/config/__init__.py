@@ -439,6 +439,8 @@ class GlobalConfig:
             return "repo_priority"
         elif leaf == schema.KEY_REPO_REMOTE:
             return "override_repo_url"
+        elif leaf == schema.KEY_REPO_ACTIVE:
+            return "is_default_repo_active"
         else:
             return None
 
