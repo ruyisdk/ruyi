@@ -136,6 +136,27 @@ class PorcelainDownloadProgressV1(PorcelainEntity):
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
 每条消息都带时间戳、日志级别，消息正文末尾不会被自动附加 1 个换行（但如果某条日志的末尾碰巧有一个或一些换行，那么这些换行将不会被删除）。
 
+使用原生 `requests` 下载后端时（可通过设置环境变量
+`RUYI_OVERRIDE_FETCHER=requests` 强制启用），`ruyi` 还会在 stderr 上输出
+`downloadrequest-v1` 与 `downloadprogress-v1` 对象以报告 distfile 的下载进度。
+基于 curl 或 wget 的后端暂不输出这些事件。
+
+每个 `downloadrequest-v1` 表示一次下载尝试（包括镜像切换与重试），其 `req_id`
+用于关联随后的进度事件。进度事件在以下时机输出：
+
+* 下载开始时（`progress_bytes` 为已存在的部分大小，`total_bytes` 为
+  `Content-Length` 加上该部分大小）；
+* 已知总大小时，每当已完成字节数跨越 1% 的整数百分比时（最多到 99%）；
+* 未知总大小时，每完成 1 MiB 时；
+* 下载结束或失败时。
+
+若在收到响应头之前就失败（例如连接失败或 HTTP 错误状态），则不会输出开始事件，
+只输出一条终止失败事件。
+
+`done=True` 表示 HTTP 响应体已完整接收，**不**代表文件已通过校验；如需确认
+完整性，调用方应以 `ruyi` 的退出状态为准。失败时 `done=False` 且 `error`
+非空，该事件是本次 `req_id` 的最后一条进度事件。
+
 ## 已适配 porcelain 输出模式的命令
 
 ### `ruyi list`
