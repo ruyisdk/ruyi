@@ -5,7 +5,7 @@
 import os
 import pathlib
 import sys
-from typing import Iterable, NamedTuple
+from typing import Iterable, Mapping, NamedTuple
 
 
 class XDGPathEntry(NamedTuple):
@@ -17,7 +17,20 @@ def _paths_from_env(env: str, default: str) -> Iterable[pathlib.Path]:
     v = os.environ.get(env, default)
     for p in v.split(":"):
         if p:
-            yield pathlib.Path(p)
+            pp = pathlib.Path(p)
+            # ignore any relative path per the spec requirement
+            if pp.is_absolute():
+                yield pp
+
+
+def _path_from_env(env: Mapping[str, str], key: str) -> pathlib.Path | None:
+    v = env.get(key, "")
+    if v:
+        p = pathlib.Path(v)
+        # ignore any relative path per the spec requirement
+        if p.is_absolute():
+            return p
+    return None
 
 
 class XDGBaseDir:
@@ -26,36 +39,32 @@ class XDGBaseDir:
 
     @property
     def cache_home(self) -> pathlib.Path:
-        v = os.environ.get("XDG_CACHE_HOME", "")
-        if v:
-            return pathlib.Path(v)
+        if v := _path_from_env(os.environ, "XDG_CACHE_HOME"):
+            return v
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Caches"
         return pathlib.Path.home() / ".cache"
 
     @property
     def config_home(self) -> pathlib.Path:
-        v = os.environ.get("XDG_CONFIG_HOME", "")
-        if v:
-            return pathlib.Path(v)
+        if v := _path_from_env(os.environ, "XDG_CONFIG_HOME"):
+            return v
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Preferences"
         return pathlib.Path.home() / ".config"
 
     @property
     def data_home(self) -> pathlib.Path:
-        v = os.environ.get("XDG_DATA_HOME", "")
-        if v:
-            return pathlib.Path(v)
+        if v := _path_from_env(os.environ, "XDG_DATA_HOME"):
+            return v
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Application Support"
         return pathlib.Path.home() / ".local" / "share"
 
     @property
     def state_home(self) -> pathlib.Path:
-        v = os.environ.get("XDG_STATE_HOME", "")
-        if v:
-            return pathlib.Path(v)
+        if v := _path_from_env(os.environ, "XDG_STATE_HOME"):
+            return v
         if sys.platform == "darwin":
             return pathlib.Path.home() / "Library" / "Application Support"
         return pathlib.Path.home() / ".local" / "state"
