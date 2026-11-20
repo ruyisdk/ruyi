@@ -4,16 +4,18 @@ import io
 import json
 import sys
 from types import TracebackType
-from typing import Protocol, Self, TypedDict
+from typing import Protocol, Self, TextIO, TypedDict
 
 
 class PorcelainEntityType(enum.StrEnum):
+    CheckDiagnosticV1 = "checkdiagnostic-v1"
+    DownloadProgressV1 = "downloadprogress-v1"
+    DownloadRequestV1 = "downloadrequest-v1"
+    EntityListOutputV1 = "entitylistoutput-v1"
     LogV1 = "log-v1"
     NewsItemV1 = "newsitem-v1"
     PkgListOutputV1 = "pkglistoutput-v1"
-    EntityListOutputV1 = "entitylistoutput-v1"
     RepoEntryV1 = "repoentry-v1"
-    CheckDiagnosticV1 = "checkdiagnostic-v1"
 
 
 class PorcelainEntity(TypedDict):
@@ -55,6 +57,12 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
         self._txt_out = text_out
         self._bin_out = binary_out
 
+    @classmethod
+    def with_stream(cls, stream: TextIO) -> Self:
+        if isinstance(stream, io.TextIOWrapper):
+            return cls(binary_out=stream.buffer)
+        return cls(text_out=stream)
+
     def __enter__(self) -> "Self":
         return self
 
@@ -64,10 +72,7 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
-        if self._txt_out is not None:
-            self._txt_out.flush()
-        if self._bin_out is not None:
-            self._bin_out.flush()
+        self.flush()
         return None
 
     def emit(self, obj: PorcelainEntity) -> None:
@@ -79,3 +84,9 @@ class PorcelainOutput(AbstractContextManager["PorcelainOutput"]):
         assert self._bin_out is not None
         self._bin_out.write(s.encode("utf-8"))
         self._bin_out.write(b"\n")
+
+    def flush(self) -> None:
+        if self._txt_out is not None:
+            self._txt_out.flush()
+        if self._bin_out is not None:
+            self._bin_out.flush()

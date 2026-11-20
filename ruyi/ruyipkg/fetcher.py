@@ -2,15 +2,48 @@ import abc
 import mmap
 import os
 import subprocess
+import sys
+import time
+import uuid
 from typing import Any, Callable, Final
 
 import requests
 from rich import progress
 
 from ..i18n import _
-from ..log import RuyiLogger
+from ..log import ProvidesLogger, ProvidesLoggerAndGlobalMode, RuyiLogger
+from ..utils.porcelain import PorcelainEntity, PorcelainEntityType, PorcelainOutput
 
 ENV_OVERRIDE_FETCHER: Final = "RUYI_OVERRIDE_FETCHER"
+
+
+class PorcelainDownloadRequestV1(PorcelainEntity):
+    req_id: str
+    """Randomly generated string ID for this download request"""
+    url: str
+    """The URL to download from"""
+    dest_path: str
+    """The local file path to save the downloaded content to"""
+
+
+class PorcelainDownloadProgressV1(PorcelainEntity):
+    t: int
+    """Timestamp of the progress update, in microseconds"""
+    req_id: str
+    """The request ID this progress update is associated with"""
+    done: bool
+    """Whether the download is complete. A progress event with ``done=True``
+    indicates successful completion and is to be the final progress update for
+    the associated request."""
+    error: str | None
+    """Error message if the download failed, or None if everything fine so far.
+    A progress event with non-empty ``error`` indicates a failure and is to be
+    the final progress update for the associated request."""
+    progress_bytes: int
+    """The number of bytes downloaded so far, including any already existing
+    part before a resumed download"""
+    total_bytes: int | None
+    """Total number of bytes for the whole file, or None if unknown"""
 
 
 def _is_url_ftp(url: str) -> bool:
@@ -50,6 +83,9 @@ _HTTP_RANGE_NOT_SATISFIABLE: Final = "416"
 
 # connect and read timeout for the requests-based fetcher, in seconds
 _DOWNLOAD_TIMEOUT: Final = 60
+
+# progress reporting step for downloads of unknown total size
+_PROGRESS_BYTE_STEP: Final = 1024 * 1024
 
 
 def _is_http_success_code(code: str) -> bool:
@@ -116,14 +152,31 @@ def _fetch_exception_warning(url: str, exc: requests.RequestException) -> str:
 
 
 class BaseFetcher:
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
-        self._logger = logger
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        self._env = env
         self.urls = urls
         self.dest = dest
 
+        self._po: PorcelainOutput | None = None
+        if self._is_porcelain:
+            self._po = PorcelainOutput.with_stream(sys.stderr)
+
+    @property
+    def _logger(self) -> RuyiLogger:
+        return self._env.logger
+
+    @property
+    def _is_porcelain(self) -> bool:
+        return self._env.is_porcelain
+
     @classmethod
     @abc.abstractmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return False
 
     @abc.abstractmethod
@@ -187,8 +240,13 @@ class BaseFetcher:
         )
 
     @classmethod
-    def new(cls, logger: RuyiLogger, urls: list[str], dest: str) -> "BaseFetcher":
-        return get_usable_fetcher_cls(logger)(logger, urls, dest)
+    def new(
+        cls,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> "BaseFetcher":
+        return get_usable_fetcher_cls(env)(env, urls, dest)
 
 
 KNOWN_FETCHERS: Final[dict[str, type[BaseFetcher]]] = {}
@@ -203,7 +261,7 @@ _fetcher_cache_populated: bool = False
 _cached_usable_fetcher_class: type[BaseFetcher] | None = None
 
 
-def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
+def get_usable_fetcher_cls(logger: ProvidesLogger) -> type[BaseFetcher]:
     global _fetcher_cache_populated
     global _cached_usable_fetcher_class
 
@@ -215,7 +273,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
     _fetcher_cache_populated = True
 
     if override_name := os.environ.get(ENV_OVERRIDE_FETCHER):
-        logger.D(f"forcing fetcher '{override_name}'")
+        logger.logger.D(f"forcing fetcher '{override_name}'")
 
         cls = KNOWN_FETCHERS.get(override_name)
         if cls is None:
@@ -235,7 +293,7 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
     for name, cls in KNOWN_FETCHERS.items():
         if not cls.is_available(logger):
-            logger.D(f"fetcher '{name}' is unavailable")
+            logger.logger.D(f"fetcher '{name}' is unavailable")
             continue
         _cached_usable_fetcher_class = cls
         return cls
@@ -244,17 +302,22 @@ def get_usable_fetcher_cls(logger: RuyiLogger) -> type[BaseFetcher]:
 
 
 class CurlFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         # try running "curl --version" and it should succeed
         try:
             retcode = subprocess.call(["curl", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            logger.D("exception occurred when trying to curl --version:", e)
+            logger.logger.D("exception occurred when trying to curl --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -340,17 +403,22 @@ register_fetcher("curl", CurlFetcher)
 
 
 class WgetFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         # try running "wget --version" and it should succeed
         try:
             retcode = subprocess.call(["wget", "--version"], stdout=subprocess.DEVNULL)
             return retcode == 0
         except Exception as e:
-            logger.D("exception occurred when trying to wget --version:", e)
+            logger.logger.D("exception occurred when trying to wget --version:", e)
             return False
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -398,18 +466,42 @@ register_fetcher("wget", WgetFetcher)
 
 
 class PythonRequestsFetcher(BaseFetcher):
-    def __init__(self, logger: RuyiLogger, urls: list[str], dest: str) -> None:
-        super().__init__(logger, urls, dest)
+    def __init__(
+        self,
+        env: ProvidesLoggerAndGlobalMode,
+        urls: list[str],
+        dest: str,
+    ) -> None:
+        super().__init__(env, urls, dest)
 
         self.chunk_size = 4 * mmap.PAGESIZE
         # TODO: User-Agent
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return True
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
         self._logger.D(f"downloading [cyan]{url}[/] to [cyan]{dest}")
+
+        req_id = uuid.uuid4().hex
+
+        def progress_event(
+            *,
+            done: bool,
+            error: str | None,
+            progress_bytes: int,
+            total_bytes: int | None,
+        ) -> PorcelainDownloadProgressV1:
+            return {
+                "ty": PorcelainEntityType.DownloadProgressV1,
+                "t": int(time.time() * 1_000_000),
+                "req_id": req_id,
+                "done": done,
+                "error": error,
+                "progress_bytes": progress_bytes,
+                "total_bytes": total_bytes,
+            }
 
         open_mode = "ab" if resume else "wb"
         start_from = 0
@@ -420,6 +512,16 @@ class PythonRequestsFetcher(BaseFetcher):
             start_from = filesize
             headers["Range"] = f"bytes={filesize}-"
 
+        if self._po is not None:
+            request_event: PorcelainDownloadRequestV1 = {
+                "ty": PorcelainEntityType.DownloadRequestV1,
+                "req_id": req_id,
+                "url": url,
+                "dest_path": dest,
+            }
+            with self._po as po:
+                po.emit(request_event)
+
         try:
             r = requests.get(
                 url,
@@ -428,6 +530,16 @@ class PythonRequestsFetcher(BaseFetcher):
                 timeout=(_DOWNLOAD_TIMEOUT, _DOWNLOAD_TIMEOUT),
             )
         except requests.RequestException as exc:
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
 
@@ -437,6 +549,16 @@ class PythonRequestsFetcher(BaseFetcher):
             # an HTTP error response is not the distfile, and the body must
             # not be kept either
             r.close()
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
 
@@ -444,12 +566,38 @@ class PythonRequestsFetcher(BaseFetcher):
         # broken proxy can still hand us a 3xx body
         if not _is_http_success_code(str(r.status_code)):
             r.close()
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=f"HTTP {r.status_code}",
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_http_error_warning(url, str(r.status_code)))
             return False
 
         total_len: int | None = None
         if total_len_str := r.headers.get("Content-Length"):
             total_len = int(total_len_str) + start_from
+
+        progress_bytes = start_from
+        last_percent = -1
+        last_emit_bytes = start_from
+        if self._po is not None:
+            with self._po as po:
+                po.emit(
+                    progress_event(
+                        done=False,
+                        error=None,
+                        progress_bytes=progress_bytes,
+                        total_bytes=total_len,
+                    )
+                )
+            if total_len is not None and total_len > 0:
+                last_percent = progress_bytes * 100 // total_len
 
         try:
             trc = progress.TimeRemainingColumn(compact=True, elapsed_when_finished=True)  # type: ignore[call-arg,unused-ignore]
@@ -470,33 +618,85 @@ class PythonRequestsFetcher(BaseFetcher):
         dest_filename = os.path.basename(dest)
         try:
             with open(dest, open_mode) as f:
-                with progress.Progress(
-                    *columns, console=self._logger.log_console
-                ) as pg:
-                    indeterminate = total_len is None
-                    kwargs: dict[str, Any]
-                    if indeterminate:
-                        # be compatible with rich <= 12.3.0 where add_task()'s `total`
-                        # parameter cannot be None
-                        # see https://github.com/Textualize/rich/commit/052b15785876ad85
-                        kwargs = {"start": False}
-                    else:
-                        kwargs = {"total": total_len}
-
-                    task = pg.add_task(dest_filename, completed=start_from, **kwargs)
+                if self._po is not None:
                     for chunk in r.iter_content(self.chunk_size):
+                        if total_len is not None and total_len > 0:
+                            percent = progress_bytes * 100 // total_len
+                            if percent < 100 and percent > last_percent:
+                                last_percent = percent
+                                with self._po as po:
+                                    po.emit(
+                                        progress_event(
+                                            done=False,
+                                            error=None,
+                                            progress_bytes=progress_bytes,
+                                            total_bytes=total_len,
+                                        )
+                                    )
+                        elif progress_bytes - last_emit_bytes >= _PROGRESS_BYTE_STEP:
+                            last_emit_bytes = progress_bytes
+                            with self._po as po:
+                                po.emit(
+                                    progress_event(
+                                        done=False,
+                                        error=None,
+                                        progress_bytes=progress_bytes,
+                                        total_bytes=total_len,
+                                    )
+                                )
                         f.write(chunk)
-                        # according to the docs it's probably not okay to pulse the
-                        # progress bar if the total number of steps is not yet known
-                        if not indeterminate:
-                            pg.advance(task, len(chunk))
+                        progress_bytes += len(chunk)
+                else:
+                    with progress.Progress(
+                        *columns, console=self._logger.log_console
+                    ) as pg:
+                        indeterminate = total_len is None
+                        kwargs: dict[str, Any]
+                        if indeterminate:
+                            # be compatible with rich <= 12.3.0 where add_task()'s `total`
+                            # parameter cannot be None
+                            # see https://github.com/Textualize/rich/commit/052b15785876ad85
+                            kwargs = {"start": False}
+                        else:
+                            kwargs = {"total": total_len}
+
+                        task = pg.add_task(
+                            dest_filename, completed=start_from, **kwargs
+                        )
+                        for chunk in r.iter_content(self.chunk_size):
+                            f.write(chunk)
+                            # according to the docs it's probably not okay to pulse the
+                            # progress bar if the total number of steps is not yet known
+                            if not indeterminate:
+                                pg.advance(task, len(chunk))
         except requests.RequestException as exc:
             # keep the partial file, if any, so that the next attempt can
             # resume from where this one broke off
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=progress_bytes,
+                            total_bytes=total_len,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
         finally:
             r.close()
+
+        if self._po is not None:
+            with self._po as po:
+                po.emit(
+                    progress_event(
+                        done=True,
+                        error=None,
+                        progress_bytes=progress_bytes,
+                        total_bytes=total_len,
+                    )
+                )
 
         return True
 

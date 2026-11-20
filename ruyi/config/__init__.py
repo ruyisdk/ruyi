@@ -169,7 +169,7 @@ class GlobalConfig:
         from ..utils.xdg_basedir import XDGBaseDir
 
         self._gm = gm
-        self.logger = logger
+        self._logger = logger
 
         # all defaults
         self.override_repo_dir: str | None = None
@@ -191,6 +191,10 @@ class GlobalConfig:
         self.is_default_repo_active = True
         self.repo_priority = 0
         self._extra_repo_entries: list["RepoEntry"] = []
+
+    @property
+    def logger(self) -> "RuyiLogger":
+        return self._logger
 
     def _apply_config(
         self,

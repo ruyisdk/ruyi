@@ -95,6 +95,39 @@ class PorcelainEntityListOutputV1(PorcelainEntity):
     data: Mapping[str, Any]
     related_refs: list[str]
     reverse_refs: list[str]
+
+
+# ty: downloadrequest-v1
+# see ruyipkg/fetcher.py
+class PorcelainDownloadRequestV1(PorcelainEntity):
+    req_id: str
+    """Randomly generated string ID for this download request"""
+    url: str
+    """The URL to download from"""
+    dest_path: str
+    """The local file path to save the downloaded content to"""
+
+
+# ty: downloadprogress-v1
+# see ruyipkg/fetcher.py
+class PorcelainDownloadProgressV1(PorcelainEntity):
+    t: int
+    """Timestamp of the progress update, in microseconds"""
+    req_id: str
+    """The request ID this progress update is associated with"""
+    done: bool
+    """Whether the download is complete. A progress event with ``done=True``
+    indicates successful completion and is to be the final progress update for
+    the associated request."""
+    error: str | None
+    """Error message if the download failed, or None if everything fine so far.
+    A progress event with non-empty ``error`` indicates a failure and is to be
+    the final progress update for the associated request."""
+    progress_bytes: int
+    """The number of bytes downloaded so far, including any already existing
+    part before a resumed download"""
+    total_bytes: int | None
+    """Total number of bytes for the whole file, or None if unknown"""
 ```
 
 `host_compat` 总是存在。未给出 `--allow-probing-host` 时，`status` 为 `unchecked`，
@@ -102,6 +135,27 @@ class PorcelainEntityListOutputV1(PorcelainEntity):
 
 当工作在 porcelain 输出模式时，`ruyi` 平时的 stderr 日志信息格式将变为类型为 `log-v1` 的输出对象。
 每条消息都带时间戳、日志级别，消息正文末尾不会被自动附加 1 个换行（但如果某条日志的末尾碰巧有一个或一些换行，那么这些换行将不会被删除）。
+
+使用原生 `requests` 下载后端时（可通过设置环境变量
+`RUYI_OVERRIDE_FETCHER=requests` 强制启用），`ruyi` 还会在 stderr 上输出
+`downloadrequest-v1` 与 `downloadprogress-v1` 对象以报告 distfile 的下载进度。
+基于 curl 或 wget 的后端暂不输出这些事件。
+
+每个 `downloadrequest-v1` 表示一次下载尝试（包括镜像切换与重试），其 `req_id`
+用于关联随后的进度事件。进度事件在以下时机输出：
+
+* 下载开始时（`progress_bytes` 为已存在的部分大小，`total_bytes` 为
+  `Content-Length` 加上该部分大小）；
+* 已知总大小时，每当已完成字节数跨越 1% 的整数百分比时（最多到 99%）；
+* 未知总大小时，每完成 1 MiB 时；
+* 下载结束或失败时。
+
+若在收到响应头之前就失败（例如连接失败或 HTTP 错误状态），则不会输出开始事件，
+只输出一条终止失败事件。
+
+`done=True` 表示 HTTP 响应体已完整接收，**不**代表文件已通过校验；如需确认
+完整性，调用方应以 `ruyi` 的退出状态为准。失败时 `done=False` 且 `error`
+非空，该事件是本次 `req_id` 的最后一条进度事件。
 
 ## 已适配 porcelain 输出模式的命令
 
@@ -115,8 +169,8 @@ ruyi --porcelain list
 
 输出格式：
 
-* stdout：一行一个 `pkglistoutput-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `pkglistoutput-v1` 类型的对象
+- stderr：无意义
 
 请注意：`-v` 选项在 porcelain 输出模式下会被无视。
 
@@ -132,8 +186,8 @@ ruyi --porcelain entity list -t cpu -t device
 
 输出格式：
 
-* stdout：一行一个 `entitylistoutput-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `entitylistoutput-v1` 类型的对象
+- stderr：无意义
 
 ### `ruyi news list`
 
@@ -147,8 +201,8 @@ ruyi --porcelain news list --new
 
 输出格式：
 
-* stdout：一行一个 `newsitem-v1` 类型的对象
-* stderr：无意义
+- stdout：一行一个 `newsitem-v1` 类型的对象
+- stderr：无意义
 
 请注意：单纯调用 `ruyi news list` 不会更新文章的已读状态。请另行进行
 `ruyi news read -q item...` 的调用以标记用户实际阅读了的文章。

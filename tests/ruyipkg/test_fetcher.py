@@ -10,7 +10,7 @@ from typing import Callable
 
 import pytest
 
-from ruyi.log import RuyiLogger
+from ruyi.log import ProvidesLogger, ProvidesLoggerAndGlobalMode
 from ruyi.ruyipkg.fetcher import BaseFetcher
 
 
@@ -19,17 +19,17 @@ class RecordingFetcher(BaseFetcher):
 
     def __init__(
         self,
-        logger: RuyiLogger,
+        env: ProvidesLoggerAndGlobalMode,
         urls: list[str],
         dest: str,
         url_content: dict[str, bytes],
     ) -> None:
-        super().__init__(logger, urls, dest)
+        super().__init__(env, urls, dest)
         self._url_content = url_content
         self.calls: list[tuple[str, bool]] = []
 
     @classmethod
-    def is_available(cls, logger: RuyiLogger) -> bool:
+    def is_available(cls, logger: ProvidesLogger) -> bool:
         return True
 
     def fetch_one(self, url: str, dest: str, resume: bool) -> bool:
@@ -58,14 +58,14 @@ def _accept_only(good: bytes, dest: str) -> Callable[[], bool]:
 
 
 def test_fetch_falls_through_to_next_url_on_validation_failure(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
     good = b"correct contents"
     urls = ["https://mirror.example/bad", "https://upstream.example/good"]
     fetcher = RecordingFetcher(
-        ruyi_logger,
+        logger_and_gm,
         urls,
         dest,
         {
@@ -83,14 +83,14 @@ def test_fetch_falls_through_to_next_url_on_validation_failure(
 
 
 def test_fetch_stops_at_first_valid_url(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
     good = b"correct contents"
     urls = ["https://mirror.example/good", "https://upstream.example/good"]
     fetcher = RecordingFetcher(
-        ruyi_logger,
+        logger_and_gm,
         urls,
         dest,
         {urls[0]: good, urls[1]: good},
@@ -103,14 +103,14 @@ def test_fetch_stops_at_first_valid_url(
 
 
 def test_fetch_raises_when_all_urls_fail_validation(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
 ) -> None:
     dest = os.path.join(tmp_path, "distfile")
     good = b"correct contents"
     urls = ["https://mirror.example/bad1", "https://mirror.example/bad2"]
     fetcher = RecordingFetcher(
-        ruyi_logger,
+        logger_and_gm,
         urls,
         dest,
         {urls[0]: b"wrong 1", urls[1]: b"wrong 2"},
@@ -123,7 +123,7 @@ def test_fetch_raises_when_all_urls_fail_validation(
 
 
 def test_fetch_disables_resume_after_validation_failure(
-    ruyi_logger: RuyiLogger,
+    logger_and_gm: ProvidesLoggerAndGlobalMode,
     tmp_path: "os.PathLike[str]",
 ) -> None:
     # A failing validator removes the partial file, so resuming from the next
@@ -132,7 +132,7 @@ def test_fetch_disables_resume_after_validation_failure(
     good = b"correct contents"
     urls = ["https://mirror.example/bad", "https://upstream.example/good"]
     fetcher = RecordingFetcher(
-        ruyi_logger,
+        logger_and_gm,
         urls,
         dest,
         {urls[0]: b"wrong", urls[1]: good},
