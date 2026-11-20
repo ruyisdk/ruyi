@@ -24,6 +24,18 @@ from urllib import parse
 from pygit2 import GitError, clone_repository, discover_repository
 from pygit2.repository import Repository
 
+from rich.markup import escape as rich_escape
+
+if TYPE_CHECKING:
+    # pyright only works with semver 3.x
+    from semver.version import Version
+else:
+    try:
+        from semver.version import Version  # type: ignore[import-untyped,unused-ignore]
+    except ModuleNotFoundError:
+        # semver 2.x
+        from semver import VersionInfo as Version  # type: ignore[import-untyped,unused-ignore]
+
 from ..i18n import _
 from ..log import RuyiLogger
 from ..pluginhost.ctx import PluginHostContext
@@ -600,11 +612,23 @@ class MetadataRepo(ProvidesPackageManifests):
         for f in glob.iglob("*/[0-9]*.toml", root_dir=category_dir):
             pkg_name, pkg_ver = os.path.split(f)
             pkg_ver = pkg_ver[:-5]  # strip the ".toml" suffix
+
+            try:
+                pkg_sv = Version.parse(pkg_ver)
+            except ValueError:
+                self.logger.W(
+                    _("ignoring manifest with malformed SemVer '{ver}': {path}").format(
+                        ver=rich_escape(pkg_ver),
+                        path=rich_escape(os.path.join(category_dir, f)),
+                    )
+                )
+                continue
+
             with open(os.path.join(category_dir, f), "rb") as fp:
                 yield BoundPackageManifest(
                     category,
                     pkg_name,
-                    pkg_ver,
+                    pkg_sv,
                     cast(InputPackageManifestType, tomllib.load(fp)),
                     self,
                 )

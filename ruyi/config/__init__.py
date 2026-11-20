@@ -100,7 +100,6 @@ def _get_bool_config_value(
     return default if parsed is None else parsed
 
 
-
 class GlobalConfigPackagesType(TypedDict):
     prereleases: "NotRequired[bool]"
 

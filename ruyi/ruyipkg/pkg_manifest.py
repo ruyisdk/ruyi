@@ -705,7 +705,7 @@ class BoundPackageManifest(PackageManifest):
         self,
         category: str,
         name: str,
-        ver: str,
+        ver: str | Version,
         data: InputPackageManifestType,
         repo: "MetadataRepo",
     ) -> None:
@@ -713,8 +713,12 @@ class BoundPackageManifest(PackageManifest):
 
         self.category = category
         self.name = name
-        self.ver = ver
-        self._semver = Version.parse(ver)
+        if isinstance(ver, Version):
+            self.ver = str(ver)
+            self._semver = ver
+        else:
+            self.ver = ver
+            self._semver = Version.parse(self.ver)
         self.repo = repo
 
     @property
