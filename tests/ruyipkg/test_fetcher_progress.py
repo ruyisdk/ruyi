@@ -36,6 +36,26 @@ class _ChunkedResponse:
         self.closed = True
 
 
+class _FailingStreamResponse(_ChunkedResponse):
+    def __init__(self, content_length: int | None = None) -> None:
+        super().__init__(200, [], content_length=content_length)
+
+    def iter_content(self, chunk_size: int) -> Any:
+        yield b"partial"
+        raise requests.ConnectionError("connection reset")
+
+
+class _RaisingResponse(_ChunkedResponse):
+    def __init__(self, status_code: int, body: bytes = b"") -> None:
+        super().__init__(status_code, [body])
+
+    def raise_for_status(self) -> None:
+        raise requests.HTTPError(
+            f"{self.status_code} Server Error",
+            response=self,  # type: ignore[arg-type]
+        )
+
+
 class _FakeProgress:
     instances = 0
 
@@ -234,6 +254,150 @@ def test_no_progress_events_in_human_mode(
     assert fetcher.fetch_one("https://mirror.example/pkg", dest, False)
 
     assert _download_events(capfd.readouterr().err) == []
+
+
+def test_progress_reports_error_on_stream_break(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+    response = _FailingStreamResponse(content_length=10)
+    monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
+
+    fetcher = PythonRequestsFetcher(
+        porcelain_logger_and_gm,
+        ["https://mirror.example/pkg"],
+        dest,
+    )
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    progress_events = [e for e in events if e["ty"] == "downloadprogress-v1"]
+
+    assert [e["progress_bytes"] for e in progress_events] == [0, len(b"partial")]
+    assert [e["done"] for e in progress_events] == [False, False]
+    assert all(e["total_bytes"] == 10 for e in progress_events)
+    assert progress_events[-1]["error"]
+    with open(dest, "rb") as f:
+        assert f.read() == b"partial"
+
+
+def test_progress_reports_error_from_raise_for_status(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+    response = _RaisingResponse(503, b"<html>maintenance</html>")
+    monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
+
+    fetcher = PythonRequestsFetcher(
+        porcelain_logger_and_gm,
+        ["https://mirror.example/pkg"],
+        dest,
+    )
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    progress_events = [e for e in events if e["ty"] == "downloadprogress-v1"]
+
+    assert len(progress_events) == 1
+    final = progress_events[0]
+    assert final["done"] is False
+    assert "503" in final["error"]
+    assert final["progress_bytes"] == 0
+    assert final["total_bytes"] is None
+
+
+def test_progress_reports_error_on_non_2xx_fallback(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+    response = _ChunkedResponse(302, [b"<html>redirecting</html>"])
+    monkeypatch.setattr(requests, "get", lambda *a, **kw: response)
+
+    fetcher = PythonRequestsFetcher(
+        porcelain_logger_and_gm,
+        ["https://mirror.example/pkg"],
+        dest,
+    )
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    progress_events = [e for e in events if e["ty"] == "downloadprogress-v1"]
+
+    assert len(progress_events) == 1
+    final = progress_events[0]
+    assert final["done"] is False
+    assert final["error"] == "HTTP 302"
+    assert final["progress_bytes"] == 0
+    assert final["total_bytes"] is None
+
+
+def test_progress_reports_error_on_connection_failure(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+
+    def raise_connection_error(*args: Any, **kwargs: Any) -> Any:
+        raise requests.ConnectionError("connection reset")
+
+    monkeypatch.setattr(requests, "get", raise_connection_error)
+
+    fetcher = PythonRequestsFetcher(
+        porcelain_logger_and_gm,
+        ["https://mirror.example/pkg"],
+        dest,
+    )
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    request_events = [e for e in events if e["ty"] == "downloadrequest-v1"]
+    progress_events = [e for e in events if e["ty"] == "downloadprogress-v1"]
+
+    assert len(request_events) == 1
+    assert len(progress_events) == 1
+    final = progress_events[0]
+    assert final["done"] is False
+    assert final["error"]
+    assert final["progress_bytes"] == 0
+    assert final["total_bytes"] is None
+
+
+def test_progress_reports_non_empty_error_without_exception_message(
+    porcelain_logger_and_gm: ProvidesLoggerAndGlobalMode,
+    tmp_path: "os.PathLike[str]",
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    dest = os.path.join(tmp_path, "distfile")
+
+    def raise_empty_connection_error(*args: Any, **kwargs: Any) -> Any:
+        raise requests.ConnectionError()
+
+    monkeypatch.setattr(requests, "get", raise_empty_connection_error)
+
+    fetcher = PythonRequestsFetcher(
+        porcelain_logger_and_gm,
+        ["https://mirror.example/pkg"],
+        dest,
+    )
+    assert not fetcher.fetch_one("https://mirror.example/pkg", dest, False)
+
+    events = _download_events(capfd.readouterr().err)
+    progress_events = [e for e in events if e["ty"] == "downloadprogress-v1"]
+
+    assert len(progress_events) == 1
+    assert progress_events[0]["error"] == "ConnectionError"
 
 
 def test_porcelain_mode_skips_human_progress_bar(

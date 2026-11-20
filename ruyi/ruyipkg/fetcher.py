@@ -530,6 +530,16 @@ class PythonRequestsFetcher(BaseFetcher):
                 timeout=(_DOWNLOAD_TIMEOUT, _DOWNLOAD_TIMEOUT),
             )
         except requests.RequestException as exc:
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
 
@@ -539,6 +549,16 @@ class PythonRequestsFetcher(BaseFetcher):
             # an HTTP error response is not the distfile, and the body must
             # not be kept either
             r.close()
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
 
@@ -546,6 +566,16 @@ class PythonRequestsFetcher(BaseFetcher):
         # broken proxy can still hand us a 3xx body
         if not _is_http_success_code(str(r.status_code)):
             r.close()
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=f"HTTP {r.status_code}",
+                            progress_bytes=start_from,
+                            total_bytes=None,
+                        )
+                    )
             self._logger.W(_http_error_warning(url, str(r.status_code)))
             return False
 
@@ -642,6 +672,16 @@ class PythonRequestsFetcher(BaseFetcher):
         except requests.RequestException as exc:
             # keep the partial file, if any, so that the next attempt can
             # resume from where this one broke off
+            if self._po is not None:
+                with self._po as po:
+                    po.emit(
+                        progress_event(
+                            done=False,
+                            error=str(exc) or exc.__class__.__name__,
+                            progress_bytes=progress_bytes,
+                            total_bytes=total_len,
+                        )
+                    )
             self._logger.W(_fetch_exception_warning(url, exc))
             return False
         finally:
