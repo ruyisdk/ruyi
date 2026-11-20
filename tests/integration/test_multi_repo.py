@@ -323,6 +323,41 @@ class TestRepoEnableDisable:
                     f"re-enabled default repo should have *: {line}"
                 )
 
+    def test_disable_default_repo_with_active_key(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        _write_user_config(ruyi_cli_runner, "[repo]\nactive = true\n")
+
+        result = ruyi_cli_runner("repo", "disable", "ruyisdk")
+        assert result.exit_code == 0
+
+        result = ruyi_cli_runner("repo", "list")
+        lines = result.stdout.strip().splitlines()
+        for line in lines:
+            if "ruyisdk" in line:
+                stripped = line.lstrip()
+                assert not stripped.startswith("*"), (
+                    f"disabled default repo should not have *: {line}"
+                )
+
+    def test_enable_default_repo_with_active_key(
+        self, ruyi_cli_runner: IntegrationTestHarness
+    ) -> None:
+        _write_user_config(ruyi_cli_runner, "[repo]\nactive = false\n")
+
+        result = ruyi_cli_runner("repo", "enable", "ruyisdk")
+        assert result.exit_code == 0
+        assert "enabled" in result.stderr
+
+        result = ruyi_cli_runner("repo", "list")
+        lines = result.stdout.strip().splitlines()
+        for line in lines:
+            if "ruyisdk" in line:
+                stripped = line.lstrip()
+                assert stripped.startswith("*"), (
+                    f"re-enabled default repo should have *: {line}"
+                )
+
     def test_default_repo_disabled_excludes_packages(
         self, ruyi_cli_runner: IntegrationTestHarness
     ) -> None:

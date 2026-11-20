@@ -87,7 +87,7 @@ class RepoEntry:
             branch=gc.override_repo_branch or DEFAULT_REPO_BRANCH,
             local_path=gc.override_repo_dir,
             priority=gc.repo_priority,
-            active=not gc._repo_disabled,
+            active=gc.is_default_repo_active,
         )
 
     def make_metadata_repo(self, gc: "GlobalConfig") -> "MetadataRepo":

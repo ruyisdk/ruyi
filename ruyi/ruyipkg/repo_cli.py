@@ -260,6 +260,9 @@ class RepoEnableCommand(
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
             if repo_id == DEFAULT_REPO_ID:
+                # Absence of the key means the repo is active, so removing
+                # both the current and the deprecated setting re-enables it.
+                editor.unset_value("repo.active")
                 editor.unset_value("repo.disabled")
             elif not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: True}):
                 # Not in user config — if it exists as a system-provided repo,
@@ -310,7 +313,10 @@ class RepoDisableCommand(
 
         with ConfigEditor.work_on_user_local_config(cfg) as editor:
             if repo_id == DEFAULT_REPO_ID:
-                editor.set_value("repo.disabled", True)
+                # Prefer the current key, and drop the deprecated one so that
+                # it cannot linger and trigger migration warnings.
+                editor.set_value("repo.active", False)
+                editor.unset_value("repo.disabled")
             elif not editor.update_repos_entry(repo_id, {KEY_REPOS_ACTIVE: False}):
                 # Not in user config — might be a system-provided repo.
                 # Create a user [[repos]] entry to override the active flag.
