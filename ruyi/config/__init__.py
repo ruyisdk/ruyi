@@ -65,6 +65,42 @@ def _get_lang_code() -> str:
     return lang or "en_US"
 
 
+def _get_optional_bool(
+    value: object,
+    key: str,
+    logger: "RuyiLogger",
+) -> bool | None:
+    """Validate an optional boolean value read from a TOML document.
+
+    Values such as the string ``"false"`` are truthy in Python, so only
+    accept real booleans and warn about anything else instead of silently
+    flipping the meaning of the setting.
+    """
+    if value is None or isinstance(value, bool):
+        return value
+
+    logger.W(
+        _(
+            "ignoring config key [yellow]'{key}'[/] with invalid value {value!r}: expected a boolean"
+        ).format(key=key, value=value)
+    )
+    return None
+
+
+def _get_bool_config_value(
+    value: object,
+    key: str,
+    logger: "RuyiLogger",
+    *,
+    default: bool = False,
+) -> bool:
+    """Like :func:`_get_optional_bool`, but substitute a default when the
+    key is absent or its value is invalid."""
+    parsed = _get_optional_bool(value, key, logger)
+    return default if parsed is None else parsed
+
+
+
 class GlobalConfigPackagesType(TypedDict):
     prereleases: "NotRequired[bool]"
 
@@ -165,16 +201,27 @@ class GlobalConfig:
     ) -> None:
         if ins_cfg := config_data.get(schema.SECTION_INSTALLATION):
             if is_global_scope:
-                iem = ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED, None)
-                self.is_installation_externally_managed = bool(iem)
-
-                dob = ins_cfg.get(schema.KEY_INSTALLATION_DISABLE_OOBE, None)
-                self.is_installation_oobe_disabled = bool(dob)
-
-                dtbd = ins_cfg.get(
-                    schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT, None
+                self.is_installation_externally_managed = _get_bool_config_value(
+                    ins_cfg.get(schema.KEY_INSTALLATION_EXTERNALLY_MANAGED),
+                    schema.KEY_INSTALLATION_EXTERNALLY_MANAGED,
+                    self.logger,
                 )
-                self.is_installation_telemetry_disabled_by_default = bool(dtbd)
+
+                self.is_installation_oobe_disabled = _get_bool_config_value(
+                    ins_cfg.get(schema.KEY_INSTALLATION_DISABLE_OOBE),
+                    schema.KEY_INSTALLATION_DISABLE_OOBE,
+                    self.logger,
+                )
+
+                self.is_installation_telemetry_disabled_by_default = (
+                    _get_bool_config_value(
+                        ins_cfg.get(
+                            schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT
+                        ),
+                        schema.KEY_INSTALLATION_DISABLE_TELEMETRY_BY_DEFAULT,
+                        self.logger,
+                    )
+                )
             else:
                 self.logger.W(
                     _(
@@ -185,8 +232,10 @@ class GlobalConfig:
                 )
 
         if pkgs_cfg := config_data.get(schema.SECTION_PACKAGES):
-            self.include_prereleases = pkgs_cfg.get(
-                schema.KEY_PACKAGES_PRERELEASES, False
+            self.include_prereleases = _get_bool_config_value(
+                pkgs_cfg.get(schema.KEY_PACKAGES_PRERELEASES),
+                schema.KEY_PACKAGES_PRERELEASES,
+                self.logger,
             )
 
         if repo_cfg := config_data.get(schema.SECTION_REPO):
@@ -194,9 +243,13 @@ class GlobalConfig:
             self.override_repo_url = repo_cfg.get(schema.KEY_REPO_REMOTE, None)
             self.override_repo_branch = repo_cfg.get(schema.KEY_REPO_BRANCH, None)
 
-            active = repo_cfg.get(schema.KEY_REPO_ACTIVE)
+            active = _get_optional_bool(
+                repo_cfg.get(schema.KEY_REPO_ACTIVE),
+                schema.KEY_REPO_ACTIVE,
+                self.logger,
+            )
             if active is not None:
-                self.is_default_repo_active = bool(active)
+                self.is_default_repo_active = active
                 if schema.KEY_REPO_DISABLED in repo_cfg:
                     self.logger.W(
                         _(
@@ -207,7 +260,11 @@ class GlobalConfig:
                         )
                     )
             else:
-                old_disable_status = repo_cfg.get(schema.KEY_REPO_DISABLED)
+                old_disable_status = _get_optional_bool(
+                    repo_cfg.get(schema.KEY_REPO_DISABLED),
+                    schema.KEY_REPO_DISABLED,
+                    self.logger,
+                )
                 if old_disable_status is not None:
                     self.is_default_repo_active = not old_disable_status
                     self.logger.W(
@@ -310,8 +367,11 @@ class GlobalConfig:
                                 priority=entry_data.get(
                                     schema.KEY_REPOS_PRIORITY, existing.priority
                                 ),
-                                active=entry_data.get(
-                                    schema.KEY_REPOS_ACTIVE, existing.active
+                                active=_get_bool_config_value(
+                                    entry_data.get(schema.KEY_REPOS_ACTIVE),
+                                    schema.KEY_REPOS_ACTIVE,
+                                    self.logger,
+                                    default=existing.active,
                                 ),
                                 is_system=False,
                             )
@@ -362,7 +422,12 @@ class GlobalConfig:
                     priority=entry_data.get(
                         schema.KEY_REPOS_PRIORITY, DEFAULT_REPO_PRIORITY
                     ),
-                    active=entry_data.get(schema.KEY_REPOS_ACTIVE, True),
+                    active=_get_bool_config_value(
+                        entry_data.get(schema.KEY_REPOS_ACTIVE),
+                        schema.KEY_REPOS_ACTIVE,
+                        self.logger,
+                        default=True,
+                    ),
                     is_system=is_system,
                 )
             )
