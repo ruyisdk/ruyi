@@ -183,6 +183,13 @@ def logger_and_gm() -> ProvidesLoggerAndGlobalMode:
     return MockLoggerAndGlobalMode()
 
 
+@pytest.fixture
+def porcelain_logger_and_gm() -> ProvidesLoggerAndGlobalMode:
+    env = MockLoggerAndGlobalMode()
+    env.is_porcelain = True
+    return env
+
+
 @dataclass
 class CLIRunResult:
     exit_code: int

@@ -538,26 +538,32 @@ class PythonRequestsFetcher(BaseFetcher):
         dest_filename = os.path.basename(dest)
         try:
             with open(dest, open_mode) as f:
-                with progress.Progress(
-                    *columns, console=self._logger.log_console
-                ) as pg:
-                    indeterminate = total_len is None
-                    kwargs: dict[str, Any]
-                    if indeterminate:
-                        # be compatible with rich <= 12.3.0 where add_task()'s `total`
-                        # parameter cannot be None
-                        # see https://github.com/Textualize/rich/commit/052b15785876ad85
-                        kwargs = {"start": False}
-                    else:
-                        kwargs = {"total": total_len}
-
-                    task = pg.add_task(dest_filename, completed=start_from, **kwargs)
+                if self._po is not None:
                     for chunk in r.iter_content(self.chunk_size):
                         f.write(chunk)
-                        # according to the docs it's probably not okay to pulse the
-                        # progress bar if the total number of steps is not yet known
-                        if not indeterminate:
-                            pg.advance(task, len(chunk))
+                else:
+                    with progress.Progress(
+                        *columns, console=self._logger.log_console
+                    ) as pg:
+                        indeterminate = total_len is None
+                        kwargs: dict[str, Any]
+                        if indeterminate:
+                            # be compatible with rich <= 12.3.0 where add_task()'s `total`
+                            # parameter cannot be None
+                            # see https://github.com/Textualize/rich/commit/052b15785876ad85
+                            kwargs = {"start": False}
+                        else:
+                            kwargs = {"total": total_len}
+
+                        task = pg.add_task(
+                            dest_filename, completed=start_from, **kwargs
+                        )
+                        for chunk in r.iter_content(self.chunk_size):
+                            f.write(chunk)
+                            # according to the docs it's probably not okay to pulse the
+                            # progress bar if the total number of steps is not yet known
+                            if not indeterminate:
+                                pg.advance(task, len(chunk))
         except requests.RequestException as exc:
             # keep the partial file, if any, so that the next attempt can
             # resume from where this one broke off
