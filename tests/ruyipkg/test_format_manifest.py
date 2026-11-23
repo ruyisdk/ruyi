@@ -32,3 +32,19 @@ def test_format_manifest(ruyi_file: RuyiFileFixtureFactory) -> None:
                 f"Formatted output for {before_file.name} doesn't match expected output. "
                 f"Check {after_file.name} for the expected formatting result."
             )
+
+
+def test_format_manifest_ending_with_empty_vendor_table(
+    ruyi_file: RuyiFileFixtureFactory,
+) -> None:
+    with ruyi_file.path("ruyipkg_suites", "format_manifest") as fixtures_dir:
+        contents = (fixtures_dir / "vendor-data.before.toml").read_text()
+    contents += "\n[metadata.vendor.data.emptyvendor]\n"
+    manifest = PackageManifest(tomlkit.parse(contents))
+
+    formatted = dumps_canonical_package_manifest_toml(manifest)
+    reparsed = PackageManifest(tomlkit.parse(formatted))
+
+    assert reparsed.to_raw() == manifest.to_raw()
+    assert reparsed.vendor_data("emptyvendor") == {}
+    assert dumps_canonical_package_manifest_toml(reparsed) == formatted
