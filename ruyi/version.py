@@ -2,7 +2,7 @@ from typing import Final
 
 from .i18n import d_
 
-RUYI_SEMVER: Final = "0.54.0-alpha.20260918"
+RUYI_SEMVER: Final = "0.56.0-alpha.20261123"
 RUYI_USER_AGENT: Final = f"ruyi/{RUYI_SEMVER}"
 
 COPYRIGHT_NOTICE: Final = d_(
